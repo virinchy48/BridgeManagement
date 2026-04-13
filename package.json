@@ -1,0 +1,36 @@
+{
+  "name": "BridgeManagement",
+  "version": "1.0.0",
+  "dependencies": {
+    "@cap-js/hana": "^2",
+    "@sap/cds": "^9",
+    "@sap/xssec": "^4",
+    "@cap-js/audit-logging": ">=0"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2",
+    "@sap/cds-dk": "^9"
+  },
+  "scripts": {
+    "start": "cds-serve"
+  },
+  "private": true,
+  "cds": {
+    "requires": {
+      "db-ext": {
+        "[development]": {
+          "model": "db/sqlite"
+        },
+        "[production]": {
+          "model": "db/hana"
+        }
+      },
+      "[production]": {
+        "auth": "xsuaa"
+      },
+      "destinations": true,
+      "html5-repo": true,
+      "application-logging": true
+    }
+  }
+}
