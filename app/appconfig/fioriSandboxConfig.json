@@ -5,51 +5,89 @@
         "config": {
           "groups": [
             {
-              "id": "Bookshop",
-              "title": "Bookshop",
+              "id": "bms.group.operations",
+              "title": "OPERATIONS",
               "isPreset": true,
               "isVisible": true,
               "isGroupLocked": false,
               "tiles": [
                 {
-                  "id": "BrowseBooks",
+                  "id": "Dashboard",
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
-                    "title": "Browse Books",
+                    "title": "Dashboard",
+                    "subtitle": "Portfolio Insights",
+                    "icon": "sap-icon://home",
                     "targetURL": "#Books-display"
                   }
                 },
                 {
-                  "id": "BrowseGenres",
+                  "id": "Bridges",
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
-                    "title": "Browse Genres",
+                    "title": "Bridges",
+                    "subtitle": "Asset Registry",
+                    "icon": "sap-icon://functional-location",
+                    "targetURL": "#Genres-display"
+                  }
+                },
+                {
+                  "id": "Restrictions",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Restrictions",
+                    "subtitle": "Active & Scheduled",
+                    "icon": "sap-icon://alert",
+                    "targetURL": "#Genres-display"
+                  }
+                },
+                {
+                  "id": "MapView",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Map View",
+                    "subtitle": "Geographic Explorer",
+                    "icon": "sap-icon://map-2",
                     "targetURL": "#Genres-display"
                   }
                 }
               ]
             },
             {
-              "id": "Administration",
-              "title": "Administration",
+              "id": "bms.group.admin",
+              "title": "BMS BUSINESS ADMIN",
               "isPreset": true,
               "isVisible": true,
               "isGroupLocked": false,
               "tiles": [
                 {
-                  "id": "ManageBooks",
+                  "id": "MassUpload",
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
-                    "title": "Manage Books",
+                    "title": "Mass Upload",
+                    "subtitle": "CSV Drag & Drop",
+                    "icon": "sap-icon://upload-to-cloud",
                     "targetURL": "#Books-manage"
                   }
                 },
                 {
-                  "id": "ManageAuthors",
+                  "id": "BusinessAdmin",
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
-                    "title": "Manage Authors",
+                    "title": "BMS Business Admin",
+                    "subtitle": "Attributes, Lookups & Roles",
+                    "icon": "sap-icon://action-settings",
                     "targetURL": "#Authors-manage"
+                  }
+                },
+                {
+                  "id": "MassEdit",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Mass Edit",
+                    "subtitle": "In-App Grid Editor",
+                    "icon": "sap-icon://edit",
+                    "targetURL": "#Books-manage"
                   }
                 }
               ]
@@ -70,7 +108,7 @@
             "BrowseBooks": {
               "semanticObject": "Books",
               "action": "display",
-              "title": "Browse Books",
+              "title": "Dashboard",
               "signature": {
                 "parameters": {
                   "Books.ID": {
@@ -91,7 +129,7 @@
             "ManageAuthors": {
               "semanticObject": "Authors",
               "action": "manage",
-              "title": "Manage Authors",
+              "title": "BMS Business Admin",
               "signature": {
                 "parameters": {
                   "Books.author.ID": {
@@ -109,7 +147,7 @@
             "BrowseGenres": {
               "semanticObject": "Genres",
               "action": "display",
-              "title": "Browse Genres",
+              "title": "Bridges / Restrictions / Map View",
               "signature": {
                 "parameters": {
                   "Genre.ID": {
@@ -127,7 +165,7 @@
             "ManageBooks": {
               "semanticObject": "Books",
               "action": "manage",
-              "title": "Manage Books",
+              "title": "Mass Upload / Mass Edit",
               "signature": {
                 "parameters": {},
                 "additionalParameters": "allowed"
