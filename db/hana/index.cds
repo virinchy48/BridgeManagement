@@ -1,10 +1,2 @@
-//
-//  Add Author.age and .lifetime with a DB-specific function
-//
-
-using { AdminService } from '../../srv/admin-service';
-
-extend projection AdminService.Authors with {
-  YEARS_BETWEEN(dateOfBirth, dateOfDeath)         as age: Integer,
-  YEAR(dateOfBirth) || ' – ' || YEAR(dateOfDeath) as lifetime : String
-}
+// HANA-specific extensions for BMS — bridge domain only
+using from '../../db/schema';
