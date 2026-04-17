@@ -62,6 +62,111 @@ async function loadDashboardAnalytics() {
   }
 }
 
+async function loadMapBridges() {
+  const db = await cds.connect.to('db')
+
+  const bridges = await db.run(
+    SELECT.from('bridge.management.Bridges').columns(
+      'ID',
+      'bridgeId',
+      'bridgeName',
+      'state',
+      'latitude',
+      'longitude',
+      'postingStatus',
+      'conditionRating',
+      'yearBuilt',
+      'structureType',
+      'route',
+      'region',
+      'clearanceHeight',
+      'spanLength',
+      'lastInspectionDate',
+      'nhvrAssessed',
+      'scourRisk',
+      'freightRoute',
+      'overMassRoute',
+      'hmlApproved',
+      'bDoubleApproved',
+      'restriction_ID'
+    )
+  )
+
+  const restrictionIds = [...new Set(bridges.map((bridge) => bridge.restriction_ID).filter(Boolean))]
+  let vehicleClassByRestriction = new Map()
+
+  if (restrictionIds.length) {
+    const restrictions = await db.run(
+      SELECT.from('bridge.management.Restrictions')
+        .columns(
+          'ID',
+          'bridge_ID',
+          'active',
+          'name',
+          'restrictionType',
+          'restrictionValue',
+          'restrictionUnit',
+          'restrictionStatus',
+          'remarks',
+          'appliesToVehicleClass'
+        )
+        .where({ ID: { in: restrictionIds } })
+    )
+
+    vehicleClassByRestriction = new Map(
+      restrictions.map((restriction) => [restriction.ID, restriction.appliesToVehicleClass || null])
+    )
+
+    var activeRestrictionsByBridgeId = new Map()
+    restrictions.forEach((restriction) => {
+      if (!restriction.active || !restriction.bridge_ID) return
+      if (!activeRestrictionsByBridgeId.has(restriction.bridge_ID)) {
+        activeRestrictionsByBridgeId.set(restriction.bridge_ID, [])
+      }
+      activeRestrictionsByBridgeId.get(restriction.bridge_ID).push({
+        name: restriction.name || restriction.restrictionType || 'Restriction',
+        restrictionType: restriction.restrictionType || null,
+        restrictionValue: restriction.restrictionValue || null,
+        restrictionUnit: restriction.restrictionUnit || null,
+        restrictionStatus: restriction.restrictionStatus || null,
+        remarks: restriction.remarks || null
+      })
+    })
+  }
+
+  const restrictionsByBridgeId = typeof activeRestrictionsByBridgeId === 'undefined'
+    ? new Map()
+    : activeRestrictionsByBridgeId
+
+  return bridges
+    .filter((bridge) => Number.isFinite(Number(bridge.latitude)) && Number.isFinite(Number(bridge.longitude)))
+    .map((bridge) => ({
+      ID: bridge.ID,
+      bridgeId: bridge.bridgeId,
+      bridgeName: bridge.bridgeName,
+      state: bridge.state,
+      latitude: Number(bridge.latitude),
+      longitude: Number(bridge.longitude),
+      postingStatus: bridge.postingStatus || null,
+      conditionRating: bridge.conditionRating == null ? null : Number(bridge.conditionRating),
+      yearBuilt: bridge.yearBuilt == null ? null : Number(bridge.yearBuilt),
+      structureType: bridge.structureType || null,
+      route: bridge.route || null,
+      region: bridge.region || null,
+      clearanceHeight: bridge.clearanceHeight == null ? null : Number(bridge.clearanceHeight),
+      spanLength: bridge.spanLength == null ? null : Number(bridge.spanLength),
+      lastInspectionDate: bridge.lastInspectionDate || null,
+      nhvrAssessed: Boolean(bridge.nhvrAssessed),
+      scourRisk: bridge.scourRisk || null,
+      freightRoute: Boolean(bridge.freightRoute),
+      overMassRoute: Boolean(bridge.overMassRoute),
+      hmlApproved: Boolean(bridge.hmlApproved),
+      bDoubleApproved: Boolean(bridge.bDoubleApproved),
+      vehicleClass: vehicleClassByRestriction.get(bridge.restriction_ID) || null,
+      restrictions: restrictionsByBridgeId.get(bridge.ID) || []
+    }))
+}
+
 cds.on('bootstrap', (app) => {
   const router = express.Router()
 
@@ -130,6 +235,19 @@ cds.on('bootstrap', (app) => {
   })
 
   app.use('/dashboard/api', dashboardRouter)
+
+  const mapRouter = express.Router()
+
+  mapRouter.get('/bridges', async (_req, res) => {
+    try {
+      const bridges = await loadMapBridges()
+      res.json({ bridges })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load bridge map data' } })
+    }
+  })
+
+  app.use('/map/api', mapRouter)
 })
 
 module.exports = cds.server

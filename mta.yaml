@@ -72,6 +72,10 @@ modules:
           artifacts:
             - admin-bridges.zip
           target-path: app/
+        - name: BridgeManagementmapview
+          artifacts:
+            - map-view.zip
+          target-path: app/
         - name: BridgeManagementrestrictions
           artifacts:
             - restrictions.zip
@@ -88,6 +92,17 @@ modules:
   - name: BridgeManagementadminbridges
     type: html5
     path: app/admin-bridges
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms:
+        []
+  - name: BridgeManagementmapview
+    type: html5
+    path: app/map-view
     build-parameters:
       build-result: dist
       builder: custom
