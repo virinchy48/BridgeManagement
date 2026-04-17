@@ -16,4 +16,7 @@ service AdminService {
   @readonly entity RestrictionTypes as projection on my.RestrictionTypes;
   @readonly entity RestrictionStatuses as projection on my.RestrictionStatuses;
   @readonly entity VehicleClasses as projection on my.VehicleClasses;
+  @readonly entity RestrictionCategories as projection on my.RestrictionCategories;
+  @readonly entity RestrictionUnits as projection on my.RestrictionUnits;
+  @readonly entity RestrictionDirections as projection on my.RestrictionDirections;
 }

@@ -2,7 +2,7 @@ const cds = require('@sap/cds')
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
-  const { Bridges } = this.entities
+  const { Bridges, Restrictions } = this.entities
 
   /**
    * Generate IDs for new Bridges drafts
@@ -14,6 +14,32 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     req.data.ID = Math.max(id1||0, id2||0) + 1
     if (!req.data.bridgeId) {
       req.data.bridgeId = `BRG-NSW001-${String(req.data.ID).padStart(3, '0')}`
+    }
+  })
+
+  this.before ('NEW', Restrictions.drafts, async (req) => {
+    if (!req.data.restrictionRef) {
+      const total = await SELECT.from(Restrictions).columns('ID')
+      req.data.restrictionRef = `RST-${String((total?.length || 0) + 1).padStart(4, '0')}`
+    }
+  })
+
+  this.before (['CREATE', 'UPDATE'], Restrictions, req => {
+    if (req.data.restrictionCategory) {
+      req.data.temporary = req.data.restrictionCategory === 'Temporary'
+    }
+    if (req.data.bridgeRef) {
+      const bridge = SELECT.one.from(Bridges).where({ bridgeId: req.data.bridgeRef })
+      return bridge.then(found => {
+        if (!found) req.error(400, `Unknown bridge reference: ${req.data.bridgeRef}`)
+        else req.data.bridge_ID = found.ID
+        if (!req.data.name) {
+          req.data.name = req.data.restrictionRef || req.data.restrictionType || 'Restriction'
+        }
+      })
+    }
+    if (!req.data.name) {
+      req.data.name = req.data.restrictionRef || req.data.restrictionType || 'Restriction'
     }
   })
   return super.init()

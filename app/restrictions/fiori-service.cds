@@ -2,16 +2,25 @@ using { bridge.management.Restrictions } from '../../db/schema';
 using { AdminService } from '../../srv/admin-service';
 
 annotate Restrictions with @cds.search: {
+  restrictionRef,
   name,
+  bridge.bridgeId,
+  bridge.bridgeName,
   descr,
   legalReference,
   issuingAuthority
 };
 
 annotate Restrictions with {
+  restrictionRef       @title: '{i18n>RestrictionRef}';
+  bridgeRef           @title: '{i18n>Bridge}';
+  bridge              @title: '{i18n>Bridge}';
   name                 @title: '{i18n>RestrictionName}';
   descr                @title: '{i18n>Description}';
+  restrictionCategory  @title: '{i18n>RestrictionCategory}';
   restrictionType      @title: '{i18n>RestrictionType}';
+  restrictionValue     @title: '{i18n>RestrictionValue}';
+  restrictionUnit      @title: '{i18n>RestrictionUnit}';
   restrictionStatus    @title: '{i18n>RestrictionStatus}';
   appliesToVehicleClass @title: '{i18n>AppliesToVehicleClass}';
   grossMassLimit       @title: '{i18n>GrossMassLimit}';
@@ -22,30 +31,45 @@ annotate Restrictions with {
   speedLimit           @title: '{i18n>SpeedLimit}';
   permitRequired       @title: '{i18n>PermitRequired}';
   escortRequired       @title: '{i18n>EscortRequired}';
+  temporary            @title: '{i18n>Temporary}';
   active               @title: '{i18n>Active}';
   effectiveFrom        @title: '{i18n>EffectiveFrom}';
   effectiveTo          @title: '{i18n>EffectiveTo}';
+  approvedBy           @title: '{i18n>ApprovedBy}';
+  direction            @title: '{i18n>Direction}';
+  enforcementAuthority @title: '{i18n>EnforcementAuthority}';
+  temporaryFrom        @title: '{i18n>TemporaryFrom}';
+  temporaryTo          @title: '{i18n>TemporaryTo}';
+  temporaryReason      @title: '{i18n>TemporaryReason}' @UI.MultiLineText;
+  approvalReference    @title: '{i18n>ApprovalReference}';
   issuingAuthority     @title: '{i18n>IssuingAuthority}';
-  legalReference       @title: '{i18n>LegalReference}';
-  remarks              @title: '{i18n>Remarks}' @UI.MultiLineText;
+  legalReference       @title: '{i18n>GazetteReference}';
+  remarks              @title: '{i18n>Notes}' @UI.MultiLineText;
 }
 
 annotate Restrictions with @(
   Common.SemanticKey : [name],
   UI.SelectionFields : [
     name,
-    restrictionType,
     restrictionStatus,
-    active,
-    permitRequired
+    restrictionType,
+    permitRequired,
+    temporary
   ],
   UI.LineItem : [
-    { Value: name, Label: '{i18n>RestrictionName}' },
+    { Value: restrictionRef, Label: '{i18n>RestrictionRef}' },
+    { Value: bridge.bridgeId, Label: '{i18n>BridgeID}' },
+    { Value: bridge.bridgeName, Label: '{i18n>Bridge}' },
     { Value: restrictionType, Label: '{i18n>RestrictionType}' },
-    { Value: restrictionStatus, Label: '{i18n>RestrictionStatus}' },
+    { Value: restrictionValue, Label: '{i18n>RestrictionValue}' },
+    { Value: restrictionUnit, Label: '{i18n>RestrictionUnit}' },
     { Value: appliesToVehicleClass, Label: '{i18n>AppliesToVehicleClass}' },
-    { Value: active, Label: '{i18n>Active}' },
+    { Value: restrictionStatus, Label: '{i18n>RestrictionStatus}' },
+    { Value: temporary, Label: '{i18n>Temp}' },
     { Value: permitRequired, Label: '{i18n>PermitRequired}' },
+    { Value: effectiveFrom, Label: '{i18n>From}' },
+    { Value: effectiveTo, Label: '{i18n>To}' },
+    { Value: legalReference, Label: '{i18n>Gazette}' },
   ],
 );
 
@@ -53,79 +77,43 @@ annotate Restrictions with @(UI : {
   Facets : [
     {
       $Type  : 'UI.ReferenceFacet',
-      Label  : '{i18n>RestrictionDefinition}',
-      Target : '@UI.FieldGroup#Definition'
+      Label  : '{i18n>RestrictionDetails}',
+      Target : '@UI.FieldGroup#Details'
     },
     {
       $Type  : 'UI.ReferenceFacet',
-      Label  : '{i18n>RestrictionLimits}',
-      Target : '@UI.FieldGroup#Limits'
-    },
-    {
-      $Type  : 'UI.ReferenceFacet',
-      Label  : '{i18n>ApplicabilityAndDates}',
-      Target : '@UI.FieldGroup#Applicability'
-    },
-    {
-      $Type  : 'UI.ReferenceFacet',
-      Label  : '{i18n>Governance}',
-      Target : '@UI.FieldGroup#Governance'
-    },
-    {
-      $Type  : 'UI.ReferenceFacet',
-      Label  : '{i18n>Administrator}',
-      Target : '@UI.FieldGroup#Admin'
+      Label  : '{i18n>ValidityAndApproval}',
+      Target : '@UI.FieldGroup#ValidityApproval'
     }
   ],
-  FieldGroup #Definition : {
+  FieldGroup #Details : {
     Data : [
-      { Value: name },
-      { Value: descr },
-      { Value: parent_ID },
+      { Value: restrictionCategory },
+      { Value: bridgeRef },
       { Value: restrictionType },
-      { Value: restrictionStatus },
-      { Value: active }
-    ]
-  },
-  FieldGroup #Limits : {
-    Data : [
-      { Value: grossMassLimit },
-      { Value: axleMassLimit },
-      { Value: heightLimit },
-      { Value: widthLimit },
-      { Value: lengthLimit },
-      { Value: speedLimit }
-    ]
-  },
-  FieldGroup #Applicability : {
-    Data : [
+      { Value: restrictionValue },
+      { Value: restrictionUnit },
       { Value: appliesToVehicleClass },
-      { Value: permitRequired },
-      { Value: escortRequired },
+      { Value: restrictionStatus }
+    ]
+  },
+  FieldGroup #ValidityApproval : {
+    Data : [
       { Value: effectiveFrom },
-      { Value: effectiveTo }
-    ]
-  },
-  FieldGroup #Governance : {
-    Data : [
-      { Value: issuingAuthority },
+      { Value: effectiveTo },
       { Value: legalReference },
+      { Value: approvedBy },
+      { Value: direction },
+      { Value: enforcementAuthority },
+      { Value: permitRequired },
       { Value: remarks }
-    ]
-  },
-  FieldGroup #Admin : {
-    Data : [
-      { Value: createdBy },
-      { Value: createdAt },
-      { Value: modifiedBy },
-      { Value: modifiedAt }
     ]
   },
   HeaderInfo : {
     TypeName       : '{i18n>Restriction}',
     TypeNamePlural : '{i18n>Restrictions}',
-    Title          : { Value: name },
-    Description    : { Value: restrictionType }
+    Title          : { Value: restrictionRef },
+    Description    : { Value: bridge.bridgeName }
   }
 });
 
@@ -133,16 +121,47 @@ annotate AdminService.Restrictions with @odata.draft.enabled;
 annotate bridge.management.Restrictions with @fiori.draft.enabled;
 annotate AdminService.Restrictions with {
   ID @Core.Computed;
-  name @(
+  name @UI.Hidden;
+  restrictionRef @UI.Hidden @(
     Common.FieldControl : #Mandatory
+  );
+  bridgeRef @(
+    Common.FieldControl : #Mandatory,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters     : [
+        {
+          $Type            : 'Common.ValueListParameterInOut',
+          ValueListProperty: 'bridgeId',
+          LocalDataProperty: bridgeRef,
+        },
+        {
+          $Type            : 'Common.ValueListParameterDisplayOnly',
+          ValueListProperty: 'bridgeName',
+        },
+      ],
+    }
+  );
+  restrictionCategory @(
+    Common.FieldControl : #Mandatory,
+    ValueList.entity:'RestrictionCategories',
+    Common.ValueListWithFixedValues
   );
   restrictionType @(
     Common.FieldControl : #Mandatory,
     ValueList.entity:'RestrictionTypes',
     Common.ValueListWithFixedValues
   );
-  restrictionStatus @(
+  restrictionValue @(
+    Common.FieldControl : #Mandatory
+  );
+  restrictionUnit @(
     Common.FieldControl : #Mandatory,
+    ValueList.entity:'RestrictionUnits',
+    Common.ValueListWithFixedValues
+  );
+  restrictionStatus @(
     ValueList.entity:'RestrictionStatuses',
     Common.ValueListWithFixedValues
   );
@@ -150,10 +169,39 @@ annotate AdminService.Restrictions with {
     ValueList.entity:'VehicleClasses',
     Common.ValueListWithFixedValues
   );
+  direction @(
+    ValueList.entity:'RestrictionDirections',
+    Common.ValueListWithFixedValues
+  );
+  parent @UI.Hidden;
+  descr @UI.Hidden;
+  grossMassLimit @UI.Hidden;
+  axleMassLimit @UI.Hidden;
+  heightLimit @UI.Hidden;
+  widthLimit @UI.Hidden;
+  lengthLimit @UI.Hidden;
+  speedLimit @UI.Hidden;
+  escortRequired @UI.Hidden;
+  temporary @UI.Hidden;
+  active @UI.Hidden;
+  temporaryFrom @UI.Hidden;
+  temporaryTo @UI.Hidden;
+  temporaryReason @UI.Hidden;
+  approvalReference @UI.Hidden;
+  issuingAuthority @UI.Hidden;
+  createdBy @UI.Hidden;
+  createdAt @UI.Hidden;
+  modifiedBy @UI.Hidden;
+  modifiedAt @UI.Hidden;
   parent @Common: {
     Text: parent.name,
     TextArrangement: #TextOnly
   };
+  bridgeRef @Common: {
+    Text: bridge.bridgeName,
+    TextArrangement: #TextOnly
+  };
+  bridge_ID @UI.Hidden;
 };
 
 // Tree Views

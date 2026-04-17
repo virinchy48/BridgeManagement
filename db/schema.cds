@@ -88,7 +88,13 @@ entity Authors : managed {
 
 /** Hierarchically organized Code List for Restrictions */
 entity Restrictions : cuid, sap.common.CodeList {
+  restrictionRef      : String(40);
+  bridgeRef           : String(40);
+  bridge              : Association to Bridges;
+  restrictionCategory : String(20) default 'Permanent';
   restrictionType     : String(40);
+  restrictionValue    : String(60);
+  restrictionUnit     : String(20);
   restrictionStatus   : String(20);
   appliesToVehicleClass : String(40);
   grossMassLimit      : Decimal(9,2);
@@ -99,9 +105,17 @@ entity Restrictions : cuid, sap.common.CodeList {
   speedLimit          : Integer;
   permitRequired      : Boolean;
   escortRequired      : Boolean;
-  active              : Boolean;
+  temporary           : Boolean;
+  active              : Boolean default true;
   effectiveFrom       : Date;
   effectiveTo         : Date;
+  approvedBy          : String(111);
+  direction           : String(40);
+  enforcementAuthority : String(111);
+  temporaryFrom       : Date;
+  temporaryTo         : Date;
+  temporaryReason     : LargeString;
+  approvalReference   : String(111);
   issuingAuthority    : String(111);
   legalReference      : String(111);
   remarks             : LargeString;
@@ -155,6 +169,18 @@ entity RestrictionStatuses : sap.common.CodeList {
 }
 
 entity VehicleClasses : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity RestrictionCategories : sap.common.CodeList {
+  key code : String(20);
+}
+
+entity RestrictionUnits : sap.common.CodeList {
+  key code : String(20);
+}
+
+entity RestrictionDirections : sap.common.CodeList {
   key code : String(40);
 }
 
