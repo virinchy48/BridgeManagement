@@ -9,21 +9,30 @@
       <content>
         <ScrollContainer height="100%" width="100%" vertical="true" horizontal="false">
           <VBox class="massUploadShell sapUiMediumMargin" busy="{view>/busy}">
+
+            <!-- Step 1: Select Data Type -->
             <VBox class="massUploadSection">
-              <Title text="{i18n>sectionSelectTitle}" level="H4" class="massUploadSectionTitle" />
+              <HBox alignItems="Center" class="massUploadSectionHeader">
+                <core:Icon src="sap-icon://list" size="1rem" class="massUploadStepIcon sapUiTinyMarginEnd" />
+                <Title text="{i18n>sectionSelectTitle}" level="H4" class="massUploadSectionTitle" />
+              </HBox>
               <Select
-                width="13rem"
+                width="16rem"
                 selectedKey="{view>/selectedDataset}"
                 change=".onDatasetChange"
                 items="{view>/datasets}"
-                class="massUploadSelect">
+                class="massUploadSelect sapUiSmallMarginBottom">
                 <core:Item key="{view>name}" text="{view>label}" />
               </Select>
               <Text text="{view>/selectedDatasetDescription}" class="massUploadMutedText" />
             </VBox>
 
+            <!-- Step 2: Download Template -->
             <VBox class="massUploadSection">
-              <Title text="{i18n>sectionDownloadTitle}" level="H4" class="massUploadSectionTitle" />
+              <HBox alignItems="Center" class="massUploadSectionHeader">
+                <core:Icon src="sap-icon://download" size="1rem" class="massUploadStepIcon sapUiTinyMarginEnd" />
+                <Title text="{i18n>sectionDownloadTitle}" level="H4" class="massUploadSectionTitle" />
+              </HBox>
               <Text text="{view>/selectedDatasetTemplateText}" class="massUploadBodyText" />
               <Button
                 text="{view>/selectedTemplateActionText}"
@@ -38,8 +47,12 @@
                 class="massUploadInfoStrip" />
             </VBox>
 
+            <!-- Step 3: Upload CSV File -->
             <VBox class="massUploadSection">
-              <Title text="{i18n>sectionUploadTitle}" level="H4" class="massUploadSectionTitle" />
+              <HBox alignItems="Center" class="massUploadSectionHeader">
+                <core:Icon src="sap-icon://upload" size="1rem" class="massUploadStepIcon sapUiTinyMarginEnd" />
+                <Title text="{i18n>sectionUploadTitle}" level="H4" class="massUploadSectionTitle" />
+              </HBox>
               <MessageStrip
                 text="{view>/uploadFormatText}"
                 type="Information"
@@ -58,7 +71,7 @@
                   width="auto"
                   buttonOnly="true"
                   sameFilenameAllowed="true"
-                  fileType="csv"
+                  fileType="csv,xlsx"
                   buttonText="{i18n>browseFile}"
                   icon="sap-icon://upload"
                   change=".onFileChange"
@@ -76,14 +89,36 @@
               </HBox>
             </VBox>
 
+            <!-- Step 4: Upload Results Summary -->
             <VBox class="massUploadSection" visible="{view>/hasUploadResults}">
-              <Title text="{i18n>summaryPanelTitle}" level="H4" class="massUploadSectionTitle" />
+              <HBox alignItems="Center" class="massUploadSectionHeader">
+                <core:Icon src="sap-icon://message-success" size="1rem" class="massUploadStepIcon sapUiTinyMarginEnd" />
+                <Title text="{i18n>summaryPanelTitle}" level="H4" class="massUploadSectionTitle" />
+              </HBox>
               <MessageStrip
                 text="{view>/lastMessage}"
                 visible="{= !!${view>/lastMessage} }"
                 type="Success"
                 showIcon="true"
                 class="sapUiTinyMarginBottom" />
+              <MessageStrip
+                text="{view>/skippedMessage}"
+                visible="{= !!${view>/skippedMessage} }"
+                type="Warning"
+                showIcon="true"
+                class="sapUiTinyMarginBottom" />
+              <VBox visible="{= ${view>/uploadWarnings}.length > 0 }" class="sapUiTinyMarginBottom">
+                <MessageStrip
+                  text="{view>/uploadWarningsTitle}"
+                  type="Warning"
+                  showIcon="true"
+                  class="sapUiTinyMarginBottom" />
+                <List items="{view>/uploadWarnings}" class="massUploadWarningList">
+                  <items>
+                    <StandardListItem title="{view>}" wrapping="true" />
+                  </items>
+                </List>
+              </VBox>
               <List items="{view>/uploadSummaries}" noDataText="{i18n>summaryNoData}" class="massUploadSummaryList">
                 <items>
                   <CustomListItem>
@@ -102,6 +137,7 @@
                 </items>
               </List>
             </VBox>
+
           </VBox>
         </ScrollContainer>
       </content>

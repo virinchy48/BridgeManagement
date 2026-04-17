@@ -269,11 +269,18 @@ async function importUpload({ buffer, fileName, datasetName }) {
 
   try {
     let summaries
+    let skipped = []
+    let warnings = []
 
     if (lowerName.endsWith('.xlsx')) {
-      summaries = await importWorkbook(tx, buffer, datasetName)
+      const result = await importWorkbook(tx, buffer, datasetName)
+      summaries = result.summaries
+      skipped = result.skipped
+      warnings = result.warnings
     } else if (lowerName.endsWith('.csv')) {
-      summaries = [await importCsv(tx, buffer, datasetName)]
+      const result = await importCsv(tx, buffer, datasetName)
+      summaries = [result.summary]
+      warnings = result.warnings
     } else {
       throw new Error('Unsupported file type. Upload an .xlsx or .csv file.')
     }
@@ -283,7 +290,9 @@ async function importUpload({ buffer, fileName, datasetName }) {
     const processed = summaries.reduce((total, summary) => total + summary.processed, 0)
     return {
       message: `Mass upload completed. ${processed} rows processed across ${summaries.length} dataset(s).`,
-      summaries
+      summaries,
+      skipped,
+      warnings
     }
   } catch (error) {
     await tx.rollback()
@@ -294,13 +303,18 @@ async function importUpload({ buffer, fileName, datasetName }) {
 async function importWorkbook(tx, buffer, datasetName) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
   const summaries = []
+  const skipped = []
+  const warnings = []
   const datasets = resolveWorkbookDatasets(datasetName)
 
   for (const dataset of datasets) {
     const sheet = workbook.Sheets[dataset.name]
-    if (!sheet) continue
+    if (!sheet) {
+      skipped.push({ name: dataset.name, label: dataset.label })
+      continue
+    }
     const rows = parseSheetRows(sheet, dataset)
-    summaries.push(await dataset.importer(tx, dataset, rows))
+    summaries.push(await dataset.importer(tx, dataset, rows, warnings))
   }
 
   if (!summaries.length) {
@@ -310,7 +324,7 @@ async function importWorkbook(tx, buffer, datasetName) {
     throw new Error('No supported upload sheets were found in the workbook.')
   }
 
-  return summaries
+  return { summaries, skipped, warnings }
 }
 
 async function importCsv(tx, buffer, datasetName) {
@@ -327,8 +341,10 @@ async function importCsv(tx, buffer, datasetName) {
     throw new Error('CSV file does not contain any rows.')
   }
 
+  const warnings = []
   const rows = parseSheetRows(sheet, dataset)
-  return dataset.importer(tx, dataset, rows)
+  const summary = await dataset.importer(tx, dataset, rows, warnings)
+  return { summary, warnings }
 }
 
 async function readDatasetRows(dbOrTx, dataset) {
@@ -337,8 +353,8 @@ async function readDatasetRows(dbOrTx, dataset) {
   )
 }
 
-async function importLookupRows(tx, dataset, rows) {
-  const normalized = normalizeRows(dataset, rows)
+async function importLookupRows(tx, dataset, rows, warnings) {
+  const normalized = normalizeRows(dataset, rows, warnings)
 
   if (!normalized.length) {
     return emptySummary(dataset)
@@ -373,8 +389,8 @@ async function importLookupRows(tx, dataset, rows) {
   return buildSummary(dataset, normalized.length, inserts.length, updates.length)
 }
 
-async function importBridgeRows(tx, dataset, rows) {
-  const normalized = normalizeRows(dataset, rows)
+async function importBridgeRows(tx, dataset, rows, warnings) {
+  const normalized = normalizeRows(dataset, rows, warnings)
 
   if (!normalized.length) {
     return emptySummary(dataset)
@@ -424,8 +440,8 @@ async function importBridgeRows(tx, dataset, rows) {
   return buildSummary(dataset, normalized.length, inserts.length, updates.length)
 }
 
-async function importRestrictionRows(tx, dataset, rows) {
-  const normalized = normalizeRows(dataset, rows)
+async function importRestrictionRows(tx, dataset, rows, warnings) {
+  const normalized = normalizeRows(dataset, rows, warnings)
 
   if (!normalized.length) {
     return emptySummary(dataset)
@@ -503,11 +519,11 @@ async function enrichRestrictionsWithBridgeKeys(tx, rows) {
   }
 }
 
-function normalizeRows(dataset, rows) {
+function normalizeRows(dataset, rows, warnings) {
   const deduped = new Map()
 
   for (const row of rows) {
-    const normalized = normalizeRow(dataset, row)
+    const normalized = normalizeRow(dataset, row, warnings)
     if (!normalized) continue
 
     const dedupeKey = getDedupeKey(dataset, normalized)
@@ -517,11 +533,11 @@ function normalizeRows(dataset, rows) {
   return [...deduped.values()]
 }
 
-function normalizeRow(dataset, row) {
+function normalizeRow(dataset, row, warnings) {
   const normalized = {}
 
   for (const columnDef of dataset.columns) {
-    normalized[columnDef.name] = convertCellValue(row[columnDef.name], columnDef, dataset.name, row.__rowNumber)
+    normalized[columnDef.name] = convertCellValue(row[columnDef.name], columnDef, dataset.name, row.__rowNumber, warnings)
   }
 
   normalized.__rowNumber = row.__rowNumber
@@ -529,11 +545,18 @@ function normalizeRow(dataset, row) {
   const hasData = dataset.columns.some((columnDef) => hasValue(normalized[columnDef.name]))
   if (!hasData) return null
 
-  for (const columnDef of dataset.columns) {
-    if (!columnDef.required) continue
-    if (!hasValue(normalized[columnDef.name])) {
-      throw new Error(`${dataset.name} row ${row.__rowNumber}: "${columnDef.name}" is required.`)
+  const missingRequired = dataset.columns
+    .filter((columnDef) => columnDef.required && !hasValue(normalized[columnDef.name]))
+    .map((columnDef) => columnDef.name)
+
+  if (missingRequired.length) {
+    if (warnings) {
+      warnings.push(
+        `${dataset.name} row ${row.__rowNumber}: skipped — required field(s) missing: ${missingRequired.join(', ')}. ` +
+        'Fill in the missing values and re-upload this row.'
+      )
     }
+    return null
   }
 
   if (dataset.columns === LOOKUP_COLUMNS) {
@@ -542,11 +565,21 @@ function normalizeRow(dataset, row) {
   }
 
   if (dataset.name === 'Bridges' && !hasValue(normalized.ID) && !hasValue(normalized.bridgeId)) {
-    throw new Error(`Bridges row ${row.__rowNumber}: provide either "ID" or "bridgeId" so the row can be matched or inserted.`)
+    if (warnings) {
+      warnings.push(
+        `Bridges row ${row.__rowNumber}: skipped — provide either "ID" or "bridgeId" so the row can be matched or inserted.`
+      )
+    }
+    return null
   }
 
   if (dataset.name === 'Restrictions' && !hasValue(normalized.ID) && !hasValue(normalized.restrictionRef)) {
-    throw new Error(`Restrictions row ${row.__rowNumber}: provide either "ID" or "restrictionRef" so the row can be matched or inserted.`)
+    if (warnings) {
+      warnings.push(
+        `Restrictions row ${row.__rowNumber}: skipped — provide either "ID" or "restrictionRef" so the row can be matched or inserted.`
+      )
+    }
+    return null
   }
 
   return normalized
@@ -575,25 +608,51 @@ function parseSheetRows(sheet, dataset) {
   })
 }
 
-function convertCellValue(value, columnDef, datasetName, rowNumber) {
+function convertCellValue(value, columnDef, datasetName, rowNumber, warnings) {
   if (!hasValue(value)) return null
 
   switch (columnDef.type) {
     case 'string':
       return String(value).trim()
     case 'integer': {
-      const numeric = typeof value === 'number' ? value : Number(String(value).trim())
-      if (!Number.isInteger(numeric)) {
-        throw new Error(`${datasetName} row ${rowNumber}: "${columnDef.name}" must be an integer.`)
+      if (typeof value === 'number') {
+        if (!Number.isInteger(value)) {
+          return handleBadNumeric(columnDef, datasetName, rowNumber, value, warnings,
+            `must be a whole number (got ${value})`)
+        }
+        return value
       }
-      return numeric
+      const intStr = String(value).trim().replace(/,(?=\d{3}(\D|$))/g, '')
+      const intVal = Number(intStr)
+      if (!Number.isInteger(intVal)) {
+        return handleBadNumeric(columnDef, datasetName, rowNumber, String(value).trim(), warnings,
+          `must be a whole number (got "${String(value).trim()}")`)
+      }
+      return intVal
     }
     case 'decimal': {
-      const numeric = typeof value === 'number' ? value : Number(String(value).trim())
-      if (!Number.isFinite(numeric)) {
-        throw new Error(`${datasetName} row ${rowNumber}: "${columnDef.name}" must be a number.`)
+      if (typeof value === 'number') {
+        if (!Number.isFinite(value)) {
+          return handleBadNumeric(columnDef, datasetName, rowNumber, value, warnings,
+            `must be a number (got ${value})`)
+        }
+        return value
       }
-      return numeric
+      let decStr = String(value).trim()
+      if (decStr.includes(',') && !decStr.includes('.')) {
+        const afterComma = decStr.slice(decStr.lastIndexOf(',') + 1)
+        decStr = afterComma.length <= 2
+          ? decStr.replace(',', '.')
+          : decStr.replace(/,/g, '')
+      } else {
+        decStr = decStr.replace(/,(?=\d{3}(\.|$))/g, '')
+      }
+      const decVal = Number(decStr)
+      if (!Number.isFinite(decVal)) {
+        return handleBadNumeric(columnDef, datasetName, rowNumber, String(value).trim(), warnings,
+          `must be a number (got "${String(value).trim()}")`)
+      }
+      return decVal
     }
     case 'boolean':
       return parseBoolean(value, datasetName, rowNumber, columnDef.name)
@@ -602,6 +661,16 @@ function convertCellValue(value, columnDef, datasetName, rowNumber) {
     default:
       return value
   }
+}
+
+function handleBadNumeric(columnDef, datasetName, rowNumber, displayValue, warnings, hint) {
+  if (columnDef.required) {
+    throw new Error(`${datasetName} row ${rowNumber}: "${columnDef.name}" is required and ${hint}. Correct the value or leave it empty only if the field is not mandatory.`)
+  }
+  if (warnings) {
+    warnings.push(`${datasetName} row ${rowNumber}: "${columnDef.name}" ${hint} — cleared to empty.`)
+  }
+  return null
 }
 
 function parseBoolean(value, datasetName, rowNumber, columnName) {

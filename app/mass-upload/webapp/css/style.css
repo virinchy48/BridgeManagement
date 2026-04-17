@@ -16,10 +16,18 @@
   margin-bottom: 0.95rem;
 }
 
+.massUploadSectionHeader {
+  margin-bottom: 1rem;
+}
+
+.massUploadStepIcon {
+  color: #3f6df6;
+}
+
 .massUploadSectionTitle {
   color: #1f3353;
   font-size: 1.1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
 }
 
 .massUploadDropzone {
@@ -104,6 +112,16 @@
 
 .massUploadSummaryList .sapMLIB {
   border-bottom: 1px solid #e7edf5;
+}
+
+.massUploadWarningList .sapMLIB {
+  border-bottom: 1px solid #fde8c0;
+  background: #fffbf2;
+}
+
+.massUploadWarningList .sapMSLITitle {
+  color: #92400e;
+  font-size: 0.85rem;
 }
 
 @media (max-width: 700px) {
