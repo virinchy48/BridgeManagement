@@ -245,7 +245,6 @@ annotate AdminService.Bridges with {
   ID @Core.Computed;
   status @UI.Hidden;
   title @UI.Hidden;
-  author @UI.Hidden;
   stock @UI.Hidden;
   price @UI.Hidden;
   currency @UI.Hidden;

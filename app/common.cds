@@ -136,62 +136,6 @@ annotate my.Bridges with {
 
 ////////////////////////////////////////////////////////////////////////////
 //
-//	Authors List
-//
-annotate my.Authors with @(
-  Common.SemanticKey : [ID],
-  UI                 : {
-    Identification  : [{ Value: name}],
-    SelectionFields : [name],
-    LineItem        : [
-      { Value: ID },
-      { Value: dateOfBirth },
-      { Value: dateOfDeath },
-      { Value: placeOfBirth },
-      { Value: placeOfDeath },
-    ],
-  }
-) {
-  ID  @Common: {
-    SemanticObject : 'Authors',
-    Text: name,
-    TextArrangement : #TextOnly,
-  };
-};
-
-////////////////////////////////////////////////////////////////////////////
-//
-//	Author Details
-//
-annotate my.Authors with @(UI : {
-  HeaderInfo : {
-    TypeName       : '{i18n>Author}',
-    TypeNamePlural : '{i18n>Authors}',
-    Title          : { Value: name },
-    Description    : { Value: dateOfBirth }
-  },
-  Facets     : [{
-    $Type  : 'UI.ReferenceFacet',
-    Target : 'bridges/@UI.LineItem'
-  }, ],
-});
-
-
-////////////////////////////////////////////////////////////////////////////
-//
-//	Authors Elements
-//
-annotate my.Authors with {
-  ID           @title: '{i18n>ID}';
-  name         @title: '{i18n>Name}';
-  dateOfBirth  @title: '{i18n>DateOfBirth}';
-  dateOfDeath  @title: '{i18n>DateOfDeath}';
-  placeOfBirth @title: '{i18n>PlaceOfBirth}';
-  placeOfDeath @title: '{i18n>PlaceOfDeath}';
-}
-
-////////////////////////////////////////////////////////////////////////////
-//
 //	Languages List
 //
 annotate common.Languages with @(

@@ -1,7 +1,6 @@
 using {bridge.management as my} from '../db/schema';
 
 service AdminService {
-  entity Authors as projection on my.Authors;
   entity Bridges as projection on my.Bridges;
   entity Restrictions as projection on my.Restrictions;
   @readonly entity AssetClasses as projection on my.AssetClasses;

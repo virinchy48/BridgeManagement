@@ -13,7 +13,6 @@ const BRIDGE_COLUMNS = [
   column('ID', 'integer'),
   column('title', 'string'),
   column('descr', 'string'),
-  column('author_ID', 'integer'),
   column('bridgeId', 'string'),
   column('bridgeName', 'string', { required: true }),
   column('assetClass', 'string'),

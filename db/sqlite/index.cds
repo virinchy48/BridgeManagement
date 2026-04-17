@@ -1,10 +1,1 @@
-//
-//  Add Author.age and .lifetime with a DB-specific function
-//
-
-using { AdminService } from '../../srv/admin-service';
-
-extend projection AdminService.Authors with {
-  strftime('%Y',dateOfDeath)-strftime('%Y',dateOfBirth)              as age: Integer,
-  strftime('%Y',dateOfBirth) || ' – ' || strftime('%Y',dateOfDeath)  as lifetime : String
-}
+// No SQLite-specific model extensions.

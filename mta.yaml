@@ -68,17 +68,9 @@ modules:
     build-parameters:
       build-result: app/
       requires:
-        - name: BridgeManagementadminauthors
-          artifacts:
-            - admin-authors.zip
-          target-path: app/
         - name: BridgeManagementadminbridges
           artifacts:
             - admin-bridges.zip
-          target-path: app/
-        - name: BridgeManagementbrowse
-          artifacts:
-            - browse.zip
           target-path: app/
         - name: BridgeManagementrestrictions
           artifacts:
@@ -93,31 +85,9 @@ modules:
           config:
             HTML5Runtime_enabled: true
 
-  - name: BridgeManagementadminauthors
-    type: html5
-    path: app/admin-authors
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms:
-        []
   - name: BridgeManagementadminbridges
     type: html5
     path: app/admin-bridges
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms:
-        []
-  - name: BridgeManagementbrowse
-    type: html5
-    path: app/browse
     build-parameters:
       build-result: dist
       builder: custom

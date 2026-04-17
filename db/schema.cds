@@ -9,7 +9,6 @@ namespace bridge.management;
 
 entity Bridges : managed {
   key ID           : Integer;
-      author       : Association to Authors;
       title        : localized String;
       descr        : localized String;
       bridgeId     : String(40);
@@ -73,17 +72,6 @@ entity Bridges : managed {
       stock        : Integer;
       price        : Price;
       currency     : Currency;
-}
-
-entity Authors : managed {
-  key ID           : Integer;
-      name         : String @mandatory;
-      dateOfBirth  : Date;
-      dateOfDeath  : Date;
-      placeOfBirth : String;
-      placeOfDeath : String;
-      bridges      : Association to many Bridges
-                       on bridges.author = $self;
 }
 
 /** Hierarchically organized Code List for Restrictions */
