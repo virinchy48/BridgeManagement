@@ -8,6 +8,60 @@ const {
   importUpload
 } = require('./mass-upload')
 
+const { SELECT } = cds.ql
+
+async function loadDashboardAnalytics() {
+  const db = await cds.connect.to('db')
+
+  const [
+    totalBridges,
+    activeRestrictions,
+    closedBridges,
+    postedRestrictions,
+    scourCritical,
+    deficient,
+    avgAdequacy,
+    conditionDist
+  ] = await Promise.all([
+    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt')),
+    db.run(SELECT.one.from('bridge.management.Restrictions').columns('count(1) as cnt').where({ active: true })),
+    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ postingStatus: 'CLOSED' })),
+    db.run(SELECT.one.from('bridge.management.Restrictions').columns('count(1) as cnt').where({ restrictionStatus: 'POSTED' })),
+    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ scourRisk: { in: ['HIGH', 'VERY_HIGH'] } })),
+    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ condition: { in: ['POOR', 'CRITICAL'] } })),
+    db.run(SELECT.one.from('bridge.management.Bridges').columns('avg(structuralAdequacyRating) as avg').where('structuralAdequacyRating is not null')),
+    db.run(SELECT.from('bridge.management.Bridges').columns('condition', 'count(1) as cnt').groupBy('condition'))
+  ])
+
+  const total = Number(totalBridges?.cnt || 0)
+
+  const conditionMap = {}
+  for (const row of (conditionDist || [])) {
+    const key = (row.condition || 'UNKNOWN').toUpperCase()
+    conditionMap[key] = Number(row.cnt || 0)
+  }
+
+  const avgRating = avgAdequacy?.avg ? Number(avgAdequacy.avg) : null
+  const sufficiencyPct = avgRating !== null ? Math.round((avgRating / 10) * 100) : 0
+
+  return {
+    totalBridges: total,
+    activeRestrictions: Number(activeRestrictions?.cnt || 0),
+    closedBridges: Number(closedBridges?.cnt || 0),
+    postedRestrictions: Number(postedRestrictions?.cnt || 0),
+    scourCritical: Number(scourCritical?.cnt || 0),
+    deficient: Number(deficient?.cnt || 0),
+    sufficiencyPct,
+    conditionDistribution: {
+      good: conditionMap['GOOD'] || 0,
+      fair: conditionMap['FAIR'] || 0,
+      poor: conditionMap['POOR'] || 0,
+      critical: conditionMap['CRITICAL'] || 0,
+      total
+    }
+  }
+}
+
 cds.on('bootstrap', (app) => {
   const router = express.Router()
 
@@ -62,6 +116,20 @@ cds.on('bootstrap', (app) => {
   })
 
   app.use('/mass-upload/api', router)
+
+  // Dashboard analytics API
+  const dashboardRouter = express.Router()
+
+  dashboardRouter.get('/analytics', async (_req, res) => {
+    try {
+      const data = await loadDashboardAnalytics()
+      res.json(data)
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load analytics' } })
+    }
+  })
+
+  app.use('/dashboard/api', dashboardRouter)
 })
 
 module.exports = cds.server

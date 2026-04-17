@@ -1,0 +1,164 @@
+/* ── Page shell ── */
+.dashboardPage {
+  background: #f3f6fb;
+}
+
+.dashboardShell {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.25rem 2rem;
+}
+
+.dashboardSubtitle {
+  color: #556070;
+  font-size: 0.9rem;
+}
+
+/* ── Section titles ── */
+.dashboardSectionTitle {
+  color: #1f3353;
+  font-size: 1rem;
+  margin-bottom: 0.65rem;
+  margin-top: 0.25rem;
+}
+
+/* ── KPI GenericTile overrides ── */
+.dashboardKpiTile {
+  min-width: 10rem;
+  max-width: 14rem;
+}
+
+/* ── Condition Distribution Card ── */
+.dashboardCard {
+  background: #fff;
+  border: 1px solid #dfe7f2;
+  border-radius: 0.85rem;
+  padding: 1.1rem 1.25rem 1rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.dashboardCardHeader {
+  margin-bottom: 0.85rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #edf2f9;
+}
+
+.dashboardConditionSummary {
+  font-weight: 600;
+  color: #1f3353;
+  font-size: 1rem;
+}
+
+.dashboardConditionHeaderIcon {
+  color: #107E3E;
+}
+
+.dashboardConditionList .sapMLIB {
+  background: transparent;
+  padding: 0;
+}
+
+.dashboardConditionItem {
+  padding: 0.3rem 0;
+}
+
+.dashboardConditionRow {
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.dashboardConditionIcon {
+  min-width: 1.1rem;
+}
+
+.dashboardConditionLabel {
+  color: #2d3748;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+}
+
+.dashboardConditionBar {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Make progress bar fill its container */
+.dashboardConditionBar > .sapMPI {
+  width: 100% !important;
+}
+
+.dashboardConditionCount {
+  color: #556070;
+  font-size: 0.85rem;
+  min-width: 5.5rem;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+/* ── Key Indicator Cards ── */
+.dashboardIndicatorCard {
+  background: #fff;
+  border: 1px solid #dfe7f2;
+  border-radius: 0.85rem;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+  min-width: 9rem;
+  max-width: 13rem;
+}
+
+.dashboardIndicatorLabel {
+  color: #556070;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.25rem;
+}
+
+.dashboardIndicatorValue {
+  color: #1f3353;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.dashboardIndicatorValueCritical {
+  color: #BB0000;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.dashboardIndicatorUnit {
+  color: #556070;
+  font-size: 1rem;
+  margin-left: 0.2rem;
+}
+
+/* ── Body text / muted ── */
+.dashboardBodyText {
+  color: #334155;
+}
+
+.dashboardMuted {
+  color: #7a8899;
+  font-size: 0.8rem;
+}
+
+/* ── Refresh button ── */
+.dashboardRefreshBtn .sapMBtnInner {
+  color: #3f6df6;
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+  .dashboardShell {
+    padding: 0.75rem 0.75rem 1.5rem;
+  }
+  .dashboardKpiTile {
+    min-width: 8rem;
+    max-width: 100%;
+  }
+  .dashboardIndicatorCard {
+    min-width: 7rem;
+  }
+}

@@ -1,0 +1,194 @@
+<mvc:View
+  controllerName="BridgeManagement.dashboard.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:layout="sap.ui.layout"
+  xmlns:f="sap.f"
+  displayBlock="true">
+
+  <App id="dashboardApp">
+    <Page
+      id="dashboardPage"
+      title="{i18n>appTitle}"
+      showHeader="true"
+      busy="{view>/busy}"
+      class="dashboardPage">
+
+      <headerContent>
+        <Button
+          icon="sap-icon://refresh"
+          tooltip="{i18n>refreshTooltip}"
+          press=".onRefresh"
+          type="Transparent"
+          class="dashboardRefreshBtn" />
+      </headerContent>
+
+      <content>
+        <ScrollContainer height="100%" width="100%" vertical="true" horizontal="false">
+          <VBox class="dashboardShell">
+
+            <!-- Summary subtitle -->
+            <Text text="{i18n>pageSubtitle}" class="dashboardSubtitle sapUiSmallMarginBottom" />
+
+            <!-- ═══ ROW 1 · Network Summary KPIs ═══ -->
+            <Title text="{i18n>sectionSummary}" level="H4" class="dashboardSectionTitle" />
+            <FlexBox wrap="Wrap" class="sapUiSmallMarginBottom">
+
+              <GenericTile
+                header="{i18n>kpiTotalAssets}"
+                subheader="{i18n>kpiTotalAssetsSubtitle}"
+                frameType="OneByOne"
+                press=".onNavigateBridges"
+                class="dashboardKpiTile sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <tileContent>
+                  <TileContent>
+                    <content>
+                      <NumericContent
+                        value="{view>/totalBridges}"
+                        icon="sap-icon://functional-location"
+                        valueColor="Neutral"
+                        withMargin="false" />
+                    </content>
+                  </TileContent>
+                </tileContent>
+              </GenericTile>
+
+              <GenericTile
+                header="{i18n>kpiActiveRestrictions}"
+                subheader="{i18n>kpiActiveRestrictionsSubtitle}"
+                frameType="OneByOne"
+                press=".onNavigateRestrictions"
+                class="dashboardKpiTile sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <tileContent>
+                  <TileContent>
+                    <content>
+                      <NumericContent
+                        value="{view>/activeRestrictions}"
+                        icon="sap-icon://alert"
+                        valueColor="{= ${view>/activeRestrictions} > 0 ? 'Critical' : 'Neutral' }"
+                        withMargin="false" />
+                    </content>
+                  </TileContent>
+                </tileContent>
+              </GenericTile>
+
+              <GenericTile
+                header="{i18n>kpiBridgesClosed}"
+                subheader="{i18n>kpiBridgesClosedSubtitle}"
+                frameType="OneByOne"
+                class="dashboardKpiTile sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <tileContent>
+                  <TileContent>
+                    <content>
+                      <NumericContent
+                        value="{view>/closedBridges}"
+                        icon="sap-icon://locked"
+                        valueColor="{= ${view>/closedBridges} > 0 ? 'Critical' : 'Good' }"
+                        withMargin="false" />
+                    </content>
+                  </TileContent>
+                </tileContent>
+              </GenericTile>
+
+            </FlexBox>
+
+            <!-- ═══ ROW 2 · Condition State Distribution ═══ -->
+            <Title text="{i18n>sectionCondition}" level="H4" class="dashboardSectionTitle" />
+            <VBox class="dashboardCard sapUiSmallMarginBottom">
+
+              <!-- Card header row -->
+              <HBox justifyContent="SpaceBetween" alignItems="Center" class="dashboardCardHeader">
+                <HBox alignItems="Center">
+                  <core:Icon src="sap-icon://status-positive" class="dashboardConditionHeaderIcon sapUiTinyMarginEnd" />
+                  <Text text="{view>/conditionSummaryLabel}" class="dashboardConditionSummary" />
+                </HBox>
+                <Text text="{view>/totalBridges} {i18n>bridgesLabel}" class="dashboardMuted" />
+              </HBox>
+
+              <!-- Condition rows -->
+              <VBox class="dashboardConditionRows">
+                <List
+                  items="{view>/conditionRows}"
+                  showSeparators="None"
+                  class="dashboardConditionList">
+                  <items>
+                    <CustomListItem class="dashboardConditionItem">
+                      <HBox alignItems="Center" class="dashboardConditionRow">
+                        <core:Icon src="{view>icon}" color="{view>color}" size="1rem" class="dashboardConditionIcon" />
+                        <Text text="{view>label}" width="5.5rem" class="dashboardConditionLabel" />
+                        <ProgressIndicator
+                          percentValue="{view>pct}"
+                          displayValue="{view>pctText}"
+                          state="{view>state}"
+                          showValue="true"
+                          width="1px"
+                          class="dashboardConditionBar" />
+                        <Text text="{view>pct}% · {view>count}" class="dashboardConditionCount" />
+                      </HBox>
+                    </CustomListItem>
+                  </items>
+                </List>
+              </VBox>
+
+            </VBox>
+
+            <!-- ═══ ROW 3 · Key Indicators ═══ -->
+            <Title text="{i18n>sectionKeyIndicators}" level="H4" class="dashboardSectionTitle" />
+            <FlexBox wrap="Wrap" class="sapUiSmallMarginBottom">
+
+              <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <Text text="{i18n>indicatorSufficiency}" class="dashboardIndicatorLabel" />
+                <HBox alignItems="Baseline">
+                  <Text text="{view>/sufficiencyPct}" class="dashboardIndicatorValue" />
+                  <Text text="%" class="dashboardIndicatorUnit" />
+                </HBox>
+                <Text text="{i18n>indicatorSufficiencyHint}" class="dashboardMuted" />
+              </VBox>
+
+              <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <Text text="{i18n>indicatorScourCritical}" class="dashboardIndicatorLabel" />
+                <HBox alignItems="Baseline">
+                  <Text text="{view>/scourCritical}" class="{= ${view>/scourCritical} > 0 ? 'dashboardIndicatorValueCritical' : 'dashboardIndicatorValue' }" />
+                </HBox>
+                <Text text="{i18n>indicatorScourCriticalHint}" class="dashboardMuted" />
+              </VBox>
+
+              <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <Text text="{i18n>indicatorDeficient}" class="dashboardIndicatorLabel" />
+                <HBox alignItems="Baseline">
+                  <Text text="{view>/deficient}" class="{= ${view>/deficient} > 0 ? 'dashboardIndicatorValueCritical' : 'dashboardIndicatorValue' }" />
+                </HBox>
+                <Text text="{i18n>indicatorDeficientHint}" class="dashboardMuted" />
+              </VBox>
+
+            </FlexBox>
+
+            <!-- ═══ ROW 4 · Active Restrictions Detail ═══ -->
+            <Title text="{i18n>sectionActiveRestrictions}" level="H4" class="dashboardSectionTitle" />
+            <VBox class="dashboardCard sapUiSmallMarginBottom">
+              <HBox class="dashboardCardHeader" alignItems="Center" justifyContent="SpaceBetween">
+                <HBox alignItems="Center">
+                  <core:Icon src="sap-icon://warning2" color="#E76500" size="1rem" class="sapUiTinyMarginEnd" />
+                  <Text text="{i18n>postedRestrictionsLabel}" class="dashboardBodyText" />
+                </HBox>
+                <ObjectNumber
+                  number="{view>/postedRestrictions}"
+                  unit="{i18n>postedRestrictionsUnit}"
+                  state="{= ${view>/postedRestrictions} > 0 ? 'Warning' : 'None' }"
+                  emphasized="false" />
+              </HBox>
+            </VBox>
+
+            <!-- Last refreshed -->
+            <HBox justifyContent="End" class="sapUiSmallMarginBottom">
+              <Text text="{view>/lastRefreshedLabel}" class="dashboardMuted" />
+            </HBox>
+
+          </VBox>
+        </ScrollContainer>
+      </content>
+
+    </Page>
+  </App>
+</mvc:View>
