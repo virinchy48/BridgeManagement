@@ -72,17 +72,17 @@ modules:
           artifacts:
             - admin-authors.zip
           target-path: app/
-        - name: BridgeManagementadminbooks
+        - name: BridgeManagementadminbridges
           artifacts:
-            - admin-books.zip
+            - admin-bridges.zip
           target-path: app/
         - name: BridgeManagementbrowse
           artifacts:
             - browse.zip
           target-path: app/
-        - name: BridgeManagementgenres
+        - name: BridgeManagementrestrictions
           artifacts:
-            - genres.zip
+            - restrictions.zip
           target-path: app/
     requires:
       - name: BridgeManagement-auth
@@ -104,9 +104,9 @@ modules:
         - npm run build
       supported-platforms:
         []
-  - name: BridgeManagementadminbooks
+  - name: BridgeManagementadminbridges
     type: html5
-    path: app/admin-books
+    path: app/admin-bridges
     build-parameters:
       build-result: dist
       builder: custom
@@ -126,9 +126,9 @@ modules:
         - npm run build
       supported-platforms:
         []
-  - name: BridgeManagementgenres
+  - name: BridgeManagementrestrictions
     type: html5
-    path: app/genres
+    path: app/restrictions
     build-parameters:
       build-result: dist
       builder: custom

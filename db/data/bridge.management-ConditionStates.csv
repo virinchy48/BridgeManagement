@@ -1,0 +1,6 @@
+code;name;descr
+Excellent;Excellent;Asset is in excellent condition.
+Good;Good;Asset is in good condition.
+Fair;Fair;Asset is in fair condition.
+Poor;Poor;Asset is in poor condition.
+Critical;Critical;Asset requires urgent intervention.

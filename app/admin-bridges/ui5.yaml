@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://sap.github.io/ui5-tooling/schema/ui5.yaml.json
 specVersion: '4.0'
 metadata:
-  name: admin-books
+  name: admin-bridges
 type: application
 resources:
   configuration:
@@ -15,7 +15,7 @@ builder:
     - name: ui5-task-zipper
       afterTask: generateVersionInfo
       configuration:
-        archiveName: admin-books
+        archiveName: admin-bridges
         relativePaths: true
         additionalFiles:
           - xs-app.json

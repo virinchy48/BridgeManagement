@@ -1,25 +1,23 @@
-using {sap.capire.bookshop as my} from '../db/schema';
+using {bridge.management as my} from '../db/schema';
 
 service CatalogService {
 
-  /** For displaying lists of Books */
+  /** For displaying lists of Bridges */
   @readonly
-  entity ListOfBooks as
-    projection on Books {
+  entity ListOfBridges as
+    projection on Bridges {
       *,
-      genre.name      as genre,
+      restriction.name as restrictionName,
       currency.symbol as currency,
-    }
-    excluding {
-      descr
     };
 
   /** For display in details pages */
   @readonly
-  entity Books       as
-    projection on my.Books {
+  entity Bridges       as
+    projection on my.Bridges {
       *,
-      author.name as author
+      author.name as author,
+      restriction.name  as restrictionName
     }
     excluding {
       createdBy,
@@ -27,7 +25,7 @@ service CatalogService {
     };
 
   @requires: 'authenticated-user'
-  action submitOrder(book: Books:ID, quantity: Integer) returns {
+  action submitUpdate(bridge: Bridges:ID, quantity: Integer) returns {
     stock : Integer
   };
 }

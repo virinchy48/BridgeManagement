@@ -1,0 +1,5 @@
+code;name;descr
+Mass Limit;Mass Limit;Restriction based on gross or axle mass.
+Dimension Limit;Dimension Limit;Restriction based on height, width, or length.
+Speed Restriction;Speed Restriction;Restriction based on permitted speed.
+Access Restriction;Access Restriction;Restriction based on route or vehicle access conditions.

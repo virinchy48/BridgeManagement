@@ -18,7 +18,7 @@
                     "title": "Dashboard",
                     "subtitle": "Portfolio Insights",
                     "icon": "sap-icon://home",
-                    "targetURL": "#Books-display"
+                    "targetURL": "#Bridges-display"
                   }
                 },
                 {
@@ -28,7 +28,7 @@
                     "title": "Bridges",
                     "subtitle": "Asset Registry",
                     "icon": "sap-icon://functional-location",
-                    "targetURL": "#Genres-display"
+                    "targetURL": "#Bridges-manage"
                   }
                 },
                 {
@@ -38,7 +38,7 @@
                     "title": "Restrictions",
                     "subtitle": "Active & Scheduled",
                     "icon": "sap-icon://alert",
-                    "targetURL": "#Genres-display"
+                    "targetURL": "#Restrictions-manage"
                   }
                 },
                 {
@@ -48,7 +48,7 @@
                     "title": "Map View",
                     "subtitle": "Geographic Explorer",
                     "icon": "sap-icon://map-2",
-                    "targetURL": "#Genres-display"
+                    "targetURL": "#Restrictions-manage"
                   }
                 }
               ]
@@ -67,7 +67,7 @@
                     "title": "Mass Upload",
                     "subtitle": "CSV Drag & Drop",
                     "icon": "sap-icon://upload-to-cloud",
-                    "targetURL": "#Books-manage"
+                    "targetURL": "#Bridges-manage"
                   }
                 },
                 {
@@ -87,7 +87,7 @@
                     "title": "Mass Edit",
                     "subtitle": "In-App Grid Editor",
                     "icon": "sap-icon://edit",
-                    "targetURL": "#Books-manage"
+                    "targetURL": "#Bridges-manage"
                   }
                 }
               ]
@@ -105,16 +105,16 @@
       "adapter": {
         "config": {
           "inbounds": {
-            "BrowseBooks": {
-              "semanticObject": "Books",
+            "BrowseBridges": {
+              "semanticObject": "Bridges",
               "action": "display",
               "title": "Dashboard",
               "signature": {
                 "parameters": {
-                  "Books.ID": {
+                  "Bridges.ID": {
                     "renameTo": "ID"
                   },
-                  "Authors.books.ID": {
+                  "Authors.bridges.ID": {
                     "renameTo": "ID"
                   }
                 },
@@ -132,7 +132,7 @@
               "title": "BMS Business Admin",
               "signature": {
                 "parameters": {
-                  "Books.author.ID": {
+                  "Bridges.author.ID": {
                     "renameTo": "ID"
                   }
                 },
@@ -144,13 +144,13 @@
                 "url": "/admin-authors/webapp"
               }
             },
-            "BrowseGenres": {
-              "semanticObject": "Genres",
-              "action": "display",
-              "title": "Bridges / Restrictions / Map View",
+            "ManageRestrictions": {
+              "semanticObject": "Restrictions",
+              "action": "manage",
+              "title": "Restrictions",
               "signature": {
                 "parameters": {
-                  "Genre.ID": {
+                  "Restriction.ID": {
                     "renameTo": "ID"
                   }
                 },
@@ -158,22 +158,22 @@
               },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.genres",
-                "url": "/genres/webapp"
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.restrictions",
+                "url": "/restrictions/webapp"
               }
             },
-            "ManageBooks": {
-              "semanticObject": "Books",
+            "ManageBridges": {
+              "semanticObject": "Bridges",
               "action": "manage",
-              "title": "Mass Upload / Mass Edit",
+              "title": "Bridges",
               "signature": {
                 "parameters": {},
                 "additionalParameters": "allowed"
               },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.admin-books",
-                "url": "/admin-books/webapp"
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
+                "url": "/admin-bridges/webapp"
               }
             }
           }

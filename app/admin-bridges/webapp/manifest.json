@@ -1,10 +1,11 @@
 {
   "_version": "1.8.0",
   "sap.app": {
-    "id": "BridgeManagement.genres",
+    "id": "BridgeManagement.adminbridges",
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
+    "i18n": "i18n/i18n.properties",
     "applicationVersion": {
       "version": "1.0.0"
     },
@@ -19,19 +20,20 @@
     },
     "crossNavigation": {
       "inbounds": {
-        "Genres-display": {
+        "Bridges-manage": {
           "signature": {
             "parameters": {},
             "additionalParameters": "allowed"
           },
+          "semanticObject": "Bridges",
+          "action": "manage",
           "title": "{{appTitle}}",
+          "info": "{{appDescription}}",
           "subTitle": "{{appSubTitle}}",
-          "semanticObject": "Genres",
-          "action": "display"
+          "icon": "sap-icon://course-book"
         }
       }
-    },
-    "i18n": "i18n/i18n.properties"
+    }
   },
   "sap.ui5": {
     "dependencies": {
@@ -59,49 +61,42 @@
       "routes": [
         {
           "pattern": ":?query:",
-          "name": "GenresList",
-          "target": "GenresList"
+          "name": "BridgesList",
+          "target": "BridgesList"
         },
         {
-          "pattern": "Genres({key}):?query:",
-          "name": "GenresDetails",
-          "target": "GenresDetails"
+          "pattern": "Bridges({key}):?query:",
+          "name": "BridgesDetails",
+          "target": "BridgesDetails"
         }
       ],
       "targets": {
-        "GenresList": {
+        "BridgesList": {
           "type": "Component",
-          "id": "GenresList",
+          "id": "BridgesList",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
-              "contextPath": "/Genres",
+              "entitySet": "Bridges",
               "liveMode": true,
               "navigation": {
-                "Genres": {
+                "Bridges": {
                   "detail": {
-                    "route": "GenresDetails"
-                  }
-                }
-              },
-              "controlConfiguration": {
-                "@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": {
-                    "hierarchyQualifier": "GenresHierarchy",
-                    "type": "TreeTable"
+                    "route": "BridgesDetails"
                   }
                 }
               }
             }
           }
         },
-        "GenresDetails": {
+        "BridgesDetails": {
           "type": "Component",
-          "id": "GenresDetails",
+          "id": "BridgesDetailsList",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "contextPath": "/Genres"
+              "entitySet": "Bridges",
+              "editableHeaderContent": false
             }
           }
         }
@@ -116,8 +111,8 @@
     "technology": "UI5",
     "deviceTypes": {
       "desktop": true,
-      "tablet": true,
-      "phone": true
+      "phone": true,
+      "tablet": true
     }
   },
   "sap.fiori": {

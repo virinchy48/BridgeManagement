@@ -20,8 +20,8 @@ annotate AdminService.Authors with @(UI : {
     },
     {
       $Type : 'UI.ReferenceFacet',
-      Label : '{i18n>Books}',
-      Target : 'books/@UI.LineItem'
+      Label : '{i18n>Bridges}',
+      Target : 'bridges/@UI.LineItem'
     },
   ],
   FieldGroup #Details : {Data : [
@@ -38,7 +38,7 @@ annotate AdminService.Authors with @(UI : {
 
 
 // Workaround to avoid errors for unknown db-specific calculated fields above
-extend sap.capire.bookshop.Authors with {
+extend bridge.management.Authors with {
   virtual age      : Integer;
   virtual lifetime : String;
 }

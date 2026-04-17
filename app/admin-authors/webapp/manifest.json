@@ -23,7 +23,7 @@
         "Authors-manage": {
           "signature": {
             "parameters": {
-              "Books.author.ID": {
+              "Bridges.author.ID": {
                 "renameTo": "ID"
               }
             },

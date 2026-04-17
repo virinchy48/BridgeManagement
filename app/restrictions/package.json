@@ -1,5 +1,5 @@
 {
-  "name": "genres",
+  "name": "restrictions",
   "version": "1.0.0",
   "main": "webapp/index.html",
   "scripts": {

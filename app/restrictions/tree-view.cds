@@ -2,19 +2,19 @@ using { AdminService } from '../../srv/admin-service';
 
 ////////////////////////////////////////////////////////////////////////////
 //
-//	Genres Tree View
+//	Restrictions Tree View
 //
 
 // Tell Fiori about the structure of the hierarchy
-annotate AdminService.Genres with @Aggregation.RecursiveHierarchy #GenresHierarchy : {
+annotate AdminService.Restrictions with @Aggregation.RecursiveHierarchy #RestrictionsHierarchy : {
   ParentNavigationProperty : parent, // navigates to a node's parent
   NodeProperty             : ID, // identifies a node, usually the key
 };
 
 // Fiori expects the following to be defined explicitly, even though they're always the same
-extend AdminService.Genres with @(
+extend AdminService.Restrictions with @(
   // The columns expected by Fiori to be present in hierarchy entities
-  Hierarchy.RecursiveHierarchy #GenresHierarchy : {
+  Hierarchy.RecursiveHierarchy #RestrictionsHierarchy : {
     LimitedDescendantCount : LimitedDescendantCount,
     DistanceFromRoot       : DistanceFromRoot,
     DrillState             : DrillState,

@@ -20,19 +20,19 @@
     },
     "crossNavigation": {
       "inbounds": {
-        "Books-display": {
+        "Bridges-display": {
           "signature": {
             "parameters": {
-              "Books.ID": {
+              "Bridges.ID": {
                 "renameTo": "ID"
               },
-              "Authors.books.ID": {
+              "Authors.bridges.ID": {
                 "renameTo": "ID"
               }
             },
             "additionalParameters": "ignored"
           },
-          "semanticObject": "Books",
+          "semanticObject": "Bridges",
           "action": "display",
           "title": "{{appTitle}}",
           "info": "{{appDescription}}",
@@ -40,7 +40,7 @@
           "icon": "sap-icon://course-book",
           "indicatorDataSource": {
             "dataSource": "CatalogService",
-            "path": "Books/$count",
+            "path": "Bridges/$count",
             "refresh": 1800
           }
         }
@@ -73,41 +73,41 @@
       "routes": [
         {
           "pattern": ":?query:",
-          "name": "BooksList",
-          "target": "BooksList"
+          "name": "BridgesList",
+          "target": "BridgesList"
         },
         {
-          "pattern": "Books({key}):?query:",
-          "name": "BooksDetails",
-          "target": "BooksDetails"
+          "pattern": "Bridges({key}):?query:",
+          "name": "BridgesDetails",
+          "target": "BridgesDetails"
         }
       ],
       "targets": {
-        "BooksList": {
+        "BridgesList": {
           "type": "Component",
-          "id": "BooksList",
+          "id": "BridgesList",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
-              "entitySet": "Books",
+              "entitySet": "Bridges",
               "liveMode": true,
               "navigation": {
-                "Books": {
+                "Bridges": {
                   "detail": {
-                    "route": "BooksDetails"
+                    "route": "BridgesDetails"
                   }
                 }
               }
             }
           }
         },
-        "BooksDetails": {
+        "BridgesDetails": {
           "type": "Component",
-          "id": "BooksDetailsList",
+          "id": "BridgesDetailsList",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "entitySet": "Books"
+              "entitySet": "Bridges"
             }
           }
         }
