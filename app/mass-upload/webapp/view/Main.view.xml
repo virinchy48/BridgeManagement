@@ -1,0 +1,110 @@
+<mvc:View
+  controllerName="BridgeManagement.massupload.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:unified="sap.ui.unified">
+  <App>
+    <Page showHeader="false" class="massUploadPage">
+      <content>
+        <ScrollContainer height="100%" width="100%" vertical="true" horizontal="false">
+          <VBox class="massUploadShell sapUiMediumMargin" busy="{view>/busy}">
+            <VBox class="massUploadSection">
+              <Title text="{i18n>sectionSelectTitle}" level="H4" class="massUploadSectionTitle" />
+              <Select
+                width="13rem"
+                selectedKey="{view>/selectedDataset}"
+                change=".onDatasetChange"
+                items="{view>/datasets}"
+                class="massUploadSelect">
+                <core:Item key="{view>name}" text="{view>label}" />
+              </Select>
+              <Text text="{view>/selectedDatasetDescription}" class="massUploadMutedText" />
+            </VBox>
+
+            <VBox class="massUploadSection">
+              <Title text="{i18n>sectionDownloadTitle}" level="H4" class="massUploadSectionTitle" />
+              <Text text="{view>/selectedDatasetTemplateText}" class="massUploadBodyText" />
+              <Button
+                text="{view>/selectedTemplateActionText}"
+                icon="sap-icon://download"
+                type="Emphasized"
+                press=".onDownloadSelectedTemplate"
+                class="massUploadPrimaryButton sapUiSmallMarginTop sapUiSmallMarginBottom" />
+              <MessageStrip
+                text="{view>/selectedMandatoryHint}"
+                type="Information"
+                showIcon="true"
+                class="massUploadInfoStrip" />
+            </VBox>
+
+            <VBox class="massUploadSection">
+              <Title text="{i18n>sectionUploadTitle}" level="H4" class="massUploadSectionTitle" />
+              <MessageStrip
+                text="{view>/uploadFormatText}"
+                type="Information"
+                showIcon="true"
+                class="massUploadInfoStrip sapUiTinyMarginBottom" />
+
+              <VBox id="dropZone" class="massUploadDropzone" renderType="Bare">
+                <core:Icon src="sap-icon://folder-blank" size="2.75rem" class="massUploadDropIcon" />
+                <Title text="{i18n>dropzoneTitle}" level="H4" class="massUploadDropTitle" />
+                <Text text="{i18n>dropzoneSubtitle}" class="massUploadDropSubtitle" />
+              </VBox>
+
+              <HBox alignItems="Center" wrap="Wrap" class="sapUiSmallMarginTop">
+                <unified:FileUploader
+                  id="fileUploader"
+                  width="auto"
+                  buttonOnly="true"
+                  sameFilenameAllowed="true"
+                  fileType="csv"
+                  buttonText="{i18n>browseFile}"
+                  icon="sap-icon://upload"
+                  change=".onFileChange"
+                  class="massUploadBrowseUploader sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                <Text text="{view>/uploadReadyText}" class="massUploadFileName sapUiTinyMarginBottom" />
+              </HBox>
+
+              <HBox justifyContent="End" class="sapUiSmallMarginTop">
+                <Button
+                  text="{i18n>uploadButton}"
+                  type="Emphasized"
+                  enabled="{view>/canUpload}"
+                  press=".onUpload"
+                  class="massUploadUploadButton" />
+              </HBox>
+            </VBox>
+
+            <VBox class="massUploadSection" visible="{view>/hasUploadResults}">
+              <Title text="{i18n>summaryPanelTitle}" level="H4" class="massUploadSectionTitle" />
+              <MessageStrip
+                text="{view>/lastMessage}"
+                visible="{= !!${view>/lastMessage} }"
+                type="Success"
+                showIcon="true"
+                class="sapUiTinyMarginBottom" />
+              <List items="{view>/uploadSummaries}" noDataText="{i18n>summaryNoData}" class="massUploadSummaryList">
+                <items>
+                  <CustomListItem>
+                    <HBox justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap">
+                      <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                        <Title text="{view>label}" level="H5" />
+                        <Text text="{view>dataset}" />
+                      </VBox>
+                      <HBox wrap="Wrap">
+                        <ObjectStatus text="{= 'Processed ' + ${view>processed} }" state="Information" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                        <ObjectStatus text="{= 'Inserted ' + ${view>inserted} }" state="Success" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                        <ObjectStatus text="{= 'Updated ' + ${view>updated} }" state="Warning" class="sapUiTinyMarginBottom" />
+                      </HBox>
+                    </HBox>
+                  </CustomListItem>
+                </items>
+              </List>
+            </VBox>
+          </VBox>
+        </ScrollContainer>
+      </content>
+    </Page>
+  </App>
+</mvc:View>

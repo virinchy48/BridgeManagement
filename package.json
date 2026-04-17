@@ -2,17 +2,18 @@
   "name": "BridgeManagement",
   "version": "1.0.0",
   "dependencies": {
+    "@cap-js/audit-logging": ">=0",
     "@cap-js/hana": "^2",
     "@sap/cds": "^9",
     "@sap/xssec": "^4",
-    "@cap-js/audit-logging": ">=0"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@cap-js/sqlite": "^2",
     "@sap/cds-dk": "^9"
   },
   "scripts": {
-  "start": "PORT=8008 cds-serve"
+    "start": "PORT=8008 cds-serve"
   },
   "private": true,
   "cds": {
