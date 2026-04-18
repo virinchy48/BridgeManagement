@@ -820,7 +820,7 @@ sap.ui.define([
     },
 
     _resourceUrl: function (path) {
-      return sap.ui.require.toUrl("BridgeManagement/mapview/" + path);
+      return this.getOwnerComponent().getManifestObject().resolveUri(path);
     },
 
     _text: function (key) {

@@ -76,6 +76,10 @@ modules:
           artifacts:
             - map-view.zip
           target-path: app/
+        - name: BridgeManagementmassedit
+          artifacts:
+            - mass-edit.zip
+          target-path: app/
         - name: BridgeManagementrestrictions
           artifacts:
             - restrictions.zip
@@ -103,6 +107,17 @@ modules:
   - name: BridgeManagementmapview
     type: html5
     path: app/map-view
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms:
+        []
+  - name: BridgeManagementmassedit
+    type: html5
+    path: app/mass-edit
     build-parameters:
       build-result: dist
       builder: custom
