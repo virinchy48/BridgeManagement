@@ -3,9 +3,20 @@
   background: #f3f6fb;
 }
 
+body.dashboardFullBleed .sapUshellApplicationContainerLimitedWidth,
+body.dashboardFullBleed .sapUshellApplicationContainer,
+body.dashboardFullBleed #application-Dashboard-display-component {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
 .dashboardShell {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: auto;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
   padding: 1rem 1.25rem 2rem;
 }
 

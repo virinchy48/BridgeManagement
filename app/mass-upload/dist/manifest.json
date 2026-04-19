@@ -1,7 +1,7 @@
 {
 	"_version": "1.8.0",
 	"sap.app": {
-		"id": "BridgeManagement.massedit",
+		"id": "BridgeManagement.massupload",
 		"type": "application",
 		"title": "{{appTitle}}",
 		"description": "{{appDescription}}",
@@ -11,17 +11,17 @@
 		},
 		"crossNavigation": {
 			"inbounds": {
-				"MassEdit-manage": {
+				"MassUpload-manage": {
 					"signature": {
 						"parameters": {},
 						"additionalParameters": "allowed"
 					},
-					"semanticObject": "MassEdit",
+					"semanticObject": "MassUpload",
 					"action": "manage",
 					"title": "{{appTitle}}",
 					"info": "{{appDescription}}",
 					"subTitle": "{{appSubTitle}}",
-					"icon": "sap-icon://edit"
+					"icon": "sap-icon://upload-to-cloud"
 				}
 			}
 		}
@@ -39,9 +39,10 @@
 		"dependencies": {
 			"minUI5Version": "1.136.0",
 			"libs": {
-				"sap.f": {},
 				"sap.m": {},
-				"sap.ui.core": {}
+				"sap.ui.core": {},
+				"sap.ui.layout": {},
+				"sap.ui.unified": {}
 			}
 		},
 		"models": {
@@ -57,27 +58,11 @@
 				}
 			]
 		},
-		"routing": {
-			"routes": [
-				{
-					"pattern": "",
-					"name": "MassEdit",
-					"target": "MassEdit"
-				}
-			],
-			"targets": {
-				"MassEdit": {
-					"viewType": "XML",
-					"viewName": "BridgeManagement.massedit.view.MassEdit",
-					"viewId": "MassEdit"
-				}
-			}
-		},
 		"rootView": {
-			"viewName": "BridgeManagement.massedit.view.MassEdit",
+			"viewName": "BridgeManagement.massupload.view.Main",
 			"type": "XML",
 			"async": true,
-			"id": "MassEdit"
+			"id": "Main"
 		},
 		"contentDensities": {
 			"compact": true,
@@ -87,6 +72,6 @@
 	},
 	"sap.fiori": {
 		"registrationIds": [],
-		"archeType": "transactional"
+		"archeType": "application"
 	}
 }

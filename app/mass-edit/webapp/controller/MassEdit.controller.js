@@ -103,6 +103,8 @@ sap.ui.define([
 
   return Controller.extend("BridgeManagement.massedit.controller.MassEdit", {
     onInit: function () {
+      document.body.classList.add("massEditFullBleed");
+
       this._allRows = [];
       this._baselineRows = [];
       this._lookupsLoaded = false;
@@ -152,6 +154,10 @@ sap.ui.define([
 
       this._buildTable();
       this._loadEntityData();
+    },
+
+    onExit: function () {
+      document.body.classList.remove("massEditFullBleed");
     },
 
     onNavHome: function () {

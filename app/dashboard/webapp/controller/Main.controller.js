@@ -16,6 +16,8 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.dashboard.controller.Main", {
 
     onInit: function () {
+      document.body.classList.add("dashboardFullBleed");
+
       const model = new JSONModel({
         busy: true,
         totalBridges: 0,
@@ -31,6 +33,10 @@ sap.ui.define([
       });
       this.getView().setModel(model, "view");
       this._loadAnalytics();
+    },
+
+    onExit: function () {
+      document.body.classList.remove("dashboardFullBleed");
     },
 
     onRefresh: function () {
