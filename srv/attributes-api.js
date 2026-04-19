@@ -345,6 +345,48 @@ module.exports = function mountAttributesApi(app) {
     }
   })
 
+  // DELETE /values/:objectType/:objectId — remove all attribute values for an object (admin reset)
+  router.delete('/values/:objectType/:objectId', async (req, res) => {
+    const { objectType, objectId } = req.params
+    try {
+      const db = await cds.connect.to('db')
+      const existing = await loadValues(db, objectType, objectId)
+      if (!existing.length) return res.json({ ok: true, deleted: 0 })
+
+      const changedBy = currentUser(req)
+      const now = new Date().toISOString()
+
+      for (const v of existing) {
+        await db.run(
+          INSERT.into('bridge.management.AttributeValueHistory').entries({
+            historyId:       cds.utils.uuid(),
+            objectType,
+            objectId:        String(objectId),
+            attributeKey:    v.attributeKey,
+            oldValueText:    v.valueText,
+            oldValueInteger: v.valueInteger,
+            oldValueDecimal: v.valueDecimal,
+            oldValueDate:    v.valueDate,
+            oldValueBoolean: v.valueBoolean,
+            changedBy,
+            changedAt:       now,
+            changeSource:    'manual'
+          })
+        )
+      }
+
+      const { DELETE: DEL } = cds.ql
+      await db.run(
+        DEL.from('bridge.management.AttributeValues')
+          .where({ objectType, objectId: String(objectId) })
+      )
+
+      res.json({ ok: true, deleted: existing.length })
+    } catch (err) {
+      res.status(500).json({ error: { message: err.message || 'Failed to delete attribute values' } })
+    }
+  })
+
   // GET /history/:objectType/:objectId/:key
   router.get('/history/:objectType/:objectId/:key', async (req, res) => {
     const { objectType, objectId, key } = req.params
