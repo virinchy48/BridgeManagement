@@ -25,7 +25,12 @@ sap.ui.define([
       const sKey  = ROUTE_TO_KEY[sName] || "changeDocuments";
       const oNavList = this.byId("navList");
       const aItems   = oNavList.getItems();
-      aItems.forEach(item => item.setSelected(item.getKey() === sKey));
+      const target   = aItems.find(item => item.getKey() === sKey);
+      if (target) oNavList.setSelectedItem(target);
+    },
+
+    onGoHome: function () {
+      window.location.href = "/fiori-apps.html";
     },
 
     onToggleSideNav: function () {

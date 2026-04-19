@@ -122,7 +122,7 @@
         </Panel>
 
         <VBox id="emptyState" alignItems="Center" justifyContent="Center" class="sapUiLargeMargin">
-          <core:Icon src="sap-icon://history" size="5rem" color="var(--sapNeutralColor)" />
+          <core:Icon src="sap-icon://history" size="5rem" color="Default" />
           <Title text="Apply filters to view change documents" level="H4" class="sapUiSmallMarginTop" />
           <Text text="Select object type, date range, or user and click Apply Filters." />
         </VBox>

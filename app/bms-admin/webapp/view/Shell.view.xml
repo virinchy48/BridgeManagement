@@ -11,6 +11,8 @@
       <tnt:ToolHeader>
         <Button icon="sap-icon://menu2" type="Transparent" press=".onToggleSideNav" tooltip="Toggle navigation" />
         <Title text="BMS Administration" titleStyle="H4" class="sapUiSmallMarginBegin" />
+        <ToolbarSpacer xmlns="sap.m" />
+        <Button xmlns="sap.m" icon="sap-icon://home" text="All Apps" type="Transparent" press=".onGoHome" tooltip="Back to launchpad" />
       </tnt:ToolHeader>
     </tnt:header>
 
@@ -18,7 +20,7 @@
       <tnt:SideNavigation id="sideNav" itemSelect=".onNavSelect">
         <tnt:item>
           <tnt:NavigationList id="navList">
-            <tnt:NavigationListItem text="Change Documents"  key="changeDocuments" icon="sap-icon://history"       selected="true" />
+            <tnt:NavigationListItem text="Change Documents"  key="changeDocuments" icon="sap-icon://history"       />
             <tnt:NavigationListItem text="Data Quality"      key="dataQuality"     icon="sap-icon://quality-issue" />
             <tnt:NavigationListItem text="Reference Data"    key="referenceData"   icon="sap-icon://value-help"    />
             <tnt:NavigationListItem text="User Access"       key="userAccess"      icon="sap-icon://employee"      />
