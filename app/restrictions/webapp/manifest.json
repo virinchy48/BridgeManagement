@@ -123,7 +123,7 @@
         }
       },
       "config": {
-        "routerClass": "sap.fe.core.AppRouter"
+        "routerClass": "sap.m.routing.Router"
       }
     },
     "contentDensities": {
