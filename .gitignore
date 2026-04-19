@@ -20,3 +20,6 @@ mta_archives/
 @cds-models
 *.sqlite-shm
 *.sqlite-wal
+
+# FUSE temp files (created when a file is deleted while still open by a process)
+.fuse_hidden*
