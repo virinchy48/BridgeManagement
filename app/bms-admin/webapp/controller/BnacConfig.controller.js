@@ -8,8 +8,10 @@ sap.ui.define([
   "sap/m/Input",
   "sap/m/CheckBox",
   "sap/m/Label",
-  "sap/ui/layout/form/SimpleForm"
-], function (Controller, JSONModel, MessageToast, MessageBox, Dialog, Button, Input, CheckBox, Label, SimpleForm) {
+  "sap/ui/layout/form/SimpleForm",
+  "sap/m/ScrollContainer",
+  "sap/m/FormattedText"
+], function (Controller, JSONModel, MessageToast, MessageBox, Dialog, Button, Input, CheckBox, Label, SimpleForm, ScrollContainer, FormattedText) {
   "use strict";
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.BnacConfig", {
@@ -152,6 +154,47 @@ sap.ui.define([
           this._histModel.setData({ history: rows });
         })
         .catch(e => console.error("History load failed:", e));
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<h2 style='margin-top:0'>BNAC Integration Configuration — How to Use</h2>",
+        "<h3>Purpose</h3>",
+        "<p>This page manages the connection between BMS and BNAC (Bridge Network Asset Condition) systems. ",
+        "It lets you configure BNAC environment URLs and upload the mapping between BMS Bridge IDs and BNAC Object IDs, ",
+        "enabling deep-links from bridge records directly into the BNAC portal.</p>",
+        "<h3>Step 1 — Configure Environments</h3>",
+        "<ol>",
+        "<li>Click <strong>Add Environment</strong> to add a BNAC environment (e.g. DEV, UAT, PROD).</li>",
+        "<li>Enter the environment name, base URL (e.g. <em>https://bnac.example.com/objects/</em>), and a description.</li>",
+        "<li>Toggle <strong>Active</strong> to mark which environment is used for generating deep-links.</li>",
+        "<li>Use the <strong>Edit</strong> or <strong>Delete</strong> buttons on each row to maintain existing environments.</li>",
+        "</ol>",
+        "<h3>Step 2 — Upload ID Mappings</h3>",
+        "<ol>",
+        "<li>Prepare a CSV file with two columns: <em>bridgeId</em> and <em>bnacObjectId</em>. Include a header row.</li>",
+        "<li>Select the target environment from the dropdown in the <strong>Upload ID Mapping</strong> panel.</li>",
+        "<li>Drop the CSV onto the upload area or click to browse. The system upserts all rows — existing mappings are updated, new ones are inserted.</li>",
+        "<li>Review the upload result summary (total, success, failed rows).</li>",
+        "</ol>",
+        "<h3>Upload History</h3>",
+        "<p>The <strong>Load History</strong> table records every CSV upload with timestamp, uploaded-by user, environment, and row counts. ",
+        "Expand any row to see per-row error messages if the upload had failures.</p>",
+        "<h3>How Deep-Links Work</h3>",
+        "<p>Once a mapping is uploaded, the Bridge detail page in BMS shows an <strong>Open in BNAC</strong> button. ",
+        "The link is built as: <em>baseUrl + bnacObjectId</em>. Ensure the active environment's base URL is correct before uploading mappings.</p>"
+      ].join("");
+      var oDialog = new Dialog({
+        title: "BNAC Integration Configuration — Help",
+        contentWidth: "580px",
+        contentHeight: "480px",
+        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
     }
   });
 });

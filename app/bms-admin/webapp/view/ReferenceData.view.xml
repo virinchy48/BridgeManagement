@@ -15,6 +15,7 @@
         <contentRight>
           <Button text="Add Entry" type="Emphasized" icon="sap-icon://add"     press=".onAddEntry" />
           <Button text="Refresh"   type="Transparent" icon="sap-icon://refresh" press=".onRefresh"  class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://sys-help" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
         </contentRight>
       </Bar>
     </customHeader>

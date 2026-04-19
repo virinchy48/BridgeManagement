@@ -9,8 +9,10 @@ sap.ui.define([
   "sap/m/Button",
   "sap/m/VBox",
   "sap/m/Label",
-  "sap/ui/core/Item"
-], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Select, Button, VBox, Label, Item) {
+  "sap/ui/core/Item",
+  "sap/m/ScrollContainer",
+  "sap/m/FormattedText"
+], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Select, Button, VBox, Label, Item, ScrollContainer, FormattedText) {
   "use strict";
 
   var BASE = "/odata/v4/admin";
@@ -371,6 +373,37 @@ sap.ui.define([
         afterClose: function () { dlg.destroy(); }
       });
       dlg.open();
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<h2 style='margin-top:0'>Attribute Configuration — How to Use</h2>",
+        "<h3>Purpose</h3>",
+        "<p>Attribute Configuration lets administrators define custom fields (attributes) that appear on Bridge and Restriction records.</p>",
+        "<h3>Three-Panel Layout</h3>",
+        "<ul>",
+        "<li><strong>Attribute Groups (left)</strong> — Groups organise attributes into logical sections. Toggle between Bridge and Restriction object types using the segmented button. Click Add Group to create a new group.</li>",
+        "<li><strong>Attribute Definitions (middle)</strong> — Shows the attributes within the selected group. Click Add Attribute to create a new field.</li>",
+        "<li><strong>Attribute Detail (right)</strong> — Shows full details of the selected attribute: data type, allowed values, object-type configuration, and whether the field is required.</li>",
+        "</ul>",
+        "<h3>Data Types</h3>",
+        "<p>Supported types: Text, Integer, Decimal, Date, Boolean, SingleSelect, MultiSelect. For Select types, add allowed values in the Allowed Values section.</p>",
+        "<h3>Object Type Configuration</h3>",
+        "<p>Each attribute can be enabled/required independently for Bridge and Restriction. Toggle Enabled to show the field on that record type, and Required to enforce entry.</p>",
+        "<h3>Export Template</h3>",
+        "<p>Use Export Template to download a CSV template pre-populated with all active custom attribute columns for use with Mass Upload.</p>"
+      ].join("");
+      var oDialog = new Dialog({
+        title: "Attribute Configuration — Help",
+        contentWidth: "560px",
+        contentHeight: "460px",
+        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
     }
   });
 });

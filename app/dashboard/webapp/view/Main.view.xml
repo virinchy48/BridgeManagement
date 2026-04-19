@@ -22,6 +22,11 @@
           press=".onRefresh"
           type="Transparent"
           class="dashboardRefreshBtn" />
+        <Button
+          icon="sap-icon://sys-help"
+          tooltip="How to use this dashboard"
+          press=".onShowHelp"
+          type="Transparent" />
       </headerContent>
 
       <content>
@@ -35,61 +40,79 @@
             <Title text="{i18n>sectionSummary}" level="H4" class="dashboardSectionTitle" />
             <FlexBox wrap="Wrap" class="sapUiSmallMarginBottom">
 
-              <GenericTile
-                header="{i18n>kpiTotalAssets}"
-                subheader="{i18n>kpiTotalAssetsSubtitle}"
-                frameType="OneByOne"
-                press=".onNavigateBridges"
-                class="dashboardKpiTile sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                <tileContent>
-                  <TileContent>
-                    <content>
-                      <NumericContent
-                        value="{view>/totalBridges}"
-                        icon="sap-icon://functional-location"
-                        valueColor="Neutral"
-                        withMargin="false" />
-                    </content>
-                  </TileContent>
-                </tileContent>
-              </GenericTile>
+              <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <GenericTile
+                  header="{i18n>kpiTotalAssets}"
+                  subheader="{i18n>kpiTotalAssetsSubtitle}"
+                  frameType="OneByOne"
+                  press=".onNavigateBridges"
+                  class="dashboardKpiTile">
+                  <tileContent>
+                    <TileContent>
+                      <content>
+                        <NumericContent
+                          value="{view>/totalBridges}"
+                          icon="sap-icon://functional-location"
+                          valueColor="Neutral"
+                          withMargin="false" />
+                      </content>
+                    </TileContent>
+                  </tileContent>
+                </GenericTile>
+                <Button icon="sap-icon://sys-help" tooltip="About: Total Assets" type="Transparent"
+                  press=".onTileInfo" class="sapUiTinyMarginTop">
+                  <customData><core:CustomData key="tileKey" value="totalAssets"/></customData>
+                </Button>
+              </VBox>
 
-              <GenericTile
-                header="{i18n>kpiActiveRestrictions}"
-                subheader="{i18n>kpiActiveRestrictionsSubtitle}"
-                frameType="OneByOne"
-                press=".onNavigateRestrictions"
-                class="dashboardKpiTile sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                <tileContent>
-                  <TileContent>
-                    <content>
-                      <NumericContent
-                        value="{view>/activeRestrictions}"
-                        icon="sap-icon://alert"
-                        valueColor="{= ${view>/activeRestrictions} > 0 ? 'Critical' : 'Neutral' }"
-                        withMargin="false" />
-                    </content>
-                  </TileContent>
-                </tileContent>
-              </GenericTile>
+              <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <GenericTile
+                  header="{i18n>kpiActiveRestrictions}"
+                  subheader="{i18n>kpiActiveRestrictionsSubtitle}"
+                  frameType="OneByOne"
+                  press=".onNavigateRestrictions"
+                  class="dashboardKpiTile">
+                  <tileContent>
+                    <TileContent>
+                      <content>
+                        <NumericContent
+                          value="{view>/activeRestrictions}"
+                          icon="sap-icon://alert"
+                          valueColor="{= ${view>/activeRestrictions} > 0 ? 'Critical' : 'Neutral' }"
+                          withMargin="false" />
+                      </content>
+                    </TileContent>
+                  </tileContent>
+                </GenericTile>
+                <Button icon="sap-icon://sys-help" tooltip="About: Active Restrictions" type="Transparent"
+                  press=".onTileInfo" class="sapUiTinyMarginTop">
+                  <customData><core:CustomData key="tileKey" value="activeRestrictions"/></customData>
+                </Button>
+              </VBox>
 
-              <GenericTile
-                header="{i18n>kpiBridgesClosed}"
-                subheader="{i18n>kpiBridgesClosedSubtitle}"
-                frameType="OneByOne"
-                class="dashboardKpiTile sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                <tileContent>
-                  <TileContent>
-                    <content>
-                      <NumericContent
-                        value="{view>/closedBridges}"
-                        icon="sap-icon://locked"
-                        valueColor="{= ${view>/closedBridges} > 0 ? 'Critical' : 'Good' }"
-                        withMargin="false" />
-                    </content>
-                  </TileContent>
-                </tileContent>
-              </GenericTile>
+              <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <GenericTile
+                  header="{i18n>kpiBridgesClosed}"
+                  subheader="{i18n>kpiBridgesClosedSubtitle}"
+                  frameType="OneByOne"
+                  class="dashboardKpiTile">
+                  <tileContent>
+                    <TileContent>
+                      <content>
+                        <NumericContent
+                          value="{view>/closedBridges}"
+                          icon="sap-icon://locked"
+                          valueColor="{= ${view>/closedBridges} > 0 ? 'Critical' : 'Good' }"
+                          withMargin="false" />
+                      </content>
+                    </TileContent>
+                  </tileContent>
+                </GenericTile>
+                <Button icon="sap-icon://sys-help" tooltip="About: Bridges Closed" type="Transparent"
+                  press=".onTileInfo" class="sapUiTinyMarginTop">
+                  <customData><core:CustomData key="tileKey" value="bridgesClosed"/></customData>
+                </Button>
+              </VBox>
 
             </FlexBox>
 
@@ -138,7 +161,12 @@
             <FlexBox wrap="Wrap" class="sapUiSmallMarginBottom">
 
               <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                <Text text="{i18n>indicatorSufficiency}" class="dashboardIndicatorLabel" />
+                <HBox justifyContent="SpaceBetween" alignItems="Center">
+                  <Text text="{i18n>indicatorSufficiency}" class="dashboardIndicatorLabel" />
+                  <Button icon="sap-icon://sys-help" tooltip="About: Sufficiency Rating" type="Transparent" press=".onTileInfo">
+                    <customData><core:CustomData key="tileKey" value="sufficiency"/></customData>
+                  </Button>
+                </HBox>
                 <HBox alignItems="Baseline">
                   <Text text="{view>/sufficiencyPct}" class="dashboardIndicatorValue" />
                   <Text text="%" class="dashboardIndicatorUnit" />
@@ -147,7 +175,12 @@
               </VBox>
 
               <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                <Text text="{i18n>indicatorScourCritical}" class="dashboardIndicatorLabel" />
+                <HBox justifyContent="SpaceBetween" alignItems="Center">
+                  <Text text="{i18n>indicatorScourCritical}" class="dashboardIndicatorLabel" />
+                  <Button icon="sap-icon://sys-help" tooltip="About: Scour Critical Bridges" type="Transparent" press=".onTileInfo">
+                    <customData><core:CustomData key="tileKey" value="scourCritical"/></customData>
+                  </Button>
+                </HBox>
                 <HBox alignItems="Baseline">
                   <Text text="{view>/scourCritical}" class="{= ${view>/scourCritical} > 0 ? 'dashboardIndicatorValueCritical' : 'dashboardIndicatorValue' }" />
                 </HBox>
@@ -155,7 +188,12 @@
               </VBox>
 
               <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                <Text text="{i18n>indicatorDeficient}" class="dashboardIndicatorLabel" />
+                <HBox justifyContent="SpaceBetween" alignItems="Center">
+                  <Text text="{i18n>indicatorDeficient}" class="dashboardIndicatorLabel" />
+                  <Button icon="sap-icon://sys-help" tooltip="About: Structurally Deficient" type="Transparent" press=".onTileInfo">
+                    <customData><core:CustomData key="tileKey" value="deficient"/></customData>
+                  </Button>
+                </HBox>
                 <HBox alignItems="Baseline">
                   <Text text="{view>/deficient}" class="{= ${view>/deficient} > 0 ? 'dashboardIndicatorValueCritical' : 'dashboardIndicatorValue' }" />
                 </HBox>

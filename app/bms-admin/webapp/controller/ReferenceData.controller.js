@@ -3,8 +3,12 @@ sap.ui.define([
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageBox",
   "sap/m/MessageToast",
-  "sap/ui/core/Item"
-], function (Controller, JSONModel, MessageBox, MessageToast, Item) {
+  "sap/ui/core/Item",
+  "sap/m/Dialog",
+  "sap/m/Button",
+  "sap/m/ScrollContainer",
+  "sap/m/FormattedText"
+], function (Controller, JSONModel, MessageBox, MessageToast, Item, Dialog, Button, ScrollContainer, FormattedText) {
   "use strict";
 
   const BASE_URL = "/odata/v4/admin/";
@@ -158,6 +162,44 @@ sap.ui.define([
         .catch(err => MessageBox.error("Save failed:\n" + err.message));
     },
 
-    onCancelDialog: function () { this.byId("editDialog").close(); }
+    onCancelDialog: function () { this.byId("editDialog").close(); },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<h2 style='margin-top:0'>Reference Data Administration — How to Use</h2>",
+        "<h3>Purpose</h3>",
+        "<p>Reference Data (also called Code Lists or Lookup Tables) defines the allowed values for dropdown fields throughout BMS — ",
+        "such as bridge condition states, posting statuses, restriction types, structure types, and more. ",
+        "Changes here immediately affect all forms and reports that use these lookups.</p>",
+        "<h3>Selecting a Dataset</h3>",
+        "<p>Use the <strong>Dataset</strong> dropdown at the top to choose which code list you want to manage. The table below updates to show all entries for that list.</p>",
+        "<h3>Adding an Entry</h3>",
+        "<ol>",
+        "<li>Click <strong>Add Entry</strong> in the header.</li>",
+        "<li>Enter a unique <em>Code</em> (the stored value, e.g. <em>ARCH</em>) and a <em>Name</em> (the display label, e.g. <em>Arch Bridge</em>).</li>",
+        "<li>Optionally add a <em>Description</em> for context.</li>",
+        "<li>Click <strong>Save</strong>. The new entry appears immediately in all dropdowns that use this list.</li>",
+        "</ol>",
+        "<h3>Editing an Entry</h3>",
+        "<p>Click the <strong>Edit</strong> (pencil) icon on any row to open the edit dialog. Update the name or description and click <strong>Save</strong>. ",
+        "Note: changing the <em>Code</em> value is not supported — delete and re-create if the code needs to change.</p>",
+        "<h3>Deleting an Entry</h3>",
+        "<p>Click the <strong>Delete</strong> (trash) icon. You will be asked to confirm. ",
+        "⚠️ Only delete codes that are no longer in use — existing bridge or restriction records referencing this code will lose their display label.</p>",
+        "<h3>Refreshing</h3>",
+        "<p>Click <strong>Refresh</strong> to reload the current dataset from the database — useful if another administrator has made changes concurrently.</p>"
+      ].join("");
+      var oDialog = new Dialog({
+        title: "Reference Data Administration — Help",
+        contentWidth: "560px",
+        contentHeight: "460px",
+        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
+    }
   });
 });

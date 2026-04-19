@@ -5,6 +5,7 @@
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
+    "i18n": "i18n/i18n.properties",
     "applicationVersion": {
       "version": "1.0.0"
     },
@@ -30,12 +31,11 @@
           "action": "manage"
         }
       }
-    },
-    "i18n": "i18n/i18n.properties"
+    }
   },
   "sap.ui5": {
     "dependencies": {
-      "minUI5Version": "1.136.0",
+      "minUI5Version": "1.120.0",
       "libs": {
         "sap.fe.templates": {}
       }
@@ -52,7 +52,8 @@
           "operationMode": "Server",
           "autoExpandSelect": true,
           "earlyRequests": true
-        }
+        },
+        "type": "sap.ui.model.odata.v4.ODataModel"
       }
     },
     "routing": {
@@ -120,6 +121,9 @@
             }
           }
         }
+      },
+      "config": {
+        "routerClass": "sap.fe.core.AppRouter"
       }
     },
     "contentDensities": {

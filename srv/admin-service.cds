@@ -38,4 +38,5 @@ service AdminService {
   entity BnacEnvironment   as projection on my.BnacEnvironment;
   entity BnacObjectIdMap   as projection on my.BnacObjectIdMap;
   @readonly entity BnacLoadHistory as projection on my.BnacLoadHistory;
+  entity DataQualityRules as projection on my.DataQualityRules;
 }

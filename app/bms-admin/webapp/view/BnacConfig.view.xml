@@ -15,6 +15,7 @@
         <contentRight>
           <Button icon="sap-icon://refresh" text="Refresh" press=".onRefreshEnvs" type="Transparent" />
           <Button icon="sap-icon://add" text="Add Environment" press=".onAddEnv" type="Emphasized" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://sys-help" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
         </contentRight>
       </Bar>
     </customHeader>

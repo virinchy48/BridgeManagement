@@ -4,8 +4,12 @@ sap.ui.define([
   "sap/m/MessageBox",
   "sap/m/MessageToast",
   "sap/ui/core/InvisibleMessage",
-  "sap/ui/core/library"
-], function (Controller, JSONModel, MessageBox, MessageToast, InvisibleMessage, coreLibrary) {
+  "sap/ui/core/library",
+  "sap/m/Dialog",
+  "sap/m/Button",
+  "sap/m/ScrollContainer",
+  "sap/m/FormattedText"
+], function (Controller, JSONModel, MessageBox, MessageToast, InvisibleMessage, coreLibrary, Dialog, Button, ScrollContainer, FormattedText) {
   "use strict";
 
   const InvisibleMessageMode = coreLibrary.InvisibleMessageMode;
@@ -736,6 +740,39 @@ sap.ui.define([
         return "Manage restriction direction dropdown values (e.g. BOTH, NORTHBOUND, SOUTHBOUND).";
       }
       return dataset.description;
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<h2 style='margin-top:0'>Mass Upload — How to Use</h2>",
+        "<h3>Purpose</h3>",
+        "<p>Mass Upload allows bulk import of bridge and restriction records (and reference data) from CSV or Excel files.</p>",
+        "<h3>Upload Tab — Step by Step</h3>",
+        "<ol>",
+        "<li><strong>Select Dataset</strong> — Choose what type of data to import (e.g. Bridges, Restrictions, Reference Data).</li>",
+        "<li><strong>Download Template</strong> — Use the template link to get the correct column headers for your chosen dataset.</li>",
+        "<li><strong>Browse File</strong> — Select your prepared CSV or Excel file.</li>",
+        "<li><strong>Preview</strong> — Review the parsed data. Rows with validation errors are highlighted. You must fix errors before uploading.</li>",
+        "<li><strong>Start Upload</strong> — Submits valid rows. The result step shows inserted vs updated counts.</li>",
+        "</ol>",
+        "<h3>History Tab</h3>",
+        "<p>Shows a log of all previous uploads — file name, dataset, row counts, and status. Use the filter to narrow by dataset type.</p>",
+        "<h3>Admin Report Tab</h3>",
+        "<p>Run a date-range report across all upload activity. Useful for auditing who uploaded what and when.</p>",
+        "<h3>File Format</h3>",
+        "<p>CSV files should use comma delimiters. Excel files should use the first sheet. Headers must match the template exactly (case-insensitive).</p>"
+      ].join("");
+      var oDialog = new Dialog({
+        title: "Mass Upload — Help",
+        contentWidth: "560px",
+        contentHeight: "460px",
+        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
     }
   });
 });
