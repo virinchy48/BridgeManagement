@@ -1,124 +1,22 @@
 using { bridge.management.Restrictions } from '../../db/schema';
 using { AdminService } from '../../srv/admin-service';
 
+////////////////////////////////////////////////////////////////////////////
+//  Search configuration (service-agnostic — applies to all services)
+////////////////////////////////////////////////////////////////////////////
+
 annotate Restrictions with @cds.search: {
   restrictionRef,
   name,
   bridge.bridgeId,
   bridge.bridgeName,
-  descr,
   legalReference,
   issuingAuthority
 };
 
-annotate Restrictions with {
-  restrictionRef       @title: '{i18n>RestrictionRef}';
-  bridgeRef           @title: '{i18n>Bridge}';
-  bridge              @title: '{i18n>Bridge}';
-  name                 @title: '{i18n>RestrictionName}';
-  descr                @title: '{i18n>Description}';
-  restrictionCategory  @title: '{i18n>RestrictionCategory}';
-  restrictionType      @title: '{i18n>RestrictionType}';
-  restrictionValue     @title: '{i18n>RestrictionValue}';
-  restrictionUnit      @title: '{i18n>RestrictionUnit}';
-  restrictionStatus    @title: '{i18n>RestrictionStatus}';
-  appliesToVehicleClass @title: '{i18n>AppliesToVehicleClass}';
-  grossMassLimit       @title: '{i18n>GrossMassLimit}';
-  axleMassLimit        @title: '{i18n>AxleMassLimit}';
-  heightLimit          @title: '{i18n>HeightLimit}';
-  widthLimit           @title: '{i18n>WidthLimit}';
-  lengthLimit          @title: '{i18n>LengthLimit}';
-  speedLimit           @title: '{i18n>SpeedLimit}';
-  permitRequired       @title: '{i18n>PermitRequired}';
-  escortRequired       @title: '{i18n>EscortRequired}';
-  temporary            @title: '{i18n>Temporary}';
-  active               @title: '{i18n>Active}';
-  effectiveFrom        @title: '{i18n>EffectiveFrom}';
-  effectiveTo          @title: '{i18n>EffectiveTo}';
-  approvedBy           @title: '{i18n>ApprovedBy}';
-  direction            @title: '{i18n>Direction}';
-  enforcementAuthority @title: '{i18n>EnforcementAuthority}';
-  temporaryFrom        @title: '{i18n>TemporaryFrom}';
-  temporaryTo          @title: '{i18n>TemporaryTo}';
-  temporaryReason      @title: '{i18n>TemporaryReason}' @UI.MultiLineText;
-  approvalReference    @title: '{i18n>ApprovalReference}';
-  issuingAuthority     @title: '{i18n>IssuingAuthority}';
-  legalReference       @title: '{i18n>GazetteReference}';
-  remarks              @title: '{i18n>Notes}' @UI.MultiLineText;
-}
-
-annotate Restrictions with @(
-  Common.SemanticKey : [name],
-  UI.SelectionFields : [
-    name,
-    restrictionStatus,
-    restrictionType,
-    permitRequired,
-    temporary
-  ],
-  UI.LineItem : [
-    { Value: restrictionRef, Label: '{i18n>RestrictionRef}' },
-    { Value: bridge.bridgeId, Label: '{i18n>BridgeID}' },
-    { Value: bridge.bridgeName, Label: '{i18n>Bridge}' },
-    { Value: restrictionType, Label: '{i18n>RestrictionType}' },
-    { Value: restrictionValue, Label: '{i18n>RestrictionValue}' },
-    { Value: restrictionUnit, Label: '{i18n>RestrictionUnit}' },
-    { Value: appliesToVehicleClass, Label: '{i18n>AppliesToVehicleClass}' },
-    { Value: restrictionStatus, Label: '{i18n>RestrictionStatus}' },
-    { Value: temporary, Label: '{i18n>Temp}' },
-    { Value: permitRequired, Label: '{i18n>PermitRequired}' },
-    { Value: effectiveFrom, Label: '{i18n>From}' },
-    { Value: effectiveTo, Label: '{i18n>To}' },
-    { Value: legalReference, Label: '{i18n>Gazette}' },
-  ],
-);
-
-annotate Restrictions with @(UI : {
-  Facets : [
-    {
-      $Type  : 'UI.ReferenceFacet',
-      Label  : '{i18n>RestrictionDetails}',
-      Target : '@UI.FieldGroup#Details'
-    },
-    {
-      $Type  : 'UI.ReferenceFacet',
-      Label  : '{i18n>ValidityAndApproval}',
-      Target : '@UI.FieldGroup#ValidityApproval'
-    }
-  ],
-  FieldGroup #Details : {
-    Data : [
-      { Value: restrictionCategory },
-      { Value: bridgeRef },
-      { Value: restrictionType },
-      { Value: restrictionValue },
-      { Value: restrictionUnit },
-      { Value: appliesToVehicleClass },
-      { Value: restrictionStatus }
-    ]
-  },
-  FieldGroup #ValidityApproval : {
-    Data : [
-      { Value: effectiveFrom },
-      { Value: effectiveTo },
-      { Value: legalReference },
-      { Value: approvedBy },
-      { Value: direction },
-      { Value: enforcementAuthority },
-      { Value: permitRequired },
-      { Value: remarks }
-    ]
-  },
-  HeaderInfo : {
-    TypeName       : '{i18n>Restriction}',
-    TypeNamePlural : '{i18n>Restrictions}',
-    Title          : { Value: restrictionRef },
-    Description    : { Value: bridge.bridgeName }
-  }
-});
-
-annotate AdminService.Restrictions with @odata.draft.enabled;
-annotate bridge.management.Restrictions with @fiori.draft.enabled;
+////////////////////////////////////////////////////////////////////////////
+//  List Report — AdminService.Restrictions
+////////////////////////////////////////////////////////////////////////////
 
 annotate AdminService.Restrictions with @(
   Capabilities.InsertRestrictions.Insertable : true,
@@ -132,23 +30,24 @@ annotate AdminService.Restrictions with @(
   },
   UI.SelectionFields: [
     restrictionRef, bridgeRef, restrictionType,
-    restrictionStatus, permitRequired, temporary, active
+    restrictionStatus, restrictionCategory,
+    permitRequired, temporary, active
   ],
   UI.LineItem: [
-    { Value: restrictionRef,          Label: '{i18n>RestrictionRef}' },
-    { Value: bridge.bridgeId,         Label: '{i18n>BridgeID}' },
-    { Value: bridge.bridgeName,       Label: '{i18n>Bridge}' },
-    { Value: restrictionType,         Label: '{i18n>RestrictionType}' },
-    { Value: restrictionValue,        Label: '{i18n>RestrictionValue}' },
-    { Value: restrictionUnit,         Label: '{i18n>RestrictionUnit}' },
-    { Value: appliesToVehicleClass,   Label: '{i18n>AppliesToVehicleClass}' },
-    { Value: restrictionStatus,       Label: '{i18n>RestrictionStatus}' },
-    { Value: temporary,               Label: '{i18n>Temp}' },
-    { Value: permitRequired,          Label: '{i18n>PermitRequired}' },
-    { Value: effectiveFrom,           Label: '{i18n>From}' },
-    { Value: effectiveTo,             Label: '{i18n>To}' },
-    { Value: legalReference,          Label: '{i18n>Gazette}' },
-    { Value: active,                  Label: '{i18n>Active}' },
+    { Value: restrictionRef,          Label: 'Restriction Ref' },
+    { Value: bridge.bridgeId,         Label: 'Bridge ID' },
+    { Value: bridge.bridgeName,       Label: 'Bridge' },
+    { Value: restrictionCategory,     Label: 'Category' },
+    { Value: restrictionType,         Label: 'Type' },
+    { Value: restrictionValue,        Label: 'Value' },
+    { Value: restrictionUnit,         Label: 'Unit' },
+    { Value: appliesToVehicleClass,   Label: 'Vehicle Class' },
+    { Value: restrictionStatus,       Label: 'Status' },
+    { Value: temporary,               Label: 'Temp' },
+    { Value: permitRequired,          Label: 'Permit Req.' },
+    { Value: effectiveFrom,           Label: 'From' },
+    { Value: effectiveTo,             Label: 'To' },
+    { Value: active,                  Label: 'Active' },
   ],
   UI.Identification: [
     {
@@ -173,87 +72,239 @@ annotate AdminService.Restrictions with @(
     }
   ]
 );
+
+////////////////////////////////////////////////////////////////////////////
+//  Object Page — AdminService.Restrictions
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.Restrictions with @(
+  UI: {
+    Facets: [
+      // ── Tab 1: Restriction Classification (3 sub-sections) ───────────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Restriction Classification',
+        ID    : 'RstClassification',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Identification', Target: '@UI.FieldGroup#RstIdentification'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Applicability',  Target: '@UI.FieldGroup#RstApplicability'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Value',          Target: '@UI.FieldGroup#RstValue'},
+        ]
+      },
+      // ── Tab 2: Physical Limits (2 sub-sections) ──────────────────────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Physical Limits',
+        ID    : 'RstPhysicalLimits',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Mass Limits (t)',    Target: '@UI.FieldGroup#RstMassLimits'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Dimensional Limits', Target: '@UI.FieldGroup#RstDimLimits'},
+        ]
+      },
+      // ── Tab 3: Validity & Approval (4 sub-sections) ──────────────────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Validity & Approval',
+        ID    : 'RstValidity',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Effective Period',    Target: '@UI.FieldGroup#RstEffective'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Temporary Condition', Target: '@UI.FieldGroup#RstTemporary'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Approval & Legal',    Target: '@UI.FieldGroup#RstApproval'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Enforcement',         Target: '@UI.FieldGroup#RstEnforcement'},
+        ]
+      },
+      // ── Tab 4: Notes ─────────────────────────────────────────────────────
+      {$Type: 'UI.ReferenceFacet', Label: 'Notes', Target: '@UI.FieldGroup#RstNotes'},
+    ],
+
+    // ── FieldGroups ─────────────────────────────────────────────────────────
+
+    // Tab 1 — Classification
+    FieldGroup#RstIdentification: {
+      Data: [
+        {Value: restrictionRef},   // @Core.Immutable — auto-generated, locked after creation
+        {Value: bridgeRef},
+        {Value: restrictionCategory},
+        {Value: restrictionType},
+        {Value: restrictionStatus},
+        {Value: active},           // @Common.FieldControl #ReadOnly — managed by actions
+      ]
+    },
+    FieldGroup#RstApplicability: {
+      Data: [
+        {Value: appliesToVehicleClass},
+        {Value: direction},
+        {Value: permitRequired},
+        {Value: escortRequired},
+        {Value: temporary},
+      ]
+    },
+    FieldGroup#RstValue: {
+      Data: [
+        {Value: restrictionValue},
+        {Value: restrictionUnit},
+      ]
+    },
+
+    // Tab 2 — Physical Limits
+    FieldGroup#RstMassLimits: {
+      Data: [
+        {Value: grossMassLimit},
+        {Value: axleMassLimit},
+      ]
+    },
+    FieldGroup#RstDimLimits: {
+      Data: [
+        {Value: heightLimit},
+        {Value: widthLimit},
+        {Value: lengthLimit},
+        {Value: speedLimit},
+      ]
+    },
+
+    // Tab 3 — Validity & Approval
+    FieldGroup#RstEffective: {
+      Data: [
+        {Value: effectiveFrom},
+        {Value: effectiveTo},
+      ]
+    },
+    FieldGroup#RstTemporary: {
+      Data: [
+        {Value: temporaryFrom},
+        {Value: temporaryTo},
+        {Value: temporaryReason},
+      ]
+    },
+    FieldGroup#RstApproval: {
+      Data: [
+        {Value: approvedBy},
+        {Value: approvalReference},
+        {Value: legalReference},
+        {Value: issuingAuthority},
+      ]
+    },
+    FieldGroup#RstEnforcement: {
+      Data: [
+        {Value: enforcementAuthority},
+      ]
+    },
+
+    // Tab 4 — Notes
+    FieldGroup#RstNotes: {
+      Data: [
+        {Value: remarks},
+        {Value: descr},
+      ]
+    },
+  }
+);
+
+////////////////////////////////////////////////////////////////////////////
+//  Field-level annotations — AdminService.Restrictions
+////////////////////////////////////////////////////////////////////////////
+
 annotate AdminService.Restrictions with {
-  ID @Core.Computed;
-  name @UI.Hidden: false;
-  restrictionRef @(
-    UI.Hidden: false,
-    Common.FieldControl : #Mandatory
-  );
+  // System-managed
+  ID             @Core.Computed;
+  createdBy      @UI.Hidden;
+  createdAt      @UI.Hidden;
+  modifiedBy     @UI.Hidden;
+  modifiedAt     @UI.Hidden;
+  // Auto-generated on create; locked thereafter
+  restrictionRef @Core.Immutable  @Common.FieldControl: #Mandatory  @title: 'Restriction Reference';
+  // Lifecycle managed exclusively by Deactivate / Reactivate actions
+  active         @Common.FieldControl: #ReadOnly  @title: 'Active';
+  // name is auto-set by server handler from restrictionRef; not user-facing
+  name           @UI.Hidden;
+  // parent/children — managed by tree view, not editable in flat form
+  parent         @UI.Hidden;
+  // descr — free-text, multiline
+  descr          @title: 'Description'  @UI.MultiLineText;
+};
+
+annotate AdminService.Restrictions with {
+  // Mandatory fields
   bridgeRef @(
-    Common.FieldControl : #Mandatory,
+    Common.FieldControl: #Mandatory,
     Common.ValueList: {
       CollectionPath : 'Bridges',
       SearchSupported: true,
       Parameters     : [
-        {
-          $Type            : 'Common.ValueListParameterInOut',
-          ValueListProperty: 'bridgeId',
-          LocalDataProperty: bridgeRef,
-        },
-        {
-          $Type            : 'Common.ValueListParameterDisplayOnly',
-          ValueListProperty: 'bridgeName',
-        },
+        { $Type: 'Common.ValueListParameterInOut',      ValueListProperty: 'bridgeId',   LocalDataProperty: bridgeRef },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
       ],
-    }
-  );
+    },
+    Common.Text: bridge.bridgeName,
+    Common.TextArrangement: #TextOnly
+  )  @title: 'Bridge';
   restrictionCategory @(
-    Common.FieldControl : #Mandatory,
+    Common.FieldControl: #Mandatory,
     ValueList.entity:'RestrictionCategories',
     Common.ValueListWithFixedValues
-  );
+  )  @title: 'Category';
   restrictionType @(
-    Common.FieldControl : #Mandatory,
+    Common.FieldControl: #Mandatory,
     ValueList.entity:'RestrictionTypes',
     Common.ValueListWithFixedValues
-  );
+  )  @title: 'Restriction Type';
   restrictionValue @(
-    Common.FieldControl : #Mandatory
-  );
+    Common.FieldControl: #Mandatory
+  )  @title: 'Value';
   restrictionUnit @(
-    Common.FieldControl : #Mandatory,
+    Common.FieldControl: #Mandatory,
     ValueList.entity:'RestrictionUnits',
     Common.ValueListWithFixedValues
-  );
+  )  @title: 'Unit';
+
+  // Value lists
   restrictionStatus @(
     ValueList.entity:'RestrictionStatuses',
     Common.ValueListWithFixedValues
-  );
+  )  @title: 'Status';
   appliesToVehicleClass @(
     ValueList.entity:'VehicleClasses',
     Common.ValueListWithFixedValues
-  );
+  )  @title: 'Applies to Vehicle Class';
   direction @(
     ValueList.entity:'RestrictionDirections',
     Common.ValueListWithFixedValues
-  );
-  parent @UI.Hidden;
-  descr @UI.Hidden;
-  grossMassLimit @UI.Hidden: false;
-  axleMassLimit @UI.Hidden: false;
-  heightLimit @UI.Hidden: false;
-  widthLimit @UI.Hidden: false;
-  lengthLimit @UI.Hidden: false;
-  speedLimit @UI.Hidden: false;
-  escortRequired @UI.Hidden: false;
-  temporary @UI.Hidden: false;
-  active @UI.Hidden: false;
-  temporaryFrom;
-  temporaryTo;
-  temporaryReason @UI.Hidden;
-  approvalReference;
-  issuingAuthority @UI.Hidden: false;
-  parent @Common: {
-    Text: parent.name,
-    TextArrangement: #TextOnly
-  };
-  bridgeRef @Common: {
-    Text: bridge.bridgeName,
-    TextArrangement: #TextOnly
-  };
+  )  @title: 'Direction';
+
+  // Labels
+  restrictionCategory  @title: 'Category';
+  temporary            @title: 'Temporary';
+  permitRequired       @title: 'Permit Required';
+  escortRequired       @title: 'Escort Required';
+  grossMassLimit       @title: 'Gross Mass Limit (t)';
+  axleMassLimit        @title: 'Axle Mass Limit (t)';
+  heightLimit          @title: 'Height Limit (m)';
+  widthLimit           @title: 'Width Limit (m)';
+  lengthLimit          @title: 'Length Limit (m)';
+  speedLimit           @title: 'Speed Limit (km/h)';
+  effectiveFrom        @title: 'Effective From';
+  effectiveTo          @title: 'Effective To';
+  temporaryFrom        @title: 'Temporary From';
+  temporaryTo          @title: 'Temporary To';
+  temporaryReason      @title: 'Temporary Reason'  @UI.MultiLineText;
+  approvedBy           @title: 'Approved By';
+  approvalReference    @title: 'Approval Reference';
+  legalReference       @title: 'Gazette / Legal Reference';
+  issuingAuthority     @title: 'Issuing Authority';
+  enforcementAuthority @title: 'Enforcement Authority';
+  remarks              @title: 'Notes'  @UI.MultiLineText;
 };
 
-// Tree Views
+////////////////////////////////////////////////////////////////////////////
+//  Draft
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.Restrictions with @odata.draft.enabled;
+annotate bridge.management.Restrictions with @fiori.draft.enabled;
+
+////////////////////////////////////////////////////////////////////////////
+//  Tree Views and Value Helps (defined in separate files)
+////////////////////////////////////////////////////////////////////////////
+
 using from './tree-view';
 using from './value-help';
