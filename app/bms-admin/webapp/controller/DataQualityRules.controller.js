@@ -5,12 +5,8 @@ sap.ui.define([
   "sap/m/MessageToast",
   "sap/m/Dialog",
   "sap/m/Button",
-  "sap/m/VBox",
-  "sap/m/Text",
-  "sap/m/Title",
-  "sap/m/ScrollContainer",
   "sap/m/FormattedText"
-], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Button, VBox, Text, Title, ScrollContainer, FormattedText) {
+], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Button, FormattedText) {
   "use strict";
 
   var BASE = "/odata/v4/admin/DataQualityRules";
@@ -191,32 +187,30 @@ sap.ui.define([
     // ── Rule Type Reference dialog ──────────────────────────────────
     onShowRuleTypeRef: function () {
       var sHtml = [
-        "<h2 style='margin-top:0'>Rule Type Reference</h2>",
+        "<p><strong>Rule Type Reference</strong></p>",
         "<p>Each rule runs against every bridge when the Data Quality Dashboard loads. ",
         "Choose the <strong>Rule Type</strong> that matches what you want to check:</p>"
       ];
       RULE_TYPE_DOCS.forEach(function (rt) {
         sHtml.push(
-          "<h3 style='font-family:monospace;color:#0070f2'>" + rt.label + "</h3>",
+          "<p><strong><code style='color:#0070f2'>" + rt.label + "</code></strong></p>",
           "<p>" + rt.desc + "</p>"
         );
       });
       sHtml.push(
-        "<h3>Config JSON examples</h3>",
+        "<p><strong>Config JSON examples</strong></p>",
         "<ul>",
         "<li><code>not_older_than_days</code>: <code>{\"days\": 730}</code> — flag inspections older than 2 years</li>",
         "<li><code>condition_requires_restriction</code>: <code>{\"conditions\": [\"Poor\", \"Critical\"]}</code></li>",
         "</ul>",
-        "<h3>Bridge fields you can reference</h3>",
+        "<p><strong>Bridge fields you can reference</strong></p>",
         "<p>bridgeName · state · region · assetOwner · latitude · longitude · geoJson · condition · conditionRating · postingStatus · structureType · yearBuilt · lastInspectionDate · nhvrAssessed · freightRoute · scourRisk</p>"
       );
       var oDialog = new Dialog({
         title: "Rule Type Reference",
         contentWidth: "560px",
         contentHeight: "460px",
-        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml.join(""), width: "100%" }).addStyleClass("sapUiSmallMargin")]
-        })],
+        content: [new FormattedText({ htmlText: sHtml.join(""), width: "100%" }).addStyleClass("sapUiSmallMargin")],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
@@ -226,11 +220,11 @@ sap.ui.define([
     // ── Help dialog ─────────────────────────────────────────────────
     onShowHelp: function () {
       var sHtml = [
-        "<h2 style='margin-top:0'>Data Quality Rules — How to Use</h2>",
-        "<h3>Purpose</h3>",
+        "<p><strong>Data Quality Rules — How to Use</strong></p>",
+        "<p><strong>Purpose</strong></p>",
         "<p>This page controls which checks are run against every bridge record when the <strong>Data Quality Dashboard</strong> loads. ",
         "Instead of hardcoded logic, rules live in the database — you can add, edit, disable, or delete them without a code deployment.</p>",
-        "<h3>Adding a Rule</h3>",
+        "<p><strong>Adding a Rule</strong></p>",
         "<ol>",
         "<li>Click <strong>Add Rule</strong>.</li>",
         "<li>Give the rule a <em>Name</em> and <em>Category</em> (category groups related rules together in the dashboard).</li>",
@@ -240,13 +234,13 @@ sap.ui.define([
         "<li>Write a clear <em>Message</em> — this is shown to the admin in the dashboard when the rule fires.</li>",
         "<li>Set <em>Sort Order</em> to control the order rules are evaluated (lower = earlier).</li>",
         "</ol>",
-        "<h3>Enabling / Disabling Rules</h3>",
+        "<p><strong>Enabling / Disabling Rules</strong></p>",
         "<p>Use the <strong>On/Off toggle</strong> on each row to enable or disable a rule without deleting it. ",
         "Disabled rules are skipped during evaluation — useful for rules you want to pause temporarily.</p>",
-        "<h3>Editing or Deleting Rules</h3>",
+        "<p><strong>Editing or Deleting Rules</strong></p>",
         "<p>Click the <strong>Edit</strong> (pencil) icon to modify a rule, or the <strong>Delete</strong> (trash) icon to remove it permanently. ",
         "You will be asked to confirm before deletion.</p>",
-        "<h3>When Do Rules Take Effect?</h3>",
+        "<p><strong>When Do Rules Take Effect?</strong></p>",
         "<p>Rules are loaded fresh from the database every time the Data Quality Dashboard is opened — no server restart required. ",
         "Changes you make here are reflected the next time someone views the dashboard.</p>"
       ].join("");
@@ -254,9 +248,7 @@ sap.ui.define([
         title: "Data Quality Rules — Help",
         contentWidth: "560px",
         contentHeight: "460px",
-        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
-        })],
+        content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

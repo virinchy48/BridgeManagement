@@ -35,22 +35,26 @@ sap.ui.define([
       fetch(BASE + "/AttributeGroups?$filter=objectType eq '" + self._objectType + "'&$orderby=displayOrder")
         .then(function (r) { return r.json(); })
         .then(function (d) {
+          if (d.error) throw new Error(d.error.message);
           self.byId("groupList").setModel(new JSONModel(d.value || []));
           self._selectedGroup = null;
           self.byId("defsPanel").setVisible(false);
           self.byId("attrDetailPanel").setVisible(false);
-        });
+        })
+        .catch(function (e) { MessageBox.error("Failed to load groups: " + e.message); });
     },
 
     _loadAttributes: function (groupId) {
       var self = this;
-      fetch(BASE + "/AttributeDefinitions?$filter=group_ID eq " + groupId + "&$orderby=displayOrder")
+      fetch(BASE + "/AttributeDefinitions?$filter=group_ID eq '" + groupId + "'&$orderby=displayOrder")
         .then(function (r) { return r.json(); })
         .then(function (d) {
+          if (d.error) throw new Error(d.error.message);
           self.byId("attrList").setModel(new JSONModel(d.value || []));
           self._selectedAttr = null;
           self.byId("attrDetailPanel").setVisible(false);
-        });
+        })
+        .catch(function (e) { MessageBox.error("Failed to load attributes: " + e.message); });
     },
 
     _loadAttrDetail: function (attrId) {

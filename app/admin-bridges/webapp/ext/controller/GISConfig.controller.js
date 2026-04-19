@@ -14,12 +14,18 @@ sap.ui.define([
   "use strict";
 
   var GIS_CONFIG_URL = "/odata/v4/admin/GISConfig('default')";
+  var REF_LAYER_URL  = "/odata/v4/admin/ReferenceLayerConfig";
+
+  var LAYER_CATEGORIES = ["Weather","Flood","Traffic","Geology","Infrastructure","Environment","Emergency","Administrative","Custom"];
+  var LAYER_TYPES      = ["WMS","XYZ","ArcGISRest","GeoJSON"];
 
   return Controller.extend("BridgeManagement.adminbridges.ext.controller.GISConfig", {
 
     onInit: function () {
       this.getView().setModel(new JSONModel(this._defaults()), "config");
+      this.getView().setModel(new JSONModel({ layers: [] }), "refLayers");
       this._loadConfig();
+      this._loadRefLayers();
     },
 
     _defaults: function () {
@@ -120,6 +126,134 @@ sap.ui.define([
       this._loadConfig();
       MessageToast.show("Changes discarded.");
     },
+
+    // ── Reference Layer Library ──────────────────────────────────────────────
+
+    _loadRefLayers: function () {
+      var model = this.getView().getModel("refLayers");
+      fetch(REF_LAYER_URL + "?$orderby=category,sortOrder,name", { headers: { "Accept": "application/json" } })
+        .then(function (res) { return res.ok ? res.json() : Promise.reject(res.statusText); })
+        .then(function (data) { model.setProperty("/layers", data.value || []); })
+        .catch(function () { /* non-fatal */ });
+    },
+
+    onToggleRefLayerActive: function (oEvent) {
+      var src = oEvent.getSource();
+      var ctx = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
+      var row  = ctx.getObject();
+      fetch(REF_LAYER_URL + "('" + row.ID + "')", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: oEvent.getParameter("state") })
+      }).catch(function () { MessageToast.show("Failed to update layer."); });
+    },
+
+    onToggleRefLayerDefault: function (oEvent) {
+      var src = oEvent.getSource();
+      var ctx = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
+      var row = ctx.getObject();
+      fetch(REF_LAYER_URL + "('" + row.ID + "')", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabledByDefault: oEvent.getParameter("state") })
+      }).catch(function () { MessageToast.show("Failed to update layer."); });
+    },
+
+    _openRefLayerDialog: function (oData) {
+      var self  = this;
+      var bEdit = !!oData.ID;
+      var oModel = new JSONModel(Object.assign({
+        ID: null, name: "", category: "Custom", layerType: "WMS",
+        url: "", subLayers: "", attribution: "", opacity: 0.70,
+        description: "", enabledByDefault: false, active: true,
+        wmsFormat: "image/png", transparent: true, minZoom: 0, maxZoom: 19
+      }, oData));
+
+      var makeLabelInput = function (label, path, placeholder) {
+        return new VBox({ items: [
+          new Label({ text: label, required: path === "/url" || path === "/name" }),
+          new Input({ value: "{dlg>" + path.slice(1) + "}", placeholder: placeholder || "" })
+        ]}).addStyleClass("sapUiSmallMarginBottom");
+      };
+
+      var oSelect = function (label, path, items) {
+        var sap_m = sap.m;
+        var oSel = new sap_m.Select({ selectedKey: "{dlg>" + path.slice(1) + "}" });
+        items.forEach(function (k) { oSel.addItem(new sap.ui.core.Item({ key: k, text: k })); });
+        return new VBox({ items: [new Label({ text: label }), oSel] }).addStyleClass("sapUiSmallMarginBottom");
+      };
+
+      var oDialog = new Dialog({
+        title: bEdit ? "Edit Reference Layer" : "Add Reference Layer",
+        contentWidth: "520px",
+        content: [
+          new VBox({ class: "sapUiSmallMargin", items: [
+            makeLabelInput("Layer Name *", "/name", "e.g. BOM Rainfall Radar"),
+            oSelect("Category", "/category", LAYER_CATEGORIES),
+            oSelect("Layer Type", "/layerType", LAYER_TYPES),
+            makeLabelInput("Service URL *", "/url", "https://services.ga.gov.au/..."),
+            makeLabelInput("Sub-layers / Layer IDs", "/subLayers", "WMS: comma-separated layer names"),
+            makeLabelInput("Attribution", "/attribution", "© Data Provider"),
+            makeLabelInput("Description", "/description", "Brief description for map users"),
+            new VBox({ items: [
+              new Label({ text: "Opacity (0 – 1)" }),
+              new sap.m.Slider({ value: "{dlg>/opacity}", min: 0, max: 1, step: 0.05, width: "100%" })
+            ]}).addStyleClass("sapUiSmallMarginBottom"),
+            new HBox({ items: [
+              new Label({ text: "Enable by default", width: "12rem" }),
+              new sap.m.Switch({ state: "{dlg>/enabledByDefault}" })
+            ]})
+          ]})
+        ],
+        beginButton: new Button({
+          text: bEdit ? "Save" : "Add",
+          type: "Emphasized",
+          press: function () {
+            var d = oModel.getData();
+            if (!d.name || !d.url) { MessageToast.show("Name and URL are required."); return; }
+            var method = bEdit ? "PATCH" : "POST";
+            var url    = bEdit ? REF_LAYER_URL + "('" + d.ID + "')" : REF_LAYER_URL;
+            var body   = Object.assign({}, d);
+            delete body["@context"]; delete body["@metadataEtag"];
+            fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+              .then(function (res) { return res.ok ? res : Promise.reject(res.statusText); })
+              .then(function () { self._loadRefLayers(); oDialog.close(); })
+              .catch(function (e) { MessageBox.error("Failed to save layer: " + e); });
+          }
+        }),
+        endButton: new Button({ text: "Cancel", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.setModel(oModel, "dlg");
+      oDialog.open();
+    },
+
+    onAddRefLayer: function () {
+      this._openRefLayerDialog({});
+    },
+
+    onEditRefLayer: function (oEvent) {
+      var src = oEvent.getSource();
+      var ctx = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
+      this._openRefLayerDialog(Object.assign({}, ctx.getObject()));
+    },
+
+    onDeleteRefLayer: function (oEvent) {
+      var self = this;
+      var src  = oEvent.getSource();
+      var ctx  = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
+      var row  = ctx.getObject();
+      MessageBox.confirm("Delete layer \"" + row.name + "\"?", {
+        onClose: function (action) {
+          if (action !== "OK") return;
+          fetch(REF_LAYER_URL + "('" + row.ID + "')", { method: "DELETE" })
+            .then(function () { self._loadRefLayers(); })
+            .catch(function () { MessageToast.show("Failed to delete layer."); });
+        }
+      });
+    },
+
+    // ── Custom WMS ──────────────────────────────────────────────────────────
 
     onAddCustomWms: function () {
       var model = this.getView().getModel("config");

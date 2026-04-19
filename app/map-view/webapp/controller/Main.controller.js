@@ -207,11 +207,15 @@ sap.ui.define([
         },
         restrictionsData: [],
         gisConfig: null,
+        demoModeActive: false,
+        dynRefLayers: [],
+        dynRefGroups: [],
         features: {
           scaleBar: true, gps: true, minimap: true,
           heatmap: false, timeSlider: false, statsPanel: true,
           proximity: true, mgaCoords: true, streetView: true,
-          conditionAlerts: true, customWms: false, serverClustering: false
+          conditionAlerts: true, customWms: false, serverClustering: false,
+          showStateBoundaries: true, showLgaBoundaries: true
         },
         heatmapActive: false,
         conditionAlertsActive: false,
@@ -231,6 +235,7 @@ sap.ui.define([
 
       this._leafletReady = this._ensureLeaflet();
       this._loadGisConfig();
+      this._loadDynamicRefLayers();
       this._loadData();
     },
 
@@ -1616,7 +1621,6 @@ sap.ui.define([
           this._vm().setProperty("/gisConfig", cfg);
           this._vm().setProperty("/features", {
             scaleBar: cfg.enableScaleBar !== false,
-
             gps: cfg.enableGps !== false,
             minimap: cfg.enableMinimap !== false,
             heatmap: cfg.enableHeatmap === true,
@@ -1627,7 +1631,9 @@ sap.ui.define([
             streetView: cfg.enableStreetView !== false,
             conditionAlerts: cfg.enableConditionAlerts !== false,
             customWms: cfg.enableCustomWms === true,
-            serverClustering: cfg.enableServerClustering === true
+            serverClustering: cfg.enableServerClustering === true,
+            showStateBoundaries: cfg.showStateBoundaries === true,
+            showLgaBoundaries: cfg.showLgaBoundaries === true
           });
           if (cfg.defaultBasemap && cfg.defaultBasemap !== "street") {
             this._vm().setProperty("/basemap", cfg.defaultBasemap);
@@ -1642,6 +1648,112 @@ sap.ui.define([
         .catch(function () {
           this._gisConfig = null;
         }.bind(this));
+
+      // Check demo mode flag
+      fetch("/odata/v4/admin/SystemConfig('demoModeActive')", { headers: { Accept: "application/json" } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (d && d.value === "true") {
+            this._vm().setProperty("/demoModeActive", true);
+          }
+        }.bind(this))
+        .catch(function () { /* non-fatal */ });
+    },
+
+    _loadDynamicRefLayers: function () {
+      var self = this;
+      fetch("/odata/v4/admin/ReferenceLayerConfig?$filter=active eq true&$orderby=category,sortOrder,name", {
+        headers: { "Accept": "application/json" }
+      })
+        .then(function (res) { return res.ok ? res.json() : Promise.reject(); })
+        .then(function (data) {
+          var layers = (data.value || []).map(function (l) {
+            return Object.assign({}, l, { sessionActive: l.enabledByDefault === true });
+          });
+          // Group into category objects for the view
+          var grouped = [];
+          var catOrder = [];
+          layers.forEach(function (l) {
+            if (catOrder.indexOf(l.category) === -1) catOrder.push(l.category);
+          });
+          catOrder.forEach(function (cat) {
+            grouped.push({
+              category: cat,
+              items: layers.filter(function (l) { return l.category === cat; })
+            });
+          });
+          self._vm().setProperty("/dynRefLayers", layers);
+          self._vm().setProperty("/dynRefGroups", grouped);
+          // Auto-enable layers marked enabledByDefault once Leaflet is ready
+          self._leafletReady.then(function () {
+            layers.filter(function (l) { return l.enabledByDefault; }).forEach(function (l) {
+              self._addDynamicRefLayer(l);
+            });
+          });
+        })
+        .catch(function () { /* optional — non-fatal */ });
+    },
+
+    onToggleDynamicRefLayer: function (oEvent) {
+      var state = oEvent.getParameter("state");
+      var src   = oEvent.getSource();
+      var cd    = src.getCustomData();
+      var layerId = cd && cd.length ? cd[0].getValue() : null;
+      if (!layerId) return;
+      var layers = this._vm().getProperty("/dynRefLayers") || [];
+      var layer  = layers.find(function (l) { return l.ID === layerId; });
+      if (!layer) return;
+      layer.sessionActive = state;
+      this._vm().setProperty("/dynRefLayers", layers.slice());
+      if (state) {
+        this._addDynamicRefLayer(layer);
+      } else {
+        this._removeDynamicRefLayer(layer.ID);
+      }
+    },
+
+    _addDynamicRefLayer: function (cfg) {
+      if (!window.L || !this._leafletMap) return;
+      if (this._refLayerInstances["dyn_" + cfg.ID]) return;
+      var instance;
+      var type = (cfg.layerType || "WMS").toUpperCase();
+      var opacity = cfg.opacity != null ? parseFloat(cfg.opacity) : 0.7;
+      if (type === "WMS") {
+        instance = window.L.tileLayer.wms(cfg.url, {
+          layers: cfg.subLayers || "0",
+          format: cfg.wmsFormat || "image/png",
+          transparent: cfg.transparent !== false,
+          opacity: opacity,
+          attribution: cfg.attribution || "",
+          minZoom: cfg.minZoom || 0,
+          maxZoom: cfg.maxZoom || 19
+        });
+      } else if (type === "XYZ") {
+        instance = window.L.tileLayer(cfg.url, {
+          opacity: opacity,
+          attribution: cfg.attribution || "",
+          minZoom: cfg.minZoom || 0,
+          maxZoom: cfg.maxZoom || 19
+        });
+      } else if (type === "ARCGISREST") {
+        var tileUrl = cfg.url.replace(/\/?$/, "") + "/MapServer/tile/{z}/{y}/{x}";
+        instance = window.L.tileLayer(tileUrl, {
+          opacity: opacity,
+          attribution: cfg.attribution || ""
+        });
+      }
+      if (instance) {
+        instance.addTo(this._leafletMap);
+        this._refLayerInstances["dyn_" + cfg.ID] = instance;
+      }
+    },
+
+    _removeDynamicRefLayer: function (id) {
+      var key = "dyn_" + id;
+      if (this._refLayerInstances[key] && this._leafletMap) {
+        this._leafletMap.removeLayer(this._refLayerInstances[key]);
+        delete this._refLayerInstances[key];
+      }
     },
 
     _feat: function (key) {
@@ -1796,49 +1908,55 @@ sap.ui.define([
     onGisToolsHelp: function (oEvent) {
       if (!this._oGisHelpPopover) {
         this._oGisHelpPopover = this._buildHelpPopover(
-          "GIS Tools Guide", "Right", "26rem",
+          "GIS Tools Guide", "Right", "28rem",
           [
+            {
+              icon: "sap-icon://layer-standard", color: "#0a6ed1",
+              title: "Reference Layers — Additional Layers",
+              purpose: "Overlay curated spatial datasets (weather, flood zones, geology, infrastructure, etc.) sourced from government and open-data providers on top of the bridge map.",
+              howToUse: "Expand the Reference Layers panel in the left sidebar. Only layers that your BMS Administrator has activated in GIS Configuration → Reference Layer Library are listed here. Toggle any layer switch on to add the overlay to the map; toggle off to remove it. Layers marked 'Default On' by the administrator are switched on automatically when you open the map."
+            },
             {
               icon: "sap-icon://temperature", color: "#e35500",
               title: "Heat Map",
               purpose: "Reveal geographic clusters of poorly-rated bridges across the network at a single glance.",
-              howToUse: "Toggle on → a colour-gradient overlay appears (red = low-rated clusters, green = good). Zoom into red/orange zones to identify individual bridges. Best used at state or regional zoom levels."
+              howToUse: "Toggle Heat Map on → a colour-gradient overlay appears (red = high-density low-rated clusters, green/blue = good). Zoom into red/orange zones to identify individual bridges. Works best at state or regional zoom levels (zoom 6–11)."
             },
             {
               icon: "sap-icon://alert", color: "#f59e0b",
               title: "Condition Alerts",
               purpose: "Instantly flag bridges that fall below an acceptable condition threshold so they can be prioritised for inspection or maintenance.",
-              howToUse: "Toggle on → bridges with a condition rating ≤ threshold (default: 3) are marked with a red alert ring. Click any flagged bridge to open its detail panel. Adjust the threshold in GIS Configuration → Condition Alert Threshold."
+              howToUse: "Toggle Condition Alerts on → bridges with a condition rating at or below the configured threshold (default: 3) are highlighted with a red alert ring on the map. Click any flagged marker to open its bridge detail panel. The threshold value is set in BMS Admin → GIS Configuration → Condition Alert Threshold."
             },
             {
               icon: "sap-icon://map-3", color: "#0a6ed1",
               title: "Mini Map",
               purpose: "Maintain geographic context while zoomed deep into a specific region.",
-              howToUse: "Toggle on → a small overview inset appears in the bottom-right corner, highlighting your current viewport on the full Australian map. Updates live as you pan and zoom. Toggle off to reclaim screen space."
+              howToUse: "Toggle Mini Map on → a small overview inset appears in the bottom-right corner of the map, showing your current viewport rectangle on the full Australian extent. It updates live as you pan and zoom. Toggle off to reclaim screen space on smaller monitors."
             },
             {
               icon: "sap-icon://show", color: "#0a6ed1",
               title: "Viewport Loading",
-              purpose: "Improve map performance when working with very large national datasets by loading only what is currently visible.",
-              howToUse: "Toggle on → only bridges inside the visible map extent are fetched from the server. Pan or zoom to a new area to load bridges there. Toggle off to load all bridges at once (may be slower on large datasets)."
+              purpose: "Improve map performance when working with very large national datasets by loading only bridges currently visible on screen.",
+              howToUse: "Toggle Viewport Loading on → only bridges within the current map extent are fetched from the server. Pan or zoom to load bridges in a new area. Toggle off to load the full dataset at once (may be slower on datasets with thousands of bridges)."
             },
             {
               icon: "sap-icon://locate-me", color: "#7c3aed",
               title: "Proximity Analysis",
-              purpose: "Find every bridge within a defined radius of any geographic point — ideal for corridor planning, impact assessments, and site investigations.",
-              howToUse: "Open the Proximity Analysis panel → enter a Latitude and Longitude → set a Radius in kilometres → click Find Bridges. Matching bridges are highlighted on the map and listed in the results panel. Click Clear to reset."
+              purpose: "Find every bridge within a defined radius of any geographic point — ideal for corridor planning, flood impact assessments, and site investigations.",
+              howToUse: "Open the Proximity Analysis panel in the left sidebar → enter a decimal Latitude and Longitude (or click a point on the map) → set a Search Radius in kilometres → click Find Bridges. Matching bridges are highlighted and listed. Click Clear to reset."
             },
             {
               icon: "sap-icon://timeline", color: "#0a6ed1",
               title: "Time Slider",
               purpose: "Analyse infrastructure age distribution or focus on bridges built within a specific construction era.",
-              howToUse: "Open the Time Slider panel → drag the left handle to set the earliest year and the right handle to set the latest year → the map updates automatically to show only bridges built in that range. Click Reset to restore all bridges."
+              howToUse: "Open the Time Slider panel → drag the left handle to set the earliest year and the right handle to the latest year. The map updates automatically to show only bridges whose year built falls within that range. Click Reset to restore all bridges."
             },
             {
               icon: "sap-icon://bar-chart", color: "#0a6ed1",
               title: "Statistics Panel",
               purpose: "Get a live summary of the condition and restriction status of bridges currently visible on the map.",
-              howToUse: "The Statistics panel is always visible at the bottom of the left panel — no action needed. Numbers (total visible, average condition, poor-condition count, restricted, closed) update automatically whenever you pan, zoom, or change filters."
+              howToUse: "The Statistics panel sits at the bottom of the left sidebar and requires no action to activate. It shows the count of visible bridges, average condition rating, number in poor/critical condition, number with active restrictions, and number closed. All figures update automatically as you pan, zoom, or apply filters."
             }
           ],
           "_oGisHelpPopover"
@@ -1850,49 +1968,55 @@ sap.ui.define([
     onMapControlsHelp: function (oEvent) {
       if (!this._oMapHelpPopover) {
         this._oMapHelpPopover = this._buildHelpPopover(
-          "Map Controls Guide", "Bottom", "26rem",
+          "Map Controls Guide", "Bottom", "28rem",
           [
             {
               icon: "sap-icon://search", color: "#0a6ed1",
               title: "Bridge Search",
-              purpose: "Quickly locate a specific bridge by name without manually scanning the map.",
-              howToUse: "Type any part of the bridge name in the search bar → matching bridges are highlighted on the map and shown in the results list. Clear the field to show all bridges again."
+              purpose: "Quickly locate a specific bridge by name or ID without manually scanning the map.",
+              howToUse: "Type any part of the bridge name into the search bar at the top of the left panel. Matching bridges are highlighted on the map and listed in the results panel below. Clear the field to return to the full bridge set."
             },
             {
               icon: "sap-icon://map-2", color: "#0a6ed1",
               title: "Spatial Select",
-              purpose: "Select a custom set of bridges by drawing an area directly on the map.",
-              howToUse: "Click Spatial Select → draw a freehand polygon on the map by clicking and dragging → release to close the shape. All bridges inside the polygon are selected and shown in the results list. Click Spatial Select again to cancel drawing."
+              purpose: "Select a custom subset of bridges by drawing a boundary directly on the map — useful for corridor or catchment analysis.",
+              howToUse: "Click Spatial Select in the toolbar → click and drag on the map to draw a freehand selection polygon → release to close the shape. All bridges inside the polygon are selected and shown in the results list. Click Spatial Select again or press Escape to cancel."
             },
             {
               icon: "sap-icon://full-screen", color: "#0a6ed1",
               title: "Fit to Australia",
-              purpose: "Instantly reset the map to show the full national extent.",
-              howToUse: "Click the Fit button → the map zooms and pans to show all of Australia with all loaded bridges in view."
+              purpose: "Instantly reset the map viewport to show the full national extent with all loaded bridges in view.",
+              howToUse: "Click the Fit Australia button in the map toolbar. The map pans and zooms to the full Australian bounding box. Useful after navigating deep into a region and wanting a quick reset."
             },
             {
               icon: "sap-icon://resize", color: "#52616f",
               title: "Zoom to Selection",
-              purpose: "Focus the map tightly on only the bridges you have selected.",
-              howToUse: "Select one or more bridges (via search, spatial select, or clicking markers) → click Zoom to Selection → the map fits to the bounding box of those bridges. Button is disabled when no selection is active."
+              purpose: "Focus the map tightly on only the bridges you currently have selected.",
+              howToUse: "Select one or more bridges (via search, spatial select, or by clicking markers) → click Zoom to Selection. The map fits to the bounding box of the selected bridges. The button is disabled when no selection is active."
             },
             {
               icon: "sap-icon://refresh", color: "#0a6ed1",
               title: "Refresh Data",
-              purpose: "Reload the latest bridge and restriction data from the server without leaving the map.",
-              howToUse: "Click Refresh → all bridge and restriction data is re-fetched from the server, applying the current filter settings. Use this after data updates have been saved in the Bridge Register."
+              purpose: "Reload the latest bridge and restriction data from the server without navigating away from the map.",
+              howToUse: "Click Refresh in the toolbar. All bridge markers, restriction overlays, and statistics are re-fetched from the server using your current filter settings. Use this after saving changes in the Bridge Register or after receiving notification that data has been updated."
             },
             {
               icon: "sap-icon://download", color: "#0a6ed1",
               title: "Export",
-              purpose: "Download the currently visible bridge or restriction data for use in external tools.",
-              howToUse: "Click Export → choose a format from the dropdown: GeoJSON (includes coordinates, compatible with QGIS and ArcGIS) or CSV (spreadsheet-compatible). Only bridges currently matching your filters are included."
+              purpose: "Download the bridges currently shown on the map for use in GIS tools, reports, or spreadsheets.",
+              howToUse: "Click Export → select a format: GeoJSON (includes coordinates and all attributes — compatible with QGIS, ArcGIS, and MapInfo) or CSV (flat table, spreadsheet-compatible). Only bridges matching your active search and filter settings are exported."
             },
             {
               icon: "sap-icon://list", color: "#0a6ed1",
               title: "Split / List View",
-              purpose: "Switch between a full-screen map and a side-by-side map + bridge list layout.",
-              howToUse: "Click List → a bridge results table appears alongside the map (split view). Click again to hide the list and return to full-screen map mode. In the list you can sort, search, and click any row to highlight the bridge on the map."
+              purpose: "View the bridge results table alongside the map without leaving the map context.",
+              howToUse: "Click List in the toolbar → the results table slides in next to the map (split view). Click a table row to fly to and highlight that bridge on the map. Click List again to hide the table and return to full-screen map mode."
+            },
+            {
+              icon: "sap-icon://locate-me", color: "#7c3aed",
+              title: "GPS / Locate Me",
+              purpose: "Centre the map on your current physical location — useful for field inspections.",
+              howToUse: "Click the GPS button in the map controls (bottom-right). Your browser will request location permission the first time. Once granted, the map flies to your current position and places a blue location marker. The marker updates as you move."
             }
           ],
           "_oMapHelpPopover"

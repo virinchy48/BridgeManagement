@@ -1,7 +1,7 @@
 {
   "_version": "1.8.0",
   "sap.app": {
-    "id": "bms.dashboard",
+    "id": "BridgeManagement.dashboard",
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -9,15 +9,7 @@
     "applicationVersion": {
       "version": "1.0.0"
     },
-    "dataSources": {
-      "BridgeManagementService": {
-        "uri": "/bridge-management/",
-        "type": "OData",
-        "settings": {
-          "odataVersion": "4.0"
-        }
-      }
-    },
+    "dataSources": {},
     "crossNavigation": {
       "inbounds": {
         "Dashboard-display": {
@@ -46,46 +38,13 @@
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "uri": "i18n/i18n.properties"
-      },
-      "": {
-        "dataSource": "BridgeManagementService",
-        "settings": {
-          "synchronizationMode": "None",
-          "operationMode": "Server",
-          "autoExpandSelect": true,
-          "earlyRequests": true
-        },
-        "type": "sap.ui.model.odata.v4.ODataModel"
       }
     },
     "rootView": {
-      "viewName": "bms.dashboard.view.Main",
+      "viewName": "BridgeManagement.dashboard.view.Main",
       "type": "XML",
-      "id": "app"
-    },
-    "routing": {
-      "config": {
-        "routerClass": "sap.m.routing.Router",
-        "viewType": "XML",
-        "viewPath": "bms.dashboard.view",
-        "controlAggregation": "pages",
-        "controlId": "app",
-        "async": true
-      },
-      "routes": [
-        {
-          "pattern": "",
-          "name": "Dashboard",
-          "target": "Dashboard"
-        }
-      ],
-      "targets": {
-        "Dashboard": {
-          "viewType": "XML",
-          "viewName": "Main",
-          "viewId": "Dashboard"
-        }
-      }
+      "async": true,
+      "id": "root"
     },
     "contentDensities": {
       "compact": true,

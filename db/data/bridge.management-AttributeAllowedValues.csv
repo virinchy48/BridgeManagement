@@ -1,8 +1,8 @@
 ID,attribute_ID,value,label,displayOrder,status
-b2289d70-69a6-464f-82ed-2dbd842ca15c,ad-bridge-001,Class A,Class A - Heavy Load,10,Active
-c5f1c019-5f41-498a-b9a7-274f7379c3f8,ad-bridge-001,Class B,Class B - Standard Load,20,Active
-28015a05-64f7-47fe-8b07-bc573cfbf96c,ad-bridge-001,Class C,Class C - Light Load,30,Active
-2164f33a-9176-450a-9371-aad89c2a95cb,ad-bridge-001,Class SM1600,Class SM1600 - Special Moving Load,40,Active
-3cf2337a-2f10-4dd4-8758-605952605d85,ad-restriction-001,Low,Low Severity,10,Active
-424107d2-84bb-4463-bf40-c9bc18f273e1,ad-restriction-001,Medium,Medium Severity,20,Active
-470977e5-d05e-411b-9ec8-546c985ba5f0,ad-restriction-001,High,High Severity,30,Active
+b2289d70-69a6-464f-82ed-2dbd842ca15c,20000000-0000-0000-0000-000000000001,Class A,Class A - Heavy Load,10,Active
+c5f1c019-5f41-498a-b9a7-274f7379c3f8,20000000-0000-0000-0000-000000000001,Class B,Class B - Standard Load,20,Active
+28015a05-64f7-47fe-8b07-bc573cfbf96c,20000000-0000-0000-0000-000000000001,Class C,Class C - Light Load,30,Active
+2164f33a-9176-450a-9371-aad89c2a95cb,20000000-0000-0000-0000-000000000001,Class SM1600,Class SM1600 - Special Moving Load,40,Active
+3cf2337a-2f10-4dd4-8758-605952605d85,20000000-0000-0000-0000-000000000006,Low,Low Severity,10,Active
+424107d2-84bb-4463-bf40-c9bc18f273e1,20000000-0000-0000-0000-000000000006,Medium,Medium Severity,20,Active
+470977e5-d05e-411b-9ec8-546c985ba5f0,20000000-0000-0000-0000-000000000006,High,High Severity,30,Active

@@ -31,6 +31,16 @@
 
         <content>
           <VBox class="nhvrSidebar">
+            <!-- Demo Mode Banner -->
+            <MessageStrip
+              id="demoBanner"
+              text="🎯  DEMO MODE — Showing 30 real NSW bridges from the Transport for NSW public dataset. Data is for demonstration only."
+              type="Warning"
+              showIcon="true"
+              showCloseButton="false"
+              visible="{view>/demoModeActive}"
+              class="sapUiTinyMarginBottom" />
+
             <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Base Map">
               <content>
                 <VBox class="nhvrFilterSection nhvrBasemapSection">
@@ -117,7 +127,8 @@
             <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Reference Layers">
               <content>
                 <VBox class="nhvrFilterSection">
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow"
+                        visible="{view>/features/showStateBoundaries}">
                     <HBox alignItems="Center">
                       <core:Icon src="sap-icon://world" size="0.875rem" class="nhvrLayerIcon" />
                       <Text text="State &amp; Territory Boundaries" class="nhvrLayerLabel" />
@@ -126,7 +137,8 @@
                       <customData><core:CustomData key="layerKey" value="stateBoundaries" /></customData>
                     </Switch>
                   </HBox>
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow"
+                        visible="{view>/features/showLgaBoundaries}">
                     <HBox alignItems="Center">
                       <core:Icon src="sap-icon://geographic-bubble-chart" size="0.875rem" class="nhvrLayerIcon" />
                       <Text text="LGA Boundaries (ABS ASGS)" class="nhvrLayerLabel" />
@@ -135,7 +147,37 @@
                       <customData><core:CustomData key="layerKey" value="lgaBoundaries" /></customData>
                     </Switch>
                   </HBox>
-                  <Text text="Source: ABS ASGS 2021" class="nhvrLayerHint sapUiTinyMarginTop" />
+                  <Text text="Source: ABS ASGS 2021" class="nhvrLayerHint sapUiTinyMarginTop"
+                        visible="{= ${view>/features/showStateBoundaries} || ${view>/features/showLgaBoundaries} }" />
+
+                  <!-- Dynamic reference layers loaded from GIS Config admin -->
+                  <VBox visible="{= ${view>/dynRefGroups}.length > 0 }">
+                    <Text text="ADDITIONAL LAYERS" class="nhvrBasemapGroupLabel sapUiSmallMarginTop" />
+                    <List items="{view>/dynRefGroups}" showSeparators="None" backgroundDesign="Transparent">
+                      <items>
+                        <CustomListItem>
+                          <VBox>
+                            <Text text="{view>category}" class="nhvrRefLayerCatHeader" />
+                            <List items="{view>items}" showSeparators="None" backgroundDesign="Transparent">
+                              <items>
+                                <CustomListItem>
+                                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                                    <VBox class="nhvrGisToolLabel">
+                                      <Text text="{view>name}" class="nhvrLayerLabel" />
+                                      <Text text="{view>description}" class="nhvrGisToolHint" maxLines="2" />
+                                    </VBox>
+                                    <Switch state="{view>sessionActive}" change=".onToggleDynamicRefLayer">
+                                      <customData><core:CustomData key="layerId" value="{view>ID}" /></customData>
+                                    </Switch>
+                                  </HBox>
+                                </CustomListItem>
+                              </items>
+                            </List>
+                          </VBox>
+                        </CustomListItem>
+                      </items>
+                    </List>
+                  </VBox>
                 </VBox>
               </content>
             </Panel>

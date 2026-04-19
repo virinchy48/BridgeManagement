@@ -24,6 +24,7 @@ service AdminService {
   entity RestrictionUnits as projection on my.RestrictionUnits;
   entity RestrictionDirections as projection on my.RestrictionDirections;
   entity GISConfig as projection on my.GISConfig;
+  entity ReferenceLayerConfig as projection on my.ReferenceLayerConfig;
   @readonly entity ChangeLog as projection on my.ChangeLog;
 
   // Configurable Attributes — admin-managed metadata
@@ -39,4 +40,8 @@ service AdminService {
   entity BnacObjectIdMap   as projection on my.BnacObjectIdMap;
   @readonly entity BnacLoadHistory as projection on my.BnacLoadHistory;
   entity DataQualityRules as projection on my.DataQualityRules;
+
+  // ── Demo Mode ────────────────────────────────────────────────────────────────
+  action loadDemoData()  returns String;
+  action clearDemoData() returns String;
 }

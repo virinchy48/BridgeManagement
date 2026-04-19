@@ -23,12 +23,13 @@
           "kind": "dummy"
         }
       },
-      "db-ext": {
+      "db": {
         "[development]": {
-          "model": "db/sqlite"
+          "kind": "sqlite",
+          "credentials": { "url": "db.sqlite" }
         },
         "[production]": {
-          "model": "db/hana"
+          "kind": "hana"
         }
       },
       "[production]": {
