@@ -25,7 +25,7 @@ sap.ui.define([
 
   const AUSTRALIA_BOUNDS = [[-44.5, 112], [-9, 154.5]];
   const STATE_OPTIONS = ["NSW", "VIC", "QLD", "WA", "SA", "TAS", "NT", "ACT"];
-  const POSTING_STATUS_OPTIONS = ["Unrestricted", "Posted", "Closed"];
+  const POSTING_STATUS_OPTIONS = ["Unrestricted", "Restricted", "Closed", "Under Review"];
   const ROUTE_FLAGS = [
     { key: "freightRoute", label: "Freight Route" },
     { key: "overMassRoute", label: "Over Mass Route" },
@@ -33,18 +33,70 @@ sap.ui.define([
     { key: "bDoubleApproved", label: "B-Double Approved" }
   ];
   const TILE_LAYERS = {
-    street: {
+    osm: {
+      label: "OpenStreetMap",
       url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      options: { maxZoom: 19, attribution: "&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors" }
+    },
+    esriStreet: {
+      label: "Esri Street",
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+      options: { maxZoom: 19, attribution: "Tiles &copy; Esri &mdash; Source: Esri" }
+    },
+    esriSatellite: {
+      label: "Esri Satellite",
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      options: { maxZoom: 19, attribution: "Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS" }
+    },
+    esriTopo: {
+      label: "Esri Topo",
+      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",
+      options: { maxZoom: 19, attribution: "Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ" }
+    },
+    google: {
+      label: "Google Maps",
+      url: "https://mt{s}.google.com/vt/lyrs=r&x={x}&y={y}&z={z}",
+      options: { maxZoom: 20, attribution: "&copy; Google", subdomains: "0123" }
+    },
+    googleSat: {
+      label: "Google Satellite",
+      url: "https://mt{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+      options: { maxZoom: 20, attribution: "&copy; Google", subdomains: "0123" }
+    },
+    here: {
+      label: "HERE Maps",
+      url: "https://maps.hereapi.com/v3/base/mc/{z}/{x}/{y}/png?apiKey={hereApiKey}",
+      options: { maxZoom: 20, attribution: "&copy; HERE", hereApiKey: "" }
+    }
+  };
+
+  // Legacy alias so any saved basemap preference "street"/"satellite" still resolves
+  TILE_LAYERS.street = TILE_LAYERS.osm;
+  TILE_LAYERS.satellite = TILE_LAYERS.esriSatellite;
+
+  const REFERENCE_LAYERS = {
+    stateBoundaries: {
+      label: "State & Territory Boundaries",
+      type: "wms",
+      url: "https://geo.abs.gov.au/arcgis/services/ASGS2021/STE_2021_AUST/MapServer/WMSServer",
       options: {
-        maxZoom: 19,
-        attribution: "&copy; OpenStreetMap contributors"
+        layers: "STE_2021_AUST",
+        format: "image/png",
+        transparent: true,
+        opacity: 0.75,
+        attribution: "State Boundaries &copy; ABS ASGS 2021"
       }
     },
-    satellite: {
-      url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    lgaBoundaries: {
+      label: "LGA Boundaries",
+      type: "wms",
+      url: "https://geo.abs.gov.au/arcgis/services/ASGS2021/LGA_2021_AUST/MapServer/WMSServer",
       options: {
-        maxZoom: 19,
-        attribution: "Tiles &copy; Esri"
+        layers: "LGA_2021_AUST",
+        format: "image/png",
+        transparent: true,
+        opacity: 0.55,
+        attribution: "LGA Boundaries &copy; ABS ASGS 2021"
       }
     }
   };
@@ -66,11 +118,14 @@ sap.ui.define([
       this._markerIndex = new Map();
       this._plainMarkerLayer = null;
       this._clusterLayer = null;
+      this._restrictionMarkerGroup = null;
       this._selectionLayer = null;
       this._hillshadeLayer = null;
+      this._refLayerInstances = {};
       this._layerDialog = null;
       this._mapInitAttempts = 0;
       this._mapInitScheduled = false;
+      this._viewportDebounce = null;
 
       this.getView().setModel(new JSONModel({
         busy: true,
@@ -97,6 +152,9 @@ sap.ui.define([
         selectionActive: false,
         selectionCount: 0,
         selectionLabel: "",
+        selectedFeature: null,
+        featurePanelOpen: false,
+        viewportMode: false,
         filters: {
           minCondition: 1,
           maxCondition: 10,
@@ -118,15 +176,30 @@ sap.ui.define([
           vehicleClasses: []
         },
         layers: {
-          clusterMarkers: true,
-          showLabels: false,
+          bridges: {
+            visible: true,
+            cluster: true,
+            showLabels: false,
+            colorBy: "condition",
+            count: 0
+          },
+          restrictions: {
+            visible: false,
+            activeOnly: true,
+            count: 0
+          },
           showLegend: true,
-          showHillshade: false
-        }
+          showHillshade: false,
+          refLayers: {
+            stateBoundaries: false,
+            lgaBoundaries: false
+          }
+        },
+        restrictionsData: []
       }), "view");
 
       this._leafletReady = this._ensureLeaflet();
-      this._loadBridges();
+      this._loadData();
     },
 
     onExit: function () {
@@ -208,7 +281,7 @@ sap.ui.define([
 
     onRefresh: function () {
       MessageToast.show(this._text("refresh"));
-      this._loadBridges();
+      this._loadData();
     },
 
     onLayoutSelect: function (oEvent) {
@@ -219,7 +292,6 @@ sap.ui.define([
     onColorByChange: function (oEvent) {
       this._vm().setProperty("/colorBy", oEvent.getSource().getSelectedKey());
       this._renderMarkers(false);
-      return displayed;
     },
 
     onSymbologyChange: function (oEvent) {
@@ -233,7 +305,7 @@ sap.ui.define([
       const source = oEvent.getSource();
       const customData = source.getCustomData && source.getCustomData()[0];
       const key = source.getSelectedKey ? source.getSelectedKey() : customData && customData.getValue();
-      this._vm().setProperty("/basemap", key || "street");
+      this._vm().setProperty("/basemap", key || "osm");
       this._applyBaseLayer();
     },
 
@@ -247,6 +319,30 @@ sap.ui.define([
 
     onToggleHillshadeLayer: function (oEvent) {
       this._onLayerSwitchChange("showHillshade", oEvent);
+    },
+
+    onToggleRefLayer: function (oEvent) {
+      const source = oEvent.getSource();
+      const layerKey = source.getCustomData && source.getCustomData()[0] && source.getCustomData()[0].getValue();
+      if (!layerKey) return;
+      const selected = oEvent.getParameter("selected");
+      this._vm().setProperty("/layers/refLayers/" + layerKey, selected);
+      this._applyRefLayer(layerKey, selected);
+    },
+
+    _applyRefLayer: function (layerKey, visible) {
+      if (!this._leafletMap || !window.L) return;
+      const config = REFERENCE_LAYERS[layerKey];
+      if (!config) return;
+
+      if (visible) {
+        if (!this._refLayerInstances[layerKey]) {
+          this._refLayerInstances[layerKey] = window.L.tileLayer.wms(config.url, config.options);
+        }
+        this._refLayerInstances[layerKey].addTo(this._leafletMap);
+      } else if (this._refLayerInstances[layerKey]) {
+        this._leafletMap.removeLayer(this._refLayerInstances[layerKey]);
+      }
     },
 
     onDrawPolygon: function () {
@@ -434,18 +530,28 @@ sap.ui.define([
       this._applyLayerSettings();
     },
 
-    _loadBridges: async function () {
+    _loadData: async function () {
       const model = this._vm();
       model.setProperty("/busy", true);
 
       try {
-        const response = await fetch("/map/api/bridges");
-        if (!response.ok) {
-          throw new Error("HTTP " + response.status);
+        const bbox = this._getViewportBbox();
+        const bboxParam = bbox ? "?bbox=" + bbox : "";
+
+        const [bridgeResp, restrictionResp] = await Promise.all([
+          fetch("/map/api/bridges" + bboxParam),
+          fetch("/map/api/restrictions" + bboxParam)
+        ]);
+        if (!bridgeResp.ok) {
+          throw new Error("HTTP " + bridgeResp.status);
         }
 
-        const payload = await response.json();
-        const bridges = (payload.bridges || []).map(this._normalizeBridge.bind(this));
+        const bridgePayload = await bridgeResp.json();
+        const restrictionPayload = restrictionResp.ok ? await restrictionResp.json() : { restrictions: [] };
+
+        const bridges = (bridgePayload.bridges || []).map(this._normalizeBridge.bind(this));
+        const restrictions = (restrictionPayload.restrictions || []).map(this._normalizeRestriction.bind(this));
+
         const yearValues = bridges.map(function (bridge) { return bridge.yearBuilt; }).filter(Number.isFinite);
         const limits = {
           minCondition: 1,
@@ -467,8 +573,12 @@ sap.ui.define([
         model.setProperty("/selectedBridge", bridges[0] || null);
         model.setProperty("/selectedRestrictions", bridges[0] ? bridges[0].restrictions : []);
         model.setProperty("/detailOpen", Boolean(bridges[0]));
+        model.setProperty("/restrictionsData", restrictions);
+        model.setProperty("/layers/restrictions/count", restrictions.length);
+        model.setProperty("/layers/bridges/count", bridges.length);
 
         this._applyFilters();
+        this._checkUrlParams();
       } catch (error) {
         MessageBox.error(this._text("mapError"));
       } finally {
@@ -492,7 +602,7 @@ sap.ui.define([
         longitude: Number(bridge.longitude),
         postingStatus: postingStatus,
         postingStatusLabel: this._postingStatusLabel(postingStatus),
-        postingStatusState: postingStatus === "Closed" ? "Error" : postingStatus === "Posted" ? "Warning" : "Success",
+        postingStatusState: postingStatus === "Closed" ? "Error" : (postingStatus === "Restricted" || postingStatus === "Under Review") ? "Warning" : "Success",
         conditionRating: conditionRating,
         yearBuilt: yearBuilt,
         structureType: bridge.structureType || null,
@@ -521,6 +631,242 @@ sap.ui.define([
         metricClearance: clearanceHeight == null ? "—" : clearanceHeight.toFixed(1) + " m",
         metricYear: yearBuilt == null ? "—" : String(yearBuilt)
       };
+    },
+
+    _normalizeRestriction: function (r) {
+      return {
+        ID: r.ID,
+        restrictionRef: r.restrictionRef || "—",
+        bridgeRef: r.bridgeRef || "—",
+        bridge_ID: r.bridge_ID,
+        bridgeId: r.bridgeId || "—",
+        bridgeName: r.bridgeName || "Bridge",
+        state: r.state || null,
+        latitude: Number(r.latitude),
+        longitude: Number(r.longitude),
+        restrictionType: r.restrictionType || null,
+        restrictionCategory: r.restrictionCategory || null,
+        restrictionValue: r.restrictionValue || null,
+        restrictionUnit: r.restrictionUnit || null,
+        restrictionStatus: r.restrictionStatus || null,
+        restrictionStatusLabel: r.restrictionStatus || "Active",
+        restrictionStatusState: r.restrictionStatus === "Active" ? "Success" : "Warning",
+        grossMassLimit: r.grossMassLimit,
+        axleMassLimit: r.axleMassLimit,
+        heightLimit: r.heightLimit,
+        speedLimit: r.speedLimit,
+        permitRequired: Boolean(r.permitRequired),
+        escortRequired: Boolean(r.escortRequired),
+        effectiveFrom: r.effectiveFrom || null,
+        effectiveTo: r.effectiveTo || null,
+        approvedBy: r.approvedBy || null,
+        direction: r.direction || null,
+        remarks: r.remarks || null,
+        severityColor: this._restrictionSeverityColor(r),
+        severityClass: this._restrictionSeverityClass(r)
+      };
+    },
+
+    _restrictionSeverityColor: function (r) {
+      if (r.restrictionStatus === "Active" && (r.grossMassLimit || r.axleMassLimit)) return "#ef4444";
+      if (r.heightLimit || r.speedLimit) return "#f59e0b";
+      return "#6366f1";
+    },
+
+    _restrictionSeverityClass: function (r) {
+      if (r.restrictionStatus === "Active" && (r.grossMassLimit || r.axleMassLimit)) return "critical";
+      if (r.heightLimit || r.speedLimit) return "warning";
+      return "info";
+    },
+
+    _renderRestrictionMarkers: function () {
+      if (!this._leafletMap) return;
+      const layers = this._vm().getProperty("/layers");
+      if (!this._restrictionMarkerGroup) {
+        this._restrictionMarkerGroup = window.L.layerGroup();
+      }
+      this._restrictionMarkerGroup.clearLayers();
+      if (!layers.restrictions.visible) {
+        if (this._leafletMap.hasLayer(this._restrictionMarkerGroup)) {
+          this._leafletMap.removeLayer(this._restrictionMarkerGroup);
+        }
+        return;
+      }
+      if (!this._leafletMap.hasLayer(this._restrictionMarkerGroup)) {
+        this._restrictionMarkerGroup.addTo(this._leafletMap);
+      }
+      const restrictions = this._vm().getProperty("/restrictionsData") || [];
+      restrictions.forEach(function (r) {
+        const icon = window.L.divIcon({
+          className: "",
+          html: "<div class=\"rstrMarker rstrMarker--" + r.severityClass + "\">" +
+                "<span class=\"rstrMarkerLabel\">" + this._restrictionAbbr(r.restrictionType) + "</span>" +
+                "</div>",
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+        const marker = window.L.marker([r.latitude, r.longitude], { icon: icon });
+        marker.bindPopup(this._restrictionPopupHtml(r), { maxWidth: 280 });
+        marker.on("click", function () {
+          this._selectFeature("restriction", r);
+        }.bind(this));
+        this._restrictionMarkerGroup.addLayer(marker);
+      }.bind(this));
+      this._vm().setProperty("/layers/restrictions/count", restrictions.length);
+    },
+
+    _restrictionAbbr: function (type) {
+      if (!type) return "R";
+      const map = { "Mass Limit": "ML", "Height Limit": "HL", "Width Limit": "WL",
+        "Length Limit": "LL", "Speed Limit": "SL", "Permit Required": "PR" };
+      return map[type] || type.substring(0, 2).toUpperCase();
+    },
+
+    _restrictionPopupHtml: function (r) {
+      const limits = [];
+      if (r.grossMassLimit) limits.push("GVM: " + r.grossMassLimit + " t");
+      if (r.heightLimit) limits.push("H: " + r.heightLimit + " m");
+      if (r.speedLimit) limits.push("Speed: " + r.speedLimit + " km/h");
+      return [
+        "<div class='leafletPopup'>",
+        "<strong>", r.restrictionType || "Restriction", "</strong><br>",
+        "<em>", r.bridgeName, "</em><br>",
+        "Ref: ", r.restrictionRef, "<br>",
+        limits.length ? limits.join(" · ") + "<br>" : "",
+        "Status: ", r.restrictionStatus || "Active",
+        "</div>"
+      ].join("");
+    },
+
+    _selectFeature: function (type, data) {
+      const model = this._vm();
+      model.setProperty("/selectedFeature", { type: type, data: data });
+      model.setProperty("/featurePanelOpen", true);
+      model.setProperty("/fclLayout", "ThreeColumnsMidExpanded");
+      if (type === "bridge") {
+        model.setProperty("/selectedBridge", data);
+        model.setProperty("/selectedRestrictions", data.restrictions || []);
+        model.setProperty("/detailOpen", true);
+        if (!model.getProperty("/showList")) {
+          model.setProperty("/showList", true);
+          setTimeout(this._invalidateMap.bind(this), 120);
+        }
+        const marker = this._markerIndex.get(data.ID);
+        if (marker && this._leafletMap) {
+          this._leafletMap.setView([data.latitude, data.longitude], Math.max(this._leafletMap.getZoom(), 10));
+          marker.openPopup();
+        }
+        this._renderMarkers(false);
+      }
+    },
+
+    onOpenInBridgeRegister: function () {
+      const feature = this._vm().getProperty("/selectedFeature");
+      if (!feature) return;
+      const bridge = feature.type === "bridge" ? feature.data : null;
+      const bridgeId = bridge ? bridge.ID : (feature.data && feature.data.bridge_ID);
+      if (bridgeId) {
+        window.location.href = "#Bridges-manage&/Bridges(ID=" + bridgeId + ",IsActiveEntity=true)";
+      } else {
+        window.location.href = "#Bridges-manage";
+      }
+    },
+
+    onViewBridgeFromRestriction: function () {
+      const feature = this._vm().getProperty("/selectedFeature");
+      if (!feature || feature.type !== "restriction") return;
+      const r = feature.data;
+      const allBridges = this._vm().getProperty("/allBridges") || [];
+      const bridge = allBridges.find(function (b) { return b.ID === r.bridge_ID; });
+      if (bridge) {
+        this._selectFeature("bridge", bridge);
+      }
+    },
+
+    onCloseFeaturePanel: function () {
+      const model = this._vm();
+      model.setProperty("/featurePanelOpen", false);
+      model.setProperty("/selectedFeature", null);
+      const panelOpen = model.getProperty("/panelOpen");
+      model.setProperty("/fclLayout", panelOpen ? "TwoColumnsMidExpanded" : "MidColumnFullScreen");
+    },
+
+    onExport: function (oEvent) {
+      const source = oEvent.getSource();
+      const customData = source.getCustomData && source.getCustomData();
+      const keyData = customData && customData.length ? customData[0] : null;
+      const key = keyData ? keyData.getValue() : "bridges-geojson";
+      const parts = key.split("-");
+      const layer = parts[0];
+      const format = parts.slice(1).join("-");
+      const bounds = this._leafletMap ? this._leafletMap.getBounds() : null;
+      const bbox = bounds
+        ? bounds.getWest() + "," + bounds.getSouth() + "," + bounds.getEast() + "," + bounds.getNorth()
+        : null;
+      const url = "/map/api/export?layer=" + layer + "&format=" + format + (bbox ? "&bbox=" + bbox : "");
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "export." + format;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    },
+
+    onShowExportMenu: function (oEvent) {
+      this.onExport(oEvent);
+    },
+
+    onToggleBridgeLayer: function (oEvent) {
+      const visible = oEvent.getParameter("selected");
+      this._vm().setProperty("/layers/bridges/visible", visible);
+      this._applyLayerSettings();
+    },
+
+    onToggleRestrictionLayer: function (oEvent) {
+      const visible = oEvent.getParameter("selected");
+      this._vm().setProperty("/layers/restrictions/visible", visible);
+      this._renderRestrictionMarkers();
+    },
+
+    onToggleBridgeCluster: function (oEvent) {
+      this._vm().setProperty("/layers/bridges/cluster", oEvent.getParameter("selected"));
+      this._applyLayerSettings();
+    },
+
+    onToggleBridgeLabels: function (oEvent) {
+      this._vm().setProperty("/layers/bridges/showLabels", oEvent.getParameter("selected"));
+      this._renderMarkers(false);
+    },
+
+    onBridgeColorByChange: function (oEvent) {
+      const key = oEvent.getParameter("item") ? oEvent.getParameter("item").getKey() : oEvent.getSource().getSelectedKey();
+      this._vm().setProperty("/layers/bridges/colorBy", key);
+      this._vm().setProperty("/colorBy", key);
+      this._renderMarkers(false);
+    },
+
+    onToggleViewportMode: function (oEvent) {
+      this._vm().setProperty("/viewportMode", oEvent.getParameter("state"));
+    },
+
+    _getViewportBbox: function () {
+      if (!this._leafletMap) return null;
+      const bounds = this._leafletMap.getBounds();
+      if (!bounds) return null;
+      return bounds.getWest() + "," + bounds.getSouth() + "," + bounds.getEast() + "," + bounds.getNorth();
+    },
+
+    _checkUrlParams: function () {
+      const search = window.location.search || "";
+      const params = new URLSearchParams(search);
+      const bridgeId = params.get("bridgeId") || params.get("highlightId");
+      if (bridgeId) {
+        const allBridges = this._vm().getProperty("/allBridges") || [];
+        const bridge = allBridges.find(function (b) { return String(b.ID) === String(bridgeId) || b.bridgeId === bridgeId; });
+        if (bridge) {
+          setTimeout(function () { this._selectFeature("bridge", bridge); }.bind(this), 500);
+        }
+      }
     },
 
     _buildFilterOptions: function (bridges) {
@@ -564,7 +910,7 @@ sap.ui.define([
 
       const filtered = allBridges.filter(function (bridge) {
         if (selectedStates.length && !selectedStates.includes(bridge.state)) return false;
-        if (selectedStatuses.length && !selectedStatuses.includes(bridge.postingStatusLabel)) return false;
+        if (selectedStatuses.length && !selectedStatuses.includes(bridge.postingStatus)) return false;
         if (selectedTypes.length && !selectedTypes.includes(bridge.structureType)) return false;
         if (selectedScour.length && !selectedScour.includes(bridge.scourRisk)) return false;
         if (selectedVehicleClasses.length && !selectedVehicleClasses.includes(bridge.vehicleClass)) return false;
@@ -768,12 +1114,22 @@ sap.ui.define([
         this._selectionLayer.addLayer(event.layer);
         this._selectionShape = event.layer;
         this._drawMode = event.layerType;
-        const selectedBridges = this._applySelectionToDisplay(this._vm().getProperty("/filteredBridges") || []);
-        this._openSelectionPopup(event.layer, event.layerType, selectedBridges.length);
+        this._applySelectionToDisplay(this._vm().getProperty("/filteredBridges") || []);
+        const selectedCount = this._vm().getProperty("/selectionCount");
+        this._openSelectionPopup(event.layer, event.layerType, selectedCount);
       }.bind(this));
 
       this._leafletMap.on("mousemove", function (event) {
         this._vm().setProperty("/coordinateText", event.latlng.lat.toFixed(5) + ", " + event.latlng.lng.toFixed(5));
+      }.bind(this));
+
+      this._leafletMap.on("moveend zoomend", function () {
+        if (this._viewportDebounce) clearTimeout(this._viewportDebounce);
+        this._viewportDebounce = setTimeout(function () {
+          if (this._vm().getProperty("/viewportMode")) {
+            this._loadData();
+          }
+        }.bind(this), 400);
       }.bind(this));
 
       this._renderMarkers(false);
@@ -811,7 +1167,7 @@ sap.ui.define([
       if (!this._leafletMap) return;
 
       const key = this._vm().getProperty("/basemap");
-      const config = TILE_LAYERS[key] || TILE_LAYERS.street;
+      const config = TILE_LAYERS[key] || TILE_LAYERS.osm;
 
       if (this._tileLayer) {
         this._leafletMap.removeLayer(this._tileLayer);
@@ -825,7 +1181,7 @@ sap.ui.define([
       if (!this._leafletMap) return;
 
       const layers = this._vm().getProperty("/layers");
-      const shouldCluster = Boolean(layers.clusterMarkers);
+      const shouldCluster = Boolean(layers.bridges ? layers.bridges.cluster : layers.clusterMarkers);
       const activeMarkerLayer = shouldCluster
         ? (this._clusterLayer || (this._clusterLayer = window.L.markerClusterGroup({
             maxClusterRadius: 44,
@@ -857,11 +1213,24 @@ sap.ui.define([
       if (!this._leafletMap) return;
 
       const layers = this._vm().getProperty("/layers");
-      const markerLayer = layers.clusterMarkers ? this._clusterLayer : this._plainMarkerLayer;
+
+      if (layers.bridges && !layers.bridges.visible) {
+        const markerLayerInactive = layers.bridges && layers.bridges.cluster ? this._clusterLayer : this._plainMarkerLayer;
+        if (markerLayerInactive) markerLayerInactive.clearLayers();
+        this._renderRestrictionMarkers();
+        return;
+      }
+
+      const shouldCluster = Boolean(layers.bridges ? layers.bridges.cluster : layers.clusterMarkers);
+      const markerLayer = shouldCluster ? this._clusterLayer : this._plainMarkerLayer;
+      const showLabels = layers.bridges ? layers.bridges.showLabels : layers.showLabels;
       const bridges = this._vm().getProperty("/bridges") || [];
       const selected = this._vm().getProperty("/selectedBridge");
 
-      if (!markerLayer) return;
+      if (!markerLayer) {
+        this._renderRestrictionMarkers();
+        return;
+      }
 
       markerLayer.clearLayers();
       this._markerIndex.clear();
@@ -869,7 +1238,7 @@ sap.ui.define([
       bridges.forEach(function (bridge) {
         const marker = window.L.circleMarker([bridge.latitude, bridge.longitude], this._markerStyle(bridge, selected));
         marker.bindPopup(this._popupHtml(bridge), { maxWidth: 260 });
-        if (layers.showLabels) {
+        if (showLabels) {
           marker.bindTooltip(bridge.bridgeName, { permanent: true, direction: "top", offset: [0, -8], className: "bridgeMapLabel" });
         }
         marker.on("click", function () {
@@ -893,6 +1262,7 @@ sap.ui.define([
         this._leafletMap.fitBounds(AUSTRALIA_BOUNDS);
       }
 
+      this._renderRestrictionMarkers();
       this._invalidateMap();
     },
 
@@ -989,38 +1359,13 @@ sap.ui.define([
 
     _focusBridge: function (bridge) {
       if (!bridge || !this._leafletMap) return;
-
-      if (this._vm().getProperty("/layoutMode") === "map") {
-        this._vm().setProperty("/layoutMode", "split");
-        this._applyLayoutMode();
-      }
-
-      this._vm().setProperty("/selectedBridge", bridge);
-      this._vm().setProperty("/selectedRestrictions", bridge.restrictions || []);
-      this._vm().setProperty("/detailOpen", true);
-
-      const marker = this._markerIndex.get(bridge.ID);
-      if (marker) {
-        this._leafletMap.setView([bridge.latitude, bridge.longitude], Math.max(this._leafletMap.getZoom(), 8));
-        marker.openPopup();
-      }
-
-      this._renderMarkers(false);
+      this._selectFeature("bridge", bridge);
     },
 
     _applyLayoutMode: function () {
-      const workspace = this.byId("workspace");
-      if (!workspace) {
-        setTimeout(this._invalidateMap.bind(this), 90);
-        return;
-      }
-      const mode = this._vm().getProperty("/layoutMode");
-
-      ["mode-map", "mode-split", "mode-list"].forEach(function (styleClass) {
-        workspace.removeStyleClass(styleClass);
-      });
-      workspace.addStyleClass("mode-" + mode);
-
+      // The current FCL-based view does not use a "workspace" control.
+      // Layout toggling is driven by the showList / fclLayout view model
+      // properties which are bound directly in the XML view.
       setTimeout(this._invalidateMap.bind(this), 90);
     },
 
@@ -1125,19 +1470,20 @@ sap.ui.define([
 
     _postingStatusLabel: function (status) {
       if (status === "Closed") return this._text("statusClosed");
-      if (status === "Posted") return this._text("statusPosted");
+      if (status === "Restricted") return this._text("statusRestricted");
+      if (status === "Under Review") return this._text("statusUnderReview");
       return this._text("statusUnrestricted");
     },
 
     _statusColor: function (status) {
       if (status === "Closed") return "#ef4444";
-      if (status === "Posted") return "#f59e0b";
+      if (status === "Restricted" || status === "Under Review") return "#f59e0b";
       return "#2563eb";
     },
 
     _borderColor: function (status) {
       if (status === "Closed") return "#991b1b";
-      if (status === "Posted") return "#b45309";
+      if (status === "Restricted" || status === "Under Review") return "#b45309";
       return "#1d4ed8";
     },
 

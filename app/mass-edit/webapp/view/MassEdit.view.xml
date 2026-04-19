@@ -7,13 +7,27 @@
   xmlns:t="sap.ui.table"
   displayBlock="true">
 
+  <!--
+    fitContent="true"  → DynamicPage hands height ownership to its content (the Table).
+    The Table uses visibleRowCountMode="Auto" to fill whatever vertical space remains.
+    MessageStrip is placed in t:infoToolbar (inside the table's own DOM) so its
+    show/hide never triggers a DynamicPage reflow — that was the root cause of the
+    "table disappears after first edit" bug.
+  -->
+  <!--
+    fitContent omitted (defaults to false) so DynamicPage fills the viewport.
+    The table uses visibleRowCountMode="Auto" and is the DIRECT child of f:content
+    (no VBox wrapper), so it fills the remaining height automatically.
+    The dirty-count banner lives inside t:extension — inside the table's own DOM —
+    so toggling its visibility never causes a DynamicPage layout recalculation.
+  -->
   <f:DynamicPage id="massEditPage" class="massEditPage" toggleHeaderOnTitleClick="false">
+
     <f:title>
       <f:DynamicPageTitle>
         <f:heading>
           <Title text="{i18n>massEdit}" level="H1"/>
         </f:heading>
-
         <f:actions>
           <Button text="{i18n>refresh}" icon="sap-icon://refresh" press="onRefresh"/>
           <Button
@@ -34,11 +48,15 @@
     <f:header>
       <f:DynamicPageHeader pinnable="true">
         <VBox class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
+
           <HBox wrap="Wrap" alignItems="Center" class="massEditFilterBar">
-            <SegmentedButton selectedKey="{view>/entityKey}" selectionChange="onEntityTypeChange">
+            <!-- OneWay so two-way binding does NOT write entityKey before selectionChange fires -->
+            <SegmentedButton
+              selectedKey="{path: 'view>/entityKey', mode: 'OneWay'}"
+              selectionChange="onEntityTypeChange">
               <items>
-                <SegmentedButtonItem key="BRIDGE" text="{i18n>bridges}" icon="sap-icon://building"/>
-                <SegmentedButtonItem key="RESTRICTION" text="{i18n>restrictions}" icon="sap-icon://alert"/>
+                <SegmentedButtonItem key="BRIDGE"      text="{i18n>bridges}"      icon="sap-icon://building"  width="7.5rem"/>
+                <SegmentedButtonItem key="RESTRICTION" text="{i18n>restrictions}" icon="sap-icon://alert"    width="9.5rem"/>
               </items>
             </SegmentedButton>
 
@@ -50,14 +68,16 @@
 
             <VBox visible="{view>/showStateFilter}">
               <Label text="{i18n>state}"/>
-              <Select selectedKey="{view>/filters/state}" change="onFilterChange" width="10rem" items="{view>/options/states}">
+              <Select selectedKey="{view>/filters/state}" change="onFilterChange" width="10rem"
+                      items="{view>/options/states}">
                 <core:Item key="{view>key}" text="{view>text}"/>
               </Select>
             </VBox>
 
             <VBox visible="{view>/showStatusFilter}">
               <Label text="{view>/statusFilterLabel}"/>
-              <Select selectedKey="{view>/filters/status}" change="onFilterChange" width="12rem" items="{view>/statusFilterOptions}">
+              <Select selectedKey="{view>/filters/status}" change="onFilterChange" width="12rem"
+                      items="{view>/statusFilterOptions}">
                 <core:Item key="{view>key}" text="{view>text}"/>
               </Select>
             </VBox>
@@ -73,72 +93,91 @@
               press="onToggleBulkApply"/>
           </HBox>
 
-          <Panel expandable="false" visible="{view>/bulkVisible}" backgroundDesign="Transparent" class="sapUiTinyMarginTop massEditBulkPanel">
+          <Panel expandable="false" visible="{view>/bulkVisible}"
+                 backgroundDesign="Transparent"
+                 class="sapUiTinyMarginTop massEditBulkPanel">
             <content>
               <HBox wrap="Wrap" alignItems="Center" class="massEditBulkBar">
                 <VBox>
                   <Label text="{i18n>field}"/>
-                  <Select id="bulkFieldSelect" selectedKey="{view>/bulkFieldKey}" change="onBulkFieldChange" width="14rem" items="{view>/options/bulkFields}">
+                  <Select id="bulkFieldSelect" selectedKey="{view>/bulkFieldKey}"
+                          change="onBulkFieldChange" width="14rem"
+                          items="{view>/options/bulkFields}">
                     <core:Item key="{view>key}" text="{view>text}"/>
                   </Select>
                 </VBox>
 
-                <Input id="bulkValueInput" width="14rem" visible="{= ${view>/bulkInputType} === 'text' || ${view>/bulkInputType} === 'number' || ${view>/bulkInputType} === 'decimal' }"/>
-                <Select id="bulkValueSelect" width="14rem" visible="{= ${view>/bulkInputType} === 'select' }" items="{view>/options/bulkFieldOptions}">
+                <Input id="bulkValueInput" width="14rem"
+                       visible="{= ${view>/bulkInputType} === 'text' || ${view>/bulkInputType} === 'number' || ${view>/bulkInputType} === 'decimal' }"/>
+                <Select id="bulkValueSelect" width="14rem"
+                        visible="{= ${view>/bulkInputType} === 'select' }"
+                        items="{view>/options/bulkFieldOptions}">
                   <core:Item key="{view>key}" text="{view>text}"/>
                 </Select>
-                <DatePicker id="bulkValueDate" width="12rem" valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy" visible="{= ${view>/bulkInputType} === 'date' }"/>
-                <CheckBox id="bulkValueBool" visible="{= ${view>/bulkInputType} === 'boolean' }"/>
+                <DatePicker id="bulkValueDate" width="12rem"
+                            valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy"
+                            visible="{= ${view>/bulkInputType} === 'date' }"/>
+                <CheckBox id="bulkValueBool"
+                          visible="{= ${view>/bulkInputType} === 'boolean' }"/>
 
-                <Button
-                  text="{view>/applyButtonText}"
-                  type="Emphasized"
-                  press="onBulkApply"/>
+                <Button text="{view>/applyButtonText}" type="Emphasized" press="onBulkApply"/>
               </HBox>
             </content>
           </Panel>
+
         </VBox>
       </f:DynamicPageHeader>
     </f:header>
 
     <f:content>
-      <VBox class="massEditShell">
-        <MessageStrip
-          text="{view>/dirtyMessage}"
-          visible="{= ${view>/dirtyCount} > 0 }"
-          type="Warning"
-          showIcon="true"
-          class="sapUiTinyMarginBegin sapUiTinyMarginEnd"/>
+      <!--
+        Table is the DIRECT child of f:content — no VBox wrapper.
+        visibleRowCountMode="Auto" fills the remaining viewport height.
+        Dirty message lives in infoToolbar (part of table's own layout),
+        so toggling its visibility never affects the outer DynamicPage geometry.
+      -->
+      <t:Table
+        id="massEditTable"
+        rows="{path: 'view>/allItems'}"
+        selectionMode="MultiToggle"
+        selectionBehavior="RowSelector"
+        rowSelectionChange="onTableSelectionChange"
+        visibleRowCountMode="Fixed"
+        visibleRowCount="18"
+        rowHeight="40"
+        fixedColumnCount="1"
+        alternateRowColors="true"
+        enableColumnReordering="true"
+        busy="{view>/busy}"
+        busyIndicatorDelay="200"
+        threshold="50"
+        class="massEditTable"
+        noData="{i18n>noRecords}">
 
-        <t:Table
-          id="massEditTable"
-          rows="{path: 'view>/allItems'}"
-          selectionMode="MultiToggle"
-          selectionBehavior="RowSelector"
-          rowSelectionChange="onTableSelectionChange"
-          visibleRowCountMode="Fixed"
-          visibleRowCount="20"
-          rowHeight="40"
-          fixedColumnCount="1"
-          alternateRowColors="true"
-          enableColumnReordering="true"
-          busy="{view>/busy}"
-          busyIndicatorDelay="200"
-          threshold="50"
-          class="massEditTable sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginBottom"
-          noData="{i18n>noRecords}">
-          <t:rowSettingsTemplate>
-            <t:RowSettings highlight="{= ${view>_dirty} ? 'Warning' : 'None'}"/>
-          </t:rowSettingsTemplate>
-          <t:extension>
-            <OverflowToolbar>
-              <Title text="{view>/tableTitle}" level="H3"/>
-              <ToolbarSpacer/>
-              <Text text="{view>/summaryText}" class="sapUiSmallMarginEnd"/>
-            </OverflowToolbar>
-          </t:extension>
-        </t:Table>
-      </VBox>
+        <t:rowSettingsTemplate>
+          <t:RowSettings highlight="{= ${view>_dirty} ? 'Warning' : 'None'}"/>
+        </t:rowSettingsTemplate>
+
+        <t:extension>
+          <!-- Title bar: always visible -->
+          <OverflowToolbar>
+            <Title text="{view>/tableTitle}" level="H3"/>
+            <ToolbarSpacer/>
+            <Text text="{view>/summaryText}" class="sapUiSmallMarginEnd"/>
+          </OverflowToolbar>
+          <!--
+            Dirty banner sits inside t:extension (inside the table's own DOM).
+            Toggling its visibility does NOT affect the DynamicPage layout —
+            this was the root cause of the "table disappears on first edit" bug.
+          -->
+          <Toolbar visible="{= ${view>/dirtyCount} > 0}" class="massEditInfoBar">
+            <core:Icon src="sap-icon://message-warning"/>
+            <Label text="{view>/dirtyMessage}" design="Bold"/>
+          </Toolbar>
+        </t:extension>
+
+      </t:Table>
     </f:content>
+
   </f:DynamicPage>
 </mvc:View>

@@ -8,704 +8,609 @@ sap.ui.define([
   "sap/ui/table/Column",
   "sap/m/Text",
   "sap/m/Input",
-  "sap/m/Select",
+  "sap/m/ComboBox",
   "sap/m/DatePicker",
   "sap/m/CheckBox",
   "sap/ui/core/Item"
 ], function (
-  Controller,
-  JSONModel,
-  Filter,
-  FilterOperator,
-  MessageBox,
-  MessageToast,
-  Column,
-  Text,
-  Input,
-  Select,
-  DatePicker,
-  CheckBox,
-  Item
+  Controller, JSONModel, Filter, FilterOperator,
+  MessageBox, MessageToast,
+  Column, Text, Input, ComboBox, DatePicker, CheckBox, Item
 ) {
   "use strict";
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+     ENTITY CONFIGURATION
+     Defines endpoints, fields, filter options and column layout for each
+     entity type (Bridge / Restriction).
+  ═══════════════════════════════════════════════════════════════════════════ */
   const ENTITY_CONFIG = {
     BRIDGE: {
       key: "BRIDGE",
-      title: "Bridges",
       endpoint: "api/bridges",
       saveEndpoint: "api/bridges/save",
-      idField: "ID",
       statusFilterLabelKey: "postingStatus",
       statusField: "postingStatus",
       statusOptionsPath: "/options/postingStatuses",
       stateField: "state",
       searchFields: ["bridgeId", "bridgeName", "route", "region", "assetOwner", "remarks"],
       fields: [
-        { key: "bridgeId", labelKey: "bridgeId", type: "text", editable: false, width: "9rem" },
-        { key: "bridgeName", labelKey: "bridgeName", type: "text", editable: true, width: "14rem" },
-        { key: "state", labelKey: "state", type: "select", editable: true, width: "8rem", optionsPath: "/options/states" },
-        { key: "route", labelKey: "route", type: "text", editable: true, width: "10rem" },
-        { key: "region", labelKey: "region", type: "text", editable: true, width: "10rem" },
-        { key: "assetOwner", labelKey: "assetOwner", type: "text", editable: true, width: "12rem" },
-        { key: "structureType", labelKey: "structureType", type: "select", editable: true, width: "11rem", optionsPath: "/options/structureTypes" },
-        { key: "yearBuilt", labelKey: "yearBuilt", type: "number", editable: true, width: "8rem" },
-        { key: "condition", labelKey: "condition", type: "select", editable: true, width: "9rem", optionsPath: "/options/conditions" },
-        { key: "conditionRating", labelKey: "conditionRating", type: "number", editable: true, width: "9rem" },
-        { key: "postingStatus", labelKey: "postingStatus", type: "select", editable: true, width: "11rem", optionsPath: "/options/postingStatuses" },
-        { key: "lastInspectionDate", labelKey: "lastInspectionDate", type: "date", editable: true, width: "10rem" },
-        { key: "scourRisk", labelKey: "scourRisk", type: "select", editable: true, width: "10rem", optionsPath: "/options/scourRisks" },
-        { key: "pbsApprovalClass", labelKey: "pbsApprovalClass", type: "select", editable: true, width: "11rem", optionsPath: "/options/pbsApprovalClasses" },
-        { key: "nhvrAssessed", labelKey: "nhvrAssessed", type: "boolean", editable: true, width: "8rem" },
-        { key: "freightRoute", labelKey: "freightRoute", type: "boolean", editable: true, width: "8rem" },
-        { key: "overMassRoute", labelKey: "overMassRoute", type: "boolean", editable: true, width: "8rem" },
-        { key: "hmlApproved", labelKey: "hmlApproved", type: "boolean", editable: true, width: "8rem" },
-        { key: "bDoubleApproved", labelKey: "bDoubleApproved", type: "boolean", editable: true, width: "8rem" },
-        { key: "remarks", labelKey: "remarks", type: "text", editable: true, width: "16rem" }
+        { key: "bridgeId",          labelKey: "bridgeId",          type: "text",    editable: false, width: "9rem"  },
+        { key: "bridgeName",        labelKey: "bridgeName",        type: "text",    editable: true,  width: "14rem" },
+        { key: "state",             labelKey: "state",             type: "select",  editable: true,  width: "10rem", optionsPath: "/options/states"            },
+        { key: "route",             labelKey: "route",             type: "text",    editable: true,  width: "10rem" },
+        { key: "region",            labelKey: "region",            type: "text",    editable: true,  width: "10rem" },
+        { key: "assetOwner",        labelKey: "assetOwner",        type: "text",    editable: true,  width: "12rem" },
+        { key: "structureType",     labelKey: "structureType",     type: "select",  editable: true,  width: "11rem", optionsPath: "/options/structureTypes"     },
+        { key: "yearBuilt",         labelKey: "yearBuilt",         type: "number",  editable: true,  width: "8rem"  },
+        { key: "condition",         labelKey: "condition",         type: "select",  editable: true,  width: "9rem",  optionsPath: "/options/conditions"         },
+        { key: "conditionRating",   labelKey: "conditionRating",   type: "number",  editable: true,  width: "9rem"  },
+        { key: "postingStatus",     labelKey: "postingStatus",     type: "select",  editable: true,  width: "11rem", optionsPath: "/options/postingStatuses"    },
+        { key: "lastInspectionDate",labelKey: "lastInspectionDate",type: "date",    editable: true,  width: "10rem" },
+        { key: "scourRisk",         labelKey: "scourRisk",         type: "select",  editable: true,  width: "10rem", optionsPath: "/options/scourRisks"         },
+        { key: "pbsApprovalClass",  labelKey: "pbsApprovalClass",  type: "select",  editable: true,  width: "11rem", optionsPath: "/options/pbsApprovalClasses" },
+        { key: "nhvrAssessed",      labelKey: "nhvrAssessed",      type: "boolean", editable: true,  width: "8rem"  },
+        { key: "freightRoute",      labelKey: "freightRoute",      type: "boolean", editable: true,  width: "8rem"  },
+        { key: "overMassRoute",     labelKey: "overMassRoute",     type: "boolean", editable: true,  width: "8rem"  },
+        { key: "hmlApproved",       labelKey: "hmlApproved",       type: "boolean", editable: true,  width: "8rem"  },
+        { key: "bDoubleApproved",   labelKey: "bDoubleApproved",   type: "boolean", editable: true,  width: "8rem"  },
+        { key: "remarks",           labelKey: "remarks",           type: "text",    editable: true,  width: "16rem" }
       ]
     },
     RESTRICTION: {
       key: "RESTRICTION",
-      title: "Restrictions",
       endpoint: "api/restrictions",
       saveEndpoint: "api/restrictions/save",
-      idField: "ID",
       statusFilterLabelKey: "restrictionStatus",
       statusField: "restrictionStatus",
       statusOptionsPath: "/options/restrictionStatuses",
       stateField: null,
       searchFields: ["restrictionRef", "bridgeRef", "restrictionType", "approvedBy", "remarks"],
       fields: [
-        { key: "restrictionRef", labelKey: "restrictionRef", type: "text", editable: false, width: "11rem" },
-        { key: "bridgeRef", labelKey: "bridgeRef", type: "text", editable: false, width: "10rem" },
-        { key: "restrictionCategory", labelKey: "restrictionCategory", type: "select", editable: true, width: "10rem", optionsPath: "/options/restrictionCategories" },
-        { key: "restrictionType", labelKey: "restrictionType", type: "select", editable: true, width: "11rem", optionsPath: "/options/restrictionTypes" },
-        { key: "restrictionValue", labelKey: "restrictionValue", type: "text", editable: true, width: "10rem" },
-        { key: "restrictionUnit", labelKey: "restrictionUnit", type: "select", editable: true, width: "8rem", optionsPath: "/options/restrictionUnits" },
-        { key: "restrictionStatus", labelKey: "restrictionStatus", type: "select", editable: true, width: "11rem", optionsPath: "/options/restrictionStatuses" },
-        { key: "appliesToVehicleClass", labelKey: "appliesToVehicleClass", type: "select", editable: true, width: "11rem", optionsPath: "/options/vehicleClasses" },
-        { key: "grossMassLimit", labelKey: "grossMassLimit", type: "decimal", editable: true, width: "8rem" },
-        { key: "axleMassLimit", labelKey: "axleMassLimit", type: "decimal", editable: true, width: "8rem" },
-        { key: "heightLimit", labelKey: "heightLimit", type: "decimal", editable: true, width: "7rem" },
-        { key: "widthLimit", labelKey: "widthLimit", type: "decimal", editable: true, width: "7rem" },
-        { key: "lengthLimit", labelKey: "lengthLimit", type: "decimal", editable: true, width: "7rem" },
-        { key: "speedLimit", labelKey: "speedLimit", type: "number", editable: true, width: "7rem" },
-        { key: "permitRequired", labelKey: "permitRequired", type: "boolean", editable: true, width: "8rem" },
-        { key: "escortRequired", labelKey: "escortRequired", type: "boolean", editable: true, width: "8rem" },
-        { key: "temporary", labelKey: "temporary", type: "boolean", editable: true, width: "8rem" },
-        { key: "active", labelKey: "active", type: "boolean", editable: true, width: "8rem" },
-        { key: "effectiveFrom", labelKey: "effectiveFrom", type: "date", editable: true, width: "10rem" },
-        { key: "effectiveTo", labelKey: "effectiveTo", type: "date", editable: true, width: "10rem" },
-        { key: "approvedBy", labelKey: "approvedBy", type: "text", editable: true, width: "11rem" },
-        { key: "direction", labelKey: "direction", type: "select", editable: true, width: "9rem", optionsPath: "/options/restrictionDirections" },
-        { key: "remarks", labelKey: "remarks", type: "text", editable: true, width: "14rem" }
+        { key: "restrictionRef",        labelKey: "restrictionRef",        type: "text",    editable: false, width: "11rem" },
+        { key: "bridgeRef",             labelKey: "bridgeRef",             type: "text",    editable: false, width: "10rem" },
+        { key: "restrictionCategory",   labelKey: "restrictionCategory",   type: "select",  editable: true,  width: "10rem", optionsPath: "/options/restrictionCategories" },
+        { key: "restrictionType",       labelKey: "restrictionType",       type: "select",  editable: true,  width: "11rem", optionsPath: "/options/restrictionTypes"      },
+        { key: "restrictionValue",      labelKey: "restrictionValue",      type: "text",    editable: true,  width: "10rem" },
+        { key: "restrictionUnit",       labelKey: "restrictionUnit",       type: "select",  editable: true,  width: "8rem",  optionsPath: "/options/restrictionUnits"      },
+        { key: "restrictionStatus",     labelKey: "restrictionStatus",     type: "select",  editable: true,  width: "11rem", optionsPath: "/options/restrictionStatuses"   },
+        { key: "appliesToVehicleClass", labelKey: "appliesToVehicleClass", type: "select",  editable: true,  width: "11rem", optionsPath: "/options/vehicleClasses"        },
+        { key: "grossMassLimit",        labelKey: "grossMassLimit",        type: "decimal", editable: true,  width: "8rem"  },
+        { key: "axleMassLimit",         labelKey: "axleMassLimit",         type: "decimal", editable: true,  width: "8rem"  },
+        { key: "heightLimit",           labelKey: "heightLimit",           type: "decimal", editable: true,  width: "7rem"  },
+        { key: "widthLimit",            labelKey: "widthLimit",            type: "decimal", editable: true,  width: "7rem"  },
+        { key: "lengthLimit",           labelKey: "lengthLimit",           type: "decimal", editable: true,  width: "7rem"  },
+        { key: "speedLimit",            labelKey: "speedLimit",            type: "number",  editable: true,  width: "7rem"  },
+        { key: "permitRequired",        labelKey: "permitRequired",        type: "boolean", editable: true,  width: "8rem"  },
+        { key: "escortRequired",        labelKey: "escortRequired",        type: "boolean", editable: true,  width: "8rem"  },
+        { key: "temporary",             labelKey: "temporary",             type: "boolean", editable: true,  width: "8rem"  },
+        { key: "active",                labelKey: "active",                type: "boolean", editable: true,  width: "8rem"  },
+        { key: "effectiveFrom",         labelKey: "effectiveFrom",         type: "date",    editable: true,  width: "10rem" },
+        { key: "effectiveTo",           labelKey: "effectiveTo",           type: "date",    editable: true,  width: "10rem" },
+        { key: "approvedBy",            labelKey: "approvedBy",            type: "text",    editable: true,  width: "11rem" },
+        { key: "direction",             labelKey: "direction",             type: "select",  editable: true,  width: "9rem",  optionsPath: "/options/restrictionDirections" },
+        { key: "remarks",               labelKey: "remarks",               type: "text",    editable: true,  width: "14rem" }
       ]
     }
   };
 
+  /* ═══════════════════════════════════════════════════════════════════════════
+     CONTROLLER
+  ═══════════════════════════════════════════════════════════════════════════ */
   return Controller.extend("BridgeManagement.massedit.controller.MassEdit", {
+
+    /* ─── Lifecycle ─────────────────────────────────────────────────────── */
+
     onInit: function () {
       document.body.classList.add("massEditFullBleed");
 
-      // _baselineRows: deep-clone of original server data used for dirty comparison
-      this._baselineRows = [];
+      // _baselineRows: deep-clone of server data used for dirty comparison + discard
+      this._baselineRows  = [];
       this._lookupsLoaded = false;
-      this._suppressValueChange = false;
-      this._loading = false;
+      this._loading       = false;
+      this._loadGeneration = 0;   // incremented on each load; stale async loads abort
+      this._filterTimer   = null; // debounce handle for search liveChange
+      this._lastFilterKey = null; // skip binding.filter() when criteria unchanged
 
       this.getView().setModel(new JSONModel({
-        busy: false,
-        initialized: false,
-        entityKey: "BRIDGE",
-        // allItems holds every row; the table binding filters it without replacing the array
-        allItems: [],
-        bulkButtonText: this._text("bulkApply"),
-        applyButtonText: this._text("applyToSelected", [0]),
-        dirtyMessage: this._text("dirtyRows", [0]),
-        showStateFilter: true,
-        showStatusFilter: true,
-        statusFilterLabel: this._text("postingStatus"),
+        busy:              false,
+        entityKey:         "BRIDGE",
+        allItems:          [],
+        dirtyCount:        0,
+        dirtyMessage:      "",
+        selectedCount:     0,
+        summaryText:       "",
+        tableTitle:        "",
+        showStateFilter:   true,
+        showStatusFilter:  true,
+        statusFilterLabel: "",
         statusFilterOptions: [],
-        tableTitle: this._text("bridges"),
-        summaryText: "",
-        selectedCount: 0,
-        dirtyCount: 0,
-        bulkVisible: false,
-        bulkFieldKey: "",
-        bulkInputType: "text",
-        filters: {
-          search: "",
-          state: "",
-          status: "",
-          onlyDirty: false
-        },
+        bulkVisible:       false,
+        bulkButtonText:    "",
+        applyButtonText:   "",
+        bulkFieldKey:      "",
+        bulkInputType:     "text",
+        filters: { search: "", state: "", status: "", onlyDirty: false },
         options: {
-          states: [],
-          conditions: [],
-          postingStatuses: [],
-          structureTypes: [],
-          scourRisks: [],
-          pbsApprovalClasses: [],
-          restrictionCategories: [],
-          restrictionTypes: [],
-          restrictionStatuses: [],
-          restrictionUnits: [],
-          restrictionDirections: [],
-          vehicleClasses: [],
-          bulkFields: [],
-          bulkFieldOptions: []
+          states: [], conditions: [], postingStatuses: [],
+          structureTypes: [], scourRisks: [], pbsApprovalClasses: [],
+          restrictionCategories: [], restrictionTypes: [], restrictionStatuses: [],
+          restrictionUnits: [], restrictionDirections: [], vehicleClasses: [],
+          bulkFields: [], bulkFieldOptions: []
         }
       }), "view");
 
+      this._syncLabels();
       this._buildTable();
       this._loadEntityData();
     },
 
     onExit: function () {
       document.body.classList.remove("massEditFullBleed");
+      clearTimeout(this._filterTimer);
     },
 
-    onNavHome: function () {
-      window.location.href = "#Dashboard-display";
-    },
+    /* ─── Toolbar actions ───────────────────────────────────────────────── */
 
     onRefresh: function () {
-      this._lookupsLoaded = false;
+      // Lookups are static — don't reset _lookupsLoaded (avoids re-binding 100+ ComboBox items)
       this._loadEntityData();
-    },
-
-    onEntityTypeChange: function (event) {
-      const entityKey = event.getParameter("item").getKey();
-      const model = this._vm();
-      if (model.getProperty("/entityKey") === entityKey) {
-        return;
-      }
-      model.setProperty("/entityKey", entityKey);
-      model.setProperty("/filters", { search: "", state: "", status: "", onlyDirty: false });
-      model.setProperty("/allItems", []);
-      model.setProperty("/selectedCount", 0);
-      model.setProperty("/dirtyCount", 0);
-      model.setProperty("/summaryText", "");
-      model.setProperty("/bulkVisible", false);
-      model.setProperty("/bulkButtonText", this._text("bulkApply"));
-      model.setProperty("/applyButtonText", this._text("applyToSelected", [0]));
-      model.setProperty("/dirtyMessage", this._text("dirtyRows", [0]));
-      model.setProperty("/bulkFieldKey", "");
-      model.setProperty("/bulkInputType", "text");
-      this._clearBulkValueControls();
-      this._baselineRows = [];
-      // Clear any active binding filters before rebuilding columns
-      const table = this.byId("massEditTable");
-      const binding = table && table.getBinding("rows");
-      if (binding) {
-        binding.filter([]);
-      }
-      this._buildTable();
-      this._loadEntityData();
-    },
-
-    onFilterChange: function () {
-      if (this._suppressValueChange || this._loading) {
-        return;
-      }
-      this._applyFilters();
-    },
-
-    onToggleBulkApply: function () {
-      const visible = !this._vm().getProperty("/bulkVisible");
-      this._vm().setProperty("/bulkVisible", visible);
-      this._vm().setProperty("/bulkButtonText", this._text(visible ? "hideBulkApply" : "bulkApply"));
-      if (!visible) {
-        this._vm().setProperty("/bulkFieldKey", "");
-        this._vm().setProperty("/bulkInputType", "text");
-        this._vm().setProperty("/options/bulkFieldOptions", []);
-        this._clearBulkValueControls();
-      }
-    },
-
-    onBulkFieldChange: function (event) {
-      const field = this._config().fields.find((entry) => entry.key === event.getSource().getSelectedKey());
-      this._vm().setProperty("/bulkInputType", field ? field.type : "text");
-      this._vm().setProperty("/options/bulkFieldOptions", field && field.optionsPath ? (this._vm().getProperty(field.optionsPath) || []) : []);
-      this._clearBulkValueControls();
-    },
-
-    onBulkApply: function () {
-      const fieldKey = this._vm().getProperty("/bulkFieldKey");
-      const field = this._config().fields.find((entry) => entry.key === fieldKey);
-      if (!field) {
-        MessageToast.show(this._text("bulkNoField"));
-        return;
-      }
-
-      const table = this.byId("massEditTable");
-      const selectedIndices = table.getSelectedIndices();
-      if (!selectedIndices.length) {
-        MessageToast.show(this._text("bulkNoRows"));
-        return;
-      }
-
-      const value = this._readBulkValue(field);
-      selectedIndices.forEach(function (index) {
-        const context = table.getContextByIndex(index);
-        if (!context) {
-          return;
-        }
-        const rowPath = context.getPath();
-        this._setFieldValue(rowPath, field, value);
-      }.bind(this));
-
-      table.clearSelection();
-      this._vm().setProperty("/selectedCount", 0);
-      this._vm().setProperty("/applyButtonText", this._text("applyToSelected", [0]));
-      MessageToast.show(this._text("bulkApplied", [selectedIndices.length]));
     },
 
     onSave: async function () {
-      const allItems = this._vm().getProperty("/allItems") || [];
-      const dirtyRows = allItems.filter(function (row) { return row._dirty; });
+      const vm    = this._vm();
+      const dirty = (vm.getProperty("/allItems") || []).filter(function (r) { return r._dirty; });
+      if (!dirty.length) { return; }
 
-      if (!dirtyRows.length) {
-        return;
-      }
-
+      vm.setProperty("/busy", true);
       try {
-        this._vm().setProperty("/busy", true);
-        const payload = dirtyRows.map(function (row) {
-          return this._toPayload(row);
-        }.bind(this));
-
-        const response = await this._fetchJsonWithFallback(this._config().saveEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "application/json"
-          },
-          body: JSON.stringify({ updates: payload })
+        const payload = dirty.map(this._toPayload.bind(this));
+        const result  = await this._fetchJson(this._config().saveEndpoint, {
+          method:  "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body:    JSON.stringify({ updates: payload })
         });
-
-        MessageToast.show(this._text("saveSuccess", [response.data.updated || payload.length]));
+        MessageToast.show(this._t("saveSuccess", [result.updated || payload.length]));
         await this._loadEntityData();
-      } catch (error) {
-        MessageBox.error(error.message || this._text("saveError"));
+      } catch (err) {
+        MessageBox.error(err.message || this._t("saveError"));
       } finally {
-        this._vm().setProperty("/busy", false);
+        vm.setProperty("/busy", false);
       }
     },
 
     onDiscard: function () {
-      if (!this._vm().getProperty("/dirtyCount")) {
-        return;
-      }
-
-      MessageBox.confirm(this._text("discardConfirm"), {
-        title: this._text("discardTitle"),
-        actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+      if (!this._vm().getProperty("/dirtyCount")) { return; }
+      MessageBox.confirm(this._t("discardConfirm"), {
+        title:           this._t("discardTitle"),
+        actions:         [MessageBox.Action.OK, MessageBox.Action.CANCEL],
         emphasizedAction: MessageBox.Action.OK,
         onClose: function (action) {
-          if (action !== MessageBox.Action.OK) return;
-          // Restore from baseline — replace allItems with a fresh clone
-          const restored = this._cloneRows(this._baselineRows);
-          this._vm().setProperty("/allItems", restored);
+          if (action !== MessageBox.Action.OK) { return; }
+          this._vm().setProperty("/allItems", this._clone(this._baselineRows));
+          this._lastFilterKey = null;
           this._applyFilters();
         }.bind(this)
       });
     },
 
-    onTableSelectionChange: function () {
-      const selectedCount = this.byId("massEditTable").getSelectedIndices().length;
-      this._vm().setProperty("/selectedCount", selectedCount);
-      this._vm().setProperty("/applyButtonText", this._text("applyToSelected", [selectedCount]));
+    /* ─── Entity / filter controls ──────────────────────────────────────── */
+
+    onEntityTypeChange: function (oEvent) {
+      const newKey = oEvent.getParameter("item").getKey();
+      const vm     = this._vm();
+      // Guard: with OneWay binding the model still holds the OLD key here, so this
+      // check is safety only — it prevents double-firing in edge cases.
+      if (vm.getProperty("/entityKey") === newKey) { return; }
+
+      // Bump generation so any in-flight load for the previous entity aborts
+      this._loadGeneration++;
+
+      vm.setProperty("/entityKey",   newKey);
+      vm.setProperty("/allItems",    []);
+      vm.setProperty("/dirtyCount",  0);
+      vm.setProperty("/selectedCount", 0);
+      vm.setProperty("/bulkVisible", false);
+      vm.setProperty("/bulkFieldKey",   "");
+      vm.setProperty("/bulkInputType",  "text");
+      vm.setProperty("/options/bulkFieldOptions", []);
+      vm.setProperty("/filters", { search: "", state: "", status: "", onlyDirty: false });
+      this._clearBulkInput();
+      this._baselineRows  = [];
+      this._lastFilterKey = null;
+      this._syncLabels();
+
+      const table   = this.byId("massEditTable");
+      const binding = table && table.getBinding("rows");
+      if (binding) { binding.filter([]); }
+
+      this._buildTable();
+      this._loadEntityData();
     },
 
-    _loadEntityData: async function () {
-      if (this._loading) {
-        return;
-      }
-      this._loading = true;
-      const model = this._vm();
-      const isInitialLoad = !model.getProperty("/initialized");
-      try {
-        if (isInitialLoad) {
-          model.setProperty("/busy", true);
-        }
+    onFilterChange: function () {
+      if (this._loading) { return; }
+      // 150 ms debounce — prevents binding.filter() on every keystroke
+      clearTimeout(this._filterTimer);
+      this._filterTimer = setTimeout(this._applyFilters.bind(this), 150);
+    },
 
+    onTableSelectionChange: function () {
+      const n = this.byId("massEditTable").getSelectedIndices().length;
+      this._vm().setProperty("/selectedCount",  n);
+      this._vm().setProperty("/applyButtonText", this._t("applyToSelected", [n]));
+    },
+
+    /* ─── Bulk apply ─────────────────────────────────────────────────────── */
+
+    onToggleBulkApply: function () {
+      const vm      = this._vm();
+      const visible = !vm.getProperty("/bulkVisible");
+      vm.setProperty("/bulkVisible",    visible);
+      vm.setProperty("/bulkButtonText", this._t(visible ? "hideBulkApply" : "bulkApply"));
+      if (!visible) {
+        vm.setProperty("/bulkFieldKey",  "");
+        vm.setProperty("/bulkInputType", "text");
+        vm.setProperty("/options/bulkFieldOptions", []);
+        this._clearBulkInput();
+      }
+    },
+
+    onBulkFieldChange: function (oEvent) {
+      const field = this._config().fields.find(function (f) {
+        return f.key === oEvent.getSource().getSelectedKey();
+      });
+      const vm = this._vm();
+      vm.setProperty("/bulkInputType", field ? field.type : "text");
+      vm.setProperty("/options/bulkFieldOptions",
+        field && field.optionsPath ? (vm.getProperty(field.optionsPath) || []) : []);
+      this._clearBulkInput();
+    },
+
+    onBulkApply: function () {
+      const vm       = this._vm();
+      const fieldKey = vm.getProperty("/bulkFieldKey");
+      const field    = this._config().fields.find(function (f) { return f.key === fieldKey; });
+      if (!field) { MessageToast.show(this._t("bulkNoField")); return; }
+
+      const table    = this.byId("massEditTable");
+      const selected = table.getSelectedIndices();
+      if (!selected.length) { MessageToast.show(this._t("bulkNoRows")); return; }
+
+      const value = this._readBulkValue(field);
+      selected.forEach(function (idx) {
+        const ctx = table.getContextByIndex(idx);
+        if (ctx) { this._writeField(ctx.getPath(), field, value); }
+      }.bind(this));
+
+      table.clearSelection();
+      vm.setProperty("/selectedCount",  0);
+      vm.setProperty("/applyButtonText", this._t("applyToSelected", [0]));
+      this._updateDirtyStats();
+      MessageToast.show(this._t("bulkApplied", [selected.length]));
+    },
+
+    /* ─── Data loading ───────────────────────────────────────────────────── */
+
+    _loadEntityData: async function () {
+      this._loadGeneration++;
+      const gen    = this._loadGeneration;
+      this._loading = true;
+
+      const vm     = this._vm();
+      const config = this._config(); // snapshot BEFORE any await
+
+      vm.setProperty("/busy", true);
+      try {
         if (!this._lookupsLoaded) {
-          const lookupResponse = await this._fetchJsonWithFallback("api/lookups", {
-            headers: { Accept: "application/json" }
-          });
-          this._applyLookups(lookupResponse.data);
+          const lookups = await this._fetchJson("api/lookups", { headers: { Accept: "application/json" } });
+          if (gen !== this._loadGeneration) { return; }
+          this._applyLookups(lookups);
           this._lookupsLoaded = true;
         }
 
-        const response = await this._fetchJsonWithFallback(this._config().endpoint, {
-          headers: { Accept: "application/json" }
+        const data = await this._fetchJson(config.endpoint, { headers: { Accept: "application/json" } });
+        if (gen !== this._loadGeneration) { return; }
+
+        const payloadKey = config.key === "BRIDGE" ? "bridges" : "restrictions";
+        const rows = (data[payloadKey] || []).map(function (r) {
+          return Object.assign({}, r, { _dirty: false });
         });
+        this._baselineRows = this._clone(rows);
 
-        const payloadKey = this._config().key === "BRIDGE" ? "bridges" : "restrictions";
-        const rows = this._prepareRows(response.data[payloadKey] || []);
-        this._baselineRows = this._cloneRows(rows);
-
-        // Put all rows into the model at a stable path.
-        // _applyFilters will filter the table binding — no array replacement.
-        model.setProperty("/allItems", rows);
+        vm.setProperty("/allItems", rows);
+        this._lastFilterKey = null;
         this._applyFilters();
-        model.setProperty("/initialized", true);
-      } catch (error) {
-        model.setProperty("/initialized", true);
-        MessageBox.error(error.message || this._text("loadError"));
+      } catch (err) {
+        if (gen !== this._loadGeneration) { return; }
+        MessageBox.error(err.message || this._t("loadError"));
       } finally {
-        this._loading = false;
-        model.setProperty("/busy", false);
+        if (gen === this._loadGeneration) {
+          this._loading = false;
+          vm.setProperty("/busy", false);
+        }
       }
     },
 
-    _applyLookups: function (lookups) {
-      const model = this._vm();
-      Object.keys(lookups || {}).forEach(function (key) {
-        model.setProperty("/options/" + key, this._withEmptyOption(lookups[key] || []));
-      }.bind(this));
-    },
-
-    _withEmptyOption: function (items) {
-      return [{ key: "", text: "—" }].concat(items || []);
-    },
-
-    _applyFilters: function () {
-      this._suppressValueChange = true;
-      const model = this._vm();
-      const config = this._config();
-      const filters = model.getProperty("/filters");
-      const search = (filters.search || "").trim().toLowerCase();
-
-      // -------------------------------------------------------------------
-      // Build sap.ui.model.Filter objects and push them to the TABLE BINDING
-      // instead of replacing the /allItems array.
-      // This keeps row binding contexts stable so Select/Input/DatePicker
-      // controls are never destroyed/recreated — eliminating all flicker.
-      // -------------------------------------------------------------------
-      const filterList = [];
-
-      if (filters.onlyDirty) {
-        filterList.push(new Filter("_dirty", FilterOperator.EQ, true));
-      }
-      if (config.stateField && filters.state) {
-        filterList.push(new Filter(config.stateField, FilterOperator.EQ, filters.state));
-      }
-      if (config.statusField && filters.status) {
-        filterList.push(new Filter(config.statusField, FilterOperator.EQ, filters.status));
-      }
-      if (search) {
-        // OR across all searchable text fields
-        const searchFilters = config.searchFields.map(function (sf) {
-          return new Filter({
-            path: sf,
-            test: function (val) {
-              return String(val || "").toLowerCase().includes(search);
-            }
-          });
-        });
-        filterList.push(new Filter({ filters: searchFilters, and: false }));
-      }
-
-      const table = this.byId("massEditTable");
-      const binding = table && table.getBinding("rows");
-      if (binding) {
-        const combined = filterList.length
-          ? [new Filter({ filters: filterList, and: true })]
-          : [];
-        binding.filter(combined);
-      }
-
-      // Count filtered rows from the JS array (synchronous, avoids binding timing)
-      const allItems = model.getProperty("/allItems") || [];
-      const visibleCount = this._countFiltered(allItems, config, filters, search);
-      const dirtyCount = allItems.filter(function (r) { return r._dirty; }).length;
-
-      this._setIfChanged("/tableTitle", this._text(config.key === "BRIDGE" ? "bridges" : "restrictions"));
-      this._setIfChanged("/showStateFilter", Boolean(config.stateField));
-      this._setIfChanged("/showStatusFilter", Boolean(config.statusField));
-      this._setIfChanged("/statusFilterLabel", this._text(config.statusFilterLabelKey));
-      this._setIfChanged("/statusFilterOptions", model.getProperty(config.statusOptionsPath) || []);
-      this._setIfChanged("/options/bulkFields", config.fields.filter(function (f) {
-        return f.editable;
-      }).map(function (f) {
-        return { key: f.key, text: this._text(f.labelKey) };
-      }.bind(this)));
-      this._setIfChanged("/dirtyCount", dirtyCount);
-      this._setIfChanged("/dirtyMessage", this._text("dirtyRows", [dirtyCount]));
-      this._setIfChanged("/summaryText", this._text("records", [visibleCount]));
-      this._clearTableSelection();
-      this._setIfChanged("/selectedCount", 0);
-      this._setIfChanged("/applyButtonText", this._text("applyToSelected", [0]));
-      this._suppressValueChange = false;
-    },
-
-    // Count rows matching current filter criteria — mirrors binding filter logic
-    _countFiltered: function (allItems, config, filters, search) {
-      return allItems.filter(function (row) {
-        if (filters.onlyDirty && !row._dirty) return false;
-        if (config.stateField && filters.state && row[config.stateField] !== filters.state) return false;
-        if (config.statusField && filters.status && row[config.statusField] !== filters.status) return false;
-        if (!search) return true;
-        return config.searchFields.some(function (sf) {
-          return String(row[sf] || "").toLowerCase().includes(search);
-        });
-      }).length;
-    },
-
-    _prepareRows: function (rows) {
-      return (rows || []).map(function (row) {
-        return Object.assign({}, row, { _dirty: false });
-      });
-    },
+    /* ─── Table building ─────────────────────────────────────────────────── */
 
     _buildTable: function () {
-      const table = this.byId("massEditTable");
+      const table  = this.byId("massEditTable");
       const config = this._config();
       table.destroyColumns();
 
       config.fields.forEach(function (field) {
         table.addColumn(new Column({
-          width: field.width,
-          label: new Text({ text: this._text(field.labelKey) }),
-          template: this._createCell(field),
-          sortProperty: field.key,
+          width:          field.width,
+          label:          new Text({ text: this._t(field.labelKey) }),
+          template:       this._createCell(field),
+          sortProperty:   field.key,
           filterProperty: field.key,
-          autoResizable: true
+          autoResizable:  true
         }));
       }.bind(this));
+
+      // Force a synchronous DOM update so the DynamicPage measures the new
+      // column count immediately, avoiding a transient zero-height layout.
+      sap.ui.getCore().applyChanges();
     },
 
     _createCell: function (field) {
+      // Read-only columns
       if (!field.editable) {
-        return new Text({ text: "{view>" + field.key + "}" });
+        return new Text({ text: "{view>" + field.key + "}", wrapping: false });
       }
 
+      // Select — ComboBox instead of Select:
+      //   ComboBox renders as <input>, so on virtual-table row recycling it
+      //   only patches input.value (no DOM replacement → zero flicker).
+      //   sap.m.Select re-renders its entire <button> HTML on every context
+      //   swap, causing visible flicker across 100+ rows.
       if (field.type === "select") {
-        return new Select({
-          width: "100%",
-          selectedKey: {
-            path: "view>" + field.key,
-            mode: "OneWay"
-          },
+        return new ComboBox({
+          width:       "100%",
+          selectedKey: { path: "view>" + field.key, mode: "OneWay" },
           items: {
-            path: "view>" + field.optionsPath,
-            template: new Item({
-              key: "{view>key}",
-              text: "{view>text}"
-            }),
+            path:             "view>" + field.optionsPath,
+            template:         new Item({ key: "{view>key}", text: "{view>text}" }),
             templateShareable: false
           },
-          change: this._onValueChange.bind(this, field)
+          // selectionChange fires only when user picks a valid item — not on
+          // programmatic updates (OneWay binding), so no suppress flag needed.
+          selectionChange: this._onValueChange.bind(this, field)
         });
       }
 
       if (field.type === "boolean") {
         return new CheckBox({
-          selected: {
-            path: "view>" + field.key,
-            mode: "OneWay"
-          },
-          select: this._onValueChange.bind(this, field)
+          selected: { path: "view>" + field.key, mode: "OneWay" },
+          select:   this._onValueChange.bind(this, field)
         });
       }
 
       if (field.type === "date") {
         return new DatePicker({
-          width: "100%",
-          value: {
-            path: "view>" + field.key,
-            mode: "OneWay"
-          },
-          valueFormat: "yyyy-MM-dd",
+          width:         "100%",
+          value:         { path: "view>" + field.key, mode: "OneWay" },
+          valueFormat:   "yyyy-MM-dd",
           displayFormat: "dd/MM/yyyy",
-          change: this._onValueChange.bind(this, field)
+          change:        this._onValueChange.bind(this, field)
         });
       }
 
+      // text / number / decimal
       return new Input({
-        width: "100%",
-        type: field.type === "number" || field.type === "decimal" ? "Number" : "Text",
-        value: {
-          path: "view>" + field.key,
-          mode: "OneWay"
-        },
+        width:  "100%",
+        type:   (field.type === "number" || field.type === "decimal") ? "Number" : "Text",
+        value:  { path: "view>" + field.key, mode: "OneWay" },
         change: this._onValueChange.bind(this, field)
       });
     },
 
-    _onValueChange: function (field, event) {
-      if (this._suppressValueChange) {
-        return;
-      }
+    /* ─── Inline cell editing ────────────────────────────────────────────── */
 
-      const rowPath = event.getSource().getBindingContext("view").getPath();
-      const value = this._extractControlValue(field, event.getSource());
-      this._setFieldValue(rowPath, field, value);
+    _onValueChange: function (field, oEvent) {
+      const src = oEvent.getSource();
+      const ctx = src.getBindingContext("view");
+      if (!ctx) { return; }
+      this._writeField(ctx.getPath(), field, this._extractValue(field, src));
     },
 
-    _setFieldValue: function (rowPath, field, value) {
-      const normalized = this._normalizeClientValue(field.type, value);
-      this._vm().setProperty(rowPath + "/" + field.key, normalized);
-      this._updateDirtyFlag(rowPath);
+    _writeField: function (rowPath, field, rawValue) {
+      const vm    = this._vm();
+      const value = this._normalize(field.type, rawValue);
+      vm.setProperty(rowPath + "/" + field.key, value);
+      this._markDirty(rowPath);
     },
 
-    _updateDirtyFlag: function (rowPath) {
-      const model = this._vm();
-      const row = model.getProperty(rowPath);
-      const baseline = this._baselineRows.find(function (entry) {
-        return String(entry.ID) === String(row.ID);
+    _markDirty: function (rowPath) {
+      const vm       = this._vm();
+      const row      = vm.getProperty(rowPath);
+      const baseline = this._baselineRows.find(function (b) {
+        return String(b.ID) === String(row.ID);
       });
-      if (!baseline) {
-        return;
-      }
-      const dirty = this._config().fields.some(function (field) {
-        return this._sameValue(row[field.key], baseline[field.key]) === false;
-      }.bind(this));
-      model.setProperty(rowPath + "/_dirty", dirty);
+      if (!baseline) { return; }
 
-      // Re-count from model — no separate _allRows needed
-      const allItems = model.getProperty("/allItems") || [];
-      const dirtyCount = allItems.filter(function (entry) { return entry._dirty; }).length;
-      model.setProperty("/dirtyCount", dirtyCount);
-      model.setProperty("/dirtyMessage", this._text("dirtyRows", [dirtyCount]));
+      const dirty = this._config().fields.some(function (f) {
+        return String(row[f.key]      != null ? row[f.key]      : "") !==
+               String(baseline[f.key] != null ? baseline[f.key] : "");
+      });
+      vm.setProperty(rowPath + "/_dirty", dirty);
+      this._updateDirtyStats();
     },
 
-    _extractControlValue: function (field, control) {
+    _updateDirtyStats: function () {
+      const vm   = this._vm();
+      const all  = vm.getProperty("/allItems") || [];
+      const n    = all.filter(function (r) { return r._dirty; }).length;
+      vm.setProperty("/dirtyCount",   n);
+      vm.setProperty("/dirtyMessage", this._t("dirtyRows", [n]));
+    },
+
+    _extractValue: function (field, ctrl) {
       switch (field.type) {
-        case "select":
-          return control.getSelectedKey();
-        case "boolean":
-          return control.getSelected();
-        case "date":
-          return control.getValue();
-        default:
-          return control.getValue();
+        case "select":  return ctrl.getSelectedKey ? ctrl.getSelectedKey() : ctrl.getValue();
+        case "boolean": return ctrl.getSelected();
+        case "date":    return ctrl.getValue();
+        default:        return ctrl.getValue();
       }
     },
 
-    _normalizeClientValue: function (type, value) {
-      if (value === "") return null;
-      if (type === "number") {
-        const parsedInt = value == null ? null : Number.parseInt(value, 10);
-        return Number.isFinite(parsedInt) ? parsedInt : null;
-      }
-      if (type === "decimal") {
-        const parsedFloat = value == null ? null : Number.parseFloat(value);
-        return Number.isFinite(parsedFloat) ? parsedFloat : null;
-      }
-      if (type === "boolean") return Boolean(value);
-      return value;
+    _normalize: function (type, val) {
+      if (val === "" || val == null) { return null; }
+      if (type === "number")  { const n = parseInt(val, 10);  return isFinite(n) ? n : null; }
+      if (type === "decimal") { const n = parseFloat(val);    return isFinite(n) ? n : null; }
+      if (type === "boolean") { return Boolean(val); }
+      return val;
     },
 
-    _readBulkValue: function (field) {
-      if (field.type === "select") {
-        return this.byId("bulkValueSelect").getSelectedKey();
-      }
-      if (field.type === "boolean") {
-        return this.byId("bulkValueBool").getSelected();
-      }
-      if (field.type === "date") {
-        return this.byId("bulkValueDate").getValue();
-      }
-      return this.byId("bulkValueInput").getValue();
-    },
+    /* ─── Filtering ──────────────────────────────────────────────────────── */
 
-    _clearBulkValueControls: function () {
-      const input = this.byId("bulkValueInput");
-      const select = this.byId("bulkValueSelect");
-      const date = this.byId("bulkValueDate");
-      const checkbox = this.byId("bulkValueBool");
-      if (input) input.setValue("");
-      if (select) select.setSelectedKey("");
-      if (date) date.setValue("");
-      if (checkbox) checkbox.setSelected(false);
-    },
+    _applyFilters: function () {
+      const vm      = this._vm();
+      const config  = this._config();
+      const filters = vm.getProperty("/filters");
+      const search  = (filters.search || "").trim().toLowerCase();
 
-    _toPayload: function (row) {
-      const payload = { ID: row.ID };
-      this._config().fields.forEach(function (field) {
-        if (!field.editable) return;
-        payload[field.key] = row[field.key];
-      });
-      return payload;
-    },
+      // Cache key — skip binding.filter() when nothing changed
+      const key = [config.key, search, filters.state || "", filters.status || "", String(!!filters.onlyDirty)].join("|");
+      const skipFilter = (key === this._lastFilterKey);
+      this._lastFilterKey = key;
 
-    _sameValue: function (left, right) {
-      const a = left == null ? null : String(left);
-      const b = right == null ? null : String(right);
-      return a === b;
-    },
+      if (!skipFilter) {
+        const list = [];
+        if (filters.onlyDirty) {
+          list.push(new Filter("_dirty", FilterOperator.EQ, true));
+        }
+        if (config.stateField && filters.state) {
+          list.push(new Filter(config.stateField, FilterOperator.EQ, filters.state));
+        }
+        if (config.statusField && filters.status) {
+          list.push(new Filter(config.statusField, FilterOperator.EQ, filters.status));
+        }
+        if (search) {
+          list.push(new Filter({
+            filters: config.searchFields.map(function (sf) {
+              return new Filter({ path: sf, test: function (v) { return String(v || "").toLowerCase().includes(search); } });
+            }),
+            and: false
+          }));
+        }
 
-    _setIfChanged: function (path, value) {
-      const model = this._vm();
-      const current = model.getProperty(path);
-      if (JSON.stringify(current) !== JSON.stringify(value)) {
-        model.setProperty(path, value);
-      }
-    },
-
-    _clearTableSelection: function () {
-      const table = this.byId("massEditTable");
-      if (table && table.getSelectedIndices().length) {
-        table.clearSelection();
-      }
-    },
-
-    _cloneRows: function (rows) {
-      return JSON.parse(JSON.stringify(rows || []));
-    },
-
-    _apiUrl: function (path) {
-      const cleanPath = String(path || "").replace(/^\/+/, "");
-      return "/mass-edit/" + cleanPath;
-    },
-
-    _fetchJsonWithFallback: async function (path, options) {
-      const cleanPath = String(path || "").replace(/^\/+/, "");
-      const candidates = [this._apiUrl(path)];
-      if (candidates.indexOf(cleanPath) === -1) {
-        candidates.push(cleanPath);
-      }
-
-      let lastError;
-      for (let index = 0; index < candidates.length; index += 1) {
-        try {
-          const response = await fetch(candidates[index], options || {});
-          const data = await this._readJsonResponse(response, this._text("loadError"));
-          if (!response.ok) {
-            throw new Error((data && data.error && data.error.message) || this._text("loadError"));
-          }
-          return { response: response, data: data };
-        } catch (error) {
-          lastError = error;
+        const table   = this.byId("massEditTable");
+        const binding = table && table.getBinding("rows");
+        if (binding) {
+          binding.filter(list.length ? [new Filter({ filters: list, and: true })] : []);
         }
       }
 
-      throw lastError || new Error(this._text("loadError"));
+      this._updateDirtyStats();
+      this._updateSummary(config, filters, search);
     },
 
-    _readJsonResponse: async function (response, fallbackMessage) {
-      const contentType = response.headers.get("content-type") || "";
-      if (!contentType.includes("application/json")) {
-        const text = await response.text();
-        const snippet = String(text || "").trim().slice(0, 120);
-        throw new Error(snippet.startsWith("<") ? fallbackMessage : (snippet || fallbackMessage));
+    _updateSummary: function (config, filters, search) {
+      const all     = this._vm().getProperty("/allItems") || [];
+      const visible = all.filter(function (row) {
+        if (filters.onlyDirty && !row._dirty) { return false; }
+        if (config.stateField  && filters.state  && row[config.stateField]  !== filters.state)  { return false; }
+        if (config.statusField && filters.status && row[config.statusField] !== filters.status) { return false; }
+        if (!search) { return true; }
+        return config.searchFields.some(function (sf) {
+          return String(row[sf] || "").toLowerCase().includes(search);
+        });
+      }).length;
+      this._vm().setProperty("/summaryText", this._t("records", [visible]));
+    },
+
+    /* ─── Lookup / label helpers ─────────────────────────────────────────── */
+
+    _applyLookups: function (lookups) {
+      const vm = this._vm();
+      Object.keys(lookups || {}).forEach(function (k) {
+        vm.setProperty("/options/" + k, [{ key: "", text: "—" }].concat(lookups[k] || []));
+      });
+    },
+
+    _syncLabels: function () {
+      const vm     = this._vm();
+      const config = this._config();
+      vm.setProperty("/tableTitle",        this._t(config.key === "BRIDGE" ? "bridges" : "restrictions"));
+      vm.setProperty("/showStateFilter",   !!config.stateField);
+      vm.setProperty("/showStatusFilter",  !!config.statusField);
+      vm.setProperty("/statusFilterLabel", this._t(config.statusFilterLabelKey));
+      vm.setProperty("/statusFilterOptions", vm.getProperty(config.statusOptionsPath) || []);
+      vm.setProperty("/bulkButtonText",    this._t("bulkApply"));
+      vm.setProperty("/applyButtonText",   this._t("applyToSelected", [0]));
+      vm.setProperty("/options/bulkFields", config.fields
+        .filter(function (f) { return f.editable; })
+        .map(function (f) { return { key: f.key, text: this._t(f.labelKey) }; }.bind(this)));
+    },
+
+    /* ─── Bulk input helpers ─────────────────────────────────────────────── */
+
+    _readBulkValue: function (field) {
+      if (field.type === "select")  { return this.byId("bulkValueSelect").getSelectedKey(); }
+      if (field.type === "boolean") { return this.byId("bulkValueBool").getSelected(); }
+      if (field.type === "date")    { return this.byId("bulkValueDate").getValue(); }
+      return this.byId("bulkValueInput").getValue();
+    },
+
+    _clearBulkInput: function () {
+      var inp = this.byId("bulkValueInput");
+      var sel = this.byId("bulkValueSelect");
+      var dt  = this.byId("bulkValueDate");
+      var chk = this.byId("bulkValueBool");
+      if (inp) { inp.setValue(""); }
+      if (sel) { sel.setSelectedKey(""); }
+      if (dt)  { dt.setValue(""); }
+      if (chk) { chk.setSelected(false); }
+    },
+
+    /* ─── Payload / network ──────────────────────────────────────────────── */
+
+    _toPayload: function (row) {
+      const p = { ID: row.ID };
+      // Sanitize values before sending to the backend:
+      //   • date fields: only pass valid YYYY-MM-DD strings; send null for anything else
+      //     (CAP can store Julian-epoch sentinels like "-4713-11-25" for NULLs)
+      //   • empty strings → null
+      this._config().fields.forEach(function (f) {
+        if (!f.editable) { return; }
+        var val = row[f.key];
+        if (f.type === "date") {
+          p[f.key] = (typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val)) ? val : null;
+        } else {
+          p[f.key] = (val === "") ? null : val;
+        }
+      });
+      return p;
+    },
+
+    _fetchJson: async function (path, options) {
+      const url = "/mass-edit/" + String(path || "").replace(/^\/+/, "");
+      let res, data;
+      try {
+        res  = await fetch(url, options || {});
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(text.trim().startsWith("<") ? this._t("loadError") : (text.slice(0, 120) || this._t("loadError")));
+        }
+        data = await res.json();
+      } catch (err) {
+        throw err instanceof TypeError ? new Error(this._t("loadError")) : err;
       }
-      return response.json();
+      if (!res.ok) {
+        throw new Error((data && data.error && data.error.message) || this._t("loadError"));
+      }
+      return data;
     },
 
-    _config: function () {
-      return ENTITY_CONFIG[this._vm().getProperty("/entityKey") || "BRIDGE"];
-    },
+    /* ─── Micro helpers ──────────────────────────────────────────────────── */
 
-    _text: function (key, args) {
-      return this.getView().getModel("i18n").getResourceBundle().getText(key, args);
-    },
-
-    _vm: function () {
-      return this.getView().getModel("view");
-    }
+    _clone:  function (rows)      { return JSON.parse(JSON.stringify(rows || [])); },
+    _config: function ()          { return ENTITY_CONFIG[this._vm().getProperty("/entityKey") || "BRIDGE"]; },
+    _t:      function (key, args) { return this.getView().getModel("i18n").getResourceBundle().getText(key, args); },
+    _vm:     function ()          { return this.getView().getModel("view"); }
   });
 });

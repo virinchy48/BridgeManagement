@@ -96,7 +96,21 @@
           "options": {
             "settings": {
               "entitySet": "Bridges",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "content": {
+                "body": {
+                  "sections": {
+                    "mapSection": {
+                      "template": "BridgeManagement.adminbridges.ext.fragment.GisMapTab",
+                      "title": "Map",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "GeneralInformation"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
