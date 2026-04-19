@@ -117,6 +117,51 @@
           </f:SimpleForm>
         </Panel>
 
+        <!-- Reference Layer Library -->
+        <Panel id="panelRefLayerLib" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+          <headerToolbar>
+            <OverflowToolbar>
+              <Title text="Reference Layer Library" level="H4" />
+              <ToolbarSpacer />
+              <Button icon="sap-icon://add" text="Add Custom Layer" press=".onAddRefLayer" type="Default" />
+            </OverflowToolbar>
+          </headerToolbar>
+          <VBox class="sapUiSmallMargin">
+            <Text text="Enable layers to make them available in the Map View Reference Layers panel. Preset layers (🔒) cannot be deleted — only activated or deactivated. Layers enabled by default will be switched on when users first open the map." class="sapUiSmallMarginBottom" wrapping="true" />
+            <Table id="tblRefLayers" items="{refLayers>/layers}" noDataText="No reference layers configured." growing="true" growingThreshold="20">
+              <columns>
+                <Column width="3rem" hAlign="Center"><Text text="On"/></Column>
+                <Column width="8rem"><Text text="Category"/></Column>
+                <Column><Text text="Name"/></Column>
+                <Column width="4rem"><Text text="Type"/></Column>
+                <Column><Text text="Description"/></Column>
+                <Column width="5rem" hAlign="Center"><Text text="Default On"/></Column>
+                <Column width="6rem" hAlign="Center"><Text text="Actions"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Switch state="{refLayers>active}" change=".onToggleRefLayerActive" />
+                    <ObjectStatus text="{refLayers>category}" state="{= ${refLayers>category} === 'Weather' ? 'Information' : ${refLayers>category} === 'Flood' ? 'Warning' : ${refLayers>category} === 'Emergency' ? 'Error' : 'None' }" />
+                    <VBox>
+                      <Text text="{refLayers>name}" />
+                      <Text text="{refLayers>url}" class="sapUiTinyMarginTop" wrapping="false" maxLines="1" />
+                    </VBox>
+                    <Text text="{refLayers>layerType}" />
+                    <Text text="{refLayers>description}" maxLines="2" wrapping="true" />
+                    <Switch state="{refLayers>enabledByDefault}" change=".onToggleRefLayerDefault" />
+                    <HBox>
+                      <Button icon="sap-icon://edit" type="Transparent" tooltip="Edit layer" press=".onEditRefLayer" visible="{= !${refLayers>isPreset} }" />
+                      <Button icon="sap-icon://locked" type="Transparent" tooltip="System preset — cannot be deleted" visible="{refLayers>isPreset}" enabled="false" />
+                      <Button icon="sap-icon://delete" type="Transparent" tooltip="Delete layer" press=".onDeleteRefLayer" visible="{= !${refLayers>isPreset} }" />
+                    </HBox>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </VBox>
+        </Panel>
+
         <!-- Custom WMS Layers -->
         <Panel id="panelCustomWms" headerText="{i18n>gisConfigCustomWmsHeader}" expandable="true" expanded="false"
                visible="{config>/enableCustomWms}" class="sapUiSmallMarginBottom">

@@ -452,6 +452,26 @@ entity DataQualityRules {
       sortOrder : Integer default 0;
 }
 
+// Configurable additional reference layers shown in the map Reference Layers panel
+entity ReferenceLayerConfig : cuid, managed {
+  name             : String(111) @mandatory;
+  category         : String(40);   // Weather | Flood | Traffic | Geology | Infrastructure | Environment | Emergency | Administrative | Custom
+  layerType        : String(20) default 'WMS';   // WMS | XYZ | ArcGISRest | GeoJSON
+  url              : String(511) @mandatory;
+  subLayers        : String(511);  // WMS: comma-separated layer names; ArcGIS: sublayer index
+  attribution      : String(255);
+  opacity          : Decimal(3,2) default 0.70;
+  enabledByDefault : Boolean default false;
+  active           : Boolean default true;   // show in the map panel
+  sortOrder        : Integer default 0;
+  description      : String(511);
+  isPreset         : Boolean default false;  // system-shipped preset (non-deletable)
+  wmsFormat        : String(40) default 'image/png';
+  transparent      : Boolean default true;
+  minZoom          : Integer default 0;
+  maxZoom          : Integer default 19;
+}
+
 // --------------------------------------------------------------------------------
 // Temporary workaround for this situation:
 // - Fiori apps annotate Bridges with @fiori.draft.enabled.

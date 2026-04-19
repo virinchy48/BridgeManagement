@@ -5,6 +5,82 @@
   xmlns:core="sap.ui.core"
   displayBlock="true">
 
+  <!-- ── Page ──────────────────────────────────────────────────────── -->
+  <Page id="dataQualityRulesPage" showHeader="true">
+
+    <customHeader>
+      <Bar>
+        <contentLeft>
+          <Title text="Data Quality Rules" level="H3" />
+        </contentLeft>
+        <contentRight>
+          <Button text="Add Rule" icon="sap-icon://add"     press=".onAddRule"    type="Emphasized" />
+          <Button icon="sap-icon://refresh"                  press=".onRefresh"    type="Transparent" tooltip="Reload rules" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://information"              press=".onShowRuleTypeRef" type="Transparent" tooltip="Rule type reference" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://sys-help"                 press=".onShowHelp"   type="Transparent" tooltip="How to use this page" class="sapUiSmallMarginBegin" />
+        </contentRight>
+      </Bar>
+    </customHeader>
+
+    <content>
+      <VBox class="sapUiMediumMargin">
+
+        <MessageStrip
+          text="Rules are evaluated against every bridge when the Data Quality Dashboard loads. Disable a rule to stop it firing without deleting it. Changes take effect immediately."
+          type="Information" showCloseButton="false" class="sapUiSmallMarginBottom" />
+
+        <Panel expandable="false">
+          <headerToolbar>
+            <Toolbar>
+              <Title text="Configured Rules" level="H4" />
+              <ToolbarSpacer />
+              <Text id="ruleCount" text="" />
+            </Toolbar>
+          </headerToolbar>
+          <content>
+            <Table id="rulesTable"
+                   items="{path: '/rules'}"
+                   mode="None"
+                   noDataText="No rules configured. Click Add Rule to create one.">
+              <columns>
+                <Column width="5rem"   hAlign="Center"><Text text="On/Off" /></Column>
+                <Column width="180px"><Text text="Rule Name" /></Column>
+                <Column width="150px"><Text text="Category" /></Column>
+                <Column width="80px"  hAlign="Center"><Text text="Severity" /></Column>
+                <Column width="120px"><Text text="Rule Type" /></Column>
+                <Column width="100px"><Text text="Field" /></Column>
+                <Column><Text text="Message" /></Column>
+                <Column width="6rem"  hAlign="Center"><Text text="Actions" /></Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Switch state="{enabled}" change=".onToggleEnabled" />
+                    <Text text="{name}" />
+                    <Text text="{category}" wrapping="false" />
+                    <ObjectStatus text="{severity}" state="{
+                      path: 'severity',
+                      formatter: '.formatSeverityState'
+                    }" />
+                    <Text text="{ruleType}" wrapping="false" />
+                    <Text text="{field}" wrapping="false" />
+                    <Text text="{message}" />
+                    <HBox>
+                      <Button icon="sap-icon://edit"   type="Transparent" tooltip="Edit rule"   press=".onEditRule" />
+                      <Button icon="sap-icon://delete" type="Transparent" tooltip="Delete rule" press=".onDeleteRule" />
+                    </HBox>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </content>
+        </Panel>
+
+      </VBox>
+    </content>
+
+  </Page>
+
   <!-- ── Edit / Add Rule Dialog ─────────────────────────────────────── -->
   <Dialog id="ruleDialog" title="Rule" contentWidth="480px">
     <content>
@@ -56,80 +132,5 @@
     </endButton>
   </Dialog>
 
-  <!-- ── Page ──────────────────────────────────────────────────────── -->
-  <Page id="dataQualityRulesPage" showHeader="true">
-
-    <customHeader>
-      <Bar>
-        <contentLeft>
-          <Title text="Data Quality Rules" level="H3" />
-        </contentLeft>
-        <contentRight>
-          <Button text="Add Rule" icon="sap-icon://add"     press=".onAddRule"    type="Emphasized" />
-          <Button icon="sap-icon://refresh"                  press=".onRefresh"    type="Transparent" tooltip="Reload rules" class="sapUiSmallMarginBegin" />
-          <Button icon="sap-icon://information"              press=".onShowRuleTypeRef" type="Transparent" tooltip="Rule type reference" class="sapUiSmallMarginBegin" />
-          <Button icon="sap-icon://sys-help"                 press=".onShowHelp"   type="Transparent" tooltip="How to use this page" class="sapUiSmallMarginBegin" />
-        </contentRight>
-      </Bar>
-    </customHeader>
-
-    <content>
-      <VBox class="sapUiMediumMargin">
-
-        <MessageStrip
-          text="Rules are evaluated against every bridge when the Data Quality Dashboard loads. Disable a rule to stop it firing without deleting it. Changes take effect immediately."
-          type="Information" showCloseButton="false" class="sapUiSmallMarginBottom" />
-
-        <Panel expandable="false">
-          <headerToolbar>
-            <Toolbar>
-              <Title text="Configured Rules" level="H4" />
-              <ToolbarSpacer />
-              <Text id="ruleCount" text="" />
-            </Toolbar>
-          </headerToolbar>
-          <content>
-            <Table id="rulesTable"
-                   items="{path: '/rules'}"
-                   mode="None"
-                   noDataText="No rules configured. Click Add Rule to create one.">
-              <columns>
-                <Column width="5rem"   hAlign="Center"><Text text="On/Off" /></Column>
-                <Column minWidth="180px"><Text text="Rule Name" /></Column>
-                <Column width="150px"><Text text="Category" /></Column>
-                <Column width="80px"  hAlign="Center"><Text text="Severity" /></Column>
-                <Column width="120px"><Text text="Rule Type" /></Column>
-                <Column width="100px"><Text text="Field" /></Column>
-                <Column><Text text="Message" /></Column>
-                <Column width="6rem"  hAlign="Center"><Text text="Actions" /></Column>
-              </columns>
-              <items>
-                <ColumnListItem>
-                  <cells>
-                    <Switch state="{enabled}" change=".onToggleEnabled" />
-                    <Text text="{name}" />
-                    <Text text="{category}" wrapping="false" />
-                    <ObjectStatus text="{severity}" state="{
-                      path: 'severity',
-                      formatter: '.formatSeverityState'
-                    }" />
-                    <Text text="{ruleType}" wrapping="false" />
-                    <Text text="{field}" wrapping="false" />
-                    <Text text="{message}" />
-                    <HBox>
-                      <Button icon="sap-icon://edit"   type="Transparent" tooltip="Edit rule"   press=".onEditRule" />
-                      <Button icon="sap-icon://delete" type="Transparent" tooltip="Delete rule" press=".onDeleteRule" />
-                    </HBox>
-                  </cells>
-                </ColumnListItem>
-              </items>
-            </Table>
-          </content>
-        </Panel>
-
-      </VBox>
-    </content>
-
-  </Page>
 
 </mvc:View>

@@ -207,6 +207,8 @@ sap.ui.define([
         },
         restrictionsData: [],
         gisConfig: null,
+        dynRefLayers: [],
+        dynRefGroups: [],
         features: {
           scaleBar: true, gps: true, minimap: true,
           heatmap: false, timeSlider: false, statsPanel: true,
@@ -231,6 +233,7 @@ sap.ui.define([
 
       this._leafletReady = this._ensureLeaflet();
       this._loadGisConfig();
+      this._loadDynamicRefLayers();
       this._loadData();
     },
 
@@ -1642,6 +1645,102 @@ sap.ui.define([
         .catch(function () {
           this._gisConfig = null;
         }.bind(this));
+    },
+
+    _loadDynamicRefLayers: function () {
+      var self = this;
+      fetch("/odata/v4/admin/ReferenceLayerConfig?$filter=active eq true&$orderby=category,sortOrder,name", {
+        headers: { "Accept": "application/json" }
+      })
+        .then(function (res) { return res.ok ? res.json() : Promise.reject(); })
+        .then(function (data) {
+          var layers = (data.value || []).map(function (l) {
+            return Object.assign({}, l, { sessionActive: l.enabledByDefault === true });
+          });
+          // Group into category objects for the view
+          var grouped = [];
+          var catOrder = [];
+          layers.forEach(function (l) {
+            if (catOrder.indexOf(l.category) === -1) catOrder.push(l.category);
+          });
+          catOrder.forEach(function (cat) {
+            grouped.push({
+              category: cat,
+              items: layers.filter(function (l) { return l.category === cat; })
+            });
+          });
+          self._vm().setProperty("/dynRefLayers", layers);
+          self._vm().setProperty("/dynRefGroups", grouped);
+          // Auto-enable layers marked enabledByDefault once Leaflet is ready
+          self._leafletReady.then(function () {
+            layers.filter(function (l) { return l.enabledByDefault; }).forEach(function (l) {
+              self._addDynamicRefLayer(l);
+            });
+          });
+        })
+        .catch(function () { /* optional — non-fatal */ });
+    },
+
+    onToggleDynamicRefLayer: function (oEvent) {
+      var state = oEvent.getParameter("state");
+      var src   = oEvent.getSource();
+      var cd    = src.getCustomData();
+      var layerId = cd && cd.length ? cd[0].getValue() : null;
+      if (!layerId) return;
+      var layers = this._vm().getProperty("/dynRefLayers") || [];
+      var layer  = layers.find(function (l) { return l.ID === layerId; });
+      if (!layer) return;
+      layer.sessionActive = state;
+      this._vm().setProperty("/dynRefLayers", layers.slice());
+      if (state) {
+        this._addDynamicRefLayer(layer);
+      } else {
+        this._removeDynamicRefLayer(layer.ID);
+      }
+    },
+
+    _addDynamicRefLayer: function (cfg) {
+      if (!window.L || !this._leafletMap) return;
+      if (this._refLayerInstances["dyn_" + cfg.ID]) return;
+      var instance;
+      var type = (cfg.layerType || "WMS").toUpperCase();
+      var opacity = cfg.opacity != null ? parseFloat(cfg.opacity) : 0.7;
+      if (type === "WMS") {
+        instance = window.L.tileLayer.wms(cfg.url, {
+          layers: cfg.subLayers || "0",
+          format: cfg.wmsFormat || "image/png",
+          transparent: cfg.transparent !== false,
+          opacity: opacity,
+          attribution: cfg.attribution || "",
+          minZoom: cfg.minZoom || 0,
+          maxZoom: cfg.maxZoom || 19
+        });
+      } else if (type === "XYZ") {
+        instance = window.L.tileLayer(cfg.url, {
+          opacity: opacity,
+          attribution: cfg.attribution || "",
+          minZoom: cfg.minZoom || 0,
+          maxZoom: cfg.maxZoom || 19
+        });
+      } else if (type === "ARCGISREST") {
+        var tileUrl = cfg.url.replace(/\/?$/, "") + "/MapServer/tile/{z}/{y}/{x}";
+        instance = window.L.tileLayer(tileUrl, {
+          opacity: opacity,
+          attribution: cfg.attribution || ""
+        });
+      }
+      if (instance) {
+        instance.addTo(this._leafletMap);
+        this._refLayerInstances["dyn_" + cfg.ID] = instance;
+      }
+    },
+
+    _removeDynamicRefLayer: function (id) {
+      var key = "dyn_" + id;
+      if (this._refLayerInstances[key] && this._leafletMap) {
+        this._leafletMap.removeLayer(this._refLayerInstances[key]);
+        delete this._refLayerInstances[key];
+      }
     },
 
     _feat: function (key) {
