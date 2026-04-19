@@ -39,7 +39,7 @@
           </headerToolbar>
           <content>
             <Table id="rulesTable"
-                   items="{path: '/rules'}"
+                   items="{/rules}"
                    mode="None"
                    noDataText="No rules configured. Click Add Rule to create one.">
               <columns>
@@ -58,10 +58,7 @@
                     <Switch state="{enabled}" change=".onToggleEnabled" />
                     <Text text="{name}" />
                     <Text text="{category}" wrapping="false" />
-                    <ObjectStatus text="{severity}" state="{
-                      path: 'severity',
-                      formatter: '.formatSeverityState'
-                    }" />
+                    <ObjectStatus text="{severity}" state="{path: 'severity', formatter: '.formatSeverityState'}" />
                     <Text text="{ruleType}" wrapping="false" />
                     <Text text="{field}" wrapping="false" />
                     <Text text="{message}" />
@@ -115,7 +112,7 @@
         <Input id="dlgField" placeholder="e.g. bridgeName, latitude, geoJson" width="100%" />
 
         <Label id="dlgConfigLabel" text="Config (JSON)" class="sapUiTinyMarginTop" />
-        <Input id="dlgConfig" placeholder='e.g. {"days":730} or {"conditions":["Poor","Critical"]}' width="100%" />
+        <Input id="dlgConfig" placeholder="e.g. days:730  or  conditions:Poor,Critical" width="100%" />
 
         <Label text="Violation Message" required="true" class="sapUiTinyMarginTop" />
         <TextArea id="dlgMessage" rows="3" width="100%" placeholder="Message shown to the administrator in the dashboard" />

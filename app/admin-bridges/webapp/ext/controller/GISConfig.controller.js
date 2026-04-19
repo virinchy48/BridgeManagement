@@ -138,7 +138,8 @@ sap.ui.define([
     },
 
     onToggleRefLayerActive: function (oEvent) {
-      var ctx  = oEvent.getSource().getParent().getParent().getBindingContext("refLayers");
+      var src = oEvent.getSource();
+      var ctx = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
       var row  = ctx.getObject();
       fetch(REF_LAYER_URL + "('" + row.ID + "')", {
         method: "PATCH",
@@ -148,7 +149,8 @@ sap.ui.define([
     },
 
     onToggleRefLayerDefault: function (oEvent) {
-      var ctx = oEvent.getSource().getParent().getParent().getBindingContext("refLayers");
+      var src = oEvent.getSource();
+      var ctx = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
       var row = ctx.getObject();
       fetch(REF_LAYER_URL + "('" + row.ID + "')", {
         method: "PATCH",
@@ -231,13 +233,15 @@ sap.ui.define([
     },
 
     onEditRefLayer: function (oEvent) {
-      var ctx = oEvent.getSource().getParent().getBindingContext("refLayers");
+      var src = oEvent.getSource();
+      var ctx = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
       this._openRefLayerDialog(Object.assign({}, ctx.getObject()));
     },
 
     onDeleteRefLayer: function (oEvent) {
       var self = this;
-      var ctx  = oEvent.getSource().getParent().getBindingContext("refLayers");
+      var src  = oEvent.getSource();
+      var ctx  = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
       var row  = ctx.getObject();
       MessageBox.confirm("Delete layer \"" + row.name + "\"?", {
         onClose: function (action) {
