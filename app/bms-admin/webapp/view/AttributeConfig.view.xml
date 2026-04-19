@@ -15,7 +15,7 @@
         <f:actions>
           <Button text="Export Template (Bridge)" icon="sap-icon://download" press=".onExportTemplate" data:objectType="bridge" class="sapUiSmallMarginEnd"/>
           <Button text="Export Template (Restriction)" icon="sap-icon://download" press=".onExportTemplate" data:objectType="restriction" class="sapUiSmallMarginEnd"/>
-          <Button icon="sap-icon://sys-help" tooltip="How to use Attribute Configuration" press=".onShowHelp" type="Transparent"/>
+          <Button icon="sap-icon://information" tooltip="How to use Attribute Configuration" press=".onShowHelp" type="Transparent"/>
         </f:actions>
       </f:DynamicPageTitle>
     </f:title>
