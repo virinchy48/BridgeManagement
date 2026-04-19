@@ -16,7 +16,7 @@ const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-lo
 
 const { getConfigInt } = require('./system-config')
 
-const { SELECT, UPDATE } = cds.ql
+const { SELECT, INSERT, UPDATE, DELETE } = cds.ql
 
 const MASS_EDIT_COLUMNS = [
   'ID',
@@ -176,6 +176,61 @@ function isHanaDb() {
   const requires = cds.env.requires || {};
   return Object.values(requires).some(s => s && (s.kind === 'hana' || s.impl === '@cap-js/hana'))
     || process.env.NODE_ENV === 'production';
+}
+
+function sanitizeAttachmentName(fileName) {
+  const cleaned = String(fileName || 'attachment')
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .trim()
+  return cleaned || 'attachment'
+}
+
+async function toAttachmentBuffer(content) {
+  if (!content) return Buffer.alloc(0)
+  if (Buffer.isBuffer(content)) return content
+  if (content instanceof Uint8Array) return Buffer.from(content)
+  if (typeof content === 'string') return Buffer.from(content, 'base64')
+  if (typeof content.pipe === 'function' || content[Symbol.asyncIterator]) {
+    const chunks = []
+    for await (const chunk of content) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk))
+    }
+    return Buffer.concat(chunks)
+  }
+  if (content.buffer) return Buffer.from(content.buffer)
+  return Buffer.from(content)
+}
+
+function attachmentResponse(row, bridgeId) {
+  return {
+    ID: row.ID,
+    title: row.title || row.fileName,
+    fileName: row.fileName,
+    mediaType: row.mediaType || 'application/octet-stream',
+    fileSize: row.fileSize || 0,
+    createdAt: row.createdAt,
+    documentDate: row.documentDate,
+    referenceNumber: row.referenceNumber,
+    openUrl: `/admin-bridges/api/bridges/${encodeURIComponent(bridgeId)}/attachments/${encodeURIComponent(row.ID)}/content`,
+    downloadUrl: `/admin-bridges/api/bridges/${encodeURIComponent(bridgeId)}/attachments/${encodeURIComponent(row.ID)}/content?download=true`,
+    deleteUrl: `/admin-bridges/api/bridges/${encodeURIComponent(bridgeId)}/attachments/${encodeURIComponent(row.ID)}`
+  }
+}
+
+async function assertBridgeExists(db, bridgeId) {
+  const ID = Number(bridgeId)
+  if (!Number.isInteger(ID)) {
+    const error = new Error('Invalid bridge ID')
+    error.status = 400
+    throw error
+  }
+  const bridge = await db.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ ID }))
+  if (!bridge) {
+    const error = new Error('Bridge not found')
+    error.status = 404
+    throw error
+  }
+  return ID
 }
 
 async function loadCodeList(entityName) {
@@ -1635,6 +1690,106 @@ cds.on('bootstrap', (app) => {
   })
 
   app.use('/system/api', sysRouter)
+
+  const adminBridgeRouter = express.Router()
+  adminBridgeRouter.use(express.json({ limit: '100mb' }))
+
+  adminBridgeRouter.get('/bridges/:bridgeId/attachments', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const bridgeId = await assertBridgeExists(db, req.params.bridgeId)
+      const rows = await db.run(
+        SELECT.from('bridge.management.BridgeDocuments')
+          .columns('ID', 'title', 'fileName', 'mediaType', 'fileSize', 'createdAt', 'documentDate', 'referenceNumber')
+          .where({ bridge_ID: bridgeId })
+          .orderBy('createdAt desc')
+      )
+      res.json({ attachments: (rows || []).map(row => attachmentResponse(row, bridgeId)) })
+    } catch (error) {
+      res.status(error.status || 500).json({ error: { message: error.message || 'Failed to load attachments' } })
+    }
+  })
+
+  adminBridgeRouter.post('/bridges/:bridgeId/attachments', async (req, res) => {
+    try {
+      const { fileName, mediaType, fileSize, contentBase64 } = req.body || {}
+      if (!fileName) {
+        return res.status(400).json({ error: { message: 'fileName is required' } })
+      }
+      if (!contentBase64) {
+        return res.status(400).json({ error: { message: 'File content is empty' } })
+      }
+
+      const db = await cds.connect.to('db')
+      const bridgeId = await assertBridgeExists(db, req.params.bridgeId)
+      const content = Buffer.from(contentBase64, 'base64')
+      const safeName = sanitizeAttachmentName(fileName)
+      const now = new Date()
+      const entry = {
+        ID: cds.utils.uuid(),
+        bridge_ID: bridgeId,
+        title: safeName,
+        fileName: safeName,
+        mediaType: mediaType || 'application/octet-stream',
+        fileSize: Number(fileSize || content.length),
+        content,
+        documentDate: now.toISOString().slice(0, 10),
+        createdAt: now.toISOString(),
+        createdBy: req.user?.id || 'anonymous',
+        modifiedAt: now.toISOString(),
+        modifiedBy: req.user?.id || 'anonymous'
+      }
+
+      await db.run(INSERT.into('bridge.management.BridgeDocuments').entries(entry))
+      res.status(201).json({ attachment: attachmentResponse(entry, bridgeId) })
+    } catch (error) {
+      res.status(error.status || 422).json({ error: { message: error.message || 'Upload failed' } })
+    }
+  })
+
+  adminBridgeRouter.get('/bridges/:bridgeId/attachments/:attachmentId/content', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const bridgeId = await assertBridgeExists(db, req.params.bridgeId)
+      const row = await db.run(
+        SELECT.one.from('bridge.management.BridgeDocuments')
+          .columns('ID', 'fileName', 'mediaType', 'content')
+          .where({ ID: req.params.attachmentId, bridge_ID: bridgeId })
+      )
+      if (!row) {
+        return res.status(404).json({ error: { message: 'Attachment not found' } })
+      }
+
+      const fileName = sanitizeAttachmentName(row.fileName)
+      const content = await toAttachmentBuffer(row.content)
+      const disposition = req.query.download === 'true' ? 'attachment' : 'inline'
+      res.setHeader('Content-Type', row.mediaType || 'application/octet-stream')
+      res.setHeader('Content-Length', content.length)
+      res.setHeader('Content-Disposition', `${disposition}; filename="${fileName}"`)
+      res.send(content)
+    } catch (error) {
+      res.status(error.status || 500).json({ error: { message: error.message || 'Failed to open attachment' } })
+    }
+  })
+
+  adminBridgeRouter.delete('/bridges/:bridgeId/attachments/:attachmentId', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const bridgeId = await assertBridgeExists(db, req.params.bridgeId)
+      const result = await db.run(
+        DELETE.from('bridge.management.BridgeDocuments')
+          .where({ ID: req.params.attachmentId, bridge_ID: bridgeId })
+      )
+      if (!result) {
+        return res.status(404).json({ error: { message: 'Attachment not found' } })
+      }
+      res.status(204).end()
+    } catch (error) {
+      res.status(error.status || 500).json({ error: { message: error.message || 'Failed to delete attachment' } })
+    }
+  })
+
+  app.use('/admin-bridges/api', adminBridgeRouter)
 })
 
 cds.on('served', async () => {

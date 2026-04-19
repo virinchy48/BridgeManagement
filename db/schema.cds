@@ -209,6 +209,12 @@ entity BridgeDocuments : cuid, managed {
   title               : String(111);
   documentUrl         : String(500);
   fileName            : String(255);
+  mediaType           : String(100);
+  fileSize            : Integer;
+  @Core.MediaType: mediaType
+  @Core.ContentDisposition.Filename: fileName
+  @Core.ContentDisposition.Type: 'attachment'
+  content             : LargeBinary;
   referenceNumber     : String(111);
   issuedBy            : String(111);
   documentDate        : Date;

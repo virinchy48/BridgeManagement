@@ -26,7 +26,6 @@ annotate AdminService.Bridges with @(
       {$Type: 'UI.ReferenceFacet', Label: 'Restrictions', Target: 'restrictions/@UI.LineItem'},
       {$Type: 'UI.ReferenceFacet', Label: 'Attributes', Target: 'attributes/@UI.LineItem'},
       {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessment', Target: 'scourAssessments/@UI.LineItem'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Document', Target: 'documents/@UI.LineItem'},
       {$Type: 'UI.ReferenceFacet', Label: 'Data Provenance', Target: '@UI.FieldGroup#DataProvenance'},
       {$Type: 'UI.ReferenceFacet', Label: 'Bridge Geometry (GeoJSON)', Target: '@UI.FieldGroup#BridgeGeometry'},
     ],
@@ -366,24 +365,36 @@ annotate AdminService.BridgeScourAssessments with @(
 );
 
 annotate AdminService.BridgeDocuments with @(
-  Capabilities.InsertRestrictions.Insertable : true,
-  Capabilities.UpdateRestrictions.Updatable  : true,
+  Common.Label : 'Attachments',
+  Capabilities.InsertRestrictions.Insertable : false,
+  Capabilities.UpdateRestrictions.Updatable  : false,
   Capabilities.DeleteRestrictions.Deletable  : true,
   UI: {
+    HeaderInfo: {
+      TypeName: 'Attachment',
+      TypeNamePlural: 'Attachments',
+      Title: {Value: title},
+      Description: {Value: fileName}
+    },
     LineItem: [
-      {Value: documentType, Label: 'Document Type'},
       {Value: title, Label: 'Title'},
       {Value: fileName, Label: 'File Name'},
+      {Value: documentType, Label: 'Attachment Type'},
+      {Value: mediaType, Label: 'Media Type'},
+      {Value: fileSize, Label: 'File Size'},
       {Value: referenceNumber, Label: 'Reference'},
-      {Value: documentDate, Label: 'Document Date'},
+      {Value: documentDate, Label: 'Attachment Date'},
       {Value: expiryDate, Label: 'Expiry Date'}
     ],
-    FieldGroup#DocumentDetails: {
+    FieldGroup#AttachmentDetails: {
       Data: [
         {Value: documentType},
         {Value: title},
-        {Value: documentUrl},
         {Value: fileName},
+        {Value: mediaType},
+        {Value: fileSize},
+        {Value: content},
+        {Value: documentUrl},
         {Value: referenceNumber},
         {Value: issuedBy},
         {Value: documentDate},
@@ -392,7 +403,7 @@ annotate AdminService.BridgeDocuments with @(
       ]
     },
     Facets: [
-      {$Type: 'UI.ReferenceFacet', Label: 'Document Details', Target: '@UI.FieldGroup#DocumentDetails'}
+      {$Type: 'UI.ReferenceFacet', Label: 'Attachment Details', Target: '@UI.FieldGroup#AttachmentDetails'}
     ]
   }
 );
@@ -419,6 +430,13 @@ annotate AdminService.BridgeScourAssessments with {
 annotate AdminService.BridgeDocuments with {
   ID @UI.Hidden;
   bridge @UI.Hidden;
+  content @Common.Label: 'Attachment';
+  documentType @Common.Label: 'Attachment Type';
+  documentUrl @Common.Label: 'External URL';
+  documentDate @Common.Label: 'Attachment Date';
+  fileName @Common.Label: 'File Name';
+  mediaType @Common.Label: 'Media Type';
+  fileSize @Common.Label: 'File Size';
 };
 
 ////////////////////////////////////////////////////////////

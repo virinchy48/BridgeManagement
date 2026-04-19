@@ -122,6 +122,14 @@
               "content": {
                 "body": {
                   "sections": {
+                    "attachmentsSection": {
+                      "template": "BridgeManagement.adminbridges.ext.fragment.Attachments",
+                      "title": "Attachments",
+                      "position": {
+                        "placement": "Before",
+                        "anchor": "DataProvenance"
+                      }
+                    },
                     "mapSection": {
                       "template": "BridgeManagement.adminbridges.ext.fragment.GisMapTab",
                       "title": "Map",
