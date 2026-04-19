@@ -45,17 +45,17 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
 
 .nhvrMapApp .sapFFCLColumnMid {
   flex: 1 1 auto !important;
-  width: calc(100% - 27rem) !important;
   max-width: none !important;
   min-width: 0 !important;
 }
 
 .nhvrMapApp .sapFFCLColumnEnd {
-  flex: 0 0 0 !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  max-width: 0 !important;
-  overflow: hidden;
+  flex: 0 0 26rem;
+  width: 26rem;
+  min-width: 26rem;
+  max-width: 26rem;
+  overflow-y: auto;
+  border-left: 1px solid #d7dce3;
 }
 
 .nhvrMapApp .sapFFCLColumnSeparator {
@@ -75,6 +75,56 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
 
 .nhvrSidebarPage {
   border-right: 1px solid #d7dce3;
+}
+
+/* Basemap tile grid */
+.nhvrBasemapGrid {
+  padding: 0.5rem 0.25rem;
+}
+
+.nhvrBasemapRow {
+  gap: 0.5rem;
+  padding: 0.25rem;
+}
+
+.nhvrBasemapTile {
+  align-items: center;
+  justify-content: center;
+  width: 5.5rem;
+  height: 5rem;
+  border: 2px solid #d7dce3;
+  border-radius: 0.5rem;
+  background: #fff;
+  cursor: pointer;
+  padding: 0.5rem 0.25rem;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.nhvrBasemapTile:hover {
+  border-color: #0064d9;
+  background: #eef4ff;
+}
+
+.nhvrBasemapTileActive {
+  border-color: #0064d9 !important;
+  background: #eef4ff !important;
+  box-shadow: 0 0 0 2px rgba(0, 100, 217, 0.2);
+}
+
+.nhvrBasemapTileActive .nhvrBasemapIcon {
+  color: #0064d9;
+}
+
+.nhvrBasemapIcon {
+  color: #5b738b;
+  margin-bottom: 0.25rem;
+}
+
+.nhvrBasemapLabel {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #3b4a59;
+  text-align: center;
 }
 
 .nhvrSidebar {
@@ -831,10 +881,4 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
 .leaflet-gps-btn {
   display: block !important;
   margin-bottom: 5px;
-}
-
-/* North arrow */
-.leaflet-north-arrow {
-  cursor: default;
-  user-select: none;
 }

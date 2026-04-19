@@ -1,0 +1,12 @@
+.bmsConfigLabel {
+  font-weight: 600;
+}
+
+.bmsConfigKey {
+  font-size: 0.75rem;
+  color: var(--sapContent_LabelColor);
+}
+
+.bmsDirtyRow {
+  background: var(--sapWarningBackground);
+}

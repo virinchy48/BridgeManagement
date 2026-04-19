@@ -28,7 +28,6 @@ sap.ui.define([
         showStateBoundaries: false,
         showLgaBoundaries: false,
         enableScaleBar: true,
-        enableNorthArrow: true,
         enableGps: true,
         enableMinimap: true,
         enableHeatmap: false,

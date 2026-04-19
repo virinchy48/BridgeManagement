@@ -1,0 +1,17 @@
+.bmsQualityCritical {
+  color: var(--sapErrorColor);
+  font-weight: 600;
+}
+
+.bmsQualityWarning {
+  color: var(--sapWarningColor);
+  font-weight: 600;
+}
+
+.bmsQualityInfo {
+  color: var(--sapInformationColor);
+}
+
+.bmsQualityScore {
+  min-width: 120px;
+}

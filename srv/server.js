@@ -1,5 +1,6 @@
 const cds = require('@sap/cds')
 const express = require('express')
+const { recordActivity } = require('./user-activity')
 
 const {
   buildCsvTemplate,
@@ -12,6 +13,8 @@ const {
 const mountAttributesApi = require('./attributes-api')
 
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
+
+const { getConfigInt } = require('./system-config')
 
 const { SELECT, UPDATE } = cds.ql
 
@@ -935,9 +938,19 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
+  // Track user activity on every API request
+  app.use((req, _res, next) => {
+    const userId = req.user?.id
+    if (userId) {
+      const displayName = req.user?.name || req.user?.email || userId
+      recordActivity(userId, displayName, req.path).catch(() => {})
+    }
+    next()
+  })
+
   const router = express.Router()
 
-  router.use(express.json({ limit: '25mb' }))
+  router.use(express.json({ limit: '25mb' })) // configurable via SystemConfig.massUploadMaxMb
 
   router.get('/datasets', (_req, res) => {
     res.json({ datasets: getDatasets() })
@@ -1244,11 +1257,12 @@ cds.on('bootstrap', (app) => {
       const db = await cds.connect.to('db')
       const { objectType, objectId, user: changedBy, source, from, to, batchId } = req.query
 
+      const maxRows = await getConfigInt('maxExportRows', 5000)
       let query = SELECT.from('bridge.management.ChangeLog')
         .columns('ID','changedAt','changedBy','objectType','objectId','objectName',
                  'fieldName','oldValue','newValue','changeSource','batchId')
         .orderBy('changedAt desc', 'objectType', 'objectId', 'batchId')
-        .limit(5000)
+        .limit(maxRows)
 
       const filters = []
       if (objectType) filters.push({ objectType })
@@ -1291,6 +1305,336 @@ cds.on('bootstrap', (app) => {
   })
 
   app.use('/audit/api', auditRouter)
+
+  // ── User Access API ───────────────────────────────────────────────────────
+  const accessRouter = express.Router()
+
+  accessRouter.get('/activity', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const users = await db.run(
+        SELECT.from('bridge.management.UserActivity')
+          .orderBy('lastSeenAt desc')
+          .limit(200)
+      )
+      res.json({ users: users || [] })
+    } catch (e) {
+      res.status(500).json({ error: { message: e.message } })
+    }
+  })
+
+  accessRouter.get('/summary', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const [total, activeToday, activeThisWeek] = await Promise.all([
+        db.run(SELECT.one.from('bridge.management.UserActivity').columns('count(1) as cnt')),
+        db.run(SELECT.one.from('bridge.management.UserActivity').columns('count(1) as cnt')
+          .where('lastSeenAt >=', new Date(Date.now() - 86400000).toISOString())),
+        db.run(SELECT.one.from('bridge.management.UserActivity').columns('count(1) as cnt')
+          .where('lastSeenAt >=', new Date(Date.now() - 7 * 86400000).toISOString()))
+      ])
+      res.json({
+        totalUsers: Number(total?.cnt || 0),
+        activeToday: Number(activeToday?.cnt || 0),
+        activeThisWeek: Number(activeThisWeek?.cnt || 0)
+      })
+    } catch (e) {
+      res.status(500).json({ error: { message: e.message } })
+    }
+  })
+
+  app.use('/access/api', accessRouter)
+
+  // ── Data Quality API ──────────────────────────────────────────────────────
+  const qualityRouter = express.Router()
+
+  // Fields used for completeness scoring (13 key fields)
+  const QUALITY_COMPLETENESS_FIELDS = [
+    'bridgeName', 'bridgeId', 'state', 'region', 'assetOwner',
+    'latitude', 'longitude', 'structureType', 'condition',
+    'conditionRating', 'postingStatus', 'lastInspectionDate', 'geoJson'
+  ]
+
+  // Load all bridges with the fields needed for quality checks
+  async function loadQualityBridges() {
+    const db = await cds.connect.to('db')
+    const bridges = await db.run(
+      SELECT.from('bridge.management.Bridges').columns(
+        'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'assetOwner',
+        'latitude', 'longitude', 'condition', 'conditionRating',
+        'postingStatus', 'scourRisk', 'lastInspectionDate',
+        'nhvrAssessed', 'freightRoute', 'geoJson', 'structureType', 'yearBuilt'
+      )
+    )
+    return bridges || []
+  }
+
+  // Load active restriction bridge IDs (for poor/critical condition check)
+  async function loadActiveRestrictionBridgeIds() {
+    const db = await cds.connect.to('db')
+    const rows = await db.run(
+      SELECT.from('bridge.management.Restrictions')
+        .columns('bridge_ID')
+        .where({ active: true })
+    )
+    return new Set((rows || []).map(r => r.bridge_ID).filter(Boolean))
+  }
+
+  function calcCompletenessScore(bridge) {
+    const populated = QUALITY_COMPLETENESS_FIELDS.filter(f => {
+      const v = bridge[f]
+      if (v == null) return false
+      if (typeof v === 'string' && v.trim() === '') return false
+      if (f === 'latitude' || f === 'longitude') return Number(v) !== 0 && Number.isFinite(Number(v))
+      return true
+    })
+    return Math.round((populated.length / QUALITY_COMPLETENESS_FIELDS.length) * 100)
+  }
+
+  function evaluateBridgeIssues(bridge, activeRestrictionBridgeIds) {
+    const issues = []
+    const now = Date.now()
+    const TWO_YEARS_MS = 730 * 24 * 60 * 60 * 1000
+
+    // Rule 1: Missing mandatory fields
+    const mandatoryFields = ['bridgeName', 'state', 'assetOwner', 'latitude', 'longitude']
+    for (const field of mandatoryFields) {
+      const v = bridge[field]
+      const missing = v == null || (typeof v === 'string' && v.trim() === '') ||
+        ((field === 'latitude' || field === 'longitude') && (!Number.isFinite(Number(v)) || Number(v) === 0))
+      if (missing) {
+        issues.push({
+          category: 'Missing Mandatory Field',
+          severity: 'critical',
+          message: `Mandatory field "${field}" is missing or empty`
+        })
+      }
+    }
+
+    // Rule 2: Missing coordinates (latitude or longitude null/zero)
+    const lat = Number(bridge.latitude), lon = Number(bridge.longitude)
+    const missingLat = bridge.latitude == null || !Number.isFinite(lat) || lat === 0
+    const missingLon = bridge.longitude == null || !Number.isFinite(lon) || lon === 0
+    if ((missingLat || missingLon) && !mandatoryFields.some(f =>
+      (f === 'latitude' && missingLat) || (f === 'longitude' && missingLon))) {
+      // Already reported above; only add if not already covered
+    }
+    if (missingLat && !issues.some(i => i.message.includes('"latitude"'))) {
+      issues.push({ category: 'Missing Location Data', severity: 'critical', message: 'Latitude is missing or zero' })
+    }
+    if (missingLon && !issues.some(i => i.message.includes('"longitude"'))) {
+      issues.push({ category: 'Missing Location Data', severity: 'critical', message: 'Longitude is missing or zero' })
+    }
+
+    // Rule 3: No GeoJSON geometry
+    if (!bridge.geoJson || String(bridge.geoJson).trim() === '') {
+      issues.push({ category: 'Missing GeoJSON', severity: 'warning', message: 'GeoJSON geometry is missing' })
+    }
+
+    // Rule 4: Stale inspection
+    if (!bridge.lastInspectionDate) {
+      issues.push({ category: 'Stale Inspection', severity: 'critical', message: 'Last inspection date has never been recorded' })
+    } else {
+      const inspDate = new Date(bridge.lastInspectionDate).getTime()
+      if (now - inspDate > TWO_YEARS_MS) {
+        const inspStr = bridge.lastInspectionDate
+        issues.push({ category: 'Stale Inspection', severity: 'warning', message: `Last inspection was over 2 years ago (${inspStr})` })
+      }
+    }
+
+    // Rule 5: Poor/Critical condition with no active restriction
+    if (bridge.condition === 'Poor' || bridge.condition === 'Critical') {
+      if (!activeRestrictionBridgeIds.has(bridge.ID)) {
+        issues.push({
+          category: 'Condition Without Restriction',
+          severity: 'critical',
+          message: `Bridge is in ${bridge.condition} condition but has no active restriction`
+        })
+      }
+    }
+
+    // Rule 6: Missing condition rating
+    if (bridge.conditionRating == null) {
+      issues.push({ category: 'Missing Data', severity: 'warning', message: 'Condition rating is missing' })
+    }
+
+    // Rule 7: Missing posting status
+    if (!bridge.postingStatus || String(bridge.postingStatus).trim() === '') {
+      issues.push({ category: 'Missing Data', severity: 'warning', message: 'Posting status is missing' })
+    }
+
+    // Rule 8: Missing structure type
+    if (!bridge.structureType || String(bridge.structureType).trim() === '') {
+      issues.push({ category: 'Missing Data', severity: 'info', message: 'Structure type is missing' })
+    }
+
+    // Rule 9: Missing year built
+    if (bridge.yearBuilt == null) {
+      issues.push({ category: 'Missing Data', severity: 'info', message: 'Year built is missing' })
+    }
+
+    // Rule 10: NHVR not assessed for freight route
+    if (bridge.freightRoute && !bridge.nhvrAssessed) {
+      issues.push({ category: 'NHVR Assessment', severity: 'warning', message: 'Bridge is on a freight route but NHVR has not been assessed' })
+    }
+
+    return issues
+  }
+
+  function maxSeverity(issues) {
+    if (issues.some(i => i.severity === 'critical')) return 'critical'
+    if (issues.some(i => i.severity === 'warning')) return 'warning'
+    if (issues.some(i => i.severity === 'info')) return 'info'
+    return 'none'
+  }
+
+  qualityRouter.get('/summary', async (_req, res) => {
+    try {
+      const [bridges, activeRestrictionBridgeIds] = await Promise.all([
+        loadQualityBridges(),
+        loadActiveRestrictionBridgeIds()
+      ])
+
+      const categoryCountMap = {}
+      let issueCount = 0
+      let criticalCount = 0
+      let warningCount = 0
+      let totalCompleteness = 0
+
+      for (const bridge of bridges) {
+        const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds)
+        totalCompleteness += calcCompletenessScore(bridge)
+        if (issues.length > 0) issueCount++
+        for (const issue of issues) {
+          if (issue.severity === 'critical') criticalCount++
+          else if (issue.severity === 'warning') warningCount++
+          categoryCountMap[issue.category] = (categoryCountMap[issue.category] || 0) + 1
+        }
+      }
+
+      const total = bridges.length
+      const completenessPercent = total > 0 ? Math.round(totalCompleteness / total) : 0
+      const byCategory = Object.entries(categoryCountMap)
+        .map(([category, count]) => ({ category, count }))
+        .sort((a, b) => b.count - a.count)
+
+      res.json({
+        totalBridges: total,
+        issueCount,
+        completenessPercent,
+        criticalCount,
+        warningCount,
+        byCategory
+      })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load quality summary' } })
+    }
+  })
+
+  qualityRouter.get('/issues', async (req, res) => {
+    try {
+      const { severity, state, name } = req.query
+
+      const [bridges, activeRestrictionBridgeIds] = await Promise.all([
+        loadQualityBridges(),
+        loadActiveRestrictionBridgeIds()
+      ])
+
+      let results = bridges.map(bridge => {
+        const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds)
+        return {
+          ID: bridge.ID,
+          bridgeId: bridge.bridgeId || null,
+          bridgeName: bridge.bridgeName || null,
+          state: bridge.state || null,
+          issues,
+          issueCount: issues.length,
+          maxSeverity: maxSeverity(issues),
+          completenessScore: calcCompletenessScore(bridge)
+        }
+      }).filter(b => b.issueCount > 0)
+
+      // Apply filters
+      if (severity) {
+        const sev = severity.toLowerCase()
+        results = results.filter(b =>
+          b.issues.some(i => i.severity === sev) || b.maxSeverity === sev
+        )
+      }
+      if (state) {
+        const st = state.toUpperCase()
+        results = results.filter(b => (b.state || '').toUpperCase() === st)
+      }
+      if (name) {
+        const needle = name.toLowerCase()
+        results = results.filter(b =>
+          (b.bridgeName || '').toLowerCase().includes(needle) ||
+          (b.bridgeId || '').toLowerCase().includes(needle)
+        )
+      }
+
+      // Sort: critical first, then by issue count desc
+      results.sort((a, b) => {
+        const sevOrder = { critical: 0, warning: 1, info: 2, none: 3 }
+        const diff = (sevOrder[a.maxSeverity] || 3) - (sevOrder[b.maxSeverity] || 3)
+        return diff !== 0 ? diff : b.issueCount - a.issueCount
+      })
+
+      res.json({ bridges: results })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load quality issues' } })
+    }
+  })
+
+  app.use('/quality/api', qualityRouter)
+
+  // ── System Config API ─────────────────────────────────────────────────────
+  const sysRouter = express.Router()
+  sysRouter.use(express.json())
+
+  sysRouter.get('/config', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const rows = await db.run(
+        SELECT.from('bridge.management.SystemConfig').orderBy('category', 'sortOrder')
+      )
+      res.json({ configs: rows || [] })
+    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+  })
+
+  sysRouter.patch('/config/:key', async (req, res) => {
+    try {
+      const { key } = req.params
+      const { value } = req.body || {}
+      if (value === undefined) return res.status(400).json({ error: { message: 'value is required' } })
+      const db = await cds.connect.to('db')
+      const existing = await db.run(SELECT.one.from('bridge.management.SystemConfig').where({ configKey: key }))
+      if (!existing) return res.status(404).json({ error: { message: 'Config key not found' } })
+      if (existing.isReadOnly) return res.status(403).json({ error: { message: 'This setting is read-only' } })
+      await db.run(
+        UPDATE('bridge.management.SystemConfig')
+          .set({ value: String(value), modifiedAt: new Date().toISOString(), modifiedBy: req.user?.id || 'system' })
+          .where({ configKey: key })
+      )
+      const { invalidateCache } = require('./system-config')
+      invalidateCache(key)
+      res.json({ success: true })
+    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+  })
+
+  sysRouter.get('/banner', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const [modeRow, msgRow] = await Promise.all([
+        db.run(SELECT.one.from('bridge.management.SystemConfig').where({ configKey: 'appMaintenanceMode' })),
+        db.run(SELECT.one.from('bridge.management.SystemConfig').where({ configKey: 'appMaintenanceMessage' }))
+      ])
+      const active = modeRow?.value === 'true'
+      res.json({ active, message: active ? (msgRow?.value || '') : '' })
+    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+  })
+
+  app.use('/system/api', sysRouter)
 })
 
 cds.on('served', async () => {

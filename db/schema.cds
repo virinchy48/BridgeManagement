@@ -289,7 +289,6 @@ entity GISConfig {
   showLgaBoundaries           : Boolean default false;
   // Advanced feature toggles
   enableScaleBar              : Boolean default true;
-  enableNorthArrow            : Boolean default true;
   enableGps                   : Boolean default true;
   enableMinimap               : Boolean default true;
   enableHeatmap               : Boolean default false;
@@ -325,6 +324,29 @@ entity ChangeLog {
   newValue         : LargeString;
   changeSource     : String(40);   // OData | MassEdit | MassUpload
   batchId          : String(111);  // groups all fields changed in one save
+}
+
+entity UserActivity {
+  key userId      : String(111);
+  displayName     : String(255);
+  lastSeenAt      : Timestamp;
+  lastPath        : String(511);
+  sessionCount    : Integer default 0;
+  actionCount     : Integer default 0;
+}
+
+entity SystemConfig {
+  key configKey     : String(80);
+  category          : String(40);   // Export | Map | Quality | Upload | Display | Security
+  label             : String(255);
+  value             : String(1024);
+  defaultValue      : String(1024);
+  dataType          : String(20);   // string | integer | decimal | boolean
+  description       : LargeString;
+  isReadOnly        : Boolean default false;
+  sortOrder         : Integer default 0;
+  modifiedAt        : Timestamp;
+  modifiedBy        : String(111);
 }
 
 // --------------------------------------------------------------------------------

@@ -15,11 +15,8 @@
 const cds = require('@sap/cds')
 const express = require('express')
 const XLSX = require('xlsx')
-const multer = require('multer')
 
-const { SELECT, INSERT, UPDATE, UPSERT } = cds.ql
-
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } })
+const { SELECT, INSERT, UPDATE } = cds.ql
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -248,6 +245,7 @@ async function buildAttributeColumns(db, objectType) {
 
 module.exports = function mountAttributesApi(app) {
   const router = express.Router()
+  router.use(express.json({ limit: '10mb' }))
 
   // GET /config?objectType=bridge
   router.get('/config', async (req, res) => {
@@ -427,19 +425,22 @@ module.exports = function mountAttributesApi(app) {
   })
 
   // POST /import?objectType=bridge&mode=all|skip  (admin only)
+  // Body: { fileName, contentBase64, mode }  (same pattern as mass-upload)
   // mode=all: abort on any error; mode=skip: import valid rows, skip errors
-  router.post('/import', upload.single('file'), async (req, res) => {
-    const { objectType, mode = 'all' } = req.query
+  router.post('/import', async (req, res) => {
+    const { objectType } = req.query
+    const { fileName, contentBase64, mode = 'all' } = req.body || {}
     if (!objectType) return res.status(400).json({ error: { message: 'objectType is required' } })
-    if (!req.file?.buffer?.length) return res.status(400).json({ error: { message: 'No file uploaded' } })
+    if (!contentBase64) return res.status(400).json({ error: { message: 'File content (contentBase64) is required' } })
 
     try {
+      const buffer = Buffer.from(contentBase64, 'base64')
       const db = await cds.connect.to('db')
       const attrCols = await buildAttributeColumns(db, objectType)
       const attrByKey = new Map(attrCols.map(c => [c.key, c]))
 
       // Parse file
-      const wb = XLSX.read(req.file.buffer, { type: 'buffer' })
+      const wb = XLSX.read(buffer, { type: 'buffer' })
       const sheetLabel = objectType.charAt(0).toUpperCase() + objectType.slice(1) + 's'
       const sheet = wb.Sheets[sheetLabel] || wb.Sheets[wb.SheetNames[0]]
       if (!sheet) throw new Error(`Sheet "${sheetLabel}" not found in uploaded file`)

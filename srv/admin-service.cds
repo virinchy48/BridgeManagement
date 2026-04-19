@@ -8,21 +8,21 @@ service AdminService {
   entity BridgeAttributes as projection on my.BridgeAttributes;
   entity BridgeScourAssessments as projection on my.BridgeScourAssessments;
   entity BridgeDocuments as projection on my.BridgeDocuments;
-  @readonly entity AssetClasses as projection on my.AssetClasses;
-  @readonly entity States as projection on my.States;
-  @readonly entity Regions as projection on my.Regions;
-  @readonly entity StructureTypes as projection on my.StructureTypes;
-  @readonly entity DesignLoads as projection on my.DesignLoads;
-  @readonly entity PostingStatuses as projection on my.PostingStatuses;
-  @readonly entity ConditionStates as projection on my.ConditionStates;
-  @readonly entity ScourRiskLevels as projection on my.ScourRiskLevels;
-  @readonly entity PbsApprovalClasses as projection on my.PbsApprovalClasses;
-  @readonly entity RestrictionTypes as projection on my.RestrictionTypes;
-  @readonly entity RestrictionStatuses as projection on my.RestrictionStatuses;
-  @readonly entity VehicleClasses as projection on my.VehicleClasses;
-  @readonly entity RestrictionCategories as projection on my.RestrictionCategories;
-  @readonly entity RestrictionUnits as projection on my.RestrictionUnits;
-  @readonly entity RestrictionDirections as projection on my.RestrictionDirections;
+  entity AssetClasses as projection on my.AssetClasses;
+  entity States as projection on my.States;
+  entity Regions as projection on my.Regions;
+  entity StructureTypes as projection on my.StructureTypes;
+  entity DesignLoads as projection on my.DesignLoads;
+  entity PostingStatuses as projection on my.PostingStatuses;
+  entity ConditionStates as projection on my.ConditionStates;
+  entity ScourRiskLevels as projection on my.ScourRiskLevels;
+  entity PbsApprovalClasses as projection on my.PbsApprovalClasses;
+  entity RestrictionTypes as projection on my.RestrictionTypes;
+  entity RestrictionStatuses as projection on my.RestrictionStatuses;
+  entity VehicleClasses as projection on my.VehicleClasses;
+  entity RestrictionCategories as projection on my.RestrictionCategories;
+  entity RestrictionUnits as projection on my.RestrictionUnits;
+  entity RestrictionDirections as projection on my.RestrictionDirections;
   entity GISConfig as projection on my.GISConfig;
   @readonly entity ChangeLog as projection on my.ChangeLog;
 
@@ -33,4 +33,6 @@ service AdminService {
   entity AttributeObjectTypeConfig as projection on my.AttributeObjectTypeConfig;
   @readonly entity AttributeValues       as projection on my.AttributeValues;
   @readonly entity AttributeValueHistory as projection on my.AttributeValueHistory;
+  @readonly entity UserActivity          as projection on my.UserActivity;
+  entity SystemConfig as projection on my.SystemConfig;
 }

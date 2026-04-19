@@ -72,8 +72,6 @@
             <f:content>
               <Label text="{i18n>gisConfigEnableScaleBar}"/>
               <Switch id="swScaleBar" state="{config>/enableScaleBar}"/>
-              <Label text="{i18n>gisConfigEnableNorthArrow}"/>
-              <Switch id="swNorthArrow" state="{config>/enableNorthArrow}"/>
               <Label text="{i18n>gisConfigEnableGps}"/>
               <Switch id="swGps" state="{config>/enableGps}"/>
               <Label text="{i18n>gisConfigEnableMinimap}"/>

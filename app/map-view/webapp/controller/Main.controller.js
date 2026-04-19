@@ -198,7 +198,7 @@ sap.ui.define([
         restrictionsData: [],
         gisConfig: null,
         features: {
-          scaleBar: true, northArrow: true, gps: true, minimap: true,
+          scaleBar: true, gps: true, minimap: true,
           heatmap: false, timeSlider: false, statsPanel: true,
           proximity: true, mgaCoords: true, streetView: true,
           conditionAlerts: true, customWms: false, serverClustering: false
@@ -258,8 +258,15 @@ sap.ui.define([
     onTogglePanel: function () {
       const model = this._vm();
       const open = !model.getProperty("/panelOpen");
+      const featureOpen = model.getProperty("/featurePanelOpen");
       model.setProperty("/panelOpen", open);
-      model.setProperty("/fclLayout", open ? "TwoColumnsMidExpanded" : "MidColumnFullScreen");
+      let layout;
+      if (featureOpen) {
+        layout = open ? "ThreeColumnsMidExpanded" : "TwoColumnsEndExpanded";
+      } else {
+        layout = open ? "TwoColumnsMidExpanded" : "MidColumnFullScreen";
+      }
+      model.setProperty("/fclLayout", layout);
       model.setProperty("/panelToggleTooltip", open ? "Close Filters & Layers panel" : "Open Filters & Layers panel");
       setTimeout(this._invalidateMap.bind(this), 120);
     },
@@ -809,8 +816,13 @@ sap.ui.define([
       const model = this._vm();
       model.setProperty("/featurePanelOpen", false);
       model.setProperty("/selectedFeature", null);
+      model.setProperty("/selectedBridge", null);
+      model.setProperty("/selectedRestrictions", []);
+      model.setProperty("/detailOpen", false);
+      model.setProperty("/showList", false);
       const panelOpen = model.getProperty("/panelOpen");
       model.setProperty("/fclLayout", panelOpen ? "TwoColumnsMidExpanded" : "MidColumnFullScreen");
+      setTimeout(this._invalidateMap.bind(this), 120);
     },
 
     onExport: function (oEvent) {
@@ -1566,7 +1578,7 @@ sap.ui.define([
           this._vm().setProperty("/gisConfig", cfg);
           this._vm().setProperty("/features", {
             scaleBar: cfg.enableScaleBar !== false,
-            northArrow: cfg.enableNorthArrow !== false,
+
             gps: cfg.enableGps !== false,
             minimap: cfg.enableMinimap !== false,
             heatmap: cfg.enableHeatmap === true,
@@ -1607,10 +1619,6 @@ sap.ui.define([
 
       if (this._feat("scaleBar")) {
         window.L.control.scale({ imperial: false, maxWidth: 150 }).addTo(map);
-      }
-
-      if (this._feat("northArrow")) {
-        this._addNorthArrow(map);
       }
 
       if (this._feat("gps")) {
@@ -1657,19 +1665,6 @@ sap.ui.define([
           this._refLayerInstances["customWms_" + (wmsLayer.label || wmsLayer.layers)] = instance;
         }.bind(this));
       }
-    },
-
-    _addNorthArrow: function (map) {
-      var NorthArrow = window.L.Control.extend({
-        options: { position: "topright" },
-        onAdd: function () {
-          var div = window.L.DomUtil.create("div", "leaflet-north-arrow");
-          div.innerHTML = "<span title='North' style='font-size:20px;line-height:1;'>&#11014;</span>";
-          div.style.cssText = "background:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:default;";
-          return div;
-        }
-      });
-      new NorthArrow().addTo(map);
     },
 
     _addGpsControl: function (map) {
