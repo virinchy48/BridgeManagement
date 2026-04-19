@@ -58,22 +58,6 @@
         }
       ]
     },
-    "routing": {
-      "routes": [
-        {
-          "pattern": "",
-          "name": "Main",
-          "target": "Main"
-        }
-      ],
-      "targets": {
-        "Main": {
-          "viewType": "XML",
-          "viewName": "BridgeManagement.dashboard.view.Main",
-          "viewId": "Main"
-        }
-      }
-    },
     "rootView": {
       "viewName": "BridgeManagement.dashboard.view.Main",
       "type": "XML",

@@ -117,7 +117,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.dashboard",
-                "url": "/operations/dashboard/webapp"
+                "url": "/dashboard/webapp"
               }
             },
             "Bridges-manage": {

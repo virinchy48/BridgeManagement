@@ -56,6 +56,14 @@ sap.ui.define([
       window.location.href = "#Restrictions-manage";
     },
 
+    onNavigateMap: function () {
+      window.location.href = "#Map-display";
+    },
+
+    onNavigateMassEdit: function () {
+      window.location.href = "#MassEdit-manage";
+    },
+
     _loadAnalytics: async function () {
       const model = this._vm();
       model.setProperty("/busy", true);

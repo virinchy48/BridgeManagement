@@ -145,8 +145,12 @@
                           displayValue="{view>pctText}"
                           state="{view>state}"
                           showValue="true"
-                          width="1px"
-                          class="dashboardConditionBar" />
+                          width="100%"
+                          class="dashboardConditionBar">
+                          <layoutData>
+                            <FlexItemData growFactor="1" shrinkFactor="1" minWidth="0px" />
+                          </layoutData>
+                        </ProgressIndicator>
                         <Text text="{view>pct}% · {view>count}" class="dashboardConditionCount" />
                       </HBox>
                     </CustomListItem>
@@ -217,6 +221,19 @@
                   emphasized="false" />
               </HBox>
             </VBox>
+
+            <!-- ═══ ROW 5 · Quick Navigation ═══ -->
+            <Title text="Quick Navigation" level="H4" class="dashboardSectionTitle" />
+            <FlexBox wrap="Wrap" class="sapUiSmallMarginBottom dashboardQuickNav">
+              <Button text="Bridge Register" icon="sap-icon://functional-location" press=".onNavigateBridges"
+                type="Emphasized" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+              <Button text="Restrictions" icon="sap-icon://alert" press=".onNavigateRestrictions"
+                type="Emphasized" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+              <Button text="Map View" icon="sap-icon://map" press=".onNavigateMap"
+                type="Emphasized" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+              <Button text="Mass Edit" icon="sap-icon://edit" press=".onNavigateMassEdit"
+                type="Default" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+            </FlexBox>
 
             <!-- Last refreshed -->
             <HBox justifyContent="End" class="sapUiSmallMarginBottom">
