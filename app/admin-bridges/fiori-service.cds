@@ -484,5 +484,4 @@ annotate AdminService.Bridges with {
   stock @UI.Hidden;
   price @UI.Hidden;
   currency @UI.Hidden;
-  currency_code @UI.Hidden;
 }
