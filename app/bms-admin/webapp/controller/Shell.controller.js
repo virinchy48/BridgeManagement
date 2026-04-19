@@ -11,6 +11,7 @@ sap.ui.define([
     userAccess:      "userAccess",
     systemConfig:    "systemConfig",
     bnacConfig:      "bnacConfig",
+    gisConfig:       "gisConfig",
     attributeConfig: "attributeConfig"
   };
 

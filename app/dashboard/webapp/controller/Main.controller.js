@@ -2,8 +2,12 @@ sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageBox",
-  "sap/m/MessageToast"
-], function (Controller, JSONModel, MessageBox, MessageToast) {
+  "sap/m/MessageToast",
+  "sap/m/Dialog",
+  "sap/m/Button",
+  "sap/m/ScrollContainer",
+  "sap/m/FormattedText"
+], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Button, ScrollContainer, FormattedText) {
   "use strict";
 
   const CONDITION_CONFIG = [
@@ -117,6 +121,85 @@ sap.ui.define([
       model.setProperty("/conditionRows",      conditionRows);
       model.setProperty("/conditionSummaryLabel", summaryLabel);
       model.setProperty("/lastRefreshedLabel", "Last refreshed: " + timeStr);
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<h2 style='margin-top:0'>Bridge Network Dashboard — How to Use</h2>",
+        "<h3>Purpose</h3>",
+        "<p>This dashboard gives a real-time overview of the bridge network — asset counts, condition health, key risk indicators, and active restrictions.</p>",
+        "<h3>Network Summary KPIs</h3>",
+        "<ul>",
+        "<li><strong>Total Assets</strong> — Total number of bridges in the register. Click to open the Bridge Register.</li>",
+        "<li><strong>Active Restrictions</strong> — Bridges with a current posting restriction. Shown in orange/red when &gt; 0. Click to open Restrictions.</li>",
+        "<li><strong>Bridges Closed</strong> — Bridges with a Closed posting status.</li>",
+        "</ul>",
+        "<h3>Condition State Distribution</h3>",
+        "<p>Shows the percentage of the network in each condition band (Good / Fair / Poor / Critical) as a progress bar.</p>",
+        "<h3>Key Indicators</h3>",
+        "<ul>",
+        "<li><strong>Sufficiency Rating</strong> — Average structural sufficiency score across all bridges.</li>",
+        "<li><strong>Scour Critical</strong> — Bridges flagged as scour-critical (vulnerable to flooding).</li>",
+        "<li><strong>Structurally Deficient</strong> — Bridges rated structurally deficient requiring attention.</li>",
+        "</ul>",
+        "<h3>Active Restrictions Detail</h3>",
+        "<p>Count of restrictions currently posted on the network.</p>",
+        "<h3>Refreshing</h3>",
+        "<p>Click the refresh icon (top right) to reload analytics from the latest data.</p>"
+      ].join("");
+      this._openHelpDialog("Bridge Network Dashboard — Help", sHtml);
+    },
+
+    onTileInfo: function (oEvent) {
+      var sKey = oEvent.getSource().data("tileKey");
+      var oInfo = {
+        totalAssets: {
+          title: "Total Assets",
+          html: "<p><strong>Total Assets</strong> shows the count of all bridge structures registered in BMS.</p>" +
+                "<p>Click the tile to navigate to the full Bridge Register where you can filter, search, and edit individual records.</p>"
+        },
+        activeRestrictions: {
+          title: "Active Restrictions",
+          html: "<p><strong>Active Restrictions</strong> counts bridges with a current posting restriction (e.g. mass, height, or speed limit).</p>" +
+                "<p>A yellow/red indicator means restrictions are posted. Click the tile to open the Restrictions list.</p>"
+        },
+        bridgesClosed: {
+          title: "Bridges Closed",
+          html: "<p><strong>Bridges Closed</strong> shows the number of bridges with a <em>Closed</em> posting status.</p>" +
+                "<p>A red indicator means one or more bridges are currently closed to traffic.</p>"
+        },
+        sufficiency: {
+          title: "Sufficiency Rating",
+          html: "<p><strong>Sufficiency Rating</strong> is the average structural sufficiency score (0–100%) across all bridges.</p>" +
+                "<p>Scores below 50% typically indicate bridges requiring priority intervention or replacement.</p>"
+        },
+        scourCritical: {
+          title: "Scour Critical Bridges",
+          html: "<p><strong>Scour Critical</strong> is the count of bridges flagged as scour-critical — meaning they are vulnerable to undermining by flood or water flow.</p>" +
+                "<p>Any value above 0 warrants review of the affected bridges after flood events.</p>"
+        },
+        deficient: {
+          title: "Structurally Deficient",
+          html: "<p><strong>Structurally Deficient</strong> counts bridges that have been rated as structurally deficient based on their condition assessment.</p>" +
+                "<p>These bridges may still be open but require prioritised maintenance or load restriction.</p>"
+        }
+      };
+      var oEntry = oInfo[sKey] || { title: "Info", html: "<p>No additional information available.</p>" };
+      this._openHelpDialog(oEntry.title, oEntry.html);
+    },
+
+    _openHelpDialog: function (sTitle, sHtml) {
+      var oDialog = new Dialog({
+        title: sTitle,
+        contentWidth: "520px",
+        contentHeight: "380px",
+        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
     },
 
     _vm: function () {

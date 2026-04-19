@@ -1,0 +1,150 @@
+<mvc:View
+  controllerName="BridgeManagement.bmsadmin.controller.GisConfig"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.ui.layout.form"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+
+  <Page id="gisConfigPage" showHeader="false">
+
+    <customHeader>
+      <Bar>
+        <contentLeft>
+          <Title text="GIS Configuration" level="H3" />
+        </contentLeft>
+        <contentRight>
+          <Button text="Save"    icon="sap-icon://save"    press=".onSave"    type="Emphasized" />
+          <Button text="Discard" icon="sap-icon://decline"  press=".onDiscard" type="Transparent" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://refresh"  tooltip="Reload from server" press=".onRefresh"   type="Transparent" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://sys-help" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
+        </contentRight>
+      </Bar>
+    </customHeader>
+
+    <content>
+      <VBox class="sapUiMediumMargin">
+
+        <!-- Basemap settings -->
+        <Panel headerText="Basemap Settings" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+          <f:SimpleForm layout="ColumnLayout" columnsM="1" columnsL="2" editable="true">
+            <f:content>
+              <Label text="Default Basemap" />
+              <Select id="selBasemap" selectedKey="{config>/defaultBasemap}">
+                <items>
+                  <core:Item key="osm"         text="OpenStreetMap" />
+                  <core:Item key="esriStreet"   text="Esri Street" />
+                  <core:Item key="esriSatellite" text="Esri Satellite" />
+                  <core:Item key="esriTopo"     text="Esri Topo" />
+                  <core:Item key="google"       text="Google Maps" />
+                  <core:Item key="googleSat"    text="Google Satellite" />
+                  <core:Item key="here"         text="HERE Maps" />
+                </items>
+              </Select>
+              <Label text="HERE Maps API Key" />
+              <Input id="inpHereApiKey" value="{config>/hereApiKey}" placeholder="Required only for HERE Maps basemap" type="Password" />
+            </f:content>
+          </f:SimpleForm>
+        </Panel>
+
+        <!-- Reference layers -->
+        <Panel headerText="Reference Layers" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+          <f:SimpleForm layout="ColumnLayout" columnsM="1" columnsL="2" editable="true">
+            <f:content>
+              <Label text="Show State Boundaries" />
+              <Switch id="swStateBoundaries" state="{config>/showStateBoundaries}" />
+              <Label text="Show LGA Boundaries" />
+              <Switch id="swLgaBoundaries" state="{config>/showLgaBoundaries}" />
+            </f:content>
+          </f:SimpleForm>
+        </Panel>
+
+        <!-- Advanced features -->
+        <Panel headerText="Advanced Map Features" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+          <f:SimpleForm layout="ColumnLayout" columnsM="1" columnsL="2" editable="true">
+            <f:content>
+              <Label text="Scale Bar" />
+              <Switch id="swScaleBar" state="{config>/enableScaleBar}" />
+              <Label text="GPS / Locate Me" />
+              <Switch id="swGps" state="{config>/enableGps}" />
+              <Label text="Mini-map" />
+              <Switch id="swMinimap" state="{config>/enableMinimap}" />
+              <Label text="Heatmap Layer" />
+              <Switch id="swHeatmap" state="{config>/enableHeatmap}" />
+              <Label text="Time Slider" />
+              <Switch id="swTimeSlider" state="{config>/enableTimeSlider}" />
+              <Label text="Stats Panel" />
+              <Switch id="swStatsPanel" state="{config>/enableStatsPanel}" />
+              <Label text="Proximity Search" />
+              <Switch id="swProximity" state="{config>/enableProximity}" />
+              <Label text="MGA Coordinates" />
+              <Switch id="swMgaCoords" state="{config>/enableMgaCoords}" />
+              <Label text="Street View" />
+              <Switch id="swStreetView" state="{config>/enableStreetView}" />
+              <Label text="Condition Alerts" />
+              <Switch id="swConditionAlerts" state="{config>/enableConditionAlerts}" />
+              <Label text="Custom WMS Layers" />
+              <Switch id="swCustomWms" state="{config>/enableCustomWms}" />
+              <Label text="Server-side Clustering" />
+              <Switch id="swServerClustering" state="{config>/enableServerClustering}" />
+            </f:content>
+          </f:SimpleForm>
+        </Panel>
+
+        <!-- Thresholds -->
+        <Panel headerText="Thresholds &amp; Defaults" expandable="true" expanded="false" class="sapUiSmallMarginBottom">
+          <f:SimpleForm layout="ColumnLayout" columnsM="1" columnsL="2" editable="true">
+            <f:content>
+              <Label text="Condition Alert Threshold (1–10)" />
+              <StepInput id="siConditionAlert" value="{config>/conditionAlertThreshold}" min="1" max="10" step="1" />
+              <Label text="Proximity Default Radius (km)" />
+              <StepInput id="siProximityRadius" value="{config>/proximityDefaultRadiusKm}" min="1" max="500" step="5" />
+              <Label text="Heatmap Radius (px)" />
+              <StepInput id="siHeatmapRadius" value="{config>/heatmapRadius}" min="5" max="80" step="5" />
+              <Label text="Heatmap Blur (px)" />
+              <StepInput id="siHeatmapBlur" value="{config>/heatmapBlur}" min="5" max="50" step="5" />
+              <Label text="Viewport Loading Zoom Level" />
+              <StepInput id="siViewportZoom" value="{config>/viewportLoadingZoom}" min="6" max="14" step="1" />
+            </f:content>
+          </f:SimpleForm>
+        </Panel>
+
+        <!-- Custom WMS layers -->
+        <Panel headerText="Custom WMS Layers" expandable="true" expanded="false"
+               visible="{config>/enableCustomWms}" class="sapUiSmallMarginBottom">
+          <headerToolbar>
+            <Toolbar>
+              <Title text="WMS Layer List" level="H4" />
+              <ToolbarSpacer />
+              <Button icon="sap-icon://add" text="Add Layer" press=".onAddCustomWms" />
+            </Toolbar>
+          </headerToolbar>
+          <content>
+            <Text text="Add external WMS tile services to appear as toggleable overlays in the Bridge Map." class="sapUiSmallMargin" />
+            <Table id="tblCustomWms" items="{config>/customWmsLayers}" noDataText="No custom WMS layers defined. Click Add Layer to create one.">
+              <columns>
+                <Column><Text text="Layer Name" /></Column>
+                <Column><Text text="WMS URL" /></Column>
+                <Column><Text text="Layer Names" /></Column>
+                <Column width="4rem" hAlign="Center"><Text text="Del" /></Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Input value="{config>label}" placeholder="Display name" />
+                    <Input value="{config>url}" placeholder="https://..." />
+                    <Input value="{config>layers}" placeholder="layer1,layer2" />
+                    <Button icon="sap-icon://delete" type="Transparent" press=".onDeleteCustomWms" />
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </content>
+        </Panel>
+
+      </VBox>
+    </content>
+
+  </Page>
+
+</mvc:View>

@@ -11,11 +11,16 @@ sap.ui.define([
   "sap/m/ComboBox",
   "sap/m/DatePicker",
   "sap/m/CheckBox",
-  "sap/ui/core/Item"
+  "sap/ui/core/Item",
+  "sap/m/Dialog",
+  "sap/m/Button",
+  "sap/m/ScrollContainer",
+  "sap/m/FormattedText"
 ], function (
   Controller, JSONModel, Filter, FilterOperator,
   MessageBox, MessageToast,
-  Column, Text, Input, ComboBox, DatePicker, CheckBox, Item
+  Column, Text, Input, ComboBox, DatePicker, CheckBox, Item,
+  Dialog, Button, ScrollContainer, FormattedText
 ) {
   "use strict";
 

@@ -64,7 +64,8 @@
         { "pattern": "user-access", "name": "userAccess", "target": "userAccess" },
         { "pattern": "system-config", "name": "systemConfig", "target": "systemConfig" },
         { "pattern": "bnac-config", "name": "bnacConfig", "target": "bnacConfig" },
-        { "pattern": "attribute-config", "name": "attributeConfig", "target": "attributeConfig" }
+        { "pattern": "attribute-config", "name": "attributeConfig", "target": "attributeConfig" },
+        { "pattern": "gis-config",       "name": "gisConfig",       "target": "gisConfig" }
       ],
       "targets": {
         "changeDocuments": { "viewName": "ChangeDocuments",  "viewLevel": 1 },
@@ -73,7 +74,8 @@
         "userAccess":      { "viewName": "UserAccess",       "viewLevel": 1 },
         "systemConfig":    { "viewName": "SystemConfig",     "viewLevel": 1 },
         "bnacConfig":      { "viewName": "BnacConfig",       "viewLevel": 1 },
-        "attributeConfig": { "viewName": "AttributeConfig",  "viewLevel": 1 }
+        "attributeConfig": { "viewName": "AttributeConfig",  "viewLevel": 1 },
+        "gisConfig":       { "viewName": "GisConfig",        "viewLevel": 1 }
       }
     },
     "contentDensities": { "compact": true, "cozy": true }

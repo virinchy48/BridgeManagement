@@ -18,6 +18,7 @@
         <contentRight>
           <Button icon="sap-icon://download" text="Export CSV" press=".onExportCsv"  type="Transparent" />
           <Button icon="sap-icon://refresh"  text="Refresh"     press=".onRefresh"    type="Transparent" />
+          <Button icon="sap-icon://sys-help" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
         </contentRight>
       </Bar>
     </customHeader>
