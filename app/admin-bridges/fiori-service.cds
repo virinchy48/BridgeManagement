@@ -354,19 +354,11 @@ annotate AdminService.BridgeCapacities with @(
     FieldGroup#CapacityGeneral: {
       Label: 'General',
       Data: [
-        {Value: capacityType},
-        {Value: vehicleClass},
-        {Value: grossMassLimit},
-        {Value: axleMassLimit},
-        {Value: heightLimit},
-        {Value: widthLimit},
-        {Value: lengthLimit},
-        {Value: speedLimit},
-        {Value: effectiveFrom},
-        {Value: effectiveTo},
-        {Value: status},
-        {Value: reportReference},
-        {Value: remarks}
+        {Value: capacityType,  Label: 'Capacity Type'},
+        {Value: vehicleClass,  Label: 'Vehicle Class'},
+        {Value: status,        Label: 'Status'},
+        {Value: effectiveFrom, Label: 'Effective From'},
+        {Value: effectiveTo,   Label: 'Effective To'}
       ]
     },
 
