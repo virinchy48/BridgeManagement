@@ -121,8 +121,9 @@ annotate AdminService.Restrictions with @odata.draft.enabled;
 annotate bridge.management.Restrictions with @fiori.draft.enabled;
 annotate AdminService.Restrictions with {
   ID @Core.Computed;
-  name @UI.Hidden;
-  restrictionRef @UI.Hidden @(
+  name @UI.Hidden: false;
+  restrictionRef @(
+    UI.Hidden: false,
     Common.FieldControl : #Mandatory
   );
   bridgeRef @(
@@ -175,20 +176,20 @@ annotate AdminService.Restrictions with {
   );
   parent @UI.Hidden;
   descr @UI.Hidden;
-  grossMassLimit @UI.Hidden;
-  axleMassLimit @UI.Hidden;
-  heightLimit @UI.Hidden;
-  widthLimit @UI.Hidden;
-  lengthLimit @UI.Hidden;
-  speedLimit @UI.Hidden;
-  escortRequired @UI.Hidden;
-  temporary @UI.Hidden;
-  active @UI.Hidden;
-  temporaryFrom @UI.Hidden;
-  temporaryTo @UI.Hidden;
+  grossMassLimit @UI.Hidden: false;
+  axleMassLimit @UI.Hidden: false;
+  heightLimit @UI.Hidden: false;
+  widthLimit @UI.Hidden: false;
+  lengthLimit @UI.Hidden: false;
+  speedLimit @UI.Hidden: false;
+  escortRequired @UI.Hidden: false;
+  temporary @UI.Hidden: false;
+  active @UI.Hidden: false;
+  temporaryFrom;
+  temporaryTo;
   temporaryReason @UI.Hidden;
-  approvalReference @UI.Hidden;
-  issuingAuthority @UI.Hidden;
+  approvalReference;
+  issuingAuthority @UI.Hidden: false;
   createdBy @UI.Hidden;
   createdAt @UI.Hidden;
   modifiedBy @UI.Hidden;
