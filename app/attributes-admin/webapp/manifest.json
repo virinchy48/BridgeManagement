@@ -9,7 +9,7 @@
     "applicationVersion": { "version": "1.0.0" },
     "dataSources": {
       "AdminService": {
-        "uri": "odata/v4/admin/",
+        "uri": "/odata/v4/admin/",
         "type": "OData",
         "settings": { "odataVersion": "4.0" }
       }

@@ -20,27 +20,7 @@
     "requires": {
       "[development]": {
         "auth": {
-          "kind": "mocked",
-          "users": {
-            "admin": {
-              "password": "admin",
-              "roles": [
-                "admin"
-              ]
-            },
-            "virinchy@live.com": {
-              "password": "admin",
-              "roles": [
-                "admin"
-              ]
-            },
-            "*": {
-              "password": "admin",
-              "roles": [
-                "admin"
-              ]
-            }
-          }
+          "kind": "dummy"
         }
       },
       "db-ext": {
