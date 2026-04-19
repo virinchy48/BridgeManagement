@@ -1907,11 +1907,14 @@ cds.on('bootstrap', (app) => {
   app.use('/bnac/api', bnacRouter)
 })
 
-cds.on('connect', srv => {
-  if (srv.name === 'AdminService') demoHandler(srv);
-});
-
 cds.on('served', async () => {
+  // ── Register demo mode action handlers on AdminService ──────────────────────
+  // cds.services is populated once all OData services are fully served.
+  // Using 'served' (not 'connect') ensures the service object exists.
+  const adminSrv = cds.services['AdminService'];
+  if (adminSrv) demoHandler(adminSrv);
+
+  // ── HANA: back-fill spatial geoLocation column after first boot ─────────────
   if (!isHanaDb()) return;
   try {
     const db = await cds.connect.to('db');
