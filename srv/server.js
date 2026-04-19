@@ -5,7 +5,8 @@ const {
   buildCsvTemplate,
   buildWorkbookTemplate,
   getDatasets,
-  importUpload
+  importUpload,
+  validateUpload
 } = require('./mass-upload')
 
 const { SELECT, UPDATE } = cds.ql
@@ -548,6 +549,27 @@ cds.on('bootstrap', (app) => {
       res.json(result)
     } catch (error) {
       res.status(422).json({ error: { message: error.message || 'Upload failed' } })
+    }
+  })
+
+  router.post('/validate', async (req, res) => {
+    try {
+      const { fileName, contentBase64, dataset } = req.body || {}
+      if (!fileName) {
+        return res.status(400).json({ error: { message: 'fileName is required' } })
+      }
+      if (!contentBase64) {
+        return res.status(400).json({ error: { message: 'File content is empty' } })
+      }
+      const buffer = Buffer.from(contentBase64, 'base64')
+      const result = await validateUpload({
+        buffer,
+        fileName,
+        datasetName: dataset
+      })
+      res.json(result)
+    } catch (error) {
+      res.status(422).json({ error: { message: error.message || 'Validation failed' } })
     }
   })
 

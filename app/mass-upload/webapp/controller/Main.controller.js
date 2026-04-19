@@ -16,9 +16,14 @@ sap.ui.define([
     onInit: function () {
       document.body.classList.add("massUploadFullBleed");
 
+      const now = new Date();
+      const ninetyDaysAgo = new Date(now);
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
       const model = new JSONModel({
         busy: false,
         datasets: [],
+        historyFilterOptions: [],
         selectedDataset: this._ALL_DATASETS_KEY,
         selectedDatasetLabel: "",
         selectedDatasetDescription: "",
@@ -35,13 +40,45 @@ sap.ui.define([
         uploadFormatText: "",
         uploadScopeText: "",
         canUpload: false,
+        previewValidated: false,
+        previewMessage: "",
+        previewMessageType: "Information",
+        previewRows: [],
+        previewTitle: "",
+        previewColHdr1: "",
+        previewColHdr2: "",
+        previewColHdr3: "",
+        previewColHdr4: "",
+        previewColHdr5: "",
+        previewValidCount: 0,
         fileName: "",
         uploadSummaries: [],
         uploadWarnings: [],
         uploadWarningsTitle: "",
         lastMessage: "",
         skippedMessage: "",
-        hasUploadResults: false
+        hasUploadResults: false,
+        allHistoryRows: [],
+        historyRows: [],
+        historyFilter: "",
+        historyStats: {
+          totalFiles: 0,
+          totalRows: 0,
+          insertedRows: 0,
+          updatedRows: 0
+        },
+        adminReport: {
+          fromDate: this._formatDate(ninetyDaysAgo),
+          toDate: this._formatDate(now),
+          dataset: "",
+          rows: [],
+          summary: {
+            totalFiles: 0,
+            totalRows: 0,
+            insertedRows: 0,
+            updatedRows: 0
+          }
+        }
       });
       this.getView().setModel(model, "view");
       this._invisibleMessage = InvisibleMessage.getInstance();
@@ -79,8 +116,20 @@ sap.ui.define([
       this._loadDatasets();
     },
 
+    onTabSelect: function (oEvent) {
+      const key = oEvent.getParameter("key") || oEvent.getParameter("selectedKey");
+      if (key === "history") {
+        this._applyHistoryFilter();
+      }
+    },
+
     onDatasetChange: function (oEvent) {
       this._getViewModel().setProperty("/selectedDataset", oEvent.getSource().getSelectedKey());
+      this._setSelectedFile(null);
+      const uploader = this.byId("fileUploader");
+      if (uploader) {
+        uploader.clear();
+      }
       this._updateSelectedDatasetContext();
     },
 
@@ -111,14 +160,125 @@ sap.ui.define([
       window.open(url, "_blank");
     },
 
+    onHistoryFilterChange: function () {
+      this._applyHistoryFilter();
+    },
+
+    onHistoryRefresh: function () {
+      this._applyHistoryFilter();
+      MessageToast.show("Upload history refreshed");
+    },
+
+    onRunAdminReport: function () {
+      const model = this._getViewModel();
+      const adminReport = model.getProperty("/adminReport") || {};
+      const rows = this._filterHistoryRows(
+        model.getProperty("/allHistoryRows") || [],
+        adminReport.dataset,
+        adminReport.fromDate,
+        adminReport.toDate
+      );
+      model.setProperty("/adminReport/rows", rows);
+      model.setProperty("/adminReport/summary", this._summarizeHistoryRows(rows));
+    },
+
+    onExportHistory: function () {
+      this._downloadRowsAsCsv(this._getViewModel().getProperty("/historyRows") || [], "mass-upload-history.csv");
+    },
+
+    onExportAdminReport: function () {
+      this._downloadRowsAsCsv(this._getViewModel().getProperty("/adminReport/rows") || [], "mass-upload-admin-report.csv");
+    },
+
+    onUploadAnother: function () {
+      const uploader = this.byId("fileUploader");
+      if (uploader) {
+        uploader.clear();
+      }
+      this._setSelectedFile(null);
+      const model = this._getViewModel();
+      model.setProperty("/uploadSummaries", []);
+      model.setProperty("/uploadWarnings", []);
+      model.setProperty("/uploadWarningsTitle", "");
+      model.setProperty("/lastMessage", "");
+      model.setProperty("/skippedMessage", "");
+      model.setProperty("/hasUploadResults", false);
+      const wizard = this.byId("uploadWizard");
+      if (wizard) {
+        wizard.discardProgress(this.byId("stepEntity"));
+      }
+    },
+
     onFileChange: function (oEvent) {
       const files = oEvent.getParameter("files") || [];
       this._setSelectedFile(files[0] || null);
+      if (this._file) {
+        this.onPreviewUpload();
+      }
+    },
+
+    onPreviewUpload: async function () {
+      if (!this._file) {
+        MessageBox.warning("Choose a CSV or Excel file to validate.");
+        return;
+      }
+
+      const model = this._getViewModel();
+      model.setProperty("/busy", true);
+      this._clearPreview();
+
+      try {
+        const contentBase64 = await this._readFileAsBase64(this._file);
+        const response = await fetch("/mass-upload/api/validate", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            fileName: this._file.name,
+            dataset: model.getProperty("/selectedDataset"),
+            contentBase64
+          })
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload.error?.message || payload.message || "Validation failed");
+        }
+
+        const previewColumns = payload.previewColumns || [];
+        model.setProperty("/previewValidated", true);
+        model.setProperty("/previewMessage", payload.message || "Validation complete.");
+        model.setProperty("/previewMessageType", payload.errorCount > 0 ? (payload.validCount > 0 ? "Warning" : "Error") : "Success");
+        model.setProperty("/previewRows", payload.previewRows || []);
+        model.setProperty("/previewTitle", payload.previewTitle || "");
+        model.setProperty("/previewColHdr1", previewColumns[0] || "");
+        model.setProperty("/previewColHdr2", previewColumns[1] || "");
+        model.setProperty("/previewColHdr3", previewColumns[2] || "");
+        model.setProperty("/previewColHdr4", previewColumns[3] || "");
+        model.setProperty("/previewColHdr5", previewColumns[4] || "");
+        model.setProperty("/previewValidCount", Number(payload.validCount || 0));
+      } catch (error) {
+        model.setProperty("/previewValidated", true);
+        model.setProperty("/previewMessage", error.message || "Validation failed");
+        model.setProperty("/previewMessageType", "Error");
+        MessageBox.error(error.message || "Validation failed");
+      } finally {
+        model.setProperty("/busy", false);
+      }
     },
 
     onUpload: async function () {
       if (!this._file) {
         MessageBox.warning("Choose a CSV or Excel file to upload.");
+        return;
+      }
+      if (!this._getViewModel().getProperty("/previewValidated")) {
+        MessageBox.warning("Preview and validate the file before uploading.");
+        return;
+      }
+      if (this._getViewModel().getProperty("/previewValidCount") <= 0) {
+        MessageBox.warning("There are no valid rows to upload.");
         return;
       }
 
@@ -176,6 +336,7 @@ sap.ui.define([
         }
 
         model.setProperty("/hasUploadResults", !!(payload.message || (payload.summaries || []).length));
+        this._appendUploadHistory(payload);
         this._setSelectedFile(null);
         this.byId("fileUploader").clear();
         MessageToast.show("Mass upload completed");
@@ -201,6 +362,10 @@ sap.ui.define([
           ...dataset,
           description: this._getDatasetDescription(dataset)
         }))));
+        model.setProperty("/historyFilterOptions", [{
+          name: "",
+          label: "All"
+        }].concat(model.getProperty("/datasets")));
 
         if (!model.getProperty("/datasets").some((dataset) => dataset.name === model.getProperty("/selectedDataset"))) {
           const defaultDataset = model.getProperty("/datasets").find((dataset) => dataset.name === "Bridges");
@@ -231,13 +396,126 @@ sap.ui.define([
       return this.getView().getModel("view");
     },
 
+    _formatDate: function (date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    },
+
+    _appendUploadHistory: function (payload) {
+      const model = this._getViewModel();
+      const now = new Date();
+      const rows = (payload.summaries || []).map((summary) => ({
+        id: `${now.getTime()}-${summary.dataset || summary.label || Math.random()}`,
+        uploadedAt: now.toISOString(),
+        uploadedDate: this._formatDate(now),
+        uploadedAtFmt: now.toLocaleString([], {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }),
+        fileName: this._file?.name || model.getProperty("/fileName") || "",
+        dataset: summary.dataset || model.getProperty("/selectedDataset"),
+        datasetLabel: summary.label || summary.dataset || model.getProperty("/selectedDatasetLabel"),
+        processed: Number(summary.processed || 0),
+        inserted: Number(summary.inserted || 0),
+        updated: Number(summary.updated || 0),
+        statusLabel: "Completed",
+        statusState: "Success"
+      }));
+      model.setProperty("/allHistoryRows", rows.concat(model.getProperty("/allHistoryRows") || []));
+      this._applyHistoryFilter();
+      this.onRunAdminReport();
+    },
+
+    _applyHistoryFilter: function () {
+      const model = this._getViewModel();
+      const rows = this._filterHistoryRows(model.getProperty("/allHistoryRows") || [], model.getProperty("/historyFilter"));
+      model.setProperty("/historyRows", rows);
+      model.setProperty("/historyStats", this._summarizeHistoryRows(rows));
+    },
+
+    _filterHistoryRows: function (rows, dataset, fromDate, toDate) {
+      return rows.filter((row) => {
+        const datasetMatches = !dataset || dataset === this._ALL_DATASETS_KEY || row.dataset === dataset;
+        const afterFrom = !fromDate || row.uploadedDate >= fromDate;
+        const beforeTo = !toDate || row.uploadedDate <= toDate;
+        return datasetMatches && afterFrom && beforeTo;
+      });
+    },
+
+    _summarizeHistoryRows: function (rows) {
+      return rows.reduce((summary, row) => {
+        summary.totalFiles += 1;
+        summary.totalRows += Number(row.processed || 0);
+        summary.insertedRows += Number(row.inserted || 0);
+        summary.updatedRows += Number(row.updated || 0);
+        return summary;
+      }, {
+        totalFiles: 0,
+        totalRows: 0,
+        insertedRows: 0,
+        updatedRows: 0
+      });
+    },
+
+    _downloadRowsAsCsv: function (rows, fileName) {
+      if (!rows.length) {
+        MessageToast.show("No rows to export");
+        return;
+      }
+      const headers = ["Uploaded At", "File Name", "Dataset", "Processed", "Inserted", "Updated", "Status"];
+      const lines = rows.map((row) => [
+        row.uploadedAtFmt,
+        row.fileName,
+        row.datasetLabel,
+        row.processed,
+        row.inserted,
+        row.updated,
+        row.statusLabel
+      ].map(this._escapeCsvValue).join(","));
+      const blob = new Blob([headers.join(",") + "\n" + lines.join("\n")], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    },
+
+    _escapeCsvValue: function (value) {
+      const text = value === undefined || value === null ? "" : String(value);
+      return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    },
+
     _setSelectedFile: function (file) {
       this._file = file || null;
       const model = this._getViewModel();
       model.setProperty("/fileName", this._file ? this._file.name : "");
       model.setProperty("/canUpload", !!this._file);
       model.setProperty("/uploadReadyText", this._file ? this._file.name : "No file selected");
+      this._clearPreview();
       this._toggleDropzoneState(!!this._file);
+    },
+
+    _clearPreview: function () {
+      const model = this._getViewModel();
+      model.setProperty("/previewValidated", false);
+      model.setProperty("/previewMessage", "");
+      model.setProperty("/previewMessageType", "Information");
+      model.setProperty("/previewRows", []);
+      model.setProperty("/previewTitle", "");
+      model.setProperty("/previewColHdr1", "");
+      model.setProperty("/previewColHdr2", "");
+      model.setProperty("/previewColHdr3", "");
+      model.setProperty("/previewColHdr4", "");
+      model.setProperty("/previewColHdr5", "");
+      model.setProperty("/previewValidCount", 0);
     },
 
     _toggleDropzoneState: function (hasFile) {
@@ -302,6 +580,7 @@ sap.ui.define([
 
       this._setSelectedFile(file);
       this._invisibleMessage.announce(`Selected file ${file.name}`, InvisibleMessageMode.Assertive);
+      this.onPreviewUpload();
     },
 
     _updateSelectedDatasetContext: function () {
@@ -318,7 +597,7 @@ sap.ui.define([
         ? "Download the full workbook template with all datasets, dropdown source sheets, a DropdownExamples guide (allowed values in sequence), and mandatory field markers."
         : `Download the full CSV template for ${datasetLabel || "the selected dataset"} with all supported columns, current values as the editing baseline, and required fields marked with *.`);
       model.setProperty("/selectedTemplateActionText", isAll
-        ? "Download Template CSV"
+        ? "Download Excel Template"
         : "Download Template CSV");
       model.setProperty("/selectedMandatoryHint", this._getDatasetMandatoryHint(selectedDataset, isAll));
       model.setProperty("/uploadFormatText", isAll

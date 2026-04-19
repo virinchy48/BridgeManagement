@@ -68,6 +68,16 @@ entity Bridges : managed {
       openDataReference : String(255);
       sourceRecordId : String(111);
       restriction  : Association to Restrictions;
+      capacities   : Composition of many BridgeCapacities
+                       on capacities.bridge = $self;
+      restrictions : Composition of many BridgeRestrictions
+                       on restrictions.bridge = $self;
+      attributes   : Composition of many BridgeAttributes
+                       on attributes.bridge = $self;
+      scourAssessments : Composition of many BridgeScourAssessments
+                       on scourAssessments.bridge = $self;
+      documents    : Composition of many BridgeDocuments
+                       on documents.bridge = $self;
       geoJson      : LargeString;
       stock        : Integer;
       price        : Price;
@@ -110,6 +120,98 @@ entity Restrictions : cuid, sap.common.CodeList {
   parent   : Association to Restrictions;
   children : Composition of many Restrictions
                on children.parent = $self;
+}
+
+entity BridgeRestrictions : cuid, managed {
+  bridge              : Association to Bridges;
+  restrictionRef      : String(40);
+  name                : String(111);
+  descr               : String(255);
+  restrictionCategory : String(20) default 'Permanent';
+  restrictionType     : String(40);
+  restrictionValue    : String(60);
+  restrictionUnit     : String(20);
+  restrictionStatus   : String(20);
+  appliesToVehicleClass : String(40);
+  grossMassLimit      : Decimal(9,2);
+  axleMassLimit       : Decimal(9,2);
+  heightLimit         : Decimal(9,2);
+  widthLimit          : Decimal(9,2);
+  lengthLimit         : Decimal(9,2);
+  speedLimit          : Integer;
+  permitRequired      : Boolean;
+  escortRequired      : Boolean;
+  temporary           : Boolean;
+  active              : Boolean default true;
+  effectiveFrom       : Date;
+  effectiveTo         : Date;
+  approvedBy          : String(111);
+  direction           : String(40);
+  enforcementAuthority : String(111);
+  temporaryFrom       : Date;
+  temporaryTo         : Date;
+  temporaryReason     : LargeString;
+  approvalReference   : String(111);
+  issuingAuthority    : String(111);
+  legalReference      : String(111);
+  remarks             : LargeString;
+}
+
+entity BridgeCapacities : cuid, managed {
+  bridge              : Association to Bridges;
+  capacityType        : String(40);
+  vehicleClass        : String(40);
+  grossMassLimit      : Decimal(9,2);
+  axleMassLimit       : Decimal(9,2);
+  heightLimit         : Decimal(9,2);
+  widthLimit          : Decimal(9,2);
+  lengthLimit         : Decimal(9,2);
+  speedLimit          : Integer;
+  pbsLevel            : String(40);
+  effectiveFrom       : Date;
+  effectiveTo         : Date;
+  status              : String(40);
+  sourceReference     : String(111);
+  remarks             : LargeString;
+}
+
+entity BridgeAttributes : cuid, managed {
+  bridge              : Association to Bridges;
+  attributeGroup      : String(60);
+  attributeName       : String(111);
+  attributeValue      : String(255);
+  unit                : String(40);
+  source              : String(111);
+  effectiveFrom       : Date;
+  effectiveTo         : Date;
+  remarks             : LargeString;
+}
+
+entity BridgeScourAssessments : cuid, managed {
+  bridge              : Association to Bridges;
+  assessmentDate      : Date;
+  assessmentType      : String(60);
+  scourRisk           : String(20);
+  measuredDepth       : Decimal(9,2);
+  floodImmunityAriYears : Integer;
+  mitigationStatus    : String(60);
+  assessor            : String(111);
+  nextReviewDate      : Date;
+  reportReference     : String(111);
+  remarks             : LargeString;
+}
+
+entity BridgeDocuments : cuid, managed {
+  bridge              : Association to Bridges;
+  documentType        : String(60);
+  title               : String(111);
+  documentUrl         : String(500);
+  fileName            : String(255);
+  referenceNumber     : String(111);
+  issuedBy            : String(111);
+  documentDate        : Date;
+  expiryDate          : Date;
+  remarks             : LargeString;
 }
 
 entity AssetClasses : sap.common.CodeList {

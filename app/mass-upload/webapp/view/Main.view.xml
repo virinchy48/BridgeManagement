@@ -3,143 +3,314 @@
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
-  xmlns:unified="sap.ui.unified">
+  xmlns:unified="sap.ui.unified"
+  displayBlock="true"
+  height="100%">
   <App>
-    <Page showHeader="false" class="massUploadPage">
+    <Page id="uploadPage" title="{i18n>appTitle}" showHeader="true" class="massUploadPage" busy="{view>/busy}">
       <content>
-        <ScrollContainer height="100%" width="100%" vertical="true" horizontal="false">
-          <VBox class="massUploadShell sapUiMediumMargin" busy="{view>/busy}">
+        <VBox class="sapUiMediumMargin">
+          <Text text="{i18n>pageIntro}" wrapping="true" class="sapUiSmallMarginBottom" />
 
-            <!-- Step 1: Select Data Type -->
-            <VBox class="massUploadSection">
-              <HBox alignItems="Center" class="massUploadSectionHeader">
-                <core:Icon src="sap-icon://list" size="1rem" class="massUploadStepIcon sapUiTinyMarginEnd" />
-                <Title text="{i18n>sectionSelectTitle}" level="H4" class="massUploadSectionTitle" />
-              </HBox>
-              <Select
-                width="16rem"
-                selectedKey="{view>/selectedDataset}"
-                change=".onDatasetChange"
-                items="{view>/datasets}"
-                class="massUploadSelect sapUiSmallMarginBottom">
-                <core:Item key="{view>name}" text="{view>label}" />
-              </Select>
-              <Text text="{view>/selectedDatasetDescription}" class="massUploadMutedText" />
-            </VBox>
+          <IconTabBar id="mainTabBar" select=".onTabSelect" expanded="true">
+            <items>
+              <IconTabFilter id="tabUpload" key="upload" text="{i18n>tabUpload}" icon="sap-icon://upload-to-cloud">
+                <Wizard id="uploadWizard" showNextButton="true" finishButtonText="{i18n>wizardFinish}">
+                  <WizardStep id="stepEntity" title="{i18n>sectionSelectTitle}" validated="{= !!${view>/selectedDataset} }">
+                    <VBox class="sapUiSmallMargin">
+                      <Label text="{i18n>datasetLabel}" labelFor="datasetSelect" required="true" />
+                      <Select
+                        id="datasetSelect"
+                        width="20rem"
+                        selectedKey="{view>/selectedDataset}"
+                        change=".onDatasetChange"
+                        items="{view>/datasets}">
+                        <core:Item key="{view>name}" text="{view>label}" />
+                      </Select>
+                      <MessageStrip
+                        text="{view>/selectedDatasetDescription}"
+                        type="Information"
+                        showIcon="true"
+                        enableFormattedText="false"
+                        class="sapUiSmallMarginTop" />
+                      <Panel
+                        headerText="{i18n>templateRulesTitle}"
+                        expandable="true"
+                        expanded="false"
+                        class="sapUiSmallMarginTop">
+                        <VBox>
+                          <Text text="{view>/selectedMandatoryHint}" wrapping="true" />
+                          <Button
+                            id="btnDownloadTemplate"
+                            text="{view>/selectedTemplateActionText}"
+                            icon="sap-icon://download"
+                            press=".onDownloadSelectedTemplate"
+                            class="sapUiSmallMarginTop" />
+                        </VBox>
+                      </Panel>
+                    </VBox>
+                  </WizardStep>
 
-            <!-- Step 2: Download Template -->
-            <VBox class="massUploadSection">
-              <HBox alignItems="Center" class="massUploadSectionHeader">
-                <core:Icon src="sap-icon://download" size="1rem" class="massUploadStepIcon sapUiTinyMarginEnd" />
-                <Title text="{i18n>sectionDownloadTitle}" level="H4" class="massUploadSectionTitle" />
-              </HBox>
-              <Text text="{view>/selectedDatasetTemplateText}" class="massUploadBodyText" />
-              <Button
-                text="{view>/selectedTemplateActionText}"
-                icon="sap-icon://download"
-                type="Emphasized"
-                press=".onDownloadSelectedTemplate"
-                class="massUploadPrimaryButton sapUiSmallMarginTop sapUiSmallMarginBottom" />
-              <MessageStrip
-                text="{view>/selectedMandatoryHint}"
-                type="Information"
-                showIcon="true"
-                class="massUploadInfoStrip" />
-            </VBox>
+                  <WizardStep id="stepFile" title="{i18n>sectionUploadTitle}" validated="{view>/previewValidated}">
+                    <VBox class="sapUiSmallMargin">
+                      <Text text="{view>/uploadFormatText}" wrapping="true" class="sapUiSmallMarginBottom" />
+                      <unified:FileUploader
+                        id="fileUploader"
+                        name="uploadFile"
+                        fileType="csv,xlsx"
+                        uploadOnChange="false"
+                        sameFilenameAllowed="true"
+                        change=".onFileChange"
+                        buttonText="{i18n>browseFile}"
+                        placeholder="{i18n>noFileSelected}"
+                        width="100%" />
+                      <Text text="{view>/uploadReadyText}" class="sapUiTinyMarginTop" />
+                    </VBox>
+                  </WizardStep>
 
-            <!-- Step 3: Upload CSV File -->
-            <VBox class="massUploadSection">
-              <HBox alignItems="Center" class="massUploadSectionHeader">
-                <core:Icon src="sap-icon://upload" size="1rem" class="massUploadStepIcon sapUiTinyMarginEnd" />
-                <Title text="{i18n>sectionUploadTitle}" level="H4" class="massUploadSectionTitle" />
-              </HBox>
-              <MessageStrip
-                text="{view>/uploadFormatText}"
-                type="Information"
-                showIcon="true"
-                class="massUploadInfoStrip sapUiTinyMarginBottom" />
-
-              <VBox id="dropZone" class="massUploadDropzone" renderType="Bare">
-                <core:Icon src="sap-icon://folder-blank" size="2.75rem" class="massUploadDropIcon" />
-                <Title text="{i18n>dropzoneTitle}" level="H4" class="massUploadDropTitle" />
-                <Text text="{i18n>dropzoneSubtitle}" class="massUploadDropSubtitle" />
-              </VBox>
-
-              <HBox alignItems="Center" wrap="Wrap" class="sapUiSmallMarginTop">
-                <unified:FileUploader
-                  id="fileUploader"
-                  width="auto"
-                  buttonOnly="true"
-                  sameFilenameAllowed="true"
-                  fileType="csv,xlsx"
-                  buttonText="{i18n>browseFile}"
-                  icon="sap-icon://upload"
-                  change=".onFileChange"
-                  class="massUploadBrowseUploader sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                <Text text="{view>/uploadReadyText}" class="massUploadFileName sapUiTinyMarginBottom" />
-              </HBox>
-
-              <HBox justifyContent="End" class="sapUiSmallMarginTop">
-                <Button
-                  text="{i18n>uploadButton}"
-                  type="Emphasized"
-                  enabled="{view>/canUpload}"
-                  press=".onUpload"
-                  class="massUploadUploadButton" />
-              </HBox>
-            </VBox>
-
-            <!-- Step 4: Upload Results Summary -->
-            <VBox class="massUploadSection" visible="{view>/hasUploadResults}">
-              <HBox alignItems="Center" class="massUploadSectionHeader">
-                <core:Icon src="sap-icon://message-success" size="1rem" class="massUploadStepIcon sapUiTinyMarginEnd" />
-                <Title text="{i18n>summaryPanelTitle}" level="H4" class="massUploadSectionTitle" />
-              </HBox>
-              <MessageStrip
-                text="{view>/lastMessage}"
-                visible="{= !!${view>/lastMessage} }"
-                type="Success"
-                showIcon="true"
-                class="sapUiTinyMarginBottom" />
-              <MessageStrip
-                text="{view>/skippedMessage}"
-                visible="{= !!${view>/skippedMessage} }"
-                type="Warning"
-                showIcon="true"
-                class="sapUiTinyMarginBottom" />
-              <VBox visible="{= ${view>/uploadWarnings}.length > 0 }" class="sapUiTinyMarginBottom">
-                <MessageStrip
-                  text="{view>/uploadWarningsTitle}"
-                  type="Warning"
-                  showIcon="true"
-                  class="sapUiTinyMarginBottom" />
-                <List items="{view>/uploadWarnings}" class="massUploadWarningList">
-                  <items>
-                    <StandardListItem title="{view>}" wrapping="true" />
-                  </items>
-                </List>
-              </VBox>
-              <List items="{view>/uploadSummaries}" noDataText="{i18n>summaryNoData}" class="massUploadSummaryList">
-                <items>
-                  <CustomListItem>
-                    <HBox justifyContent="SpaceBetween" alignItems="Center" wrap="Wrap">
-                      <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
-                        <Title text="{view>label}" level="H5" />
-                        <Text text="{view>dataset}" />
-                      </VBox>
-                      <HBox wrap="Wrap">
-                        <ObjectStatus text="{= 'Processed ' + ${view>processed} }" state="Information" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                        <ObjectStatus text="{= 'Inserted ' + ${view>inserted} }" state="Success" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                        <ObjectStatus text="{= 'Updated ' + ${view>updated} }" state="Warning" class="sapUiTinyMarginBottom" />
+                  <WizardStep id="stepPreview" title="{i18n>previewStepTitle}" validated="{= ${view>/previewValidCount} > 0 }">
+                    <VBox class="sapUiSmallMargin">
+                      <MessageStrip
+                        text="{view>/previewMessage}"
+                        visible="{= !!${view>/previewMessage} }"
+                        type="{view>/previewMessageType}"
+                        showIcon="true"
+                        enableFormattedText="false"
+                        class="sapUiSmallMarginBottom" />
+                      <Table
+                        id="previewTable"
+                        items="{view>/previewRows}"
+                        growing="false"
+                        mode="None"
+                        noDataText="{i18n>previewNoData}">
+                        <headerToolbar>
+                          <OverflowToolbar>
+                            <Title text="{view>/previewTitle}" level="H2" />
+                          </OverflowToolbar>
+                        </headerToolbar>
+                        <columns>
+                          <Column width="6rem"><Text text="{i18n>previewColRow}" /></Column>
+                          <Column><Text text="{view>/previewColHdr1}" /></Column>
+                          <Column><Text text="{view>/previewColHdr2}" /></Column>
+                          <Column><Text text="{view>/previewColHdr3}" /></Column>
+                          <Column><Text text="{view>/previewColHdr4}" /></Column>
+                          <Column><Text text="{view>/previewColHdr5}" /></Column>
+                          <Column width="10rem"><Text text="{i18n>previewColValid}" /></Column>
+                          <Column><Text text="{i18n>previewColIssues}" /></Column>
+                        </columns>
+                        <items>
+                          <ColumnListItem>
+                            <cells>
+                              <Text text="{view>rowNum}" />
+                              <Text text="{view>_c1}" wrapping="false" />
+                              <Text text="{view>_c2}" wrapping="false" />
+                              <Text text="{view>_c3}" wrapping="false" />
+                              <Text text="{view>_c4}" wrapping="false" />
+                              <Text text="{view>_c5}" wrapping="false" />
+                              <ObjectStatus text="{view>validText}" state="{view>statusState}" />
+                              <Text text="{view>message}" wrapping="true" />
+                            </cells>
+                          </ColumnListItem>
+                        </items>
+                      </Table>
+                      <HBox class="sapUiSmallMarginTop" justifyContent="End">
+                        <Button
+                          id="btnSubmitUpload"
+                          type="Emphasized"
+                          text="{i18n>startUploadButton}"
+                          icon="sap-icon://upload"
+                          press=".onUpload"
+                          enabled="{= ${view>/previewValidCount} > 0 }" />
                       </HBox>
-                    </HBox>
-                  </CustomListItem>
-                </items>
-              </List>
-            </VBox>
+                    </VBox>
+                  </WizardStep>
 
-          </VBox>
-        </ScrollContainer>
+                  <WizardStep id="stepResult" title="{i18n>resultStepTitle}" validated="true">
+                    <VBox class="sapUiSmallMargin">
+                      <MessageStrip
+                        text="{view>/lastMessage}"
+                        visible="{= !!${view>/lastMessage} }"
+                        type="Success"
+                        showIcon="true"
+                        enableFormattedText="false"
+                        class="sapUiSmallMarginBottom" />
+                      <MessageStrip
+                        text="{view>/skippedMessage}"
+                        visible="{= !!${view>/skippedMessage} }"
+                        type="Warning"
+                        showIcon="true"
+                        enableFormattedText="false"
+                        class="sapUiSmallMarginBottom" />
+                      <MessageStrip
+                        text="{i18n>resultEmptyText}"
+                        visible="{= !${view>/hasUploadResults} }"
+                        type="Information"
+                        showIcon="true"
+                        enableFormattedText="false"
+                        class="sapUiSmallMarginBottom" />
+                      <Table
+                        id="summaryTable"
+                        items="{view>/uploadSummaries}"
+                        visible="{view>/hasUploadResults}"
+                        growing="false"
+                        mode="None"
+                        noDataText="{i18n>summaryNoData}">
+                        <headerToolbar>
+                          <OverflowToolbar>
+                            <Title text="{i18n>summaryPanelTitle}" level="H2" />
+                          </OverflowToolbar>
+                        </headerToolbar>
+                        <columns>
+                          <Column><Text text="{i18n>summaryColDataset}" /></Column>
+                          <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColProcessed}" /></Column>
+                          <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColInserted}" /></Column>
+                          <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColUpdated}" /></Column>
+                        </columns>
+                        <items>
+                          <ColumnListItem>
+                            <cells>
+                              <ObjectIdentifier title="{view>label}" text="{view>dataset}" />
+                              <Text text="{view>processed}" />
+                              <ObjectStatus text="{view>inserted}" state="Success" />
+                              <ObjectStatus text="{view>updated}" state="Warning" />
+                            </cells>
+                          </ColumnListItem>
+                        </items>
+                      </Table>
+                      <VBox visible="{= ${view>/uploadWarnings}.length > 0 }" class="sapUiSmallMarginTop">
+                        <MessageStrip text="{view>/uploadWarningsTitle}" type="Warning" showIcon="true" class="sapUiTinyMarginBottom" />
+                        <List items="{view>/uploadWarnings}" class="massUploadWarningList">
+                          <items>
+                            <StandardListItem title="{view>}" wrapping="true" />
+                          </items>
+                        </List>
+                      </VBox>
+                      <HBox class="sapUiSmallMarginTop" justifyContent="End">
+                        <Button text="{i18n>uploadAnotherButton}" icon="sap-icon://refresh" press=".onUploadAnother" visible="{view>/hasUploadResults}" />
+                      </HBox>
+                    </VBox>
+                  </WizardStep>
+                </Wizard>
+              </IconTabFilter>
+
+              <IconTabFilter id="tabHistory" key="history" text="{i18n>tabHistory}" icon="sap-icon://history">
+                <VBox class="sapUiSmallMargin">
+                  <Toolbar class="sapUiSmallMarginBottom">
+                    <Label text="{i18n>historyFilterType}" class="sapUiSmallMarginEnd" />
+                    <Select
+                      id="historyTypeFilter"
+                      selectedKey="{view>/historyFilter}"
+                      change=".onHistoryFilterChange"
+                      width="16rem"
+                      items="{view>/historyFilterOptions}">
+                      <core:Item key="{view>name}" text="{view>label}" />
+                    </Select>
+                    <ToolbarSpacer />
+                    <Button text="{i18n>historyRefresh}" icon="sap-icon://refresh" press=".onHistoryRefresh" />
+                  </Toolbar>
+                  <HBox class="sapUiSmallMarginBottom" wrap="Wrap">
+                    <ObjectStatus title="{i18n>historyKpiFiles}" text="{view>/historyStats/totalFiles}" state="None" class="sapUiSmallMarginEnd" />
+                    <ObjectStatus title="{i18n>historyKpiRows}" text="{view>/historyStats/totalRows}" state="None" class="sapUiSmallMarginEnd" />
+                    <ObjectStatus title="{i18n>historyKpiInserted}" text="{view>/historyStats/insertedRows}" state="Success" class="sapUiSmallMarginEnd" />
+                    <ObjectStatus title="{i18n>historyKpiUpdated}" text="{view>/historyStats/updatedRows}" state="Warning" />
+                  </HBox>
+                  <Table id="historyTable" items="{view>/historyRows}" growing="true" growingThreshold="25" mode="None" noDataText="{i18n>historyNoData}">
+                    <headerToolbar>
+                      <OverflowToolbar>
+                        <Title text="{i18n>historyTableTitle}" level="H2" />
+                        <ToolbarSpacer />
+                        <Button text="{i18n>historyExport}" icon="sap-icon://excel-attachment" press=".onExportHistory" type="Transparent" />
+                      </OverflowToolbar>
+                    </headerToolbar>
+                    <columns>
+                      <Column width="12rem"><Text text="{i18n>historyColUploadedAt}" /></Column>
+                      <Column width="14rem"><Text text="{i18n>historyColFileName}" /></Column>
+                      <Column width="12rem"><Text text="{i18n>historyColDataset}" /></Column>
+                      <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColProcessed}" /></Column>
+                      <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColInserted}" /></Column>
+                      <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColUpdated}" /></Column>
+                      <Column width="9rem"><Text text="{i18n>historyColStatus}" /></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem>
+                        <cells>
+                          <Text text="{view>uploadedAtFmt}" />
+                          <Text text="{view>fileName}" wrapping="false" />
+                          <ObjectIdentifier title="{view>datasetLabel}" text="{view>dataset}" />
+                          <Text text="{view>processed}" />
+                          <ObjectStatus text="{view>inserted}" state="Success" />
+                          <ObjectStatus text="{view>updated}" state="Warning" />
+                          <ObjectStatus text="{view>statusLabel}" state="{view>statusState}" />
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </IconTabFilter>
+
+              <IconTabFilter id="tabAdminReport" key="adminReport" text="{i18n>tabAdminReport}" icon="sap-icon://manager-insight">
+                <VBox class="sapUiSmallMargin">
+                  <MessageStrip text="{i18n>adminReportInfo}" type="Information" showIcon="true" class="sapUiSmallMarginBottom" />
+                  <VBox class="sapUiSmallMarginBottom">
+                    <HBox alignItems="Center" class="sapUiTinyMarginBottom" wrap="Wrap">
+                      <Label text="{i18n>adminReportFrom}" width="8rem" />
+                      <DatePicker value="{view>/adminReport/fromDate}" valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" width="12rem" />
+                    </HBox>
+                    <HBox alignItems="Center" class="sapUiTinyMarginBottom" wrap="Wrap">
+                      <Label text="{i18n>adminReportTo}" width="8rem" />
+                      <DatePicker value="{view>/adminReport/toDate}" valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" width="12rem" />
+                    </HBox>
+                    <HBox alignItems="Center" wrap="Wrap">
+                      <Label text="{i18n>historyFilterType}" width="8rem" />
+                      <Select selectedKey="{view>/adminReport/dataset}" width="16rem" items="{view>/historyFilterOptions}">
+                        <core:Item key="{view>name}" text="{view>label}" />
+                      </Select>
+                    </HBox>
+                  </VBox>
+                  <HBox class="sapUiSmallMarginBottom" wrap="Wrap">
+                    <Button text="{i18n>adminReportRun}" icon="sap-icon://begin" type="Emphasized" press=".onRunAdminReport" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
+                    <Button text="{i18n>historyExport}" icon="sap-icon://excel-attachment" press=".onExportAdminReport" class="sapUiTinyMarginBottom" />
+                  </HBox>
+                  <HBox visible="{= ${view>/adminReport/rows}.length > 0 }" class="sapUiSmallMarginBottom" wrap="Wrap">
+                    <ObjectStatus title="{i18n>historyKpiFiles}" text="{view>/adminReport/summary/totalFiles}" state="None" class="sapUiSmallMarginEnd" />
+                    <ObjectStatus title="{i18n>historyKpiRows}" text="{view>/adminReport/summary/totalRows}" state="None" class="sapUiSmallMarginEnd" />
+                    <ObjectStatus title="{i18n>historyKpiInserted}" text="{view>/adminReport/summary/insertedRows}" state="Success" class="sapUiSmallMarginEnd" />
+                    <ObjectStatus title="{i18n>historyKpiUpdated}" text="{view>/adminReport/summary/updatedRows}" state="Warning" />
+                  </HBox>
+                  <Table id="adminReportTable" items="{view>/adminReport/rows}" growing="true" growingThreshold="50" mode="None" noDataText="{i18n>adminReportNoData}">
+                    <headerToolbar>
+                      <OverflowToolbar>
+                        <Title text="{i18n>adminReportTableTitle}" level="H2" />
+                      </OverflowToolbar>
+                    </headerToolbar>
+                    <columns>
+                      <Column width="12rem"><Text text="{i18n>historyColUploadedAt}" /></Column>
+                      <Column width="14rem"><Text text="{i18n>historyColFileName}" /></Column>
+                      <Column width="12rem"><Text text="{i18n>historyColDataset}" /></Column>
+                      <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColProcessed}" /></Column>
+                      <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColInserted}" /></Column>
+                      <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColUpdated}" /></Column>
+                      <Column width="9rem"><Text text="{i18n>historyColStatus}" /></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem>
+                        <cells>
+                          <Text text="{view>uploadedAtFmt}" />
+                          <Text text="{view>fileName}" wrapping="false" />
+                          <ObjectIdentifier title="{view>datasetLabel}" text="{view>dataset}" />
+                          <Text text="{view>processed}" />
+                          <ObjectStatus text="{view>inserted}" state="Success" />
+                          <ObjectStatus text="{view>updated}" state="Warning" />
+                          <ObjectStatus text="{view>statusLabel}" state="{view>statusState}" />
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </IconTabFilter>
+            </items>
+          </IconTabBar>
+        </VBox>
       </content>
     </Page>
   </App>

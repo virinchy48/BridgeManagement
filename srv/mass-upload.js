@@ -299,6 +299,134 @@ async function importUpload({ buffer, fileName, datasetName }) {
   }
 }
 
+async function validateUpload({ buffer, fileName, datasetName }) {
+  if (!buffer?.length) {
+    throw new Error('Uploaded file is empty')
+  }
+
+  const lowerName = (fileName || '').toLowerCase()
+  if (!lowerName.endsWith('.xlsx') && !lowerName.endsWith('.csv')) {
+    throw new Error('Unsupported file type. Upload an .xlsx or .csv file.')
+  }
+  if (lowerName.endsWith('.csv') && (!datasetName || datasetName === 'All')) {
+    throw new Error('Select a specific dataset for CSV uploads, or use the Excel template for All.')
+  }
+
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const datasets = lowerName.endsWith('.xlsx') ? resolveWorkbookDatasets(datasetName) : [requireDataset(datasetName)]
+  const previewRows = []
+  let totalCount = 0
+  let validCount = 0
+  let warningCount = 0
+  let errorCount = 0
+  let previewColumns = []
+
+  for (const dataset of datasets) {
+    const sheet = lowerName.endsWith('.xlsx') ? workbook.Sheets[dataset.name] : workbook.Sheets[workbook.SheetNames[0]]
+    if (!sheet) continue
+    const rows = parseSheetRows(sheet, dataset)
+    if (!previewColumns.length) {
+      previewColumns = getPreviewColumns(dataset)
+    }
+
+    for (const row of rows) {
+      const messages = []
+      let status = 'Success'
+      try {
+        const normalized = normalizeRow(dataset, row, messages)
+        if (!normalized) {
+          status = 'Error'
+        } else if (messages.length) {
+          status = 'Warning'
+        }
+      } catch (error) {
+        messages.push(error.message || String(error))
+        status = 'Error'
+      }
+
+      totalCount += 1
+      if (status === 'Error') errorCount += 1
+      else validCount += 1
+      if (status === 'Warning') warningCount += 1
+
+      previewRows.push({
+        rowNum: row.__rowNumber,
+        _c1: formatPreviewCell(row, previewColumns[0]),
+        _c2: formatPreviewCell(row, previewColumns[1]),
+        _c3: formatPreviewCell(row, previewColumns[2]),
+        _c4: formatPreviewCell(row, previewColumns[3]),
+        _c5: formatPreviewCell(row, previewColumns[4]),
+        validText: status === 'Error' ? 'Errors' : status === 'Warning' ? 'Warnings' : 'Valid',
+        statusState: status === 'Error' ? 'Error' : status === 'Warning' ? 'Warning' : 'Success',
+        message: stripDatasetRowPrefix(messages.join('; '))
+      })
+    }
+  }
+
+  if (!totalCount) {
+    throw new Error('No supported upload rows were found in the file.')
+  }
+
+  return {
+    fileName,
+    totalCount,
+    validCount,
+    warningCount,
+    errorCount,
+    previewTitle: `Parsed ${totalCount} row(s) - showing the first ${Math.min(totalCount, 10)}.`,
+    previewColumns: previewColumns.map((column) => column.label),
+    previewRows: previewRows.slice(0, 10),
+    message: buildValidationMessage(totalCount, validCount, warningCount, errorCount)
+  }
+}
+
+function getPreviewColumns(dataset) {
+  if (dataset.name === 'Bridges') {
+    return [
+      { name: 'bridgeId', label: 'Bridge ID' },
+      { name: 'bridgeName', label: 'Name' },
+      { name: 'state', label: 'State' },
+      { name: 'condition', label: 'Condition' },
+      { name: 'postingStatus', label: 'Posting Status' }
+    ]
+  }
+  if (dataset.name === 'Restrictions') {
+    return [
+      { name: 'restrictionRef', label: 'Restriction Ref' },
+      { name: 'bridgeRef', label: 'Bridge Ref' },
+      { name: 'restrictionType', label: 'Type' },
+      { name: 'restrictionStatus', label: 'Status' },
+      { name: 'restrictionValue', label: 'Value' }
+    ]
+  }
+  return [
+    { name: 'code', label: 'Code' },
+    { name: 'name', label: 'Name' },
+    { name: 'descr', label: 'Description' },
+    { name: '', label: '' },
+    { name: '', label: '' }
+  ]
+}
+
+function formatPreviewCell(row, column) {
+  if (!column?.name) return ''
+  const value = row[column.name]
+  if (value === null || value === undefined) return ''
+  if (value instanceof Date) return value.toISOString().slice(0, 10)
+  return String(value)
+}
+
+function stripDatasetRowPrefix(message) {
+  return String(message || '').replace(/^[A-Za-z]+ row \d+:\s*/g, '')
+}
+
+function buildValidationMessage(totalCount, validCount, warningCount, errorCount) {
+  if (!validCount) return 'No valid rows. Fix the highlighted errors and re-upload.'
+  if (errorCount) return `${validCount} valid row(s). Fix ${errorCount} error row(s) or upload only valid rows.`
+  if (warningCount) return `${validCount} valid row(s) with ${warningCount} warning(s).`
+  return `${totalCount} row(s) validated successfully.`
+}
+
 async function importWorkbook(tx, buffer, datasetName) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
   const summaries = []
@@ -873,5 +1001,6 @@ module.exports = {
   buildCsvTemplate,
   buildWorkbookTemplate,
   getDatasets,
-  importUpload
+  importUpload,
+  validateUpload
 }

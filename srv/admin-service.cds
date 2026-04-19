@@ -3,6 +3,11 @@ using {bridge.management as my} from '../db/schema';
 service AdminService {
   entity Bridges as projection on my.Bridges;
   entity Restrictions as projection on my.Restrictions;
+  entity BridgeRestrictions as projection on my.BridgeRestrictions;
+  entity BridgeCapacities as projection on my.BridgeCapacities;
+  entity BridgeAttributes as projection on my.BridgeAttributes;
+  entity BridgeScourAssessments as projection on my.BridgeScourAssessments;
+  entity BridgeDocuments as projection on my.BridgeDocuments;
   @readonly entity AssetClasses as projection on my.AssetClasses;
   @readonly entity States as projection on my.States;
   @readonly entity Regions as projection on my.Regions;
