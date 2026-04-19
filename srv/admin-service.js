@@ -17,6 +17,16 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     }
   })
 
+  const { GISConfig } = this.entities
+
+  // Auto-seed the singleton GIS config record on first access
+  this.before('READ', GISConfig, async () => {
+    const existing = await SELECT.one.from(GISConfig).where({ id: 'default' })
+    if (!existing) {
+      await INSERT.into(GISConfig).entries({ id: 'default' })
+    }
+  })
+
   this.before ('NEW', Restrictions.drafts, async (req) => {
     if (!req.data.restrictionRef) {
       const total = await SELECT.from(Restrictions).columns('ID')

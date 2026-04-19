@@ -156,6 +156,21 @@ function normalizeMassEditValue(field, value, fieldTypes = MASS_EDIT_FIELD_TYPES
   }
 }
 
+function parseBbox(bbox) {
+  if (!bbox) return null;
+  const parts = String(bbox).split(',').map(Number);
+  if (parts.length !== 4 || parts.some(isNaN)) return null;
+  const [minLon, minLat, maxLon, maxLat] = parts;
+  if (minLon >= maxLon || minLat >= maxLat) return null;
+  return { minLon, minLat, maxLon, maxLat };
+}
+
+function isHanaDb() {
+  const requires = cds.env.requires || {};
+  return Object.values(requires).some(s => s && (s.kind === 'hana' || s.impl === '@cap-js/hana'))
+    || process.env.NODE_ENV === 'production';
+}
+
 async function loadCodeList(entityName) {
   const db = await cds.connect.to('db')
   const rows = await db.run(
@@ -357,10 +372,10 @@ async function loadDashboardAnalytics() {
   ] = await Promise.all([
     db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt')),
     db.run(SELECT.one.from('bridge.management.Restrictions').columns('count(1) as cnt').where({ active: true })),
-    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ postingStatus: 'CLOSED' })),
-    db.run(SELECT.one.from('bridge.management.Restrictions').columns('count(1) as cnt').where({ restrictionStatus: 'POSTED' })),
-    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ scourRisk: { in: ['HIGH', 'VERY_HIGH'] } })),
-    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ condition: { in: ['POOR', 'CRITICAL'] } })),
+    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ postingStatus: 'Closed' })),
+    db.run(SELECT.one.from('bridge.management.Restrictions').columns('count(1) as cnt').where({ restrictionStatus: 'Active' })),
+    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ scourRisk: 'High' })),
+    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ condition: { in: ['Poor', 'Critical'] } })),
     db.run(SELECT.one.from('bridge.management.Bridges').columns('avg(structuralAdequacyRating) as avg').where('structuralAdequacyRating is not null')),
     db.run(SELECT.from('bridge.management.Bridges').columns('condition', 'count(1) as cnt').groupBy('condition'))
   ])
@@ -369,7 +384,7 @@ async function loadDashboardAnalytics() {
 
   const conditionMap = {}
   for (const row of (conditionDist || [])) {
-    const key = (row.condition || 'UNKNOWN').toUpperCase()
+    const key = (row.condition || 'Unknown').toLowerCase()
     conditionMap[key] = Number(row.cnt || 0)
   }
 
@@ -385,45 +400,78 @@ async function loadDashboardAnalytics() {
     deficient: Number(deficient?.cnt || 0),
     sufficiencyPct,
     conditionDistribution: {
-      good: conditionMap['GOOD'] || 0,
-      fair: conditionMap['FAIR'] || 0,
-      poor: conditionMap['POOR'] || 0,
-      critical: conditionMap['CRITICAL'] || 0,
+      good: conditionMap['good'] || 0,
+      fair: conditionMap['fair'] || 0,
+      poor: conditionMap['poor'] || 0,
+      critical: conditionMap['critical'] || 0,
       total
     }
   }
 }
 
-async function loadMapBridges() {
+async function loadMapBridges({ bbox } = {}) {
   const db = await cds.connect.to('db')
+  const bboxParsed = parseBbox(bbox)
 
-  const bridges = await db.run(
-    SELECT.from('bridge.management.Bridges').columns(
-      'ID',
-      'bridgeId',
-      'bridgeName',
-      'state',
-      'latitude',
-      'longitude',
-      'postingStatus',
-      'conditionRating',
-      'yearBuilt',
-      'structureType',
-      'route',
-      'region',
-      'clearanceHeight',
-      'spanLength',
-      'lastInspectionDate',
-      'nhvrAssessed',
-      'scourRisk',
-      'freightRoute',
-      'overMassRoute',
-      'hmlApproved',
-      'bDoubleApproved',
-      'restriction_ID'
-    )
+  let query = SELECT.from('bridge.management.Bridges').columns(
+    'ID',
+    'bridgeId',
+    'bridgeName',
+    'state',
+    'latitude',
+    'longitude',
+    'postingStatus',
+    'conditionRating',
+    'yearBuilt',
+    'structureType',
+    'route',
+    'region',
+    'clearanceHeight',
+    'spanLength',
+    'lastInspectionDate',
+    'nhvrAssessed',
+    'scourRisk',
+    'freightRoute',
+    'overMassRoute',
+    'hmlApproved',
+    'bDoubleApproved',
+    'restriction_ID',
+    'assetOwner',
+    'managingAuthority',
+    'material',
+    'spanCount',
+    'totalLength',
+    'deckWidth',
+    'averageDailyTraffic',
+    'loadRating',
+    'importanceLevel',
+    'scourDepthLastMeasured',
+    'geoJson'
   )
 
+  if (bboxParsed) {
+    if (isHanaDb()) {
+      const { minLon, minLat, maxLon, maxLat } = bboxParsed
+      const bridges = await db.run(
+        `SELECT * FROM "BRIDGE_MANAGEMENT_BRIDGES"
+         WHERE ST_Within("GEOLOCATION", NEW ST_Rectangle(${minLon}, ${minLat}, ${maxLon}, ${maxLat})) = 1`
+      )
+      return _mapBridgeRows(bridges, db)
+    } else {
+      const { minLat, maxLat, minLon, maxLon } = bboxParsed
+      query = query
+        .where('latitude >=', minLat)
+        .and('latitude <=', maxLat)
+        .and('longitude >=', minLon)
+        .and('longitude <=', maxLon)
+    }
+  }
+
+  const bridges = await db.run(query)
+  return _mapBridgeRows(bridges, db)
+}
+
+async function _mapBridgeRows(bridges, db) {
   const restrictionIds = [...new Set(bridges.map((bridge) => bridge.restriction_ID).filter(Boolean))]
   let vehicleClassByRestriction = new Map()
 
@@ -495,8 +543,315 @@ async function loadMapBridges() {
       hmlApproved: Boolean(bridge.hmlApproved),
       bDoubleApproved: Boolean(bridge.bDoubleApproved),
       vehicleClass: vehicleClassByRestriction.get(bridge.restriction_ID) || null,
-      restrictions: restrictionsByBridgeId.get(bridge.ID) || []
+      restrictions: restrictionsByBridgeId.get(bridge.ID) || [],
+      assetOwner: bridge.assetOwner || null,
+      managingAuthority: bridge.managingAuthority || null,
+      material: bridge.material || null,
+      spanCount: bridge.spanCount || null,
+      totalLength: bridge.totalLength ? Number(bridge.totalLength) : null,
+      deckWidth: bridge.deckWidth ? Number(bridge.deckWidth) : null,
+      averageDailyTraffic: bridge.averageDailyTraffic || null,
+      loadRating: bridge.loadRating ? Number(bridge.loadRating) : null,
+      importanceLevel: bridge.importanceLevel || null,
+      geoJson: bridge.geoJson || null
     }))
+}
+
+async function loadMapRestrictions({ bbox } = {}) {
+  const db = await cds.connect.to('db');
+  const bboxParsed = parseBbox(bbox);
+
+  const restrictions = await db.run(
+    SELECT.from('bridge.management.Restrictions')
+      .columns('ID', 'restrictionRef', 'bridgeRef', 'bridge_ID', 'restrictionType',
+        'restrictionValue', 'restrictionUnit', 'restrictionStatus', 'active',
+        'restrictionCategory', 'grossMassLimit', 'axleMassLimit', 'heightLimit',
+        'widthLimit', 'lengthLimit', 'speedLimit', 'permitRequired', 'escortRequired',
+        'effectiveFrom', 'effectiveTo', 'approvedBy', 'direction', 'remarks')
+      .where({ active: true })
+  );
+
+  if (!restrictions.length) return [];
+
+  const bridgeIds = [...new Set(restrictions.map(r => r.bridge_ID).filter(Boolean))];
+  const bridges = bridgeIds.length ? await db.run(
+    SELECT.from('bridge.management.Bridges')
+      .columns('ID', 'latitude', 'longitude', 'bridgeId', 'bridgeName', 'state', 'postingStatus')
+      .where({ ID: { in: bridgeIds } })
+  ) : [];
+
+  const bridgeMap = new Map(bridges.map(b => [b.ID, b]));
+
+  return restrictions
+    .filter(r => {
+      const bridge = bridgeMap.get(r.bridge_ID);
+      if (!bridge) return false;
+      if (!Number.isFinite(Number(bridge.latitude)) || !Number.isFinite(Number(bridge.longitude))) return false;
+      if (bboxParsed) {
+        const lat = Number(bridge.latitude), lon = Number(bridge.longitude);
+        if (lat < bboxParsed.minLat || lat > bboxParsed.maxLat) return false;
+        if (lon < bboxParsed.minLon || lon > bboxParsed.maxLon) return false;
+      }
+      return true;
+    })
+    .map(r => {
+      const bridge = bridgeMap.get(r.bridge_ID);
+      return {
+        ID: r.ID,
+        restrictionRef: r.restrictionRef || '—',
+        bridgeRef: r.bridgeRef || '—',
+        bridge_ID: r.bridge_ID,
+        bridgeId: bridge.bridgeId,
+        bridgeName: bridge.bridgeName,
+        state: bridge.state || null,
+        bridgePostingStatus: bridge.postingStatus || null,
+        latitude: Number(bridge.latitude),
+        longitude: Number(bridge.longitude),
+        restrictionType: r.restrictionType || null,
+        restrictionCategory: r.restrictionCategory || null,
+        restrictionValue: r.restrictionValue || null,
+        restrictionUnit: r.restrictionUnit || null,
+        restrictionStatus: r.restrictionStatus || null,
+        grossMassLimit: r.grossMassLimit ? Number(r.grossMassLimit) : null,
+        axleMassLimit: r.axleMassLimit ? Number(r.axleMassLimit) : null,
+        heightLimit: r.heightLimit ? Number(r.heightLimit) : null,
+        widthLimit: r.widthLimit ? Number(r.widthLimit) : null,
+        lengthLimit: r.lengthLimit ? Number(r.lengthLimit) : null,
+        speedLimit: r.speedLimit ? Number(r.speedLimit) : null,
+        permitRequired: Boolean(r.permitRequired),
+        escortRequired: Boolean(r.escortRequired),
+        effectiveFrom: r.effectiveFrom || null,
+        effectiveTo: r.effectiveTo || null,
+        approvedBy: r.approvedBy || null,
+        direction: r.direction || null,
+        remarks: r.remarks || null
+      };
+    });
+}
+
+function buildBridgesCsv(bridges) {
+  const FIELDS = ['ID','bridgeId','bridgeName','state','latitude','longitude','postingStatus',
+    'conditionRating','yearBuilt','structureType','route','region','clearanceHeight','spanLength',
+    'assetOwner','scourRisk','nhvrAssessed','freightRoute','overMassRoute','hmlApproved','bDoubleApproved'];
+  const header = FIELDS.join(',');
+  const rows = bridges.map(b => FIELDS.map(f => {
+    const v = b[f];
+    if (v == null) return '';
+    const s = String(v);
+    return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }).join(','));
+  return header + '\n' + rows.join('\n');
+}
+
+function buildRestrictionsCsv(restrictions) {
+  const FIELDS = ['ID','restrictionRef','bridgeRef','bridgeName','state','restrictionType',
+    'restrictionCategory','restrictionValue','restrictionUnit','restrictionStatus',
+    'grossMassLimit','axleMassLimit','heightLimit','widthLimit','lengthLimit','speedLimit',
+    'permitRequired','escortRequired','effectiveFrom','effectiveTo','approvedBy','direction'];
+  const header = FIELDS.join(',');
+  const rows = restrictions.map(r => FIELDS.map(f => {
+    const v = r[f];
+    if (v == null) return '';
+    const s = String(v);
+    return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+  }).join(','));
+  return header + '\n' + rows.join('\n');
+}
+
+function zoomToCellSize(zoom) {
+  if (zoom <= 4)  return 2.0;
+  if (zoom <= 5)  return 1.0;
+  if (zoom <= 6)  return 0.5;
+  if (zoom <= 7)  return 0.25;
+  if (zoom <= 8)  return 0.1;
+  return null; // individual points at zoom 9+
+}
+
+async function loadClusters({ bbox, zoom = 6 } = {}) {
+  const db = await cds.connect.to('db');
+  const bboxParsed = parseBbox(bbox);
+  const cellSize = zoomToCellSize(Number(zoom));
+
+  // At high zoom, return individual bridge points (not clusters)
+  if (!cellSize) {
+    const bridges = await loadMapBridges({ bbox });
+    return {
+      type: 'points',
+      features: bridges.map(b => ({
+        lat: b.latitude,
+        lng: b.longitude,
+        id: b.ID,
+        bridgeId: b.bridgeId,
+        bridgeName: b.bridgeName,
+        postingStatus: b.postingStatus,
+        conditionRating: b.conditionRating
+      }))
+    };
+  }
+
+  // Grid-based clustering via SQL aggregation
+  // Works on both HANA and SQLite
+  let query;
+  if (bboxParsed) {
+    const { minLat, maxLat, minLon, maxLon } = bboxParsed;
+    if (isHanaDb()) {
+      query = `
+        SELECT
+          ROUND("LATITUDE" / ${cellSize}) * ${cellSize} AS "gridLat",
+          ROUND("LONGITUDE" / ${cellSize}) * ${cellSize} AS "gridLon",
+          COUNT(*) AS "cnt",
+          AVG("CONDITIONRATING") AS "avgCondition",
+          SUM(CASE WHEN "POSTINGSTATUS" = 'Closed' THEN 1 ELSE 0 END) AS "closedCount",
+          SUM(CASE WHEN "POSTINGSTATUS" IN ('Restricted','Under Review') THEN 1 ELSE 0 END) AS "restrictedCount"
+        FROM "BRIDGE_MANAGEMENT_BRIDGES"
+        WHERE "LATITUDE" BETWEEN ${minLat} AND ${maxLat}
+          AND "LONGITUDE" BETWEEN ${minLon} AND ${maxLon}
+          AND "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL
+        GROUP BY ROUND("LATITUDE" / ${cellSize}), ROUND("LONGITUDE" / ${cellSize})
+      `;
+    } else {
+      query = `
+        SELECT
+          ROUND(latitude / ${cellSize}) * ${cellSize} AS gridLat,
+          ROUND(longitude / ${cellSize}) * ${cellSize} AS gridLon,
+          COUNT(*) AS cnt,
+          AVG(conditionRating) AS avgCondition,
+          SUM(CASE WHEN postingStatus = 'Closed' THEN 1 ELSE 0 END) AS closedCount,
+          SUM(CASE WHEN postingStatus IN ('Restricted','Under Review') THEN 1 ELSE 0 END) AS restrictedCount
+        FROM bridge_management_Bridges
+        WHERE latitude BETWEEN ${minLat} AND ${maxLat}
+          AND longitude BETWEEN ${minLon} AND ${maxLon}
+          AND latitude IS NOT NULL AND longitude IS NOT NULL
+        GROUP BY ROUND(latitude / ${cellSize}), ROUND(longitude / ${cellSize})
+      `;
+    }
+  } else {
+    if (isHanaDb()) {
+      query = `
+        SELECT
+          ROUND("LATITUDE" / ${cellSize}) * ${cellSize} AS "gridLat",
+          ROUND("LONGITUDE" / ${cellSize}) * ${cellSize} AS "gridLon",
+          COUNT(*) AS "cnt",
+          AVG("CONDITIONRATING") AS "avgCondition",
+          SUM(CASE WHEN "POSTINGSTATUS" = 'Closed' THEN 1 ELSE 0 END) AS "closedCount",
+          SUM(CASE WHEN "POSTINGSTATUS" IN ('Restricted','Under Review') THEN 1 ELSE 0 END) AS "restrictedCount"
+        FROM "BRIDGE_MANAGEMENT_BRIDGES"
+        WHERE "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL
+        GROUP BY ROUND("LATITUDE" / ${cellSize}), ROUND("LONGITUDE" / ${cellSize})
+      `;
+    } else {
+      query = `
+        SELECT
+          ROUND(latitude / ${cellSize}) * ${cellSize} AS gridLat,
+          ROUND(longitude / ${cellSize}) * ${cellSize} AS gridLon,
+          COUNT(*) AS cnt,
+          AVG(conditionRating) AS avgCondition,
+          SUM(CASE WHEN postingStatus = 'Closed' THEN 1 ELSE 0 END) AS closedCount,
+          SUM(CASE WHEN postingStatus IN ('Restricted','Under Review') THEN 1 ELSE 0 END) AS restrictedCount
+        FROM bridge_management_Bridges
+        WHERE latitude IS NOT NULL AND longitude IS NOT NULL
+        GROUP BY ROUND(latitude / ${cellSize}), ROUND(longitude / ${cellSize})
+      `;
+    }
+  }
+
+  const rows = await db.run(query);
+  return {
+    type: 'clusters',
+    cellSize,
+    features: (rows || []).map(row => {
+      const lat = Number(row.gridLat || row['gridLat']);
+      const lng = Number(row.gridLon || row['gridLon']);
+      const cnt = Number(row.cnt || row['cnt'] || 0);
+      const avg = row.avgCondition || row['avgCondition'];
+      const closed = Number(row.closedCount || row['closedCount'] || 0);
+      const restricted = Number(row.restrictedCount || row['restrictedCount'] || 0);
+      return {
+        lat,
+        lng,
+        count: cnt,
+        avgCondition: avg != null ? Math.round(Number(avg) * 10) / 10 : null,
+        closedCount: closed,
+        restrictedCount: restricted
+      };
+    }).filter(f => Number.isFinite(f.lat) && Number.isFinite(f.lng))
+  };
+}
+
+function haversineDistanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
+  const db = await cds.connect.to('db');
+  const latN = Number(lat), lngN = Number(lng), radN = Number(radiusKm);
+
+  if (!Number.isFinite(latN) || !Number.isFinite(lngN) || radN <= 0) {
+    throw new Error('lat, lng and radius (km) are required');
+  }
+
+  // Approximate bounding box for initial filter (faster)
+  const latDelta = radN / 111;
+  const lngDelta = radN / (111 * Math.cos(latN * Math.PI / 180));
+  const minLat = latN - latDelta, maxLat = latN + latDelta;
+  const minLon = lngN - lngDelta, maxLon = lngN + lngDelta;
+
+  let bridges;
+  if (isHanaDb()) {
+    // HANA: ST_Distance for exact spherical distance
+    bridges = await db.run(`
+      SELECT "ID","bridgeId","bridgeName","state","latitude","longitude",
+             "postingStatus","conditionRating","structureType","route","region",
+             "clearanceHeight","spanLength","nhvrAssessed","scourRisk",
+             "geoLocation".ST_Distance(NEW ST_Point(${lngN}, ${latN}, 4326), 'meter') / 1000 AS "distanceKm"
+      FROM "BRIDGE_MANAGEMENT_BRIDGES"
+      WHERE "LATITUDE" BETWEEN ${minLat} AND ${maxLat}
+        AND "LONGITUDE" BETWEEN ${minLon} AND ${maxLon}
+        AND "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL
+        AND "geoLocation".ST_Distance(NEW ST_Point(${lngN}, ${latN}, 4326), 'meter') / 1000 <= ${radN}
+      ORDER BY "distanceKm"
+    `);
+  } else {
+    // SQLite: haversine post-filter
+    const candidateQuery = SELECT.from('bridge.management.Bridges')
+      .columns('ID', 'bridgeId', 'bridgeName', 'state', 'latitude', 'longitude',
+        'postingStatus', 'conditionRating', 'structureType', 'route', 'region',
+        'clearanceHeight', 'spanLength', 'nhvrAssessed', 'scourRisk')
+      .where('latitude >=', minLat).and('latitude <=', maxLat)
+      .and('longitude >=', minLon).and('longitude <=', maxLon);
+    const candidates = await db.run(candidateQuery);
+    bridges = candidates
+      .map(b => ({
+        ...b,
+        distanceKm: haversineDistanceKm(latN, lngN, Number(b.latitude), Number(b.longitude))
+      }))
+      .filter(b => b.distanceKm <= radN)
+      .sort((a, b) => a.distanceKm - b.distanceKm);
+  }
+
+  return (bridges || []).map(b => ({
+    ID: b.ID,
+    bridgeId: b.bridgeId || '—',
+    bridgeName: b.bridgeName || 'Bridge',
+    state: b.state || null,
+    latitude: Number(b.latitude),
+    longitude: Number(b.longitude),
+    postingStatus: b.postingStatus || null,
+    conditionRating: b.conditionRating != null ? Number(b.conditionRating) : null,
+    structureType: b.structureType || null,
+    route: b.route || null,
+    region: b.region || null,
+    clearanceHeight: b.clearanceHeight != null ? Number(b.clearanceHeight) : null,
+    spanLength: b.spanLength != null ? Number(b.spanLength) : null,
+    nhvrAssessed: Boolean(b.nhvrAssessed),
+    scourRisk: b.scourRisk || null,
+    distanceKm: Math.round(Number(b.distanceKm || 0) * 100) / 100
+  }));
 }
 
 cds.on('bootstrap', (app) => {
@@ -591,18 +946,127 @@ cds.on('bootstrap', (app) => {
 
   const mapRouter = express.Router()
 
-  mapRouter.get('/bridges', async (_req, res) => {
+  mapRouter.get('/bridges', async (req, res) => {
     try {
-      const bridges = await loadMapBridges()
+      const bridges = await loadMapBridges({ bbox: req.query.bbox })
       res.json({ bridges })
     } catch (error) {
       res.status(500).json({ error: { message: error.message || 'Failed to load bridge map data' } })
     }
   })
 
+  mapRouter.get('/restrictions', async (req, res) => {
+    try {
+      const restrictions = await loadMapRestrictions({ bbox: req.query.bbox });
+      res.json({ restrictions });
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load restriction map data' } });
+    }
+  });
+
+  mapRouter.get('/export', async (req, res) => {
+    try {
+      const format = (req.query.format || 'geojson').toLowerCase();
+      const layer = (req.query.layer || 'bridges').toLowerCase();
+      const bbox = req.query.bbox;
+
+      if (layer === 'restrictions') {
+        const restrictions = await loadMapRestrictions({ bbox });
+        if (format === 'csv') {
+          const csv = buildRestrictionsCsv(restrictions);
+          res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+          res.setHeader('Content-Disposition', 'attachment; filename="bridge-restrictions.csv"');
+          return res.send(csv);
+        }
+        const geojson = {
+          type: 'FeatureCollection',
+          features: restrictions.map(r => ({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [r.longitude, r.latitude] },
+            properties: { ...r, latitude: undefined, longitude: undefined }
+          }))
+        };
+        res.setHeader('Content-Type', 'application/geo+json');
+        res.setHeader('Content-Disposition', 'attachment; filename="bridge-restrictions.geojson"');
+        return res.json(geojson);
+      }
+
+      // default: bridges
+      const bridges = await loadMapBridges({ bbox });
+      if (format === 'csv') {
+        const csv = buildBridgesCsv(bridges);
+        res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="bridges.csv"');
+        return res.send(csv);
+      }
+      const geojson = {
+        type: 'FeatureCollection',
+        features: bridges.map(b => ({
+          type: 'Feature',
+          geometry: b.geoJson ? JSON.parse(b.geoJson) : { type: 'Point', coordinates: [b.longitude, b.latitude] },
+          properties: { ...b, geoJson: undefined, latitude: undefined, longitude: undefined }
+        }))
+      };
+      res.setHeader('Content-Type', 'application/geo+json');
+      res.setHeader('Content-Disposition', 'attachment; filename="bridges.geojson"');
+      res.json(geojson);
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Export failed' } });
+    }
+  });
+
+  mapRouter.get('/clusters', async (req, res) => {
+    try {
+      const result = await loadClusters({ bbox: req.query.bbox, zoom: req.query.zoom });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load cluster data' } });
+    }
+  });
+
+  mapRouter.get('/proximity', async (req, res) => {
+    try {
+      const { lat, lng, radius } = req.query;
+      const bridges = await loadProximityBridges({ lat, lng, radiusKm: radius || 10 });
+      res.json({ bridges, searchCenter: { lat: Number(lat), lng: Number(lng) }, radiusKm: Number(radius || 10) });
+    } catch (error) {
+      res.status(error.message.includes('required') ? 400 : 500)
+         .json({ error: { message: error.message || 'Proximity search failed' } });
+    }
+  });
+
+  mapRouter.get('/config', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db');
+      let cfg = await db.run(SELECT.one.from('bridge_management_GISConfig').where({ id: 'default' }));
+      if (!cfg) {
+        cfg = {
+          id: 'default', defaultBasemap: 'osm', hereApiKey: '',
+          showStateBoundaries: false, showLgaBoundaries: false,
+          enableScaleBar: true, enableNorthArrow: true, enableGps: true,
+          enableMinimap: true, enableHeatmap: false, enableTimeSlider: false,
+          enableStatsPanel: true, enableProximity: true, enableMgaCoords: true,
+          enableStreetView: true, enableConditionAlerts: true, enableCustomWms: false,
+          enableServerClustering: false, conditionAlertThreshold: 3,
+          proximityDefaultRadiusKm: 10, heatmapRadius: 20, heatmapBlur: 15,
+          viewportLoadingZoom: 8, customWmsLayers: null
+        };
+      }
+      if (cfg.customWmsLayers) {
+        try { cfg.customWmsLayers = JSON.parse(cfg.customWmsLayers); } catch (_) { cfg.customWmsLayers = []; }
+      } else {
+        cfg.customWmsLayers = [];
+      }
+      res.json(cfg);
+    } catch (err) {
+      res.status(500).json({ error: { message: err.message || 'Failed to load GIS config' } });
+    }
+  });
+
   app.use('/map/api', mapRouter)
 
   const massEditRouter = express.Router()
+  massEditRouter.use(express.json({ limit: '5mb' }))
 
   massEditRouter.get('/lookups', async (_req, res) => {
     try {
@@ -659,5 +1123,17 @@ cds.on('bootstrap', (app) => {
 
   app.use('/mass-edit/api', massEditRouter)
 })
+
+cds.on('served', async () => {
+  if (!isHanaDb()) return;
+  try {
+    const db = await cds.connect.to('db');
+    await db.run(`UPDATE "BRIDGE_MANAGEMENT_BRIDGES"
+      SET "GEOLOCATION" = NEW ST_Point("LONGITUDE", "LATITUDE", 4326)
+      WHERE "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL AND "GEOLOCATION" IS NULL`);
+  } catch (e) {
+    // Spatial column may not exist in dev — ignore
+  }
+});
 
 module.exports = cds.server

@@ -51,11 +51,11 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
 }
 
 .nhvrMapApp .sapFFCLColumnEnd {
-  display: none !important;
   flex: 0 0 0 !important;
   width: 0 !important;
   min-width: 0 !important;
   max-width: 0 !important;
+  overflow: hidden;
 }
 
 .nhvrMapApp .sapFFCLColumnSeparator {
@@ -206,6 +206,14 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
 .nhvrMapHostShell .sapUiCoreHTML {
   width: 100%;
   height: 100%;
+}
+
+/* Ensure the inner UI5 VBox fills the host shell so Leaflet gets a real height */
+.nhvrMapHostShell > .sapMVBox {
+  flex: 1 1 auto;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .nhvrCoordinateBar {
@@ -610,4 +618,223 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
     border-left: none;
     border-top: 1px solid #d7e1ef;
   }
+}
+
+/* Restriction markers (diamond shapes) */
+.rstrMarker {
+  width: 26px;
+  height: 26px;
+  transform: rotate(45deg);
+  border: 2.5px solid;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.25);
+}
+
+.rstrMarker--critical { background: #fee2e2; border-color: #ef4444; }
+.rstrMarker--warning  { background: #fef3c7; border-color: #f59e0b; }
+.rstrMarker--info     { background: #ede9fe; border-color: #6366f1; }
+
+.rstrMarkerLabel {
+  transform: rotate(-45deg);
+  font-size: 0.52rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Feature detail panel */
+.nhvrFeaturePage {
+  background: #fff;
+}
+
+.nhvrFeatureDetail {
+  padding: 0;
+}
+
+.nhvrFeatureHeader.sapMOH {
+  padding: 1rem 1rem 0.5rem;
+  border-bottom: 1px solid #e8eef7;
+}
+
+.nhvrFeatureSection {
+  padding: 0.75rem 1rem 0;
+  border-bottom: 1px solid #f0f4f8;
+}
+
+.nhvrFeatureSectionTitle {
+  color: #52616f;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.35rem;
+}
+
+.nhvrFeatureMetrics {
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.nhvrFeatureMetric {
+  flex: 1;
+  background: #f7f9fb;
+  border: 1px solid #e8eef7;
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.6rem;
+}
+
+.nhvrFeatureActions {
+  padding: 1rem;
+}
+
+.nhvrSubText.sapMText {
+  color: #8696a9;
+  font-size: 0.8rem;
+}
+
+.nhvrRestrictionRow {
+  padding: 0.25rem 0;
+}
+
+/* Layer group styling */
+.nhvrLayerGroup {
+  border: 1px solid #e5eaf0;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  background: #fff;
+}
+
+.nhvrLayerGroupHeader {
+  padding: 0.5rem 0.6rem;
+  background: #f7f9fb;
+  border-bottom: 1px solid #e5eaf0;
+  min-height: 2.75rem;
+}
+
+.nhvrLayerGroupTitle.sapMTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1d2b3a;
+  margin: 0 0 0 0.25rem;
+}
+
+.nhvrLayerCount.sapMText {
+  color: #8696a9;
+  font-size: 0.75rem;
+}
+
+.nhvrLayerSubOptions {
+  padding: 0.35rem 0.75rem 0.5rem;
+}
+
+.nhvrLayerSubOption {
+  margin-bottom: 0.2rem;
+}
+
+.nhvrLayerSubLabel.sapMLabel {
+  font-size: 0.8rem;
+  color: #52616f;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+}
+
+.nhvrLayerColorBy {
+  flex: 1;
+}
+
+.nhvrLayerHint.sapMText {
+  font-size: 0.78rem;
+  color: #8696a9;
+  font-style: italic;
+}
+
+.nhvrLayerIconWarning {
+  color: #f59e0b !important;
+}
+
+/* End column — shown when three-column layout is active (FCL adds sapFFCLThreeColumnsMidExpanded etc.) */
+.nhvrMapApp[data-sap-ui-component] .sapFFCLColumnEnd:not([aria-hidden="true"]),
+.nhvrMapApp .sapFFCLColumnEnd.sapFFCLColumnActive {
+  flex: 0 0 22rem !important;
+  width: 22rem !important;
+  min-width: 22rem !important;
+  max-width: 22rem !important;
+  overflow: auto;
+}
+
+/* ── GIS Advanced Feature UI ────────────────────────────────────────────── */
+
+/* MGA coordinate display */
+.nhvrMgaCoords.sapMText {
+  margin-left: 0.75rem;
+  padding-left: 0.75rem;
+  border-left: 1px solid rgba(0,0,0,0.12);
+  color: #52616f;
+}
+
+/* Statistics panel */
+.nhvrStatsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.nhvrStatCard {
+  flex: 1;
+  min-width: 4.5rem;
+  background: #f7f9fb;
+  border: 1px solid #e5eaf0;
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.5rem;
+  align-items: center;
+  text-align: center;
+}
+
+.nhvrStatLabel.sapMText {
+  font-size: 0.72rem;
+  color: #8696a9;
+  margin-top: 0.15rem;
+}
+
+/* Condition alert markers */
+.condAlert {
+  background: #fef2f2;
+  border: 2px solid #ef4444;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Proximity results */
+.nhvrProximityBadge {
+  display: inline-flex;
+  align-items: center;
+  background: #ede9fe;
+  color: #7c3aed;
+  border-radius: 1rem;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+/* GPS button adjustments */
+.leaflet-gps-btn {
+  display: block !important;
+  margin-bottom: 5px;
+}
+
+/* North arrow */
+.leaflet-north-arrow {
+  cursor: default;
+  user-select: none;
 }

@@ -23,4 +23,5 @@ service AdminService {
   @readonly entity RestrictionCategories as projection on my.RestrictionCategories;
   @readonly entity RestrictionUnits as projection on my.RestrictionUnits;
   @readonly entity RestrictionDirections as projection on my.RestrictionDirections;
+  entity GISConfig as projection on my.GISConfig;
 }

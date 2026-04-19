@@ -39,7 +39,8 @@
     "dependencies": {
       "minUI5Version": "1.136.0",
       "libs": {
-        "sap.fe.templates": {}
+        "sap.fe.templates": {},
+        "sap.ui.layout": {}
       }
     },
     "models": {
@@ -68,9 +69,22 @@
           "pattern": "Bridges({key}):?query:",
           "name": "BridgesDetails",
           "target": "BridgesDetails"
+        },
+        {
+          "pattern": "GISConfig:?query:",
+          "name": "GISConfig",
+          "target": "GISConfig"
         }
       ],
       "targets": {
+        "GISConfig": {
+          "type": "XMLView",
+          "id": "GISConfig",
+          "viewName": "BridgeManagement.adminbridges.ext.view.GISConfig",
+          "viewLevel": 1,
+          "controlAggregation": "midColumnPages",
+          "controlId": "fcl"
+        },
         "BridgesList": {
           "type": "Component",
           "id": "BridgesList",
@@ -85,6 +99,14 @@
                     "route": "BridgesDetails"
                   }
                 }
+              },
+              "actions": {
+                "openGISConfig": {
+                  "press": "BridgeManagement.adminbridges.ext.controller.ListReportExt.onOpenGISConfig",
+                  "text": "GIS Configuration",
+                  "enabled": true,
+                  "type": "ForAction"
+                }
               }
             }
           }
@@ -96,7 +118,21 @@
           "options": {
             "settings": {
               "entitySet": "Bridges",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "content": {
+                "body": {
+                  "sections": {
+                    "mapSection": {
+                      "template": "BridgeManagement.adminbridges.ext.fragment.GisMapTab",
+                      "title": "Map",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "GeneralInformation"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

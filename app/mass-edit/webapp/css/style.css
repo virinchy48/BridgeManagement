@@ -1,3 +1,4 @@
+/* ─── Full-bleed layout ──────────────────────────────────────────────────── */
 body.massEditFullBleed .sapUshellApplicationContainerLimitedWidth,
 body.massEditFullBleed .sapUshellApplicationContainer,
 body.massEditFullBleed #application-MassEdit-manage-component {
@@ -7,6 +8,15 @@ body.massEditFullBleed #application-MassEdit-manage-component {
   margin-right: 0 !important;
 }
 
+/* ─── Root view height fix ────────────────────────────────────────────────── */
+/* Without an explicit height the XMLView collapses to its content's intrinsic
+   height (~192 px) instead of filling the Fiori shell's 668 px content area.
+   Setting height:100% lets the DynamicPage expand to fill the available space. */
+.sapUShellApplicationContainer .sapUiXMLView {
+  height: 100%;
+}
+
+/* ─── DynamicPage background & layout ───────────────────────────────────── */
 .massEditPage .sapFDynamicPageContent,
 .massEditPage .sapFDynamicPageContentFitContainer {
   background: #f7f9fc;
@@ -16,15 +26,49 @@ body.massEditFullBleed #application-MassEdit-manage-component {
   max-width: none;
 }
 
-.massEditShell {
-  gap: 0.75rem;
-}
-
+/* ─── Filter and bulk bars ───────────────────────────────────────────────── */
 .massEditFilterBar,
 .massEditBulkBar {
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
+/* ─── Table cells ────────────────────────────────────────────────────────── */
 .massEditTable .sapUiTableCell {
   vertical-align: middle;
+}
+
+/* Compact input/select/datepicker inside table cells */
+.massEditTable .sapMInput,
+.massEditTable .sapMComboBox,
+.massEditTable .sapMDP {
+  margin: 0;
+}
+
+/* ─── Dirty row highlight ────────────────────────────────────────────────── */
+/* SAP row highlight renders an amber left border via rowSettingsTemplate.
+   We add a subtle background tint so changed rows are immediately obvious. */
+.massEditTable .sapUiTableRowHighlightWarning ~ td,
+.massEditTable tr.sapUiTableRowHighlightWarning > td {
+  background-color: #fff9ed !important;
+}
+
+/* ─── Info toolbar (dirty banner) ────────────────────────────────────────── */
+/* Sits between column headers and first data row — never affects outer layout */
+.massEditInfoBar {
+  gap: 0.5rem;
+  padding: 0.375rem 1rem;
+  background: #fef3e2;
+  border-bottom: 1px solid #e9730c;
+}
+
+/* ─── Fixed first column separator ──────────────────────────────────────── */
+.massEditTable .sapUiTableFixedCols .sapUiTableCell {
+  border-right: 2px solid #d1e3f8 !important;
+}
+
+/* ─── Bulk apply panel ───────────────────────────────────────────────────── */
+.massEditBulkPanel {
+  border-left: 3px solid #0a6ed1;
+  padding-left: 0.75rem;
 }
