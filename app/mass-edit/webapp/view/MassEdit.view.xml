@@ -73,7 +73,7 @@
               press="onToggleBulkApply"/>
           </HBox>
 
-          <Panel expandable="false" visible="{view>/bulkVisible}" backgroundDesign="Transparent" class="sapUiTinyMarginTop">
+          <Panel expandable="false" visible="{view>/bulkVisible}" backgroundDesign="Transparent" class="sapUiTinyMarginTop massEditBulkPanel">
             <content>
               <HBox wrap="Wrap" alignItems="Center" class="massEditBulkBar">
                 <VBox>
@@ -103,27 +103,38 @@
 
     <f:content>
       <VBox class="massEditShell">
-        <MessageStrip text="{view>/dirtyMessage}" visible="{= ${view>/dirtyCount} > 0 }" type="Warning" showIcon="true"/>
+        <MessageStrip
+          text="{view>/dirtyMessage}"
+          visible="{= ${view>/dirtyCount} > 0 }"
+          type="Warning"
+          showIcon="true"
+          class="sapUiTinyMarginBegin sapUiTinyMarginEnd"/>
 
         <t:Table
           id="massEditTable"
-          rows="{view>/items}"
+          rows="{path: 'view>/allItems'}"
           selectionMode="MultiToggle"
+          selectionBehavior="RowSelector"
           rowSelectionChange="onTableSelectionChange"
           visibleRowCountMode="Fixed"
-          visibleRowCount="14"
+          visibleRowCount="20"
           rowHeight="40"
+          fixedColumnCount="1"
           alternateRowColors="true"
           enableColumnReordering="true"
           busy="{view>/busy}"
-          busyIndicatorDelay="0"
+          busyIndicatorDelay="200"
+          threshold="50"
           class="massEditTable sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginBottom"
           noData="{i18n>noRecords}">
+          <t:rowSettingsTemplate>
+            <t:RowSettings highlight="{= ${view>_dirty} ? 'Warning' : 'None'}"/>
+          </t:rowSettingsTemplate>
           <t:extension>
             <OverflowToolbar>
               <Title text="{view>/tableTitle}" level="H3"/>
               <ToolbarSpacer/>
-              <Text text="{view>/summaryText}"/>
+              <Text text="{view>/summaryText}" class="sapUiSmallMarginEnd"/>
             </OverflowToolbar>
           </t:extension>
         </t:Table>

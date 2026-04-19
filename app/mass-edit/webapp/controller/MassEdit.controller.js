@@ -1,6 +1,8 @@
 sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
+  "sap/ui/model/Filter",
+  "sap/ui/model/FilterOperator",
   "sap/m/MessageBox",
   "sap/m/MessageToast",
   "sap/ui/table/Column",
@@ -13,6 +15,8 @@ sap.ui.define([
 ], function (
   Controller,
   JSONModel,
+  Filter,
+  FilterOperator,
   MessageBox,
   MessageToast,
   Column,
@@ -103,7 +107,7 @@ sap.ui.define([
     onInit: function () {
       document.body.classList.add("massEditFullBleed");
 
-      this._allRows = [];
+      // _baselineRows: deep-clone of original server data used for dirty comparison
       this._baselineRows = [];
       this._lookupsLoaded = false;
       this._suppressValueChange = false;
@@ -113,7 +117,8 @@ sap.ui.define([
         busy: false,
         initialized: false,
         entityKey: "BRIDGE",
-        items: [],
+        // allItems holds every row; the table binding filters it without replacing the array
+        allItems: [],
         bulkButtonText: this._text("bulkApply"),
         applyButtonText: this._text("applyToSelected", [0]),
         dirtyMessage: this._text("dirtyRows", [0]),
@@ -177,8 +182,10 @@ sap.ui.define([
       }
       model.setProperty("/entityKey", entityKey);
       model.setProperty("/filters", { search: "", state: "", status: "", onlyDirty: false });
+      model.setProperty("/allItems", []);
       model.setProperty("/selectedCount", 0);
       model.setProperty("/dirtyCount", 0);
+      model.setProperty("/summaryText", "");
       model.setProperty("/bulkVisible", false);
       model.setProperty("/bulkButtonText", this._text("bulkApply"));
       model.setProperty("/applyButtonText", this._text("applyToSelected", [0]));
@@ -186,6 +193,13 @@ sap.ui.define([
       model.setProperty("/bulkFieldKey", "");
       model.setProperty("/bulkInputType", "text");
       this._clearBulkValueControls();
+      this._baselineRows = [];
+      // Clear any active binding filters before rebuilding columns
+      const table = this.byId("massEditTable");
+      const binding = table && table.getBinding("rows");
+      if (binding) {
+        binding.filter([]);
+      }
       this._buildTable();
       this._loadEntityData();
     },
@@ -248,9 +262,8 @@ sap.ui.define([
     },
 
     onSave: async function () {
-      const dirtyRows = this._allRows.filter(function (row) {
-        return row._dirty;
-      });
+      const allItems = this._vm().getProperty("/allItems") || [];
+      const dirtyRows = allItems.filter(function (row) { return row._dirty; });
 
       if (!dirtyRows.length) {
         return;
@@ -270,9 +283,8 @@ sap.ui.define([
           },
           body: JSON.stringify({ updates: payload })
         });
-        const data = response.data;
 
-        MessageToast.show(this._text("saveSuccess", [data.updated || payload.length]));
+        MessageToast.show(this._text("saveSuccess", [response.data.updated || payload.length]));
         await this._loadEntityData();
       } catch (error) {
         MessageBox.error(error.message || this._text("saveError"));
@@ -292,7 +304,9 @@ sap.ui.define([
         emphasizedAction: MessageBox.Action.OK,
         onClose: function (action) {
           if (action !== MessageBox.Action.OK) return;
-          this._allRows = this._cloneRows(this._baselineRows);
+          // Restore from baseline — replace allItems with a fresh clone
+          const restored = this._cloneRows(this._baselineRows);
+          this._vm().setProperty("/allItems", restored);
           this._applyFilters();
         }.bind(this)
       });
@@ -320,19 +334,21 @@ sap.ui.define([
           const lookupResponse = await this._fetchJsonWithFallback("api/lookups", {
             headers: { Accept: "application/json" }
           });
-          const lookupData = lookupResponse.data;
-          this._applyLookups(lookupData);
+          this._applyLookups(lookupResponse.data);
           this._lookupsLoaded = true;
         }
 
         const response = await this._fetchJsonWithFallback(this._config().endpoint, {
           headers: { Accept: "application/json" }
         });
-        const data = response.data;
 
         const payloadKey = this._config().key === "BRIDGE" ? "bridges" : "restrictions";
-        this._allRows = this._prepareRows(data[payloadKey] || []);
-        this._baselineRows = this._cloneRows(this._allRows);
+        const rows = this._prepareRows(response.data[payloadKey] || []);
+        this._baselineRows = this._cloneRows(rows);
+
+        // Put all rows into the model at a stable path.
+        // _applyFilters will filter the table binding — no array replacement.
+        model.setProperty("/allItems", rows);
         this._applyFilters();
         model.setProperty("/initialized", true);
       } catch (error) {
@@ -361,35 +377,81 @@ sap.ui.define([
       const config = this._config();
       const filters = model.getProperty("/filters");
       const search = (filters.search || "").trim().toLowerCase();
-      const items = this._allRows.filter(function (row) {
-        if (filters.onlyDirty && !row._dirty) return false;
-        if (config.stateField && filters.state && row[config.stateField] !== filters.state) return false;
-        if (config.statusField && filters.status && row[config.statusField] !== filters.status) return false;
-        if (!search) return true;
-        return config.searchFields.some(function (field) {
-          return String(row[field] || "").toLowerCase().includes(search);
+
+      // -------------------------------------------------------------------
+      // Build sap.ui.model.Filter objects and push them to the TABLE BINDING
+      // instead of replacing the /allItems array.
+      // This keeps row binding contexts stable so Select/Input/DatePicker
+      // controls are never destroyed/recreated — eliminating all flicker.
+      // -------------------------------------------------------------------
+      const filterList = [];
+
+      if (filters.onlyDirty) {
+        filterList.push(new Filter("_dirty", FilterOperator.EQ, true));
+      }
+      if (config.stateField && filters.state) {
+        filterList.push(new Filter(config.stateField, FilterOperator.EQ, filters.state));
+      }
+      if (config.statusField && filters.status) {
+        filterList.push(new Filter(config.statusField, FilterOperator.EQ, filters.status));
+      }
+      if (search) {
+        // OR across all searchable text fields
+        const searchFilters = config.searchFields.map(function (sf) {
+          return new Filter({
+            path: sf,
+            test: function (val) {
+              return String(val || "").toLowerCase().includes(search);
+            }
+          });
         });
-      });
+        filterList.push(new Filter({ filters: searchFilters, and: false }));
+      }
+
+      const table = this.byId("massEditTable");
+      const binding = table && table.getBinding("rows");
+      if (binding) {
+        const combined = filterList.length
+          ? [new Filter({ filters: filterList, and: true })]
+          : [];
+        binding.filter(combined);
+      }
+
+      // Count filtered rows from the JS array (synchronous, avoids binding timing)
+      const allItems = model.getProperty("/allItems") || [];
+      const visibleCount = this._countFiltered(allItems, config, filters, search);
+      const dirtyCount = allItems.filter(function (r) { return r._dirty; }).length;
 
       this._setIfChanged("/tableTitle", this._text(config.key === "BRIDGE" ? "bridges" : "restrictions"));
       this._setIfChanged("/showStateFilter", Boolean(config.stateField));
       this._setIfChanged("/showStatusFilter", Boolean(config.statusField));
       this._setIfChanged("/statusFilterLabel", this._text(config.statusFilterLabelKey));
       this._setIfChanged("/statusFilterOptions", model.getProperty(config.statusOptionsPath) || []);
-      this._setIfChanged("/options/bulkFields", config.fields.filter(function (field) {
-        return field.editable;
-      }).map(function (field) {
-        return { key: field.key, text: this._text(field.labelKey) };
+      this._setIfChanged("/options/bulkFields", config.fields.filter(function (f) {
+        return f.editable;
+      }).map(function (f) {
+        return { key: f.key, text: this._text(f.labelKey) };
       }.bind(this)));
-      const dirtyCount = this._allRows.filter(function (row) { return row._dirty; }).length;
       this._setIfChanged("/dirtyCount", dirtyCount);
       this._setIfChanged("/dirtyMessage", this._text("dirtyRows", [dirtyCount]));
-      this._setIfChanged("/summaryText", this._text("records", [items.length]));
+      this._setIfChanged("/summaryText", this._text("records", [visibleCount]));
       this._clearTableSelection();
       this._setIfChanged("/selectedCount", 0);
       this._setIfChanged("/applyButtonText", this._text("applyToSelected", [0]));
-      model.setProperty("/items", items);
       this._suppressValueChange = false;
+    },
+
+    // Count rows matching current filter criteria — mirrors binding filter logic
+    _countFiltered: function (allItems, config, filters, search) {
+      return allItems.filter(function (row) {
+        if (filters.onlyDirty && !row._dirty) return false;
+        if (config.stateField && filters.state && row[config.stateField] !== filters.state) return false;
+        if (config.statusField && filters.status && row[config.statusField] !== filters.status) return false;
+        if (!search) return true;
+        return config.searchFields.some(function (sf) {
+          return String(row[sf] || "").toLowerCase().includes(search);
+        });
+      }).length;
     },
 
     _prepareRows: function (rows) {
@@ -490,17 +552,24 @@ sap.ui.define([
     },
 
     _updateDirtyFlag: function (rowPath) {
-      const row = this._vm().getProperty(rowPath);
+      const model = this._vm();
+      const row = model.getProperty(rowPath);
       const baseline = this._baselineRows.find(function (entry) {
         return String(entry.ID) === String(row.ID);
       });
+      if (!baseline) {
+        return;
+      }
       const dirty = this._config().fields.some(function (field) {
         return this._sameValue(row[field.key], baseline[field.key]) === false;
       }.bind(this));
-      this._vm().setProperty(rowPath + "/_dirty", dirty);
-      const dirtyCount = this._allRows.filter(function (entry) { return entry._dirty; }).length;
-      this._vm().setProperty("/dirtyCount", dirtyCount);
-      this._vm().setProperty("/dirtyMessage", this._text("dirtyRows", [dirtyCount]));
+      model.setProperty(rowPath + "/_dirty", dirty);
+
+      // Re-count from model — no separate _allRows needed
+      const allItems = model.getProperty("/allItems") || [];
+      const dirtyCount = allItems.filter(function (entry) { return entry._dirty; }).length;
+      model.setProperty("/dirtyCount", dirtyCount);
+      model.setProperty("/dirtyMessage", this._text("dirtyRows", [dirtyCount]));
     },
 
     _extractControlValue: function (field, control) {
