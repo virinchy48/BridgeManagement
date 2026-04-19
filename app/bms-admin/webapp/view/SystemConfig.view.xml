@@ -1,0 +1,71 @@
+<mvc:View
+  controllerName="BridgeManagement.bmsadmin.controller.SystemConfig"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  displayBlock="true">
+
+  <Page id="systemConfigPage" showHeader="false">
+
+    <customHeader>
+      <Bar>
+        <contentLeft>
+          <Title text="System Configuration" level="H3" />
+        </contentLeft>
+        <contentRight>
+          <Button id="saveBtn" text="Save Changes" type="Emphasized" enabled="false"
+                  press=".onSaveChanges" icon="sap-icon://save" />
+          <Button text="Reset to Defaults" type="Transparent"
+                  press=".onResetDefaults" icon="sap-icon://reset" class="sapUiSmallMarginBegin" />
+        </contentRight>
+      </Bar>
+    </customHeader>
+
+    <content>
+      <VBox class="sapUiSmallMargin">
+        <MessageStrip
+          text="Changes take effect immediately without redeployment. Settings marked read-only cannot be edited here."
+          type="Information" showCloseButton="false" class="sapUiSmallMarginBottom" />
+
+        <IconTabBar id="categoryTabs" select=".onCategoryChange" class="sapUiSmallMarginBottom" />
+
+        <Table id="configTable" mode="None" items="{/filtered}" noDataText="No settings in this category">
+          <columns>
+            <Column width="22%"><Text text="Setting" /></Column>
+            <Column width="25%"><Text text="Current Value" /></Column>
+            <Column width="18%"><Text text="Default" /></Column>
+            <Column width="10%"><Text text="Data Type" /></Column>
+            <Column width="25%"><Text text="Description" /></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <VBox>
+                  <Text text="{label}" />
+                  <Text text="{configKey}" class="sapUiTinyMarginTop" />
+                </VBox>
+                <HBox alignItems="Center">
+                  <CheckBox
+                    visible="{= ${dataType} === 'boolean'}"
+                    selected="{path: 'value', formatter: '.formatBoolValue'}"
+                    select=".onCheckBoxChange"
+                    enabled="{= !${isReadOnly}}" />
+                  <Input
+                    visible="{= ${dataType} !== 'boolean'}"
+                    value="{value}"
+                    type="{= ${dataType} === 'integer' || ${dataType} === 'decimal' ? 'Number' : 'Text'}"
+                    editable="{= !${isReadOnly}}"
+                    change=".onValueChange"
+                    width="100%" />
+                </HBox>
+                <Text text="{defaultValue}" />
+                <ObjectStatus text="{dataType}" />
+                <Text text="{description}" wrapping="true" />
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </VBox>
+    </content>
+  </Page>
+
+</mvc:View>
