@@ -33,31 +33,43 @@
           <VBox class="nhvrSidebar">
             <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Base Map">
               <content>
-                <List mode="SingleSelectMaster" showSeparators="None" class="nhvrBaseMapList">
-                  <items>
-                    <StandardListItem title="OpenStreetMap" info="OSM" type="Active" selected="{= ${view>/basemap} === 'osm' || ${view>/basemap} === 'street' }" press=".onBasemapChange">
-                      <customData><core:CustomData key="basemap" value="osm" /></customData>
-                    </StandardListItem>
-                    <StandardListItem title="Esri Street" info="Esri" type="Active" selected="{= ${view>/basemap} === 'esriStreet' }" press=".onBasemapChange">
-                      <customData><core:CustomData key="basemap" value="esriStreet" /></customData>
-                    </StandardListItem>
-                    <StandardListItem title="Esri Satellite" info="Esri" type="Active" selected="{= ${view>/basemap} === 'esriSatellite' || ${view>/basemap} === 'satellite' }" press=".onBasemapChange">
-                      <customData><core:CustomData key="basemap" value="esriSatellite" /></customData>
-                    </StandardListItem>
-                    <StandardListItem title="Esri Topo" info="Esri" type="Active" selected="{= ${view>/basemap} === 'esriTopo' }" press=".onBasemapChange">
-                      <customData><core:CustomData key="basemap" value="esriTopo" /></customData>
-                    </StandardListItem>
-                    <StandardListItem title="Google Maps" info="Google" type="Active" selected="{= ${view>/basemap} === 'google' }" press=".onBasemapChange">
-                      <customData><core:CustomData key="basemap" value="google" /></customData>
-                    </StandardListItem>
-                    <StandardListItem title="Google Satellite" info="Google" type="Active" selected="{= ${view>/basemap} === 'googleSat' }" press=".onBasemapChange">
-                      <customData><core:CustomData key="basemap" value="googleSat" /></customData>
-                    </StandardListItem>
-                    <StandardListItem title="HERE Maps" info="HERE" type="Active" selected="{= ${view>/basemap} === 'here' }" press=".onBasemapChange">
-                      <customData><core:CustomData key="basemap" value="here" /></customData>
-                    </StandardListItem>
-                  </items>
-                </List>
+                <FlexBox wrap="Wrap" class="nhvrBasemapGrid">
+                  <Button icon="sap-icon://map" text="OSM"
+                    class="{= ${view>/basemap} === 'osm' || ${view>/basemap} === 'street' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
+                    type="Transparent" press=".onBasemapChange">
+                    <customData><core:CustomData key="basemap" value="osm" /></customData>
+                  </Button>
+                  <Button icon="sap-icon://journey-arrive" text="Esri Street"
+                    class="{= ${view>/basemap} === 'esriStreet' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
+                    type="Transparent" press=".onBasemapChange">
+                    <customData><core:CustomData key="basemap" value="esriStreet" /></customData>
+                  </Button>
+                  <Button icon="sap-icon://globe" text="Satellite"
+                    class="{= ${view>/basemap} === 'esriSatellite' || ${view>/basemap} === 'satellite' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
+                    type="Transparent" press=".onBasemapChange">
+                    <customData><core:CustomData key="basemap" value="esriSatellite" /></customData>
+                  </Button>
+                  <Button icon="sap-icon://mountain" text="Topo"
+                    class="{= ${view>/basemap} === 'esriTopo' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
+                    type="Transparent" press=".onBasemapChange">
+                    <customData><core:CustomData key="basemap" value="esriTopo" /></customData>
+                  </Button>
+                  <Button icon="sap-icon://map-2" text="Google"
+                    class="{= ${view>/basemap} === 'google' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
+                    type="Transparent" press=".onBasemapChange">
+                    <customData><core:CustomData key="basemap" value="google" /></customData>
+                  </Button>
+                  <Button icon="sap-icon://world" text="Google Sat"
+                    class="{= ${view>/basemap} === 'googleSat' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
+                    type="Transparent" press=".onBasemapChange">
+                    <customData><core:CustomData key="basemap" value="googleSat" /></customData>
+                  </Button>
+                  <Button icon="sap-icon://pushpin-on" text="HERE"
+                    class="{= ${view>/basemap} === 'here' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
+                    type="Transparent" press=".onBasemapChange">
+                    <customData><core:CustomData key="basemap" value="here" /></customData>
+                  </Button>
+                </FlexBox>
               </content>
             </Panel>
 
@@ -101,17 +113,20 @@
                       <Text text="{view>/layers/bridges/count} bridges" class="nhvrLayerCount" />
                     </HBox>
                     <VBox class="nhvrLayerSubOptions" visible="{view>/layers/bridges/visible}">
-                      <CheckBox text="{i18n>clusterMarkers}" selected="{view>/layers/bridges/cluster}" select=".onToggleBridgeCluster" class="nhvrLayerSubOption" />
-                      <CheckBox text="{i18n>showLabels}" selected="{view>/layers/bridges/showLabels}" select=".onToggleBridgeLabels" class="nhvrLayerSubOption" />
-                      <HBox alignItems="Center" class="nhvrLayerSubOption">
-                        <Label text="Color by:" class="nhvrLayerSubLabel" />
-                        <SegmentedButton selectedKey="{view>/layers/bridges/colorBy}" selectionChange=".onBridgeColorByChange" class="nhvrLayerColorBy">
-                          <items>
-                            <SegmentedButtonItem key="condition" text="Condition" />
-                            <SegmentedButtonItem key="status" text="Status" />
-                          </items>
-                        </SegmentedButton>
-                      </HBox>
+                      <Text text="Display options" class="nhvrSubOptionsHeader" />
+                      <VBox class="nhvrSubOptionsBody">
+                        <CheckBox text="{i18n>clusterMarkers}" selected="{view>/layers/bridges/cluster}" select=".onToggleBridgeCluster" class="nhvrLayerSubOption" />
+                        <CheckBox text="{i18n>showLabels}" selected="{view>/layers/bridges/showLabels}" select=".onToggleBridgeLabels" class="nhvrLayerSubOption" />
+                        <HBox alignItems="Center" class="nhvrLayerSubOption nhvrColorByRow">
+                          <Label text="Color by:" class="nhvrLayerSubLabel" />
+                          <SegmentedButton selectedKey="{view>/layers/bridges/colorBy}" selectionChange=".onBridgeColorByChange" class="nhvrLayerColorBy">
+                            <items>
+                              <SegmentedButtonItem key="condition" text="Condition" />
+                              <SegmentedButtonItem key="status" text="Status" />
+                            </items>
+                          </SegmentedButton>
+                        </HBox>
+                      </VBox>
                     </VBox>
                   </VBox>
 

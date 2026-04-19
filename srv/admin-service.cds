@@ -35,4 +35,7 @@ service AdminService {
   @readonly entity AttributeValueHistory as projection on my.AttributeValueHistory;
   @readonly entity UserActivity          as projection on my.UserActivity;
   entity SystemConfig as projection on my.SystemConfig;
+  entity BnacEnvironment   as projection on my.BnacEnvironment;
+  entity BnacObjectIdMap   as projection on my.BnacObjectIdMap;
+  @readonly entity BnacLoadHistory as projection on my.BnacLoadHistory;
 }

@@ -1,0 +1,20 @@
+/* BMS Admin consolidated shell */
+.sapTntToolPage {
+  height: 100vh;
+}
+
+/* Change Documents */
+.bmsAuditOld { color: #c0392b; }
+.bmsAuditNew { color: #27ae60; }
+
+/* Reference Data */
+.bmsRefDataHeader { background-color: var(--sapShellColor); }
+
+/* System Config */
+.bmsConfigKey   { font-size: 0.75rem; color: var(--sapContent_LabelColor); }
+.bmsConfigLabel { font-weight: bold; }
+
+/* Data Quality */
+.bmsQualityCritical { color: var(--sapErrorColor); font-weight: bold; }
+.bmsQualityWarning  { color: var(--sapWarningColor); font-weight: bold; }
+.bmsQualityInfo     { color: var(--sapInformationColor); }

@@ -84,29 +84,13 @@ modules:
           artifacts:
             - restrictions.zip
           target-path: app/
-        - name: BridgeManagementauditreport
-          artifacts:
-            - audit-report.zip
-          target-path: app/
         - name: BridgeManagementattributesadmin
           artifacts:
             - attributes-admin.zip
           target-path: app/
-        - name: BridgeManagementdataquality
+        - name: BridgeManagementbmsadmin
           artifacts:
-            - data-quality.zip
-          target-path: app/
-        - name: BridgeManagementreferencedata
-          artifacts:
-            - reference-data.zip
-          target-path: app/
-        - name: BridgeManagementuseraccess
-          artifacts:
-            - user-access.zip
-          target-path: app/
-        - name: BridgeManagementsystemconfig
-          artifacts:
-            - system-config.zip
+            - bms-admin.zip
           target-path: app/
     requires:
       - name: BridgeManagement-auth
@@ -161,9 +145,9 @@ modules:
         - npm run build
       supported-platforms:
         []
-  - name: BridgeManagementauditreport
+  - name: BridgeManagementbmsadmin
     type: html5
-    path: app/audit-report
+    path: app/bms-admin
     build-parameters:
       build-result: dist
       builder: custom
@@ -175,50 +159,6 @@ modules:
   - name: BridgeManagementattributesadmin
     type: html5
     path: app/attributes-admin
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms:
-        []
-  - name: BridgeManagementdataquality
-    type: html5
-    path: app/data-quality
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms:
-        []
-  - name: BridgeManagementreferencedata
-    type: html5
-    path: app/reference-data
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms:
-        []
-  - name: BridgeManagementuseraccess
-    type: html5
-    path: app/user-access
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms:
-        []
-  - name: BridgeManagementsystemconfig
-    type: html5
-    path: app/system-config
     build-parameters:
       build-result: dist
       builder: custom

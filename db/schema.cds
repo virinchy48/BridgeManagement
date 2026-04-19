@@ -355,6 +355,37 @@ entity SystemConfig {
   modifiedBy        : String(111);
 }
 
+entity BnacEnvironment {
+  key environment  : String(20);    // DEV | PREPROD | PROD | TEST
+  baseUrl          : String(511) @mandatory;
+  description      : String(255);
+  active           : Boolean default true;
+  modifiedAt       : Timestamp;
+  modifiedBy       : String(111);
+}
+
+entity BnacObjectIdMap {
+  key bridgeId     : String(40);   // matches Bridges.bridgeId
+  bnacObjectId     : String(111) @mandatory;
+  bnacUrl          : String(511);  // computed: active env baseUrl + bnacObjectId
+  loadedAt         : Timestamp;
+  loadedBy         : String(111);
+  loadBatchId      : String(111);
+}
+
+entity BnacLoadHistory {
+  key ID           : UUID;
+  loadedAt         : Timestamp;
+  loadedBy         : String(111);
+  fileName         : String(255);
+  environment      : String(20);
+  total            : Integer default 0;
+  success          : Integer default 0;
+  failed           : Integer default 0;
+  errors           : LargeString;
+  batchId          : String(111);
+}
+
 // --------------------------------------------------------------------------------
 // Temporary workaround for this situation:
 // - Fiori apps annotate Bridges with @fiori.draft.enabled.
