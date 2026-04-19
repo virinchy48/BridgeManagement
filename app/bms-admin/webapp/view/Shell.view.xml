@@ -29,6 +29,7 @@
             <tnt:NavigationListItem text="BNAC Config"       key="bnacConfig"      icon="sap-icon://chain-link"    />
             <tnt:NavigationListItem text="GIS Config"        key="gisConfig"       icon="sap-icon://map"           />
             <tnt:NavigationListItem text="Attribute Config" key="attributeConfig"  icon="sap-icon://customize"     />
+            <tnt:NavigationListItem text="Demo Mode"       key="demoMode"         icon="sap-icon://simulate"      />
           </tnt:NavigationList>
         </tnt:item>
       </tnt:SideNavigation>

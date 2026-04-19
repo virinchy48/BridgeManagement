@@ -41,3 +41,9 @@ service AdminService {
   @readonly entity BnacLoadHistory as projection on my.BnacLoadHistory;
   entity DataQualityRules as projection on my.DataQualityRules;
 }
+
+extend service AdminService {
+  // ── Demo Mode ────────────────────────────────────────────────────────────────
+  action loadDemoData()  returns String;
+  action clearDemoData() returns String;
+}

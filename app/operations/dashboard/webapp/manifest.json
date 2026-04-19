@@ -61,31 +61,8 @@
     "rootView": {
       "viewName": "BridgeManagement.dashboard.view.Main",
       "type": "XML",
-      "id": "app"
-    },
-    "routing": {
-      "config": {
-        "routerClass": "sap.m.routing.Router",
-        "viewType": "XML",
-        "viewPath": "BridgeManagement.dashboard.view",
-        "controlAggregation": "pages",
-        "controlId": "app",
-        "async": true
-      },
-      "routes": [
-        {
-          "pattern": "",
-          "name": "Dashboard",
-          "target": "Dashboard"
-        }
-      ],
-      "targets": {
-        "Dashboard": {
-          "viewType": "XML",
-          "viewName": "Main",
-          "viewId": "Dashboard"
-        }
-      }
+      "async": true,
+      "id": "root"
     },
     "contentDensities": {
       "compact": true,

@@ -31,6 +31,16 @@
 
         <content>
           <VBox class="nhvrSidebar">
+            <!-- Demo Mode Banner -->
+            <MessageStrip
+              id="demoBanner"
+              text="🎯  DEMO MODE — Showing 30 real NSW bridges from the Transport for NSW public dataset. Data is for demonstration only."
+              type="Warning"
+              showIcon="true"
+              showCloseButton="false"
+              visible="{view>/demoModeActive}"
+              class="sapUiTinyMarginBottom" />
+
             <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Base Map">
               <content>
                 <VBox class="nhvrFilterSection nhvrBasemapSection">

@@ -207,6 +207,7 @@ sap.ui.define([
         },
         restrictionsData: [],
         gisConfig: null,
+        demoModeActive: false,
         dynRefLayers: [],
         dynRefGroups: [],
         features: {
@@ -1647,6 +1648,16 @@ sap.ui.define([
         .catch(function () {
           this._gisConfig = null;
         }.bind(this));
+
+      // Check demo mode flag
+      fetch("/odata/v4/admin/SystemConfig('demoModeActive')", { headers: { Accept: "application/json" } })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (d) {
+          if (d && d.value === "true") {
+            this._vm().setProperty("/demoModeActive", true);
+          }
+        }.bind(this))
+        .catch(function () { /* non-fatal */ });
     },
 
     _loadDynamicRefLayers: function () {

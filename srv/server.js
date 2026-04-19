@@ -15,6 +15,7 @@ const mountAttributesApi = require('./attributes-api')
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 
 const { getConfigInt } = require('./system-config')
+const demoHandler = require('./demo-handler')
 
 const { SELECT, INSERT, UPDATE, DELETE } = cds.ql
 
@@ -1905,6 +1906,10 @@ cds.on('bootstrap', (app) => {
 
   app.use('/bnac/api', bnacRouter)
 })
+
+cds.on('connect', srv => {
+  if (srv.name === 'AdminService') demoHandler(srv);
+});
 
 cds.on('served', async () => {
   if (!isHanaDb()) return;
