@@ -136,6 +136,35 @@
                     </Switch>
                   </HBox>
                   <Text text="Source: ABS ASGS 2021" class="nhvrLayerHint sapUiTinyMarginTop" />
+
+                  <!-- Dynamic reference layers loaded from GIS Config admin -->
+                  <VBox visible="{= ${view>/dynRefGroups}.length > 0 }">
+                    <Text text="ADDITIONAL LAYERS" class="nhvrBasemapGroupLabel sapUiSmallMarginTop" />
+                    <List items="{view>/dynRefGroups}" showSeparators="None" backgroundDesign="Transparent">
+                      <items>
+                        <CustomListItem>
+                          <VBox>
+                            <Text text="{view>category}" class="nhvrRefLayerCatHeader" />
+                            <List items="{view>items}" showSeparators="None" backgroundDesign="Transparent">
+                              <items>
+                                <CustomListItem>
+                                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                                    <VBox class="nhvrGisToolLabel">
+                                      <Text text="{view>name}" class="nhvrLayerLabel" />
+                                      <Text text="{view>description}" class="nhvrGisToolHint" maxLines="2" />
+                                    </VBox>
+                                    <Switch state="{view>sessionActive}" change=".onToggleDynamicRefLayer">
+                                      <customData><core:CustomData key="layerId" value="{view>ID}" /></customData>
+                                    </Switch>
+                                  </HBox>
+                                </CustomListItem>
+                              </items>
+                            </List>
+                          </VBox>
+                        </CustomListItem>
+                      </items>
+                    </List>
+                  </VBox>
                 </VBox>
               </content>
             </Panel>

@@ -107,6 +107,15 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
   min-width: 0;
 }
 
+.nhvrRefLayerCatHeader.sapMText {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #52616f;
+  padding: 0.4rem 0.1rem 0.1rem;
+}
+
 .nhvrGisToolHint.sapMText {
   font-size: 0.75rem;
   color: #8696a9;
