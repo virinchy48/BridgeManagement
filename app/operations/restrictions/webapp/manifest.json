@@ -1,7 +1,7 @@
 {
   "_version": "1.8.0",
   "sap.app": {
-    "id": "BridgeManagement.restrictions",
+    "id": "bms.restrictions",
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -10,8 +10,8 @@
       "version": "1.0.0"
     },
     "dataSources": {
-      "AdminService": {
-        "uri": "/odata/v4/admin/",
+      "BridgeManagementService": {
+        "uri": "/bridge-management/",
         "type": "OData",
         "settings": {
           "odataVersion": "4.0"
@@ -20,15 +20,15 @@
     },
     "crossNavigation": {
       "inbounds": {
-        "Restrictions-manage": {
+        "Restrictions-display": {
+          "semanticObject": "Restrictions",
+          "action": "display",
           "signature": {
             "parameters": {},
             "additionalParameters": "allowed"
           },
           "title": "{{appTitle}}",
-          "subTitle": "{{appSubTitle}}",
-          "semanticObject": "Restrictions",
-          "action": "manage"
+          "icon": "sap-icon://alert"
         }
       }
     }
@@ -46,7 +46,7 @@
         "uri": "i18n/i18n.properties"
       },
       "": {
-        "dataSource": "AdminService",
+        "dataSource": "BridgeManagementService",
         "settings": {
           "synchronizationMode": "None",
           "operationMode": "Server",
@@ -76,20 +76,12 @@
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
-              "contextPath": "/Restrictions",
+              "entitySet": "Restrictions",
               "liveMode": true,
               "navigation": {
                 "Restrictions": {
                   "detail": {
                     "route": "RestrictionsDetails"
-                  }
-                }
-              },
-              "controlConfiguration": {
-                "@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": {
-                    "hierarchyQualifier": "RestrictionsHierarchy",
-                    "type": "TreeTable"
                   }
                 }
               }
@@ -102,22 +94,7 @@
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "contextPath": "/Restrictions",
-              "editableHeaderContent": false,
-              "content": {
-                "body": {
-                  "sections": {
-                    "customAttributesSection": {
-                      "template": "BridgeManagement.restrictions.ext.fragment.CustomAttributes",
-                      "title": "Custom Attributes",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "GeneralInformation"
-                      }
-                    }
-                  }
-                }
-              }
+              "entitySet": "Restrictions"
             }
           }
         }

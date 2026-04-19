@@ -1,7 +1,7 @@
 {
   "_version": "1.8.0",
   "sap.app": {
-    "id": "BridgeManagement.restrictions",
+    "id": "bms.massedit",
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -10,8 +10,8 @@
       "version": "1.0.0"
     },
     "dataSources": {
-      "AdminService": {
-        "uri": "/odata/v4/admin/",
+      "BridgeManagementService": {
+        "uri": "/bridge-management/",
         "type": "OData",
         "settings": {
           "odataVersion": "4.0"
@@ -20,15 +20,15 @@
     },
     "crossNavigation": {
       "inbounds": {
-        "Restrictions-manage": {
+        "MassEdit-manage": {
+          "semanticObject": "MassEdit",
+          "action": "manage",
           "signature": {
             "parameters": {},
             "additionalParameters": "allowed"
           },
           "title": "{{appTitle}}",
-          "subTitle": "{{appSubTitle}}",
-          "semanticObject": "Restrictions",
-          "action": "manage"
+          "icon": "sap-icon://edit"
         }
       }
     }
@@ -46,7 +46,7 @@
         "uri": "i18n/i18n.properties"
       },
       "": {
-        "dataSource": "AdminService",
+        "dataSource": "BridgeManagementService",
         "settings": {
           "synchronizationMode": "None",
           "operationMode": "Server",
@@ -60,64 +60,41 @@
       "routes": [
         {
           "pattern": ":?query:",
-          "name": "RestrictionsList",
-          "target": "RestrictionsList"
+          "name": "BridgeGridList",
+          "target": "BridgeGridList"
         },
         {
-          "pattern": "Restrictions({key}):?query:",
-          "name": "RestrictionsDetails",
-          "target": "RestrictionsDetails"
+          "pattern": "BridgeGrid({key}):?query:",
+          "name": "BridgeGridDetails",
+          "target": "BridgeGridDetails"
         }
       ],
       "targets": {
-        "RestrictionsList": {
+        "BridgeGridList": {
           "type": "Component",
-          "id": "RestrictionsList",
+          "id": "BridgeGridList",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
-              "contextPath": "/Restrictions",
+              "entitySet": "BridgeGrid",
               "liveMode": true,
               "navigation": {
-                "Restrictions": {
+                "BridgeGrid": {
                   "detail": {
-                    "route": "RestrictionsDetails"
-                  }
-                }
-              },
-              "controlConfiguration": {
-                "@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": {
-                    "hierarchyQualifier": "RestrictionsHierarchy",
-                    "type": "TreeTable"
+                    "route": "BridgeGridDetails"
                   }
                 }
               }
             }
           }
         },
-        "RestrictionsDetails": {
+        "BridgeGridDetails": {
           "type": "Component",
-          "id": "RestrictionsDetails",
+          "id": "BridgeGridDetails",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "contextPath": "/Restrictions",
-              "editableHeaderContent": false,
-              "content": {
-                "body": {
-                  "sections": {
-                    "customAttributesSection": {
-                      "template": "BridgeManagement.restrictions.ext.fragment.CustomAttributes",
-                      "title": "Custom Attributes",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "GeneralInformation"
-                      }
-                    }
-                  }
-                }
-              }
+              "entitySet": "BridgeGrid"
             }
           }
         }

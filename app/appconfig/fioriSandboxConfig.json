@@ -39,7 +39,7 @@
                     "title": "Restrictions",
                     "subtitle": "Active & Scheduled",
                     "icon": "sap-icon://alert",
-                    "targetURL": "#Restrictions-manage"
+                    "targetURL": "#Restrictions-display"
                   }
                 },
                 {
@@ -49,7 +49,7 @@
                     "title": "Map View",
                     "subtitle": "Geographic Explorer",
                     "icon": "sap-icon://map-2",
-                    "targetURL": "#Map-display"
+                    "targetURL": "#MapView-display"
                   }
                 }
               ]
@@ -68,7 +68,7 @@
                     "title": "Mass Upload",
                     "subtitle": "CSV Drag & Drop",
                     "icon": "sap-icon://upload-to-cloud",
-                    "targetURL": "#MassUpload-manage"
+                    "targetURL": "#MassUpload-display"
                   }
                 },
                 {
@@ -106,7 +106,77 @@
       "adapter": {
         "config": {
           "inbounds": {
-            "ManageBmsAdmin": {
+            "Dashboard-display": {
+              "semanticObject": "Dashboard",
+              "action": "display",
+              "title": "Dashboard",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=bms.dashboard",
+                "url": "/operations/dashboard/webapp"
+              }
+            },
+            "Bridges-manage": {
+              "semanticObject": "Bridges",
+              "action": "manage",
+              "title": "Bridges",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=bms.bridges",
+                "url": "/operations/bridges/webapp"
+              }
+            },
+            "Restrictions-display": {
+              "semanticObject": "Restrictions",
+              "action": "display",
+              "title": "Restrictions",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=bms.restrictions",
+                "url": "/operations/restrictions/webapp"
+              }
+            },
+            "MapView-display": {
+              "semanticObject": "MapView",
+              "action": "display",
+              "title": "Map View",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=bms.mapview",
+                "url": "/operations/map-view/webapp"
+              }
+            },
+            "MassUpload-display": {
+              "semanticObject": "MassUpload",
+              "action": "display",
+              "title": "Mass Upload",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=bms.massupload",
+                "url": "/bms-business-admin/mass-upload/webapp"
+              }
+            },
+            "BmsAdmin-manage": {
               "semanticObject": "BmsAdmin",
               "action": "manage",
               "title": "BMS Administration",
@@ -120,81 +190,7 @@
                 "url": "/bms-admin/webapp"
               }
             },
-            "ManageRestrictions": {
-              "semanticObject": "Restrictions",
-              "action": "manage",
-              "title": "Restrictions",
-              "signature": {
-                "parameters": {
-                  "Restriction.ID": {
-                    "renameTo": "ID"
-                  }
-                },
-                "additionalParameters": "ignored"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.restrictions",
-                "url": "/restrictions/webapp"
-              }
-            },
-            "ManageBridges": {
-              "semanticObject": "Bridges",
-              "action": "manage",
-              "title": "Bridges",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/admin-bridges/webapp"
-              }
-            },
-            "ManageMassUpload": {
-              "semanticObject": "MassUpload",
-              "action": "manage",
-              "title": "Mass Upload",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.massupload",
-                "url": "/mass-upload/webapp"
-              }
-            },
-            "DisplayDashboard": {
-              "semanticObject": "Dashboard",
-              "action": "display",
-              "title": "Dashboard",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.dashboard",
-                "url": "/dashboard/webapp"
-              }
-            },
-            "DisplayMap": {
-              "semanticObject": "Map",
-              "action": "display",
-              "title": "Bridge Map",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.mapview",
-                "url": "/map-view/webapp"
-              }
-            },
-            "ManageMassEdit": {
+            "MassEdit-manage": {
               "semanticObject": "MassEdit",
               "action": "manage",
               "title": "Mass Edit",
@@ -204,8 +200,8 @@
               },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.massedit",
-                "url": "/mass-edit/webapp"
+                "additionalInformation": "SAPUI5.Component=bms.massedit",
+                "url": "/bms-business-admin/mass-edit/webapp"
               }
             }
           }

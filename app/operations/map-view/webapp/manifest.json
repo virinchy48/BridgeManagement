@@ -1,7 +1,7 @@
 {
   "_version": "1.8.0",
   "sap.app": {
-    "id": "BridgeManagement.restrictions",
+    "id": "bms.mapview",
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -10,8 +10,8 @@
       "version": "1.0.0"
     },
     "dataSources": {
-      "AdminService": {
-        "uri": "/odata/v4/admin/",
+      "BridgeManagementService": {
+        "uri": "/bridge-management/",
         "type": "OData",
         "settings": {
           "odataVersion": "4.0"
@@ -20,15 +20,15 @@
     },
     "crossNavigation": {
       "inbounds": {
-        "Restrictions-manage": {
+        "MapView-display": {
+          "semanticObject": "MapView",
+          "action": "display",
           "signature": {
             "parameters": {},
             "additionalParameters": "allowed"
           },
           "title": "{{appTitle}}",
-          "subTitle": "{{appSubTitle}}",
-          "semanticObject": "Restrictions",
-          "action": "manage"
+          "icon": "sap-icon://map-2"
         }
       }
     }
@@ -46,7 +46,7 @@
         "uri": "i18n/i18n.properties"
       },
       "": {
-        "dataSource": "AdminService",
+        "dataSource": "BridgeManagementService",
         "settings": {
           "synchronizationMode": "None",
           "operationMode": "Server",
@@ -60,64 +60,41 @@
       "routes": [
         {
           "pattern": ":?query:",
-          "name": "RestrictionsList",
-          "target": "RestrictionsList"
+          "name": "BridgeLocationsList",
+          "target": "BridgeLocationsList"
         },
         {
-          "pattern": "Restrictions({key}):?query:",
-          "name": "RestrictionsDetails",
-          "target": "RestrictionsDetails"
+          "pattern": "BridgeLocations({key}):?query:",
+          "name": "BridgeLocationsDetails",
+          "target": "BridgeLocationsDetails"
         }
       ],
       "targets": {
-        "RestrictionsList": {
+        "BridgeLocationsList": {
           "type": "Component",
-          "id": "RestrictionsList",
+          "id": "BridgeLocationsList",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
-              "contextPath": "/Restrictions",
+              "entitySet": "BridgeLocations",
               "liveMode": true,
               "navigation": {
-                "Restrictions": {
+                "BridgeLocations": {
                   "detail": {
-                    "route": "RestrictionsDetails"
-                  }
-                }
-              },
-              "controlConfiguration": {
-                "@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": {
-                    "hierarchyQualifier": "RestrictionsHierarchy",
-                    "type": "TreeTable"
+                    "route": "BridgeLocationsDetails"
                   }
                 }
               }
             }
           }
         },
-        "RestrictionsDetails": {
+        "BridgeLocationsDetails": {
           "type": "Component",
-          "id": "RestrictionsDetails",
+          "id": "BridgeLocationsDetails",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
-              "contextPath": "/Restrictions",
-              "editableHeaderContent": false,
-              "content": {
-                "body": {
-                  "sections": {
-                    "customAttributesSection": {
-                      "template": "BridgeManagement.restrictions.ext.fragment.CustomAttributes",
-                      "title": "Custom Attributes",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "GeneralInformation"
-                      }
-                    }
-                  }
-                }
-              }
+              "entitySet": "BridgeLocations"
             }
           }
         }
@@ -141,6 +118,6 @@
   },
   "sap.fiori": {
     "registrationIds": [],
-    "archeType": "transactional"
+    "archeType": "analytical"
   }
 }

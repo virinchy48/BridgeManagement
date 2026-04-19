@@ -1,3 +1,8 @@
+// Bridge Management System — DB Schema Barrel
+using from './schema/types';
+using from './schema/core';
+using from './schema/restrictions';
+using from './schema/admin';
 using {
   Currency,
   cuid,
@@ -432,6 +437,19 @@ entity BnacLoadHistory {
   failed           : Integer default 0;
   errors           : LargeString;
   batchId          : String(111);
+}
+
+entity DataQualityRules {
+  key id        : UUID;
+      name      : String(120) not null;
+      category  : String(60)  not null;
+      severity  : String(10)  not null;  // critical | warning | info
+      ruleType  : String(40)  not null;  // required_field | non_zero | not_older_than_days | condition_requires_restriction | freight_requires_nhvr
+      field     : String(60);            // bridge field to check (null for compound rules)
+      config    : LargeString;           // JSON: e.g. {"days": 730}
+      message   : String(255) not null;  // violation message shown in dashboard
+      enabled   : Boolean default true;
+      sortOrder : Integer default 0;
 }
 
 // --------------------------------------------------------------------------------
