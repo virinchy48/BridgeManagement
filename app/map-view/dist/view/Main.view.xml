@@ -2,286 +2,284 @@
   controllerName="BridgeManagement.mapview.controller.Main"
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
+  xmlns:f="sap.f"
   xmlns:core="sap.ui.core"
-  displayBlock="true">
+  displayBlock="true"
+  height="100%">
 
-  <App id="mapApp">
-    <Page id="mapPage" showHeader="false" busy="{view>/busy}" class="mapPage">
-      <content>
-        <VBox class="mapShell">
-          <OverflowToolbar class="mapToolbar">
-            <Button icon="sap-icon://home" tooltip="{i18n>home}" press=".onNavHome" type="Transparent" />
-            <Title text="{i18n>appTitle}" level="H4" class="mapToolbarTitle" />
-            <ToolbarSeparator />
-            <SegmentedButton selectedKey="{view>/layoutMode}" selectionChange=".onLayoutSelect">
-              <items>
-                <SegmentedButtonItem key="map" text="{i18n>layoutMap}" icon="sap-icon://map-2" />
-                <SegmentedButtonItem key="split" text="{i18n>layoutSplit}" icon="sap-icon://open-command-field" />
-                <SegmentedButtonItem key="list" text="{i18n>layoutList}" icon="sap-icon://table-view" />
-              </items>
-            </SegmentedButton>
-            <ToolbarSeparator />
-            <Select selectedKey="{view>/colorBy}" change=".onColorByChange" width="11rem">
-              <items>
-                <core:Item key="condition" text="{i18n>colorByCondition}" />
-                <core:Item key="status" text="{i18n>colorByStatus}" />
-              </items>
-            </Select>
-            <Select selectedKey="{view>/basemap}" change=".onBasemapChange" width="9rem">
-              <items>
-                <core:Item key="street" text="{i18n>basemapStreet}" />
-                <core:Item key="satellite" text="{i18n>basemapSatellite}" />
-              </items>
-            </Select>
-            <ToolbarSeparator />
-            <Button text="{i18n>filters}" icon="sap-icon://filter" type="Transparent" press=".onToggleFilters" />
-            <Text text="{view>/summaryText}" class="mapToolbarBadge" />
-            <ToolbarSeparator />
-            <Button icon="sap-icon://draw-freehand" tooltip="{i18n>drawPolygon}" press=".onDrawPolygon" type="Transparent" />
-            <Button icon="sap-icon://border" tooltip="{i18n>drawRectangle}" press=".onDrawRectangle" type="Transparent" />
-            <Button icon="sap-icon://circle-task" tooltip="{i18n>drawCircle}" press=".onDrawCircle" type="Transparent" />
-            <Button icon="sap-icon://sys-cancel" tooltip="{i18n>clearSelection}" press=".onClearDrawing" type="Transparent" />
-            <Button icon="sap-icon://activate" tooltip="{i18n>layers}" press=".onOpenLayerManager" type="Transparent" />
-            <ToolbarSpacer />
-            <Text text="{view>/selectionLabel}" visible="{view>/selectionActive}" class="mapSelectionBadge" />
-            <Button icon="sap-icon://locate-me" tooltip="{i18n>centerMap}" press=".onCenterMap" type="Transparent" />
-            <Button icon="sap-icon://refresh" tooltip="{i18n>refresh}" press=".onRefresh" type="Transparent" />
-          </OverflowToolbar>
+  <f:FlexibleColumnLayout
+    id="fcl"
+    layout="{view>/fclLayout}"
+    backgroundDesign="Solid"
+    class="nhvrMapApp">
 
-          <HBox class="mapBody">
-            <VBox class="mapFilterRail" visible="{view>/showFilters}">
-              <HBox justifyContent="SpaceBetween" alignItems="Center" class="mapFilterRailHeader">
-                <Title text="{i18n>filterTitle}" level="H5" />
-                <Link text="{i18n>clearAll}" press=".onClearFilters" />
-              </HBox>
-              <Text text="{view>/summaryText}" class="mapFilterSummary" />
+    <f:beginColumnPages>
+      <Page id="filterPage" backgroundDesign="Solid" class="nhvrSidebarPage">
+        <customHeader>
+          <Bar id="filterBar" class="nhvrTopBar">
+            <contentLeft>
+              <Button icon="sap-icon://building" tooltip="{i18n>fullRecord}" press=".onNavToBridgesFE" type="Transparent" />
+              <Button icon="sap-icon://bar-chart" tooltip="Reports" press=".onNavToReports" type="Transparent" />
+              <Button icon="sap-icon://upload-to-cloud" tooltip="Upload" press=".onNavToUpload" type="Transparent" />
+              <Button icon="sap-icon://grid" tooltip="Mass Edit" press=".onNavToMassEdit" type="Transparent" />
+            </contentLeft>
+            <contentMiddle>
+              <Title text="{i18n>filterTitle}" level="H4" />
+            </contentMiddle>
+          </Bar>
+        </customHeader>
 
-              <Panel headerText="{i18n>stateTerritory}" expandable="true" expanded="true" class="mapFilterPanel">
-                <List items="{view>/filterOptions/states}" showSeparators="None">
+        <content>
+          <VBox class="nhvrSidebar">
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Base Map">
+              <content>
+                <List mode="SingleSelectMaster" showSeparators="None" class="nhvrBaseMapList">
                   <items>
-                    <CustomListItem class="mapFilterItem">
-                      <CheckBox text="{view>label}" selected="{view>selected}" select=".onApplyFilters" />
-                    </CustomListItem>
+                    <StandardListItem title="{i18n>basemapStreet}" type="Active" selected="{= ${view>/basemap} === 'street' }" press=".onBasemapChange">
+                      <customData>
+                        <core:CustomData key="basemap" value="street" />
+                      </customData>
+                    </StandardListItem>
+                    <StandardListItem title="{i18n>basemapSatellite}" type="Active" selected="{= ${view>/basemap} === 'satellite' }" press=".onBasemapChange">
+                      <customData>
+                        <core:CustomData key="basemap" value="satellite" />
+                      </customData>
+                    </StandardListItem>
                   </items>
                 </List>
-              </Panel>
+              </content>
+            </Panel>
 
-              <Panel headerText="{i18n>postingStatus}" expandable="true" expanded="true" class="mapFilterPanel">
-                <List items="{view>/filterOptions/postingStatuses}" showSeparators="None">
-                  <items>
-                    <CustomListItem class="mapFilterItem">
-                      <CheckBox text="{view>label}" selected="{view>selected}" select=".onApplyFilters" />
-                    </CustomListItem>
-                  </items>
-                </List>
-              </Panel>
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Business Layers">
+              <content>
+                <VBox class="nhvrFilterSection">
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                    <HBox alignItems="Center">
+                      <CheckBox selected="true" enabled="false" />
+                      <core:Icon src="sap-icon://map-2" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Bridges" class="nhvrLayerLabel" />
+                    </HBox>
+                    <Button icon="sap-icon://zoom-in" type="Transparent" press=".onZoomAll" />
+                  </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                    <HBox alignItems="Center">
+                      <CheckBox selected="{view>/layers/clusterMarkers}" select=".onToggleClusterLayer" />
+                      <core:Icon src="sap-icon://group-2" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="{i18n>clusterMarkers}" class="nhvrLayerLabel" />
+                    </HBox>
+                  </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                    <HBox alignItems="Center">
+                      <CheckBox selected="{view>/layers/showLabels}" select=".onToggleLabelLayer" />
+                      <core:Icon src="sap-icon://tag" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="{i18n>showLabels}" class="nhvrLayerLabel" />
+                    </HBox>
+                  </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                    <HBox alignItems="Center">
+                      <CheckBox selected="{view>/layers/showHillshade}" select=".onToggleHillshadeLayer" />
+                      <core:Icon src="sap-icon://map-3" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="{i18n>showHillshade}" class="nhvrLayerLabel" />
+                    </HBox>
+                  </HBox>
+                </VBox>
+              </content>
+            </Panel>
 
-              <Panel headerText="{i18n>conditionRating}" expandable="true" expanded="true" class="mapFilterPanel">
-                <HBox alignItems="Center" justifyContent="SpaceBetween" class="mapRangeRow">
-                  <Label text="{i18n>min}" />
-                  <StepInput value="{view>/filters/minCondition}" min="1" max="10" step="1" width="5rem" change=".onApplyFilters" />
-                  <Label text="{i18n>max}" />
-                  <StepInput value="{view>/filters/maxCondition}" min="1" max="10" step="1" width="5rem" change=".onApplyFilters" />
-                </HBox>
-                <HBox wrap="Wrap" class="mapChipRow">
-                  <ObjectStatus text="{i18n>conditionGood}" state="Success" class="mapLegendChip" />
-                  <ObjectStatus text="{i18n>conditionFair}" state="Warning" class="mapLegendChip" />
-                  <ObjectStatus text="{i18n>conditionPoor}" state="Error" class="mapLegendChip" />
-                </HBox>
-              </Panel>
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="{i18n>filters}">
+              <content>
+                <VBox class="nhvrFilterSection">
+                  <Label text="{i18n>stateTerritory}" class="nhvrFilterLabel" />
+                  <List items="{view>/filterOptions/states}" showSeparators="None">
+                    <items>
+                      <CustomListItem class="nhvrCompactFilterItem">
+                        <CheckBox text="{view>label}" selected="{view>selected}" select=".onApplyFilters" />
+                      </CustomListItem>
+                    </items>
+                  </List>
 
-              <Panel headerText="{i18n>yearBuilt}" expandable="true" expanded="false" class="mapFilterPanel">
-                <HBox alignItems="Center" justifyContent="SpaceBetween" class="mapRangeRow">
-                  <Label text="{i18n>min}" />
-                  <StepInput value="{view>/filters/minYear}" min="1800" max="2100" step="1" width="5rem" change=".onApplyFilters" />
-                  <Label text="{i18n>max}" />
-                  <StepInput value="{view>/filters/maxYear}" min="1800" max="2100" step="1" width="5rem" change=".onApplyFilters" />
-                </HBox>
-              </Panel>
+                  <Label text="{i18n>postingStatus}" class="nhvrFilterLabel nhvrFilterLabelTop" />
+                  <List items="{view>/filterOptions/postingStatuses}" showSeparators="None">
+                    <items>
+                      <CustomListItem class="nhvrCompactFilterItem">
+                        <CheckBox text="{view>label}" selected="{view>selected}" select=".onApplyFilters" />
+                      </CustomListItem>
+                    </items>
+                  </List>
 
-              <Panel headerText="{i18n>structureType}" expandable="true" expanded="false" class="mapFilterPanel">
-                <List items="{view>/filterOptions/structureTypes}" showSeparators="None">
-                  <items>
-                    <CustomListItem class="mapFilterItem">
-                      <CheckBox text="{view>label}" selected="{view>selected}" select=".onApplyFilters" />
-                    </CustomListItem>
-                  </items>
-                </List>
-              </Panel>
+                  <Label text="{i18n>conditionRating}" class="nhvrFilterLabel nhvrFilterLabelTop" />
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrRangeRow">
+                    <Label text="{i18n>min}" />
+                    <StepInput value="{view>/filters/minCondition}" min="1" max="10" step="1" width="5rem" change=".onApplyFilters" />
+                    <Label text="{i18n>max}" />
+                    <StepInput value="{view>/filters/maxCondition}" min="1" max="10" step="1" width="5rem" change=".onApplyFilters" />
+                  </HBox>
 
-              <Panel headerText="{i18n>scourRisk}" expandable="true" expanded="false" class="mapFilterPanel">
-                <List items="{view>/filterOptions/scourRisks}" showSeparators="None">
-                  <items>
-                    <CustomListItem class="mapFilterItem">
-                      <CheckBox text="{view>label}" selected="{view>selected}" select=".onApplyFilters" />
-                    </CustomListItem>
-                  </items>
-                </List>
-              </Panel>
+                  <HBox justifyContent="SpaceBetween" class="nhvrFilterActions">
+                    <Button text="{i18n>clearAll}" icon="sap-icon://reset" press=".onClearFilters" />
+                    <Button text="{i18n>applyFilters}" icon="sap-icon://search" type="Emphasized" press=".onApplyFilters" />
+                  </HBox>
+                </VBox>
+              </content>
+            </Panel>
 
-              <Panel headerText="{i18n>routeFlags}" expandable="true" expanded="false" class="mapFilterPanel">
-                <List items="{view>/filterOptions/routeFlags}" showSeparators="None">
-                  <items>
-                    <CustomListItem class="mapFilterItem">
-                      <CheckBox text="{view>label}" selected="{view>selected}" select=".onApplyFilters" />
-                    </CustomListItem>
-                  </items>
-                </List>
-              </Panel>
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Legend &amp; Symbology">
+              <content>
+                <VBox class="nhvrFilterSection">
+                  <Label text="Color by" class="nhvrFilterLabel" />
+                  <SegmentedButton selectedKey="{view>/colorBy}" selectionChange=".onSymbologyChange" width="100%" class="nhvrSymbologyButton">
+                    <items>
+                      <SegmentedButtonItem key="status" text="{i18n>colorByStatus}" icon="sap-icon://status-positive" />
+                      <SegmentedButtonItem key="condition" text="{i18n>colorByCondition}" icon="sap-icon://quality-issue" />
+                    </items>
+                  </SegmentedButton>
 
-              <Panel headerText="{i18n>vehicleClass}" expandable="true" expanded="false" class="mapFilterPanel">
-                <List items="{view>/filterOptions/vehicleClasses}" showSeparators="None">
-                  <items>
-                    <CustomListItem class="mapFilterItem">
-                      <CheckBox text="{view>label}" selected="{view>selected}" select=".onApplyFilters" />
-                    </CustomListItem>
-                  </items>
-                </List>
-              </Panel>
+                  <VBox class="nhvrLegendItems" visible="{= ${view>/colorBy} === 'status' }">
+                    <HBox alignItems="Center" class="nhvrLegendRow">
+                      <core:HTML content="&lt;span class='nhvrLegendDot' style='background:#2563eb'&gt;&lt;/span&gt;" />
+                      <Text text="{i18n>statusUnrestricted}" class="nhvrLegendText" />
+                    </HBox>
+                    <HBox alignItems="Center" class="nhvrLegendRow">
+                      <core:HTML content="&lt;span class='nhvrLegendDot' style='background:#f59e0b'&gt;&lt;/span&gt;" />
+                      <Text text="{i18n>statusPosted}" class="nhvrLegendText" />
+                    </HBox>
+                    <HBox alignItems="Center" class="nhvrLegendRow">
+                      <core:HTML content="&lt;span class='nhvrLegendDot' style='background:#ef4444'&gt;&lt;/span&gt;" />
+                      <Text text="{i18n>statusClosed}" class="nhvrLegendText" />
+                    </HBox>
+                  </VBox>
 
-              <Button text="{i18n>applyFilters}" type="Emphasized" press=".onApplyFilters" class="mapApplyButton" />
-              <Button text="{i18n>clearAll}" type="Transparent" press=".onClearFilters" class="mapClearButton" />
+                  <VBox class="nhvrLegendItems" visible="{= ${view>/colorBy} === 'condition' }">
+                    <HBox alignItems="Center" class="nhvrLegendRow">
+                      <core:HTML content="&lt;span class='nhvrLegendDot' style='background:#16a34a'&gt;&lt;/span&gt;" />
+                      <Text text="{i18n>conditionGood}" class="nhvrLegendText" />
+                    </HBox>
+                    <HBox alignItems="Center" class="nhvrLegendRow">
+                      <core:HTML content="&lt;span class='nhvrLegendDot' style='background:#f59e0b'&gt;&lt;/span&gt;" />
+                      <Text text="{i18n>conditionFair}" class="nhvrLegendText" />
+                    </HBox>
+                    <HBox alignItems="Center" class="nhvrLegendRow">
+                      <core:HTML content="&lt;span class='nhvrLegendDot' style='background:#ef4444'&gt;&lt;/span&gt;" />
+                      <Text text="{i18n>conditionPoor}" class="nhvrLegendText" />
+                    </HBox>
+                  </VBox>
+                </VBox>
+              </content>
+            </Panel>
+
+            <Panel class="nhvrSidebarPanel nhvrSelectionPanel" expandable="false" headerText="Spatial Selection" visible="{view>/selectionActive}">
+              <content>
+                <VBox class="nhvrFilterSection">
+                  <ObjectStatus text="{view>/selectionLabel}" state="Information" inverted="true" />
+                  <Text text="{= ${view>/selectionCount} + ' selected bridges' }" class="sapUiTinyMarginTop" />
+                  <Button text="{i18n>clearSelection}" icon="sap-icon://clear-filter" press=".onClearSelection" class="sapUiTinyMarginTop" />
+                </VBox>
+              </content>
+            </Panel>
+          </VBox>
+        </content>
+      </Page>
+    </f:beginColumnPages>
+
+    <f:midColumnPages>
+      <Page id="mapPage" backgroundDesign="Solid" busy="{view>/busy}" class="nhvrMapPage">
+        <customHeader>
+          <Bar id="mapBar" class="nhvrTopBar">
+            <contentLeft>
+              <Button icon="sap-icon://menu2" tooltip="{view>/panelToggleTooltip}" press=".onTogglePanel" type="Transparent" />
+              <Title id="mapPageTitle" text="{i18n>appTitle}" level="H1" />
+            </contentLeft>
+            <contentMiddle>
+              <SearchField width="20rem" placeholder="{i18n>bridgeName}" search=".onSearchBridge" liveChange=".onSearchLiveChange" />
+            </contentMiddle>
+            <contentRight>
+              <ObjectStatus text="{view>/bridgeCountText}" state="Information" />
+              <Button text="Spatial Select" icon="sap-icon://map-2" press=".onToggleDrawToolbar" type="{= ${view>/drawToolbarVisible} ? 'Emphasized' : 'Default' }" />
+              <ToggleButton text="{i18n>layoutList}" icon="sap-icon://list" pressed="{view>/showList}" press=".onToggleSplitView" type="Transparent" />
+              <Button icon="sap-icon://full-screen" tooltip="{i18n>centerMap}" press=".onZoomAll" type="Transparent" />
+              <Button icon="sap-icon://resize" tooltip="Zoom to selection" press=".onZoomSelected" enabled="{view>/selectionActive}" type="Transparent" />
+              <Button icon="sap-icon://refresh" tooltip="{i18n>refresh}" press=".onRefresh" type="Transparent" />
+            </contentRight>
+          </Bar>
+        </customHeader>
+
+        <content>
+          <VBox id="mapBodyBox" height="100%" class="nhvrMapBody">
+            <Toolbar visible="{view>/drawToolbarVisible}" design="Solid" class="nhvrDrawToolbar">
+              <Text text="Draw a spatial selection on the map" />
+              <ToolbarSpacer />
+              <Button text="{i18n>drawPolygon}" icon="sap-icon://map-2" press=".onDrawPolygon" />
+              <Button text="{i18n>drawRectangle}" icon="sap-icon://border" press=".onDrawRectangle" />
+              <Button text="{i18n>drawCircle}" icon="sap-icon://circle-task" press=".onDrawCircle" />
+              <Button text="{i18n>clearSelection}" icon="sap-icon://eraser" press=".onClearSelection" />
+              <ToolbarSeparator />
+              <Button icon="sap-icon://decline" tooltip="Close draw tools" press=".onCloseDrawToolbar" type="Transparent" />
+            </Toolbar>
+
+            <VBox class="nhvrMapHostShell">
+              <VBox id="mapHost" class="bridgeMapCanvas" />
             </VBox>
 
-            <HBox id="workspace" class="mapContentWorkspace mode-map">
-              <VBox class="mapCanvasPane">
-                <core:HTML id="mapHost" preferDOM="true" content="&lt;div class='bridgeMapCanvas'&gt;&lt;/div&gt;" />
-                <VBox id="legendBox" class="mapLegend" visible="{view>/layers/showLegend}">
-                  <Title text="{i18n>legendTitle}" level="H6" class="mapLegendTitle" />
-                  <HBox alignItems="Center" class="mapLegendRow">
-                    <core:Icon src="sap-icon://circle-task-2" color="#1a9850" class="sapUiTinyMarginEnd" />
-                    <Text text="{i18n>conditionGood}" />
-                  </HBox>
-                  <HBox alignItems="Center" class="mapLegendRow">
-                    <core:Icon src="sap-icon://circle-task-2" color="#f59e0b" class="sapUiTinyMarginEnd" />
-                    <Text text="{i18n>conditionFair}" />
-                  </HBox>
-                  <HBox alignItems="Center" class="mapLegendRow">
-                    <core:Icon src="sap-icon://circle-task-2" color="#ef4444" class="sapUiTinyMarginEnd" />
-                    <Text text="{i18n>conditionPoor}" />
-                  </HBox>
-                  <ToolbarSeparator />
-                  <Title text="{i18n>legendStatusTitle}" level="H6" class="mapLegendTitle mapLegendSubTitle" />
-                  <Text text="{i18n>statusClosed}" class="mapLegendBorderClosed" />
-                  <Text text="{i18n>statusPosted}" class="mapLegendBorderPosted" />
-                  <Text text="{i18n>statusUnrestricted}" class="mapLegendBorderOpen" />
-                </VBox>
-              </VBox>
+            <Toolbar design="Transparent" height="28px" visible="{= !!${view>/coordinateText} }" class="nhvrCoordinateBar">
+              <ToolbarSpacer />
+              <Text text="{view>/coordinateText}" class="nhvrCoordinateText" />
+            </Toolbar>
 
-              <VBox class="mapResultPane">
-                <Toolbar design="Transparent" class="mapResultHeader">
-                  <Title text="{i18n>bridgeList}" level="H5" />
-                  <ToolbarSpacer />
-                  <Text text="{= ${view>/selectionActive} ? ${view>/selectionCount} + ' selected' : ${view>/summaryText} }" class="mapResultSummary" />
-                </Toolbar>
-                <SearchField search=".onListSearch" liveChange=".onListSearch" class="mapListSearch" placeholder="{i18n>bridgeName}" />
-                <Table
-                  items="{view>/bridges}"
-                  growing="true"
-                  growingThreshold="50"
-                  growingScrollToLoad="true"
-                  noDataText="{i18n>noBridges}"
-                  class="mapResultTable"
-                  itemPress=".onBridgeSelectionChange">
-                  <columns>
-                    <Column width="6rem"><Text text="{i18n>bridgeId}" /></Column>
-                    <Column><Text text="{i18n>bridgeName}" /></Column>
-                    <Column width="4rem"><Text text="{i18n>stateTerritory}" /></Column>
-                    <Column width="5rem"><Text text="{i18n>conditionShort}" /></Column>
-                    <Column width="6rem"><Text text="{i18n>postingStatus}" /></Column>
-                    <Column width="3rem"><Text text="" /></Column>
-                  </columns>
+            <VBox visible="{view>/showList}" class="nhvrListPanel">
+              <Toolbar class="nhvrVariantBar">
+                <Text text="View:" class="nhvrVariantLabel" />
+                <Select width="10rem" selectedKey="standard">
                   <items>
-                    <ColumnListItem type="Active">
-                      <cells>
-                        <Text text="{view>bridgeId}" />
-                        <VBox>
-                          <Text text="{view>bridgeName}" maxLines="1" />
-                          <Text text="{= (${view>region} || '—') + ' • ' + (${view>structureType} || '—') }" class="mapListSubtext" />
-                        </VBox>
-                        <Text text="{view>state}" />
-                        <ObjectStatus text="{view>conditionRating}" state="{view>conditionState}" />
-                        <ObjectStatus text="{view>postingStatusLabel}" state="{= ${view>postingStatusLabel} === 'Closed' ? 'Error' : ${view>postingStatusLabel} === 'Posted' ? 'Warning' : 'Success' }" />
-                        <Button icon="sap-icon://locate-me" tooltip="{i18n>zoomToBridge}" press=".onLocateBridgeOnMap" type="Transparent" />
-                      </cells>
-                    </ColumnListItem>
+                    <core:Item key="standard" text="Standard" />
                   </items>
-                </Table>
-              </VBox>
-            </HBox>
-
-            <VBox class="mapDetailPane" visible="{view>/detailOpen}">
-              <Toolbar design="Solid" class="mapDetailHeader">
-                <Title text="{i18n>details}" level="H5" />
+                </Select>
                 <ToolbarSpacer />
-                <Button icon="sap-icon://decline" type="Transparent" press=".onCloseDetail" />
+                <ObjectStatus text="{view>/listTitleText}" state="Information" />
               </Toolbar>
 
-              <HBox class="mapDetailStatusRow" wrap="Wrap">
-                <ObjectStatus text="{view>/selectedBridge/conditionBandLabel}" state="{view>/selectedBridge/conditionState}" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                <ObjectStatus text="{view>/selectedBridge/postingStatusLabel}" state="{view>/selectedBridge/postingStatusState}" class="sapUiTinyMarginBottom" />
-              </HBox>
+              <Toolbar design="Solid" class="nhvrListToolbar">
+                <SearchField width="14rem" placeholder="{i18n>bridgeName}" search=".onListSearch" liveChange=".onListSearchLive" />
+                <ToolbarSpacer />
+                <Button icon="sap-icon://full-screen" tooltip="{i18n>centerMap}" press=".onZoomAll" type="Transparent" />
+              </Toolbar>
 
-              <HBox class="mapMetricsStrip" justifyContent="SpaceBetween">
-                <VBox alignItems="Center" class="mapMetric">
-                  <Title text="{view>/selectedBridge/metricRating}" level="H4" />
-                  <Text text="{i18n>rating}" class="mapMetricLabel" />
-                </VBox>
-                <VBox alignItems="Center" class="mapMetric">
-                  <Title text="{view>/selectedBridge/metricClearance}" level="H4" />
-                  <Text text="{i18n>clearance}" class="mapMetricLabel" />
-                </VBox>
-                <VBox alignItems="Center" class="mapMetric">
-                  <Title text="{view>/selectedBridge/metricYear}" level="H4" />
-                  <Text text="{i18n>built}" class="mapMetricLabel" />
-                </VBox>
-              </HBox>
-
-              <VBox class="mapDetailBlock">
-                <Label text="{i18n>bridgeId}" design="Bold" />
-                <Text text="{view>/selectedBridge/bridgeId}" class="sapUiTinyMarginBottom" />
-                <Label text="{i18n>regionState}" design="Bold" />
-                <Text text="{= (${view>/selectedBridge/region} || '—') + ' / ' + (${view>/selectedBridge/state} || '—') }" class="sapUiTinyMarginBottom" />
-                <Label text="{i18n>route}" design="Bold" />
-                <Text text="{view>/selectedBridge/route}" class="sapUiTinyMarginBottom" />
-                <Label text="{i18n>structureType}" design="Bold" />
-                <Text text="{view>/selectedBridge/structureType}" class="sapUiTinyMarginBottom" />
-                <Label text="{i18n>clearance}" design="Bold" />
-                <Text text="{view>/selectedBridge/metricClearance}" class="sapUiTinyMarginBottom" />
-                <Label text="{i18n>spanLength}" design="Bold" />
-                <Text text="{view>/selectedBridge/spanLengthText}" class="sapUiTinyMarginBottom" />
-                <Label text="{i18n>lastInspection}" design="Bold" />
-                <Text text="{view>/selectedBridge/lastInspectionDate}" class="sapUiTinyMarginBottom" />
-                <Label text="{i18n>coordinates}" design="Bold" />
-                <Text text="{view>/selectedBridge/coordinateText}" class="sapUiTinyMarginBottom" />
-              </VBox>
-
-              <HBox class="mapDetailStatusRow" wrap="Wrap">
-                <ObjectStatus text="{view>/selectedBridge/scourRiskLabel}" state="Warning" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                <ObjectStatus text="{view>/selectedBridge/freightRouteLabel}" state="{= ${view>/selectedBridge/freightRoute} ? 'Success' : 'None' }" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                <ObjectStatus text="{view>/selectedBridge/nhvrAssessedLabel}" state="{= ${view>/selectedBridge/nhvrAssessed} ? 'Success' : 'None' }" class="sapUiTinyMarginBottom" />
-              </HBox>
-
-              <VBox class="mapDetailBlock">
-                <Text text="{i18n>activeRestrictions}" class="mapDetailSectionTitle sapUiTinyMarginBottom" />
-                <List items="{view>/selectedRestrictions}" noDataText="{i18n>noRestrictions}" showSeparators="Inner">
-                  <items>
-                    <StandardListItem
-                      title="{view>name}"
-                      description="{= (${view>restrictionValue} || '—') + ' ' + (${view>restrictionUnit} || '') + ' • ' + (${view>restrictionStatus} || '—') }"
-                      info="{view>restrictionType}" />
-                  </items>
-                </List>
-              </VBox>
-
-              <HBox class="mapDetailActions" wrap="Wrap">
-                <Button text="{i18n>fullRecord}" icon="sap-icon://document" press=".onOpenBridgeDetail" type="Emphasized" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-                <Button text="{i18n>zoomToBridge}" icon="sap-icon://map-2" press=".onZoomToSelected" type="Transparent" class="sapUiTinyMarginBottom" />
-              </HBox>
+              <Table
+                id="bridgeList"
+                items="{view>/bridges}"
+                growing="true"
+                growingThreshold="50"
+                alternateRowColors="true"
+                sticky="ColumnHeaders"
+                noDataText="{i18n>noBridges}">
+                <columns>
+                  <Column><Text text="{i18n>bridgeName}" /></Column>
+                  <Column width="8rem" demandPopin="true" minScreenWidth="Large"><Text text="{i18n>bridgeId}" /></Column>
+                  <Column width="7rem" demandPopin="true" minScreenWidth="Tablet"><Text text="{i18n>stateTerritory}" /></Column>
+                  <Column width="10rem"><Text text="{i18n>postingStatus}" /></Column>
+                  <Column width="8rem" demandPopin="true" minScreenWidth="Tablet"><Text text="{i18n>conditionRating}" /></Column>
+                  <Column width="11rem" demandPopin="true" minScreenWidth="Large"><Text text="{i18n>structureType}" /></Column>
+                  <Column width="7rem" demandPopin="true" minScreenWidth="Large"><Text text="{i18n>yearBuilt}" /></Column>
+                  <Column width="5rem" hAlign="End"><Text text="" /></Column>
+                </columns>
+                <items>
+                  <ColumnListItem type="Navigation" press=".onListItemPress">
+                    <cells>
+                      <Text text="{view>bridgeName}" maxLines="1" wrapping="false" />
+                      <Text text="{view>bridgeId}" />
+                      <Text text="{view>state}" />
+                      <ObjectStatus text="{view>postingStatusLabel}" state="{view>postingStatusState}" />
+                      <ObjectStatus text="{view>conditionRating}" state="{view>conditionState}" />
+                      <Text text="{view>structureType}" />
+                      <Text text="{view>yearBuilt}" />
+                      <Button icon="sap-icon://detail-view" tooltip="{i18n>zoomToBridge}" press=".onListItemDetail" type="Transparent" />
+                    </cells>
+                  </ColumnListItem>
+                </items>
+              </Table>
             </VBox>
-          </HBox>
-        </VBox>
-      </content>
-    </Page>
-  </App>
+          </VBox>
+        </content>
+      </Page>
+    </f:midColumnPages>
+  </f:FlexibleColumnLayout>
 </mvc:View>

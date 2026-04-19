@@ -8,8 +8,7 @@ sap.ui.define([
   "sap/m/HBox",
   "sap/m/Switch",
   "sap/m/Text",
-  "sap/m/Button",
-  "sap/ui/dom/includeStylesheet"
+  "sap/m/Button"
 ], function (
   Controller,
   JSONModel,
@@ -20,8 +19,7 @@ sap.ui.define([
   HBox,
   Switch,
   Text,
-  Button,
-  includeStylesheet
+  Button
 ) {
   "use strict";
 
@@ -61,6 +59,8 @@ sap.ui.define([
 
   return Controller.extend("BridgeManagement.mapview.controller.Main", {
     onInit: function () {
+      document.body.classList.add("bridgeMapFullBleed");
+
       this._selectionShape = null;
       this._drawMode = null;
       this._markerIndex = new Map();
@@ -69,9 +69,19 @@ sap.ui.define([
       this._selectionLayer = null;
       this._hillshadeLayer = null;
       this._layerDialog = null;
+      this._mapInitAttempts = 0;
+      this._mapInitScheduled = false;
 
       this.getView().setModel(new JSONModel({
         busy: true,
+        fclLayout: "TwoColumnsMidExpanded",
+        panelOpen: true,
+        panelToggleTooltip: "Close Filters & Layers panel",
+        drawToolbarVisible: false,
+        showList: false,
+        bridgeCountText: "0 bridges",
+        listTitleText: "0 visible bridges",
+        coordinateText: "",
         showFilters: true,
         layoutMode: "map",
         colorBy: "condition",
@@ -119,11 +129,18 @@ sap.ui.define([
       this._loadBridges();
     },
 
+    onExit: function () {
+      document.body.classList.remove("bridgeMapFullBleed");
+    },
+
     onAfterRendering: function () {
       this._leafletReady
-        .then(this._initMap.bind(this))
-        .catch(function () {
-          MessageBox.error(this._text("leafletError"));
+        .then(function () {
+          this._scheduleMapInit();
+        }.bind(this))
+        .catch(function (error) {
+          const detail = error && error.message ? "\n\n" + error.message : "";
+          MessageBox.error(this._text("leafletError") + detail);
         }.bind(this));
     },
 
@@ -143,6 +160,52 @@ sap.ui.define([
       }
     },
 
+    onTogglePanel: function () {
+      const model = this._vm();
+      const open = !model.getProperty("/panelOpen");
+      model.setProperty("/panelOpen", open);
+      model.setProperty("/fclLayout", open ? "TwoColumnsMidExpanded" : "MidColumnFullScreen");
+      model.setProperty("/panelToggleTooltip", open ? "Close Filters & Layers panel" : "Open Filters & Layers panel");
+      setTimeout(this._invalidateMap.bind(this), 120);
+    },
+
+    onToggleDrawToolbar: function () {
+      const model = this._vm();
+      model.setProperty("/drawToolbarVisible", !model.getProperty("/drawToolbarVisible"));
+    },
+
+    onCloseDrawToolbar: function () {
+      this._vm().setProperty("/drawToolbarVisible", false);
+    },
+
+    onClearSelection: function () {
+      this.onClearDrawing();
+    },
+
+    onToggleSplitView: function (oEvent) {
+      const showList = Boolean(oEvent.getParameter("pressed"));
+      const model = this._vm();
+      model.setProperty("/showList", showList);
+      model.setProperty("/layoutMode", showList ? "split" : "map");
+      setTimeout(this._invalidateMap.bind(this), 120);
+    },
+
+    onZoomAll: function () {
+      this._renderMarkers(true);
+    },
+
+    onZoomSelected: function () {
+      const bridges = this._vm().getProperty("/bridges") || [];
+      if (!this._leafletMap || !bridges.length) {
+        return;
+      }
+
+      const bounds = window.L.latLngBounds(bridges.map(function (bridge) {
+        return [bridge.latitude, bridge.longitude];
+      }));
+      this._leafletMap.fitBounds(bounds.pad(0.18));
+    },
+
     onRefresh: function () {
       MessageToast.show(this._text("refresh"));
       this._loadBridges();
@@ -156,11 +219,34 @@ sap.ui.define([
     onColorByChange: function (oEvent) {
       this._vm().setProperty("/colorBy", oEvent.getSource().getSelectedKey());
       this._renderMarkers(false);
+      return displayed;
+    },
+
+    onSymbologyChange: function (oEvent) {
+      const item = oEvent.getParameter("item");
+      const key = item ? item.getKey() : oEvent.getSource().getSelectedKey();
+      this._vm().setProperty("/colorBy", key === "status" ? "status" : "condition");
+      this._renderMarkers(false);
     },
 
     onBasemapChange: function (oEvent) {
-      this._vm().setProperty("/basemap", oEvent.getSource().getSelectedKey());
+      const source = oEvent.getSource();
+      const customData = source.getCustomData && source.getCustomData()[0];
+      const key = source.getSelectedKey ? source.getSelectedKey() : customData && customData.getValue();
+      this._vm().setProperty("/basemap", key || "street");
       this._applyBaseLayer();
+    },
+
+    onToggleClusterLayer: function (oEvent) {
+      this._onLayerSwitchChange("clusterMarkers", oEvent);
+    },
+
+    onToggleLabelLayer: function (oEvent) {
+      this._onLayerSwitchChange("showLabels", oEvent);
+    },
+
+    onToggleHillshadeLayer: function (oEvent) {
+      this._onLayerSwitchChange("showHillshade", oEvent);
     },
 
     onDrawPolygon: function () {
@@ -269,6 +355,18 @@ sap.ui.define([
       this._renderMarkers(false);
     },
 
+    onSearchBridge: function (oEvent) {
+      this.onListSearch(oEvent);
+    },
+
+    onSearchLiveChange: function (oEvent) {
+      this.onListSearch(oEvent);
+    },
+
+    onListSearchLive: function (oEvent) {
+      this.onListSearch(oEvent);
+    },
+
     onLocateBridgeOnMap: function (oEvent) {
       const bridge = oEvent.getSource().getBindingContext("view").getObject();
       this._focusBridge(bridge);
@@ -286,6 +384,36 @@ sap.ui.define([
       window.location.href = "#Bridges-manage";
     },
 
+    onListItemPress: function (oEvent) {
+      const item = oEvent.getSource();
+      this._focusBridge(item.getBindingContext("view").getObject());
+    },
+
+    onListItemDetail: function (oEvent) {
+      const item = oEvent.getSource().getParent();
+      this._focusBridge(item.getBindingContext("view").getObject());
+    },
+
+    onNavToDashboard: function () {
+      this.onNavHome();
+    },
+
+    onNavToBridgesFE: function () {
+      window.location.href = "#Bridges-manage";
+    },
+
+    onNavToReports: function () {
+      window.location.href = "#Reports-display";
+    },
+
+    onNavToUpload: function () {
+      window.location.href = "#Upload-display";
+    },
+
+    onNavToMassEdit: function () {
+      window.location.href = "#MassEdit-manage";
+    },
+
     _layerRow: function (path, label) {
       return new HBox({
         justifyContent: "SpaceBetween",
@@ -301,7 +429,8 @@ sap.ui.define([
     },
 
     _onLayerSwitchChange: function (path, oEvent) {
-      this._vm().setProperty("/layers/" + path, oEvent.getParameter("state"));
+      const value = oEvent.getParameter("state");
+      this._vm().setProperty("/layers/" + path, value == null ? oEvent.getParameter("selected") : value);
       this._applyLayerSettings();
     },
 
@@ -456,6 +585,8 @@ sap.ui.define([
 
       model.setProperty("/bridges", displayed);
       model.setProperty("/summaryText", displayed.length + " of " + total + " bridges");
+      model.setProperty("/bridgeCountText", displayed.length + " of " + total + " bridges");
+      model.setProperty("/listTitleText", displayed.length + " visible bridges");
       model.setProperty("/selectionActive", Boolean(this._selectionShape));
       model.setProperty("/selectionCount", this._selectionShape ? displayed.length : 0);
       model.setProperty("/selectionLabel", this._selectionShape ? this._text("selectionActive") : "");
@@ -491,14 +622,76 @@ sap.ui.define([
         return Promise.resolve();
       }
 
-      includeStylesheet(this._resourceUrl("vendor/leaflet/leaflet.css"));
-      includeStylesheet(this._resourceUrl("vendor/leaflet.markercluster/MarkerCluster.css"));
-      includeStylesheet(this._resourceUrl("vendor/leaflet.markercluster/MarkerCluster.Default.css"));
-      includeStylesheet(this._resourceUrl("vendor/leaflet.draw/leaflet.draw.css"));
+      this._includeStylesheet("vendor/leaflet/leaflet.css");
+      this._includeStylesheet("vendor/leaflet.markercluster/MarkerCluster.css");
+      this._includeStylesheet("vendor/leaflet.markercluster/MarkerCluster.Default.css");
+      this._includeStylesheet("vendor/leaflet.draw/leaflet.draw.css");
 
-      return this._loadScript(this._resourceUrl("vendor/leaflet/leaflet.js"))
-        .then(this._loadScript.bind(this, this._resourceUrl("vendor/leaflet.markercluster/leaflet.markercluster.js")))
-        .then(this._loadScript.bind(this, this._resourceUrl("vendor/leaflet.draw/leaflet.draw.js")));
+      return this._loadScriptCandidates("vendor/leaflet/leaflet.js")
+        .then(function () {
+          if (!window.L) {
+            throw new Error("Leaflet loaded, but window.L is not available.");
+          }
+          return this._loadScriptCandidates("vendor/leaflet.markercluster/leaflet.markercluster.js");
+        }.bind(this))
+        .then(function () {
+          if (!window.L.markerClusterGroup) {
+            throw new Error("Leaflet MarkerCluster loaded, but L.markerClusterGroup is not available.");
+          }
+          return this._loadScriptCandidates("vendor/leaflet.draw/leaflet.draw.js");
+        }.bind(this))
+        .then(function () {
+          if (!window.L.Draw) {
+            throw new Error("Leaflet Draw loaded, but L.Draw is not available.");
+          }
+        });
+    },
+
+    _includeStylesheet: function (path) {
+      const candidates = this._resourceUrlCandidates(path);
+      const alreadyLoaded = candidates.some(function (href) {
+        return Boolean(document.querySelector("link[data-map-href='" + href + "']"));
+      });
+
+      if (alreadyLoaded) {
+        return;
+      }
+
+      this._includeStylesheetCandidate(candidates, 0);
+    },
+
+    _includeStylesheetCandidate: function (candidates, index) {
+      const href = candidates[index];
+      if (!href) {
+        return;
+      }
+
+      const link = document.createElement("link");
+      link.rel = "stylesheet";
+      link.href = href;
+      link.dataset.mapHref = href;
+      link.addEventListener("error", function () {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+        this._includeStylesheetCandidate(candidates, index + 1);
+      }.bind(this), { once: true });
+      document.head.appendChild(link);
+    },
+
+    _loadScriptCandidates: function (path) {
+      const candidates = this._resourceUrlCandidates(path);
+      let chain = Promise.reject(new Error("No script URL candidates for " + path));
+
+      candidates.forEach(function (src) {
+        chain = chain.catch(function () {
+          return this._loadScript(src);
+        }.bind(this));
+      }.bind(this));
+
+      return chain.catch(function (error) {
+        throw new Error("Could not load " + path + ". Tried: " + candidates.join(", ") + ". " + (error && error.message ? error.message : ""));
+      });
     },
 
     _loadScript: function (src) {
@@ -509,7 +702,9 @@ sap.ui.define([
             resolve();
           } else {
             existing.addEventListener("load", resolve, { once: true });
-            existing.addEventListener("error", reject, { once: true });
+            existing.addEventListener("error", function () {
+              reject(new Error("Failed to load script: " + src));
+            }, { once: true });
           }
           return;
         }
@@ -522,17 +717,42 @@ sap.ui.define([
           script.dataset.loaded = "true";
           resolve();
         }, { once: true });
-        script.addEventListener("error", reject, { once: true });
+        script.addEventListener("error", function () {
+          reject(new Error("Failed to load script: " + src));
+        }, { once: true });
         document.head.appendChild(script);
       });
     },
 
-    _initMap: function () {
-      if (this._leafletMap || !this.byId("mapHost").getDomRef()) {
+    _scheduleMapInit: function () {
+      if (this._leafletMap || this._mapInitScheduled) {
         return;
       }
 
-      const host = this.byId("mapHost").getDomRef().querySelector(".bridgeMapCanvas");
+      this._mapInitScheduled = true;
+      setTimeout(function () {
+        this._mapInitScheduled = false;
+        this._initMap();
+      }.bind(this), 0);
+    },
+
+    _initMap: function () {
+      if (this._leafletMap) {
+        return;
+      }
+
+      const host = this._resolveMapHost();
+      if (!host) {
+        this._mapInitAttempts += 1;
+        if (this._mapInitAttempts <= 20) {
+          setTimeout(this._initMap.bind(this), 50);
+        } else {
+          MessageBox.error("Map container not found. The map host control did not render.");
+        }
+        return;
+      }
+
+      this._mapInitAttempts = 0;
       this._leafletMap = window.L.map(host, {
         zoomControl: true,
         attributionControl: true
@@ -548,11 +768,43 @@ sap.ui.define([
         this._selectionLayer.addLayer(event.layer);
         this._selectionShape = event.layer;
         this._drawMode = event.layerType;
-        this._applySelectionToDisplay(this._vm().getProperty("/filteredBridges") || []);
+        const selectedBridges = this._applySelectionToDisplay(this._vm().getProperty("/filteredBridges") || []);
+        this._openSelectionPopup(event.layer, event.layerType, selectedBridges.length);
+      }.bind(this));
+
+      this._leafletMap.on("mousemove", function (event) {
+        this._vm().setProperty("/coordinateText", event.latlng.lat.toFixed(5) + ", " + event.latlng.lng.toFixed(5));
       }.bind(this));
 
       this._renderMarkers(false);
       this._applyLayoutMode();
+      setTimeout(this._invalidateMap.bind(this), 250);
+    },
+
+    _resolveMapHost: function () {
+      const mapHost = this.byId("mapHost");
+      const domRef = mapHost && mapHost.getDomRef();
+      if (!domRef) {
+        return null;
+      }
+
+      domRef.setAttribute("role", "application");
+      domRef.setAttribute("aria-label", "Bridge geographic map");
+      domRef.setAttribute("tabindex", "0");
+
+      if (domRef.classList && domRef.classList.contains("bridgeMapCanvas")) {
+        return domRef;
+      }
+
+      const existing = domRef.querySelector(".bridgeMapCanvas");
+      if (existing) {
+        return existing;
+      }
+
+      const created = document.createElement("div");
+      created.className = "bridgeMapCanvas";
+      domRef.appendChild(created);
+      return created;
     },
 
     _applyBaseLayer: function () {
@@ -669,6 +921,72 @@ sap.ui.define([
       ].join("");
     },
 
+    _openSelectionPopup: function (layer, layerType, count) {
+      if (!layer || !this._leafletMap) {
+        return;
+      }
+
+      const html = this._selectionPopupHtml(layer, layerType, count);
+      const popupLocation = this._selectionPopupLocation(layer);
+      if (!popupLocation) {
+        return;
+      }
+
+      if (layer.bindPopup) {
+        layer.bindPopup(html, { maxWidth: 260 });
+        layer.off("click", this._boundSelectionPopupClick);
+        this._boundSelectionPopupClick = function () {
+          this._showSelectionPopup(html, popupLocation);
+        }.bind(this);
+        layer.on("click", this._boundSelectionPopupClick);
+      }
+
+      setTimeout(function () {
+        this._showSelectionPopup(html, popupLocation);
+      }.bind(this), 80);
+    },
+
+    _showSelectionPopup: function (html, popupLocation) {
+      window.L.popup({ maxWidth: 260 })
+        .setLatLng(popupLocation)
+        .setContent(html)
+        .openOn(this._leafletMap);
+    },
+
+    _selectionPopupHtml: function (layer, layerType, count) {
+      const label = layerType === "circle" ? "Circle selection" :
+        layerType === "rectangle" ? "Rectangle selection" :
+          "Polygon selection";
+      const radius = layerType === "circle" && layer.getRadius
+        ? "<br>Radius: " + this._formatRadius(layer.getRadius())
+        : "";
+
+      return [
+        "<div class='leafletPopup selectionPopup'>",
+        "<strong>", label, "</strong><br>",
+        count, " bridge", count === 1 ? "" : "s", " selected",
+        radius,
+        "<br><span class='selectionPopupHint'>Use Clear Selection to reset.</span>",
+        "</div>"
+      ].join("");
+    },
+
+    _selectionPopupLocation: function (layer) {
+      if (layer.getLatLng) {
+        return layer.getLatLng();
+      }
+      if (layer.getBounds) {
+        return layer.getBounds().getCenter();
+      }
+      return null;
+    },
+
+    _formatRadius: function (meters) {
+      return meters >= 1000
+        ? (meters / 1000).toFixed(2) + " km"
+        : Math.round(meters) + " m";
+    },
+
     _focusBridge: function (bridge) {
       if (!bridge || !this._leafletMap) return;
 
@@ -692,6 +1010,10 @@ sap.ui.define([
 
     _applyLayoutMode: function () {
       const workspace = this.byId("workspace");
+      if (!workspace) {
+        setTimeout(this._invalidateMap.bind(this), 90);
+        return;
+      }
       const mode = this._vm().getProperty("/layoutMode");
 
       ["mode-map", "mode-split", "mode-list"].forEach(function (styleClass) {
@@ -820,7 +1142,29 @@ sap.ui.define([
     },
 
     _resourceUrl: function (path) {
-      return this.getOwnerComponent().getManifestObject().resolveUri(path);
+      return this._resourceUrlCandidates(path)[0];
+    },
+
+    _resourceUrlCandidates: function (path) {
+      const cleanPath = String(path || "").replace(/^\/+/, "");
+      const candidates = [];
+      const add = function (value) {
+        if (value && candidates.indexOf(value) === -1) {
+          candidates.push(value);
+        }
+      };
+
+      try {
+        add(this.getOwnerComponent().getManifestObject().resolveUri(cleanPath));
+      } catch (error) {
+        // Fall back to explicit local sandbox and deployed app URLs below.
+      }
+
+      add("/map-view/webapp/" + cleanPath);
+      add("/map-view/" + cleanPath);
+      add(cleanPath);
+
+      return candidates;
     },
 
     _text: function (key) {

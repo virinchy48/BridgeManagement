@@ -2,6 +2,267 @@
   background: #eef3fb;
 }
 
+body.bridgeMapFullBleed .sapUshellApplicationContainerLimitedWidth,
+body.bridgeMapFullBleed .sapUshellApplicationContainer,
+body.bridgeMapFullBleed #application-Map-display-component {
+  width: 100% !important;
+  max-width: none !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+body.bridgeMapFullBleed #application-Map-display-component,
+body.bridgeMapFullBleed #application-Map-display-component > div {
+  height: 100% !important;
+}
+
+/* NHVR reference-style map shell */
+.nhvrMapApp,
+.nhvrMapApp .sapFFCL,
+.nhvrMapPage,
+.nhvrMapPage > section,
+.nhvrMapBody {
+  height: 100%;
+  min-height: 0;
+}
+
+.nhvrMapApp {
+  width: 100%;
+  max-width: none;
+  background: #f6f7f9;
+}
+
+.nhvrMapApp .sapFFCLColumn {
+  height: 100%;
+}
+
+.nhvrMapApp .sapFFCLColumnBegin {
+  flex: 0 0 27rem !important;
+  width: 27rem !important;
+  max-width: 27rem !important;
+  min-width: 27rem !important;
+}
+
+.nhvrMapApp .sapFFCLColumnMid {
+  flex: 1 1 auto !important;
+  width: calc(100% - 27rem) !important;
+  max-width: none !important;
+  min-width: 0 !important;
+}
+
+.nhvrMapApp .sapFFCLColumnEnd {
+  display: none !important;
+  flex: 0 0 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+}
+
+.nhvrMapApp .sapFFCLColumnSeparator {
+  flex: 0 0 0.25rem;
+}
+
+.nhvrTopBar {
+  border-bottom: 1px solid #d7dce3;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.nhvrTopBar .sapMTitle {
+  color: #1d2b3a;
+  font-weight: 700;
+}
+
+.nhvrSidebarPage {
+  border-right: 1px solid #d7dce3;
+}
+
+.nhvrSidebar {
+  height: 100%;
+  overflow-y: auto;
+  padding: 0.75rem;
+  background: #f7f9fb;
+}
+
+.nhvrSidebarPanel {
+  margin-bottom: 0.75rem;
+  border: 1px solid #d7dce3;
+  border-radius: 0.35rem;
+  overflow: hidden;
+  background: #fff;
+}
+
+.nhvrSidebarPanel .sapMPanelHdr {
+  height: 2.5rem;
+  background: #fff;
+  color: #1d2b3a;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.nhvrFilterSection {
+  padding: 0.5rem 0.25rem 0.25rem;
+}
+
+.nhvrFilterLabel {
+  color: #354a5f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.nhvrFilterLabelTop {
+  margin-top: 0.7rem;
+}
+
+.nhvrCompactFilterItem {
+  min-height: 2rem;
+}
+
+.nhvrRangeRow {
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.nhvrFilterActions {
+  margin-top: 0.85rem;
+}
+
+.nhvrLayerRow {
+  min-height: 2.25rem;
+  border-bottom: 1px solid #edf0f4;
+}
+
+.nhvrLayerRow:last-child {
+  border-bottom: 0;
+}
+
+.nhvrLayerIcon {
+  margin: 0 0.45rem 0 0.1rem;
+  color: #0a6ed1;
+}
+
+.nhvrLayerLabel {
+  color: #263746;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.nhvrBaseMapList .sapMSLI {
+  border-radius: 0.25rem;
+}
+
+.nhvrSymbologyButton {
+  margin: 0.35rem 0 0.75rem;
+}
+
+.nhvrLegendItems {
+  gap: 0.35rem;
+}
+
+.nhvrLegendRow {
+  min-height: 1.5rem;
+  gap: 0.45rem;
+}
+
+.nhvrLegendDot {
+  display: inline-block;
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 2px solid #fff;
+  border-radius: 999px;
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, 0.28);
+}
+
+.nhvrLegendText {
+  color: #354a5f;
+  font-size: 0.8125rem;
+}
+
+.nhvrSelectionPanel {
+  border-color: #9ec7f7;
+  background: #eef6ff;
+}
+
+.nhvrMapBody {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #edf2f7;
+}
+
+.nhvrDrawToolbar {
+  border-bottom: 1px solid #d7dce3;
+  background: #fefefe;
+}
+
+.nhvrMapHostShell {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 18rem;
+  overflow: hidden;
+  background: #dbeafe;
+}
+
+.nhvrMapHostShell .sapUiCoreHTML {
+  width: 100%;
+  height: 100%;
+}
+
+.nhvrCoordinateBar {
+  border-top: 1px solid #d7dce3;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.nhvrCoordinateText {
+  color: #52616f;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  font-size: 0.72rem;
+}
+
+.nhvrListPanel {
+  flex: 0 0 18.5rem;
+  min-height: 12rem;
+  border-top: 1px solid #cfd7e2;
+  background: #fff;
+  overflow: hidden;
+}
+
+.nhvrVariantBar {
+  height: 2.5rem;
+  border-bottom: 1px solid #e5e9ef;
+  background: #fbfcfe;
+}
+
+.nhvrVariantLabel {
+  color: #52616f;
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+
+.nhvrListToolbar {
+  height: 2.75rem;
+  border-bottom: 1px solid #e5e9ef;
+}
+
+.nhvrListPanel .sapMListTbl {
+  border-top: 0;
+}
+
+.nhvrListPanel .sapMListTblHeaderCell {
+  background: #f5f7fa;
+  border-bottom: 1px solid #d7dce3;
+}
+
+@media (max-width: 900px) {
+  .nhvrTopBar .sapMBarMiddle {
+    display: none;
+  }
+
+  .nhvrListPanel {
+    flex-basis: 20rem;
+  }
+}
+
 .mapShell {
   height: 100vh;
   overflow: hidden;
@@ -282,6 +543,15 @@
 .leafletPopup {
   color: #17324d;
   line-height: 1.45;
+}
+
+.selectionPopup {
+  min-width: 10rem;
+}
+
+.selectionPopupHint {
+  color: #64748b;
+  font-size: 0.75rem;
 }
 
 .bridgeMapLabel {

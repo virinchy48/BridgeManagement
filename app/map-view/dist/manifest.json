@@ -28,6 +28,7 @@
 	},
 	"sap.ui": {
 		"technology": "UI5",
+		"fullWidth": true,
 		"deviceTypes": {
 			"desktop": true,
 			"phone": true,
@@ -39,6 +40,7 @@
 			"minUI5Version": "1.136.0",
 			"libs": {
 				"sap.m": {},
+				"sap.f": {},
 				"sap.ui.core": {},
 				"sap.ui.layout": {}
 			}
