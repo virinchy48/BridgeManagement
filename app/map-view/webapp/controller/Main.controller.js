@@ -354,9 +354,12 @@ sap.ui.define([
       const source = oEvent.getSource();
       const layerKey = source.getCustomData && source.getCustomData()[0] && source.getCustomData()[0].getValue();
       if (!layerKey) return;
-      const selected = oEvent.getParameter("selected");
-      this._vm().setProperty("/layers/refLayers/" + layerKey, selected);
-      this._applyRefLayer(layerKey, selected);
+      // Switch fires "state"; CheckBox fires "selected"
+      const visible = oEvent.getParameter("state") !== undefined
+        ? oEvent.getParameter("state")
+        : oEvent.getParameter("selected");
+      this._vm().setProperty("/layers/refLayers/" + layerKey, visible);
+      this._applyRefLayer(layerKey, visible);
     },
 
     _applyRefLayer: function (layerKey, visible) {

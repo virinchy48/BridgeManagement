@@ -33,43 +33,84 @@
           <VBox class="nhvrSidebar">
             <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Base Map">
               <content>
-                <FlexBox wrap="Wrap" class="nhvrBasemapGrid">
-                  <Button icon="sap-icon://map" text="OSM"
-                    class="{= ${view>/basemap} === 'osm' || ${view>/basemap} === 'street' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
-                    type="Transparent" press=".onBasemapChange">
-                    <customData><core:CustomData key="basemap" value="osm" /></customData>
-                  </Button>
-                  <Button icon="sap-icon://journey-arrive" text="Esri Street"
-                    class="{= ${view>/basemap} === 'esriStreet' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
-                    type="Transparent" press=".onBasemapChange">
-                    <customData><core:CustomData key="basemap" value="esriStreet" /></customData>
-                  </Button>
-                  <Button icon="sap-icon://globe" text="Satellite"
-                    class="{= ${view>/basemap} === 'esriSatellite' || ${view>/basemap} === 'satellite' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
-                    type="Transparent" press=".onBasemapChange">
-                    <customData><core:CustomData key="basemap" value="esriSatellite" /></customData>
-                  </Button>
-                  <Button icon="sap-icon://mountain" text="Topo"
-                    class="{= ${view>/basemap} === 'esriTopo' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
-                    type="Transparent" press=".onBasemapChange">
-                    <customData><core:CustomData key="basemap" value="esriTopo" /></customData>
-                  </Button>
-                  <Button icon="sap-icon://map-2" text="Google"
-                    class="{= ${view>/basemap} === 'google' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
-                    type="Transparent" press=".onBasemapChange">
-                    <customData><core:CustomData key="basemap" value="google" /></customData>
-                  </Button>
-                  <Button icon="sap-icon://world" text="Google Sat"
-                    class="{= ${view>/basemap} === 'googleSat' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
-                    type="Transparent" press=".onBasemapChange">
-                    <customData><core:CustomData key="basemap" value="googleSat" /></customData>
-                  </Button>
-                  <Button icon="sap-icon://pushpin-on" text="HERE"
-                    class="{= ${view>/basemap} === 'here' ? 'nhvrBasemapBtn nhvrBasemapBtnActive' : 'nhvrBasemapBtn' }"
-                    type="Transparent" press=".onBasemapChange">
-                    <customData><core:CustomData key="basemap" value="here" /></customData>
-                  </Button>
-                </FlexBox>
+                <VBox class="nhvrFilterSection nhvrBasemapSection">
+                  <!-- Streets group -->
+                  <Text text="STREETS" class="nhvrBasemapGroupLabel" />
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrBasemapRow">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://map" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="OpenStreetMap" class="nhvrLayerLabel" />
+                    </HBox>
+                    <RadioButton groupName="basemapGroup" select=".onBasemapChange"
+                      selected="{= ${view>/basemap} === 'osm' || ${view>/basemap} === 'street' }">
+                      <customData><core:CustomData key="basemap" value="osm" /></customData>
+                    </RadioButton>
+                  </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrBasemapRow">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://journey-arrive" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Esri Street" class="nhvrLayerLabel" />
+                    </HBox>
+                    <RadioButton groupName="basemapGroup" select=".onBasemapChange"
+                      selected="{= ${view>/basemap} === 'esriStreet' }">
+                      <customData><core:CustomData key="basemap" value="esriStreet" /></customData>
+                    </RadioButton>
+                  </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrBasemapRow">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://map-2" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Google Maps" class="nhvrLayerLabel" />
+                    </HBox>
+                    <RadioButton groupName="basemapGroup" select=".onBasemapChange"
+                      selected="{= ${view>/basemap} === 'google' }">
+                      <customData><core:CustomData key="basemap" value="google" /></customData>
+                    </RadioButton>
+                  </HBox>
+                  <!-- Imagery group -->
+                  <Text text="IMAGERY" class="nhvrBasemapGroupLabel" />
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrBasemapRow">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://globe" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Esri Satellite" class="nhvrLayerLabel" />
+                    </HBox>
+                    <RadioButton groupName="basemapGroup" select=".onBasemapChange"
+                      selected="{= ${view>/basemap} === 'esriSatellite' || ${view>/basemap} === 'satellite' }">
+                      <customData><core:CustomData key="basemap" value="esriSatellite" /></customData>
+                    </RadioButton>
+                  </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrBasemapRow">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://world" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Google Satellite" class="nhvrLayerLabel" />
+                    </HBox>
+                    <RadioButton groupName="basemapGroup" select=".onBasemapChange"
+                      selected="{= ${view>/basemap} === 'googleSat' }">
+                      <customData><core:CustomData key="basemap" value="googleSat" /></customData>
+                    </RadioButton>
+                  </HBox>
+                  <!-- Terrain / Other group -->
+                  <Text text="TERRAIN &amp; OTHER" class="nhvrBasemapGroupLabel" />
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrBasemapRow">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://mountain" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Esri Topo" class="nhvrLayerLabel" />
+                    </HBox>
+                    <RadioButton groupName="basemapGroup" select=".onBasemapChange"
+                      selected="{= ${view>/basemap} === 'esriTopo' }">
+                      <customData><core:CustomData key="basemap" value="esriTopo" /></customData>
+                    </RadioButton>
+                  </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrBasemapRow">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://pushpin-on" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="HERE Maps" class="nhvrLayerLabel" />
+                    </HBox>
+                    <RadioButton groupName="basemapGroup" select=".onBasemapChange"
+                      selected="{= ${view>/basemap} === 'here' }">
+                      <customData><core:CustomData key="basemap" value="here" /></customData>
+                    </RadioButton>
+                  </HBox>
+                </VBox>
               </content>
             </Panel>
 
@@ -78,23 +119,23 @@
                 <VBox class="nhvrFilterSection">
                   <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
                     <HBox alignItems="Center">
-                      <CheckBox selected="{view>/layers/refLayers/stateBoundaries}" select=".onToggleRefLayer">
-                        <customData><core:CustomData key="layerKey" value="stateBoundaries" /></customData>
-                      </CheckBox>
                       <core:Icon src="sap-icon://world" size="0.875rem" class="nhvrLayerIcon" />
                       <Text text="State &amp; Territory Boundaries" class="nhvrLayerLabel" />
                     </HBox>
+                    <Switch state="{view>/layers/refLayers/stateBoundaries}" change=".onToggleRefLayer">
+                      <customData><core:CustomData key="layerKey" value="stateBoundaries" /></customData>
+                    </Switch>
                   </HBox>
                   <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
                     <HBox alignItems="Center">
-                      <CheckBox selected="{view>/layers/refLayers/lgaBoundaries}" select=".onToggleRefLayer">
-                        <customData><core:CustomData key="layerKey" value="lgaBoundaries" /></customData>
-                      </CheckBox>
                       <core:Icon src="sap-icon://geographic-bubble-chart" size="0.875rem" class="nhvrLayerIcon" />
                       <Text text="LGA Boundaries (ABS ASGS)" class="nhvrLayerLabel" />
                     </HBox>
+                    <Switch state="{view>/layers/refLayers/lgaBoundaries}" change=".onToggleRefLayer">
+                      <customData><core:CustomData key="layerKey" value="lgaBoundaries" /></customData>
+                    </Switch>
                   </HBox>
-                  <Text text="Powered by ABS ASGS 2021" class="nhvrLayerHint sapUiTinyMarginTop" />
+                  <Text text="Source: ABS ASGS 2021" class="nhvrLayerHint sapUiTinyMarginTop" />
                 </VBox>
               </content>
             </Panel>
@@ -146,18 +187,20 @@
                   </VBox>
 
                   <!-- Terrain -->
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
-                    <HBox alignItems="Center">
-                      <CheckBox selected="{view>/layers/showHillshade}" select=".onToggleHillshadeLayer" />
-                      <core:Icon src="sap-icon://map-3" size="0.875rem" class="nhvrLayerIcon" />
-                      <Text text="{i18n>showHillshade}" class="nhvrLayerLabel" />
+                  <VBox class="nhvrLayerGroup">
+                    <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerGroupHeader">
+                      <HBox alignItems="Center">
+                        <core:Icon src="sap-icon://map-3" size="1rem" class="nhvrLayerIcon" />
+                        <Title text="Terrain Hillshade" level="H6" class="nhvrLayerGroupTitle" />
+                      </HBox>
+                      <Switch state="{view>/layers/showHillshade}" change=".onToggleHillshadeLayer" />
                     </HBox>
-                  </HBox>
+                  </VBox>
                 </VBox>
               </content>
             </Panel>
 
-            <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="{i18n>filters}">
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="false" headerText="{i18n>filters}">
               <content>
                 <VBox class="nhvrFilterSection">
                   <Label text="{i18n>stateTerritory}" class="nhvrFilterLabel" />
@@ -194,7 +237,7 @@
               </content>
             </Panel>
 
-            <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Legend &amp; Symbology">
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="false" headerText="Legend &amp; Symbology">
               <content>
                 <VBox class="nhvrFilterSection">
                   <Label text="Color by" class="nhvrFilterLabel" />
@@ -243,35 +286,47 @@
               <content>
                 <VBox class="nhvrFilterSection">
                   <!-- Heat Map -->
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow" visible="{view>/features/heatmap}">
-                    <HBox alignItems="Center">
-                      <core:Icon src="sap-icon://temperature" size="0.875rem" class="nhvrLayerIcon" />
-                      <Text text="Heat Map (Condition)" class="nhvrLayerLabel" />
-                    </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrGisToolRow" visible="{view>/features/heatmap}">
+                    <VBox class="nhvrGisToolLabel">
+                      <HBox alignItems="Center">
+                        <core:Icon src="sap-icon://temperature" size="0.875rem" class="nhvrLayerIcon" />
+                        <Text text="Heat Map" class="nhvrLayerLabel" />
+                      </HBox>
+                      <Text text="Density overlay by condition rating" class="nhvrGisToolHint" />
+                    </VBox>
                     <Switch state="{view>/heatmapActive}" change=".onToggleHeatmap" />
                   </HBox>
                   <!-- Condition Alerts -->
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow" visible="{view>/features/conditionAlerts}">
-                    <HBox alignItems="Center">
-                      <core:Icon src="sap-icon://alert" size="0.875rem" class="nhvrLayerIcon nhvrLayerIconWarning" />
-                      <Text text="Condition Alerts" class="nhvrLayerLabel" />
-                    </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrGisToolRow" visible="{view>/features/conditionAlerts}">
+                    <VBox class="nhvrGisToolLabel">
+                      <HBox alignItems="Center">
+                        <core:Icon src="sap-icon://alert" size="0.875rem" class="nhvrLayerIcon nhvrLayerIconWarning" />
+                        <Text text="Condition Alerts" class="nhvrLayerLabel" />
+                      </HBox>
+                      <Text text="Highlights bridges below alert threshold" class="nhvrGisToolHint" />
+                    </VBox>
                     <Switch state="{view>/conditionAlertsActive}" change=".onToggleConditionAlerts" />
                   </HBox>
                   <!-- Minimap -->
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow" visible="{view>/features/minimap}">
-                    <HBox alignItems="Center">
-                      <core:Icon src="sap-icon://map-3" size="0.875rem" class="nhvrLayerIcon" />
-                      <Text text="Mini Map" class="nhvrLayerLabel" />
-                    </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrGisToolRow" visible="{view>/features/minimap}">
+                    <VBox class="nhvrGisToolLabel">
+                      <HBox alignItems="Center">
+                        <core:Icon src="sap-icon://map-3" size="0.875rem" class="nhvrLayerIcon" />
+                        <Text text="Mini Map" class="nhvrLayerLabel" />
+                      </HBox>
+                      <Text text="Overview inset map (bottom-right)" class="nhvrGisToolHint" />
+                    </VBox>
                     <Switch state="{view>/minimapActive}" change=".onToggleMinimap" />
                   </HBox>
                   <!-- Viewport loading -->
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
-                    <HBox alignItems="Center">
-                      <core:Icon src="sap-icon://show" size="0.875rem" class="nhvrLayerIcon" />
-                      <Text text="Viewport Loading" class="nhvrLayerLabel" />
-                    </HBox>
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow nhvrGisToolRow">
+                    <VBox class="nhvrGisToolLabel">
+                      <HBox alignItems="Center">
+                        <core:Icon src="sap-icon://show" size="0.875rem" class="nhvrLayerIcon" />
+                        <Text text="Viewport Loading" class="nhvrLayerLabel" />
+                      </HBox>
+                      <Text text="Load only bridges in the current view" class="nhvrGisToolHint" />
+                    </VBox>
                     <Switch state="{view>/viewportMode}" change=".onToggleViewportMode" />
                   </HBox>
                 </VBox>
