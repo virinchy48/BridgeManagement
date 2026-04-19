@@ -204,6 +204,21 @@ sap.ui.define([
       }
     },
 
+    onTileInfo: function (oEvent) {
+      var sHtml = "<p><strong>Total Changes</strong> is the count of individual field-level change records matching your current filter criteria.</p>" +
+                  "<p>Each row in the Field-Level Changes table represents one field change. Multiple field changes for the same object in the same session are grouped together in the grouped view above.</p>";
+      var oDialog = new Dialog({
+        title: "Total Changes",
+        contentWidth: "460px",
+        content: [new ScrollContainer({ width: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
+    },
+
     onShowHelp: function () {
       var sHtml = [
         "<h2 style='margin-top:0'>Change Document Report — How to Use</h2>",

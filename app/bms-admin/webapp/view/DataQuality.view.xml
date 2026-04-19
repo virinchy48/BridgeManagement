@@ -8,7 +8,7 @@
   xmlns:t="sap.ui.table"
   displayBlock="true">
 
-  <Page id="dataQualityPage" showHeader="false">
+  <Page id="dataQualityPage" showHeader="true">
 
     <customHeader>
       <Bar>
@@ -27,18 +27,38 @@
       <VBox class="sapUiSmallMargin">
 
         <HBox id="kpiStrip" wrap="Wrap" class="sapUiSmallMarginBottom">
-          <GenericTile id="kpiTotalBridges"  header="Total Bridges"       class="sapUiSmallMarginEnd sapUiSmallMarginBottom" press=".onKpiPress">
-            <tileContent><TileContent><content><NumericContent id="kpiTotalBridgesVal" value="0" icon="sap-icon://it-system"    withMargin="false" /></content></TileContent></tileContent>
-          </GenericTile>
-          <GenericTile id="kpiIssuesFound"   header="Bridges with Issues" class="sapUiSmallMarginEnd sapUiSmallMarginBottom" press=".onKpiPress">
-            <tileContent><TileContent><content><NumericContent id="kpiIssuesFoundVal"  value="0" icon="sap-icon://alert"        withMargin="false" /></content></TileContent></tileContent>
-          </GenericTile>
-          <GenericTile id="kpiCritical"      header="Critical Issues"     class="sapUiSmallMarginEnd sapUiSmallMarginBottom" press=".onKpiPress">
-            <tileContent><TileContent><content><NumericContent id="kpiCriticalVal"     value="0" icon="sap-icon://message-error" valueColor="Critical" withMargin="false" /></content></TileContent></tileContent>
-          </GenericTile>
-          <GenericTile id="kpiCompleteness"  header="Avg Completeness"    class="sapUiSmallMarginEnd sapUiSmallMarginBottom" press=".onKpiPress">
-            <tileContent><TileContent><content><NumericContent id="kpiCompletenessVal" value="0" scale="%" icon="sap-icon://quality-issue" withMargin="false" /></content></TileContent></tileContent>
-          </GenericTile>
+          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+            <GenericTile id="kpiTotalBridges" header="Total Bridges" press=".onKpiPress">
+              <tileContent><TileContent><content><NumericContent id="kpiTotalBridgesVal" value="0" icon="sap-icon://it-system" withMargin="false" /></content></TileContent></tileContent>
+            </GenericTile>
+            <Button icon="sap-icon://sys-help" tooltip="About: Total Bridges" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+              <customData><core:CustomData key="tileKey" value="totalBridges"/></customData>
+            </Button>
+          </VBox>
+          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+            <GenericTile id="kpiIssuesFound" header="Bridges with Issues" press=".onKpiPress">
+              <tileContent><TileContent><content><NumericContent id="kpiIssuesFoundVal" value="0" icon="sap-icon://alert" withMargin="false" /></content></TileContent></tileContent>
+            </GenericTile>
+            <Button icon="sap-icon://sys-help" tooltip="About: Bridges with Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+              <customData><core:CustomData key="tileKey" value="issuesFound"/></customData>
+            </Button>
+          </VBox>
+          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+            <GenericTile id="kpiCritical" header="Critical Issues" press=".onKpiPress">
+              <tileContent><TileContent><content><NumericContent id="kpiCriticalVal" value="0" icon="sap-icon://message-error" valueColor="Critical" withMargin="false" /></content></TileContent></tileContent>
+            </GenericTile>
+            <Button icon="sap-icon://sys-help" tooltip="About: Critical Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+              <customData><core:CustomData key="tileKey" value="critical"/></customData>
+            </Button>
+          </VBox>
+          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+            <GenericTile id="kpiCompleteness" header="Avg Completeness" press=".onKpiPress">
+              <tileContent><TileContent><content><NumericContent id="kpiCompletenessVal" value="0" scale="%" icon="sap-icon://quality-issue" withMargin="false" /></content></TileContent></tileContent>
+            </GenericTile>
+            <Button icon="sap-icon://sys-help" tooltip="About: Average Completeness" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+              <customData><core:CustomData key="tileKey" value="completeness"/></customData>
+            </Button>
+          </VBox>
         </HBox>
 
         <Panel headerText="Filters" expandable="true" expanded="true" class="sapUiSmallMarginBottom">

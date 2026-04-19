@@ -1,6 +1,6 @@
-sap.ui.define(["sap/fe/core/AppComponent"], (AppComponent) => {
+sap.ui.define(["sap/ui/core/UIComponent"], (UIComponent) => {
   "use strict";
-  return AppComponent.extend("bms.dashboard", {
+  return UIComponent.extend("bms.dashboard", {
     metadata: { manifest: "json" }
   });
 });

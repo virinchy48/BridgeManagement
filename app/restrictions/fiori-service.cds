@@ -190,10 +190,6 @@ annotate AdminService.Restrictions with {
   temporaryReason @UI.Hidden;
   approvalReference;
   issuingAuthority @UI.Hidden: false;
-  createdBy @UI.Hidden;
-  createdAt @UI.Hidden;
-  modifiedBy @UI.Hidden;
-  modifiedAt @UI.Hidden;
   parent @Common: {
     Text: parent.name,
     TextArrangement: #TextOnly
@@ -202,7 +198,6 @@ annotate AdminService.Restrictions with {
     Text: bridge.bridgeName,
     TextArrangement: #TextOnly
   };
-  bridge_ID @UI.Hidden;
 };
 
 // Tree Views

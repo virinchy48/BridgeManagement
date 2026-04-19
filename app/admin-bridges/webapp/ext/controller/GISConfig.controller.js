@@ -7,8 +7,10 @@ sap.ui.define([
   "sap/m/Input",
   "sap/m/Button",
   "sap/m/VBox",
-  "sap/m/Label"
-], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Button, VBox, Label) {
+  "sap/m/Label",
+  "sap/m/ScrollContainer",
+  "sap/m/FormattedText"
+], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Button, VBox, Label, ScrollContainer, FormattedText) {
   "use strict";
 
   var GIS_CONFIG_URL = "/odata/v4/admin/GISConfig('default')";
@@ -134,6 +136,48 @@ sap.ui.define([
       var layers = model.getProperty("/customWmsLayers") || [];
       layers.splice(idx, 1);
       model.setProperty("/customWmsLayers", layers.slice());
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<h2 style='margin-top:0'>GIS Configuration — How to Use</h2>",
+        "<h3>Purpose</h3>",
+        "<p>GIS Config controls the default map appearance and advanced GIS feature flags for all users of the Map View application.</p>",
+        "<h3>Basemap Settings</h3>",
+        "<p>Set the <strong>Default Basemap</strong> shown when users open the map (e.g. OpenStreetMap, Esri Satellite). If you enable HERE Maps, enter your HERE Maps API Key.</p>",
+        "<h3>Reference Layers</h3>",
+        "<p>Toggle default visibility of <strong>State Boundaries</strong> and <strong>LGA Boundaries</strong> overlay layers.</p>",
+        "<h3>Advanced GIS Features</h3>",
+        "<p>Enable or disable optional map features system-wide:</p>",
+        "<ul>",
+        "<li><strong>Scale Bar</strong> — Distance scale on the map.</li>",
+        "<li><strong>GPS / Locate Me</strong> — Browser geolocation button.</li>",
+        "<li><strong>Mini Map</strong> — Overview inset map (bottom-right corner).</li>",
+        "<li><strong>Heat Map</strong> — Density overlay by condition rating.</li>",
+        "<li><strong>Time Slider</strong> — Filter bridges by year built.</li>",
+        "<li><strong>Stats Panel</strong> — Live statistics sidebar.</li>",
+        "<li><strong>Proximity Analysis</strong> — Find bridges within a radius.</li>",
+        "<li><strong>MGA Coordinates</strong> — Show MGA grid reference alongside decimal degrees.</li>",
+        "<li><strong>Condition Alerts</strong> — Highlight bridges below the alert threshold.</li>",
+        "<li><strong>Custom WMS</strong> — Allow adding external WMS tile layers.</li>",
+        "<li><strong>Server-side Clustering</strong> — Cluster markers server-side for large datasets.</li>",
+        "</ul>",
+        "<h3>Thresholds</h3>",
+        "<p>Set numeric defaults: condition alert threshold, proximity search radius, and heatmap parameters.</p>",
+        "<h3>Saving</h3>",
+        "<p>Click <strong>Save</strong> to apply changes immediately. Changes take effect for all users on their next map load.</p>"
+      ].join("");
+      var oDialog = new Dialog({
+        title: "GIS Configuration — Help",
+        contentWidth: "560px",
+        contentHeight: "480px",
+        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
     }
   });
 });

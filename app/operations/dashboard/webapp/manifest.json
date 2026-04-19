@@ -37,7 +37,9 @@
     "dependencies": {
       "minUI5Version": "1.120.0",
       "libs": {
-        "sap.fe.templates": {}
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.ui.layout": {}
       }
     },
     "models": {
@@ -56,51 +58,33 @@
         "type": "sap.ui.model.odata.v4.ODataModel"
       }
     },
+    "rootView": {
+      "viewName": "bms.dashboard.view.Main",
+      "type": "XML",
+      "id": "app"
+    },
     "routing": {
+      "config": {
+        "routerClass": "sap.m.routing.Router",
+        "viewType": "XML",
+        "viewPath": "bms.dashboard.view",
+        "controlAggregation": "pages",
+        "controlId": "app",
+        "async": true
+      },
       "routes": [
         {
-          "pattern": ":?query:",
-          "name": "BridgesList",
-          "target": "BridgesList"
-        },
-        {
-          "pattern": "Bridges({key}):?query:",
-          "name": "BridgesDetails",
-          "target": "BridgesDetails"
+          "pattern": "",
+          "name": "Dashboard",
+          "target": "Dashboard"
         }
       ],
       "targets": {
-        "BridgesList": {
-          "type": "Component",
-          "id": "BridgesList",
-          "name": "sap.fe.templates.ListReport",
-          "options": {
-            "settings": {
-              "entitySet": "Bridges",
-              "liveMode": true,
-              "navigation": {
-                "Bridges": {
-                  "detail": {
-                    "route": "BridgesDetails"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "BridgesDetails": {
-          "type": "Component",
-          "id": "BridgesDetails",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "entitySet": "Bridges"
-            }
-          }
+        "Dashboard": {
+          "viewType": "XML",
+          "viewName": "Main",
+          "viewId": "Dashboard"
         }
-      },
-      "config": {
-        "routerClass": "sap.fe.core.AppRouter"
       }
     },
     "contentDensities": {

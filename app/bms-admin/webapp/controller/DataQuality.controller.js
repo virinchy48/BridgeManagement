@@ -175,6 +175,43 @@ sap.ui.define([
       MessageToast.show("Export downloaded.");
     },
 
+    onTileInfo: function (oEvent) {
+      var sKey = oEvent.getSource().data("tileKey");
+      var oInfo = {
+        totalBridges: {
+          title: "Total Bridges",
+          html: "<p><strong>Total Bridges</strong> is the count of all bridge records in the BMS register, regardless of their data quality status.</p>" +
+                "<p>This is the baseline for the completeness and issue calculations below.</p>"
+        },
+        issuesFound: {
+          title: "Bridges with Issues",
+          html: "<p><strong>Bridges with Issues</strong> counts bridges that have at least one data quality rule violation of any severity (Critical, Warning, or Info).</p>" +
+                "<p>Click this tile to filter the results table to show only bridges with issues.</p>"
+        },
+        critical: {
+          title: "Critical Issues",
+          html: "<p><strong>Critical Issues</strong> counts violations rated as Critical — meaning data is missing or incorrect in a way that impairs safety or compliance.</p>" +
+                "<p>Examples: missing GPS coordinates, no inspection record ever entered, critical condition with no restriction posted.</p>"
+        },
+        completeness: {
+          title: "Average Completeness",
+          html: "<p><strong>Average Completeness</strong> is the mean completeness score (0–100%) across all bridges, based on 13 key fields.</p>" +
+                "<p>A score of 100% means all 13 key fields are populated. Scores below 70% are highlighted as warnings.</p>"
+        }
+      };
+      var oEntry = oInfo[sKey] || { title: "Info", html: "<p>No additional information available.</p>" };
+      var oDialog = new Dialog({
+        title: oEntry.title,
+        contentWidth: "480px",
+        content: [new ScrollContainer({ width: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: oEntry.html, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
+    },
+
     onShowHelp: function () {
       var sHtml = [
         "<h2 style='margin-top:0'>Data Quality Dashboard — How to Use</h2>",
