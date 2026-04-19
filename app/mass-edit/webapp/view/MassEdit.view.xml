@@ -13,12 +13,7 @@
         <f:heading>
           <Title text="{i18n>massEdit}" level="H1"/>
         </f:heading>
-        <f:breadcrumbs>
-          <Breadcrumbs>
-            <Link text="{i18n>home}" press="onNavHome"/>
-            <Link text="{i18n>massEdit}"/>
-          </Breadcrumbs>
-        </f:breadcrumbs>
+
         <f:actions>
           <Button text="{i18n>refresh}" icon="sap-icon://refresh" press="onRefresh"/>
           <Button

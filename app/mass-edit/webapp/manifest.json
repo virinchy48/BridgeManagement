@@ -58,22 +58,6 @@
         }
       ]
     },
-    "routing": {
-      "routes": [
-        {
-          "pattern": "",
-          "name": "MassEdit",
-          "target": "MassEdit"
-        }
-      ],
-      "targets": {
-        "MassEdit": {
-          "viewType": "XML",
-          "viewName": "BridgeManagement.massedit.view.MassEdit",
-          "viewId": "MassEdit"
-        }
-      }
-    },
     "rootView": {
       "viewName": "BridgeManagement.massedit.view.MassEdit",
       "type": "XML",

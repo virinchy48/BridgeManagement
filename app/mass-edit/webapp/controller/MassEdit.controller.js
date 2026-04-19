@@ -107,6 +107,7 @@ sap.ui.define([
       this._baselineRows = [];
       this._lookupsLoaded = false;
       this._suppressValueChange = false;
+      this._loading = false;
 
       this.getView().setModel(new JSONModel({
         busy: false,
@@ -164,12 +165,16 @@ sap.ui.define([
     },
 
     onRefresh: function () {
+      this._lookupsLoaded = false;
       this._loadEntityData();
     },
 
     onEntityTypeChange: function (event) {
       const entityKey = event.getParameter("item").getKey();
       const model = this._vm();
+      if (model.getProperty("/entityKey") === entityKey) {
+        return;
+      }
       model.setProperty("/entityKey", entityKey);
       model.setProperty("/filters", { search: "", state: "", status: "", onlyDirty: false });
       model.setProperty("/selectedCount", 0);
@@ -186,6 +191,9 @@ sap.ui.define([
     },
 
     onFilterChange: function () {
+      if (this._suppressValueChange || this._loading) {
+        return;
+      }
       this._applyFilters();
     },
 
@@ -297,6 +305,10 @@ sap.ui.define([
     },
 
     _loadEntityData: async function () {
+      if (this._loading) {
+        return;
+      }
+      this._loading = true;
       const model = this._vm();
       const isInitialLoad = !model.getProperty("/initialized");
       try {
@@ -327,6 +339,7 @@ sap.ui.define([
         model.setProperty("/initialized", true);
         MessageBox.error(error.message || this._text("loadError"));
       } finally {
+        this._loading = false;
         model.setProperty("/busy", false);
       }
     },
@@ -334,7 +347,7 @@ sap.ui.define([
     _applyLookups: function (lookups) {
       const model = this._vm();
       Object.keys(lookups || {}).forEach(function (key) {
-        model.setProperty("/options/" + key, this._withEmptyOption(lookups[key] || []), null, true);
+        model.setProperty("/options/" + key, this._withEmptyOption(lookups[key] || []));
       }.bind(this));
     },
 
@@ -375,10 +388,8 @@ sap.ui.define([
       this._clearTableSelection();
       this._setIfChanged("/selectedCount", 0);
       this._setIfChanged("/applyButtonText", this._text("applyToSelected", [0]));
-      model.setProperty("/items", items, null, true);
-      setTimeout(function () {
-        this._suppressValueChange = false;
-      }.bind(this), 0);
+      model.setProperty("/items", items);
+      this._suppressValueChange = false;
     },
 
     _prepareRows: function (rows) {
@@ -562,7 +573,7 @@ sap.ui.define([
       const model = this._vm();
       const current = model.getProperty(path);
       if (JSON.stringify(current) !== JSON.stringify(value)) {
-        model.setProperty(path, value, null, true);
+        model.setProperty(path, value);
       }
     },
 
