@@ -8,7 +8,12 @@ sap.ui.define([
   "sap/m/HBox",
   "sap/m/Switch",
   "sap/m/Text",
-  "sap/m/Button"
+  "sap/m/Button",
+  "sap/m/Popover",
+  "sap/m/ScrollContainer",
+  "sap/ui/core/Icon",
+  "sap/m/Title",
+  "sap/m/Label"
 ], function (
   Controller,
   JSONModel,
@@ -19,7 +24,12 @@ sap.ui.define([
   HBox,
   Switch,
   Text,
-  Button
+  Button,
+  Popover,
+  ScrollContainer,
+  Icon,
+  Title,
+  Label
 ) {
   "use strict";
 
@@ -1725,6 +1735,114 @@ sap.ui.define([
     onGpsLocate: function () {
       if (!this._leafletMap) return;
       this._leafletMap.locate({ setView: false, maxZoom: 14 });
+    },
+
+    // ─── Help Popovers ────────────────────────────────────────────────────────
+
+    onGisToolsHelp: function (oEvent) {
+      if (!this._oGisHelpPopover) {
+        var aTools = [
+          { icon: "sap-icon://temperature",          title: "Heat Map",            body: "A colour-gradient overlay showing bridge density weighted by condition rating. Red/orange zones indicate clusters of poorly-rated bridges. Toggle it on and zoom in to isolate individual bridge conditions." },
+          { icon: "sap-icon://alert",                title: "Condition Alerts",     body: "Flags bridges whose condition rating is at or below the configured alert threshold (default: ≤ 3). Affected bridges are highlighted with a red ring marker. The threshold can be changed in GIS Configuration." },
+          { icon: "sap-icon://map-3",                title: "Mini Map",             body: "Displays a small overview inset in the bottom-right corner so you can track your viewport position relative to the whole country while zoomed into a specific region." },
+          { icon: "sap-icon://show",                 title: "Viewport Loading",     body: "Only bridges inside the current visible map extent are fetched from the server. Panning or zooming triggers a fresh load. Recommended when working with large national datasets — reduces initial page load significantly." },
+          { icon: "sap-icon://locate-me",            title: "Proximity Analysis",   body: "Enter a latitude/longitude and a search radius (km) to find all bridges within that distance. Matching bridges are highlighted on the map and listed in the results panel. Useful for corridor planning and impact assessments." },
+          { icon: "sap-icon://timeline",             title: "Time Slider",          body: "Filters the map to show only bridges built within a selected year range. Drag the slider handles to set the from/to years. Use Reset to clear the filter and restore all bridges." },
+          { icon: "sap-icon://bar-chart",            title: "Statistics Panel",     body: "Shows live counts for bridges currently visible on the map — total visible, average condition rating, poor-condition count, restricted count, and condition-alert count. Updates automatically as you pan, zoom, or change filters." }
+        ];
+
+        var oContent = new ScrollContainer({
+          height: "auto",
+          vertical: true,
+          content: [
+            new VBox({
+              class: "nhvrHelpPopoverBody",
+              items: aTools.map(function (t) {
+                return new VBox({
+                  class: "nhvrHelpItem",
+                  items: [
+                    new HBox({
+                      alignItems: "Center",
+                      items: [
+                        new Icon({ src: t.icon, size: "0.875rem", color: "#0a6ed1" }),
+                        new Title({ text: t.title, level: "H6", class: "nhvrHelpItemTitle" })
+                      ]
+                    }),
+                    new Text({ text: t.body, class: "nhvrHelpItemBody" })
+                  ]
+                });
+              })
+            })
+          ]
+        });
+
+        this._oGisHelpPopover = new Popover({
+          title: "GIS Tools — How they work",
+          placement: "Right",
+          contentWidth: "22rem",
+          showHeader: true,
+          content: [oContent],
+          footer: new HBox({
+            justifyContent: "End",
+            items: [new Button({ text: "Close", press: function () { this._oGisHelpPopover.close(); }.bind(this) })]
+          })
+        });
+        this.getView().addDependent(this._oGisHelpPopover);
+      }
+      this._oGisHelpPopover.openBy(oEvent.getSource());
+    },
+
+    onMapControlsHelp: function (oEvent) {
+      if (!this._oMapHelpPopover) {
+        var aControls = [
+          { icon: "sap-icon://search",        title: "Bridge Search",        body: "Type any part of a bridge name to filter the map in real time. Matching bridges are highlighted and shown in the results list. Clear the field to restore all bridges." },
+          { icon: "sap-icon://map-2",         title: "Spatial Select",       body: "Activates drawing mode — draw a freehand polygon on the map to select all bridges within that area. The selection is highlighted and shown in the results list. Click again to cancel." },
+          { icon: "sap-icon://full-screen",   title: "Fit to Australia",     body: "Resets the map viewport to show the full extent of Australia and all loaded bridges." },
+          { icon: "sap-icon://resize",        title: "Zoom to Selection",    body: "Fits the map tightly around the currently selected bridges. Only active when at least one bridge is selected." },
+          { icon: "sap-icon://refresh",       title: "Refresh Data",         body: "Reloads all bridge and restriction data from the server, applying the current filter settings." },
+          { icon: "sap-icon://download",      title: "Export",               body: "Download bridge or restriction data in GeoJSON (includes geographic coordinates, suitable for QGIS/ArcGIS) or CSV (spreadsheet-compatible) formats." },
+          { icon: "sap-icon://list",          title: "Split / List View",    body: "Toggles the bridge results list alongside the map. In split view the map occupies the left half; in list view the full panel shows bridge records." }
+        ];
+
+        var oContent = new ScrollContainer({
+          height: "auto",
+          vertical: true,
+          content: [
+            new VBox({
+              class: "nhvrHelpPopoverBody",
+              items: aControls.map(function (t) {
+                return new VBox({
+                  class: "nhvrHelpItem",
+                  items: [
+                    new HBox({
+                      alignItems: "Center",
+                      items: [
+                        new Icon({ src: t.icon, size: "0.875rem", color: "#0a6ed1" }),
+                        new Title({ text: t.title, level: "H6", class: "nhvrHelpItemTitle" })
+                      ]
+                    }),
+                    new Text({ text: t.body, class: "nhvrHelpItemBody" })
+                  ]
+                });
+              })
+            })
+          ]
+        });
+
+        this._oMapHelpPopover = new Popover({
+          title: "Map Controls — How they work",
+          placement: "Bottom",
+          contentWidth: "24rem",
+          showHeader: true,
+          content: [oContent],
+          footer: new HBox({
+            justifyContent: "End",
+            items: [new Button({ text: "Close", press: function () { this._oMapHelpPopover.close(); }.bind(this) })]
+          })
+        });
+        this.getView().addDependent(this._oMapHelpPopover);
+      }
+      this._oMapHelpPopover.openBy(oEvent.getSource());
     },
 
     // ─── Heat Map ─────────────────────────────────────────────────────────────
