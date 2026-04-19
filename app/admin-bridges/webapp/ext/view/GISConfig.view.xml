@@ -1,0 +1,166 @@
+<mvc:View
+  controllerName="BridgeManagement.adminbridges.ext.controller.GISConfig"
+  xmlns="sap.m"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:f="sap.ui.layout.form"
+  xmlns:l="sap.ui.layout"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+
+  <Page
+    id="gisConfigPage"
+    title="{i18n>gisConfigTitle}"
+    showNavButton="true"
+    navButtonPress=".onNavBack"
+    class="sapUiContentPadding">
+
+    <content>
+      <VBox class="sapUiMediumMargin">
+
+        <!-- Save / Discard toolbar -->
+        <Toolbar id="gisConfigToolbar">
+          <ToolbarSpacer/>
+          <Button
+            id="btnDiscard"
+            text="{i18n>gisConfigDiscard}"
+            press=".onDiscard"
+            type="Default"/>
+          <Button
+            id="btnSave"
+            text="{i18n>gisConfigSave}"
+            press=".onSave"
+            type="Emphasized"/>
+        </Toolbar>
+
+        <!-- Basemap settings -->
+        <Panel id="panelBasemap" headerText="{i18n>gisConfigBasemapHeader}" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+          <f:SimpleForm id="formBasemap" layout="ResponsiveGridLayout" editable="true" columnsL="2" columnsM="1">
+            <f:content>
+              <Label text="{i18n>gisConfigDefaultBasemap}"/>
+              <Select id="selBasemap" selectedKey="{config>/defaultBasemap}">
+                <items>
+                  <core:Item key="osm" text="OpenStreetMap"/>
+                  <core:Item key="esriStreet" text="Esri Street"/>
+                  <core:Item key="esriSatellite" text="Esri Satellite"/>
+                  <core:Item key="esriTopo" text="Esri Topo"/>
+                  <core:Item key="google" text="Google Maps"/>
+                  <core:Item key="googleSat" text="Google Satellite"/>
+                  <core:Item key="here" text="HERE Maps"/>
+                </items>
+              </Select>
+              <Label text="{i18n>gisConfigHereApiKey}"/>
+              <Input id="inpHereApiKey" value="{config>/hereApiKey}" placeholder="Your HERE Maps API key" type="Password"/>
+            </f:content>
+          </f:SimpleForm>
+        </Panel>
+
+        <!-- Reference Layers defaults -->
+        <Panel id="panelRefLayers" headerText="{i18n>gisConfigRefLayersHeader}" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+          <f:SimpleForm id="formRefLayers" layout="ResponsiveGridLayout" editable="true" columnsL="2" columnsM="1">
+            <f:content>
+              <Label text="{i18n>gisConfigShowStateBoundaries}"/>
+              <Switch id="swStateBoundaries" state="{config>/showStateBoundaries}"/>
+              <Label text="{i18n>gisConfigShowLgaBoundaries}"/>
+              <Switch id="swLgaBoundaries" state="{config>/showLgaBoundaries}"/>
+            </f:content>
+          </f:SimpleForm>
+        </Panel>
+
+        <!-- Advanced GIS features -->
+        <Panel id="panelAdvanced" headerText="{i18n>gisConfigAdvancedHeader}" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+          <f:SimpleForm id="formAdvanced" layout="ResponsiveGridLayout" editable="true" columnsL="2" columnsM="1">
+            <f:content>
+              <Label text="{i18n>gisConfigEnableScaleBar}"/>
+              <Switch id="swScaleBar" state="{config>/enableScaleBar}"/>
+              <Label text="{i18n>gisConfigEnableNorthArrow}"/>
+              <Switch id="swNorthArrow" state="{config>/enableNorthArrow}"/>
+              <Label text="{i18n>gisConfigEnableGps}"/>
+              <Switch id="swGps" state="{config>/enableGps}"/>
+              <Label text="{i18n>gisConfigEnableMinimap}"/>
+              <Switch id="swMinimap" state="{config>/enableMinimap}"/>
+              <Label text="{i18n>gisConfigEnableHeatmap}"/>
+              <Switch id="swHeatmap" state="{config>/enableHeatmap}"/>
+              <Label text="{i18n>gisConfigEnableTimeSlider}"/>
+              <Switch id="swTimeSlider" state="{config>/enableTimeSlider}"/>
+              <Label text="{i18n>gisConfigEnableStatsPanel}"/>
+              <Switch id="swStatsPanel" state="{config>/enableStatsPanel}"/>
+              <Label text="{i18n>gisConfigEnableProximity}"/>
+              <Switch id="swProximity" state="{config>/enableProximity}"/>
+              <Label text="{i18n>gisConfigEnableMgaCoords}"/>
+              <Switch id="swMgaCoords" state="{config>/enableMgaCoords}"/>
+              <Label text="{i18n>gisConfigEnableStreetView}"/>
+              <Switch id="swStreetView" state="{config>/enableStreetView}"/>
+              <Label text="{i18n>gisConfigEnableConditionAlerts}"/>
+              <Switch id="swConditionAlerts" state="{config>/enableConditionAlerts}"/>
+              <Label text="{i18n>gisConfigEnableCustomWms}"/>
+              <Switch id="swCustomWms" state="{config>/enableCustomWms}"/>
+              <Label text="{i18n>gisConfigEnableServerClustering}"/>
+              <Switch id="swServerClustering" state="{config>/enableServerClustering}"/>
+            </f:content>
+          </f:SimpleForm>
+        </Panel>
+
+        <!-- Thresholds -->
+        <Panel id="panelThresholds" headerText="{i18n>gisConfigThresholdsHeader}" expandable="true" expanded="false" class="sapUiSmallMarginBottom">
+          <f:SimpleForm id="formThresholds" layout="ResponsiveGridLayout" editable="true" columnsL="2" columnsM="1">
+            <f:content>
+              <Label text="{i18n>gisConfigConditionAlertThreshold}"/>
+              <StepInput id="siConditionAlert" value="{config>/conditionAlertThreshold}" min="1" max="10" step="1"/>
+              <Label text="{i18n>gisConfigProximityRadius}"/>
+              <StepInput id="siProximityRadius" value="{config>/proximityDefaultRadiusKm}" min="1" max="500" step="5"/>
+              <Label text="{i18n>gisConfigHeatmapRadius}"/>
+              <StepInput id="siHeatmapRadius" value="{config>/heatmapRadius}" min="5" max="80" step="5"/>
+              <Label text="{i18n>gisConfigHeatmapBlur}"/>
+              <StepInput id="siHeatmapBlur" value="{config>/heatmapBlur}" min="5" max="50" step="5"/>
+              <Label text="{i18n>gisConfigViewportLoadingZoom}"/>
+              <StepInput id="siViewportZoom" value="{config>/viewportLoadingZoom}" min="6" max="14" step="1"/>
+            </f:content>
+          </f:SimpleForm>
+        </Panel>
+
+        <!-- Custom WMS Layers -->
+        <Panel id="panelCustomWms" headerText="{i18n>gisConfigCustomWmsHeader}" expandable="true" expanded="false"
+               visible="{config>/enableCustomWms}" class="sapUiSmallMarginBottom">
+          <VBox class="sapUiSmallMargin">
+            <Text text="{i18n>gisConfigCustomWmsHint}" class="sapUiSmallMarginBottom"/>
+            <Table id="tblCustomWms" items="{config>/customWmsLayers}" noDataText="{i18n>gisConfigNoCustomWms}">
+              <headerToolbar>
+                <Toolbar id="customWmsToolbar">
+                  <Title text="{i18n>gisConfigCustomWmsTitle}"/>
+                  <ToolbarSpacer/>
+                  <Button id="btnAddWms" icon="sap-icon://add" press=".onAddCustomWms"/>
+                </Toolbar>
+              </headerToolbar>
+              <columns>
+                <Column><Text text="{i18n>gisConfigWmsLabel}"/></Column>
+                <Column><Text text="{i18n>gisConfigWmsUrl}"/></Column>
+                <Column><Text text="{i18n>gisConfigWmsLayers}"/></Column>
+                <Column hAlign="Center"><Text text="{i18n>gisConfigWmsActions}"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Input value="{config>label}" placeholder="Layer name"/>
+                    <Input value="{config>url}" placeholder="WMS URL"/>
+                    <Input value="{config>layers}" placeholder="Layer names"/>
+                    <Button icon="sap-icon://delete" type="Transparent" press=".onDeleteCustomWms"/>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </VBox>
+        </Panel>
+
+      </VBox>
+    </content>
+
+    <footer>
+      <OverflowToolbar id="footerToolbar">
+        <ToolbarSpacer/>
+        <Button text="{i18n>gisConfigDiscard}" press=".onDiscard" type="Default"/>
+        <Button text="{i18n>gisConfigSave}" press=".onSave" type="Emphasized"/>
+      </OverflowToolbar>
+    </footer>
+
+  </Page>
+</mvc:View>

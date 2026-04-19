@@ -174,6 +174,39 @@ entity RestrictionDirections : sap.common.CodeList {
 
 type Price : Decimal(9, 2);
 
+// GIS configuration singleton — one record with id='default'
+entity GISConfig {
+  key id                      : String(40) default 'default';
+  // Basemap
+  defaultBasemap              : String(40) default 'osm';
+  hereApiKey                  : String(255);
+  // Reference layers
+  showStateBoundaries         : Boolean default false;
+  showLgaBoundaries           : Boolean default false;
+  // Advanced feature toggles
+  enableScaleBar              : Boolean default true;
+  enableNorthArrow            : Boolean default true;
+  enableGps                   : Boolean default true;
+  enableMinimap               : Boolean default true;
+  enableHeatmap               : Boolean default false;
+  enableTimeSlider            : Boolean default false;
+  enableStatsPanel            : Boolean default true;
+  enableProximity             : Boolean default true;
+  enableMgaCoords             : Boolean default true;
+  enableStreetView            : Boolean default true;
+  enableConditionAlerts       : Boolean default true;
+  enableCustomWms             : Boolean default false;
+  enableServerClustering      : Boolean default false;
+  // Thresholds / defaults
+  conditionAlertThreshold     : Integer default 3;
+  proximityDefaultRadiusKm    : Decimal(9, 2) default 10;
+  heatmapRadius               : Integer default 20;
+  heatmapBlur                 : Integer default 15;
+  viewportLoadingZoom         : Integer default 8;
+  // Custom WMS layers as JSON array string
+  customWmsLayers             : LargeString;
+}
+
 
 // --------------------------------------------------------------------------------
 // Temporary workaround for this situation:

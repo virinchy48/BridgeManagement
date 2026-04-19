@@ -195,10 +195,32 @@ sap.ui.define([
             lgaBoundaries: false
           }
         },
-        restrictionsData: []
+        restrictionsData: [],
+        gisConfig: null,
+        features: {
+          scaleBar: true, northArrow: true, gps: true, minimap: true,
+          heatmap: false, timeSlider: false, statsPanel: true,
+          proximity: true, mgaCoords: true, streetView: true,
+          conditionAlerts: true, customWms: false, serverClustering: false
+        },
+        heatmapActive: false,
+        conditionAlertsActive: false,
+        minimapActive: false,
+        stats: { total: 0, avgCondition: "—", poor: 0, restricted: 0, closed: 0 },
+        mgaCoords: { zone: 0, easting: 0, northing: 0, text: "" },
+        proximity: {
+          active: false, loading: false, lat: "", lng: "", radius: 10,
+          results: [], count: 0
+        },
+        timeSlider: {
+          active: false,
+          fromYear: 1900,
+          toYear: new Date().getFullYear()
+        }
       }), "view");
 
       this._leafletReady = this._ensureLeaflet();
+      this._loadGisConfig();
       this._loadData();
     },
 
@@ -990,7 +1012,10 @@ sap.ui.define([
           if (!window.L.Draw) {
             throw new Error("Leaflet Draw loaded, but L.Draw is not available.");
           }
-        });
+          // Load optional GIS plugins (non-blocking)
+          this._loadScriptCandidates("vendor/leaflet.heat/leaflet.heat.js").catch(function () {});
+          this._loadScriptCandidates("vendor/leaflet.minimap/Control.MiniMap.js").catch(function () {});
+        }.bind(this));
     },
 
     _includeStylesheet: function (path) {
@@ -1120,7 +1145,9 @@ sap.ui.define([
       }.bind(this));
 
       this._leafletMap.on("mousemove", function (event) {
-        this._vm().setProperty("/coordinateText", event.latlng.lat.toFixed(5) + ", " + event.latlng.lng.toFixed(5));
+        var lat = event.latlng.lat, lng = event.latlng.lng;
+        this._vm().setProperty("/coordinateText", lat.toFixed(5) + ", " + lng.toFixed(5));
+        this._updateMgaCoords(lat, lng);
       }.bind(this));
 
       this._leafletMap.on("moveend zoomend", function () {
@@ -1134,6 +1161,7 @@ sap.ui.define([
 
       this._renderMarkers(false);
       this._applyLayoutMode();
+      this._initAdvancedControls();
       setTimeout(this._invalidateMap.bind(this), 250);
     },
 
@@ -1264,6 +1292,9 @@ sap.ui.define([
 
       this._renderRestrictionMarkers();
       this._invalidateMap();
+      this._updateStats();
+      if (this._vm().getProperty("/heatmapActive")) { this._renderHeatmap(); }
+      if (this._vm().getProperty("/conditionAlertsActive")) { this._renderConditionAlerts(); }
     },
 
     _markerStyle: function (bridge, selected) {
@@ -1279,6 +1310,9 @@ sap.ui.define([
     },
 
     _popupHtml: function (bridge) {
+      var svLink = this._feat("streetView")
+        ? "<br><a href='https://maps.google.com/maps?q&layer=c&cbll=" + bridge.latitude + "," + bridge.longitude + "' target='_blank' rel='noopener'>&#128248; Street View</a>"
+        : "";
       return [
         "<div class='leafletPopup'>",
         "<strong>", bridge.bridgeName, "</strong><br>",
@@ -1287,6 +1321,7 @@ sap.ui.define([
         "Condition: ", (bridge.conditionRating == null ? "n/a" : bridge.conditionRating), "<br>",
         "Structure: ", (bridge.structureType || "n/a"), "<br>",
         "Year Built: ", (bridge.yearBuilt || "n/a"),
+        svLink,
         "</div>"
       ].join("");
     },
@@ -1519,6 +1554,401 @@ sap.ui.define([
 
     _vm: function () {
       return this.getView().getModel("view");
+    },
+
+    // ─── GIS Config ────────────────────────────────────────────────────────────
+
+    _loadGisConfig: function () {
+      return fetch("/map/api/config")
+        .then(function (res) { return res.ok ? res.json() : Promise.reject(res.statusText); })
+        .then(function (cfg) {
+          this._gisConfig = cfg;
+          this._vm().setProperty("/gisConfig", cfg);
+          this._vm().setProperty("/features", {
+            scaleBar: cfg.enableScaleBar !== false,
+            northArrow: cfg.enableNorthArrow !== false,
+            gps: cfg.enableGps !== false,
+            minimap: cfg.enableMinimap !== false,
+            heatmap: cfg.enableHeatmap === true,
+            timeSlider: cfg.enableTimeSlider === true,
+            statsPanel: cfg.enableStatsPanel !== false,
+            proximity: cfg.enableProximity !== false,
+            mgaCoords: cfg.enableMgaCoords !== false,
+            streetView: cfg.enableStreetView !== false,
+            conditionAlerts: cfg.enableConditionAlerts !== false,
+            customWms: cfg.enableCustomWms === true,
+            serverClustering: cfg.enableServerClustering === true
+          });
+          if (cfg.defaultBasemap && cfg.defaultBasemap !== "street") {
+            this._vm().setProperty("/basemap", cfg.defaultBasemap);
+          }
+          if (cfg.showStateBoundaries) {
+            this._vm().setProperty("/layers/refLayers/stateBoundaries", true);
+          }
+          if (cfg.showLgaBoundaries) {
+            this._vm().setProperty("/layers/refLayers/lgaBoundaries", true);
+          }
+        }.bind(this))
+        .catch(function () {
+          this._gisConfig = null;
+        }.bind(this));
+    },
+
+    _feat: function (key) {
+      var features = this._vm().getProperty("/features") || {};
+      return features[key] !== false;
+    },
+
+    // ─── Advanced Controls ────────────────────────────────────────────────────
+
+    _initAdvancedControls: function () {
+      if (!this._leafletMap || !window.L) return;
+      var map = this._leafletMap;
+
+      if (this._feat("scaleBar")) {
+        window.L.control.scale({ imperial: false, maxWidth: 150 }).addTo(map);
+      }
+
+      if (this._feat("northArrow")) {
+        this._addNorthArrow(map);
+      }
+
+      if (this._feat("gps")) {
+        this._addGpsControl(map);
+      }
+
+      // Minimap — may not be loaded yet; retry briefly
+      if (this._feat("minimap")) {
+        var self = this;
+        var tries = 0;
+        var tryMinimap = function () {
+          if (window.L && window.L.Control && window.L.Control.MiniMap) {
+            var miniTile = window.L.tileLayer(TILE_LAYERS.osm.url, { maxZoom: 19, attribution: "" });
+            self._minimapControl = new window.L.Control.MiniMap(miniTile, {
+              toggleDisplay: true, minimized: false, position: "bottomright"
+            }).addTo(map);
+            self._vm().setProperty("/minimapActive", true);
+          } else if (tries++ < 20) {
+            setTimeout(tryMinimap, 300);
+          }
+        };
+        tryMinimap();
+      }
+
+      // Apply reference layers from config defaults
+      var refLayers = this._vm().getProperty("/layers/refLayers") || {};
+      Object.keys(refLayers).forEach(function (key) {
+        if (refLayers[key]) this._applyRefLayer(key, true);
+      }.bind(this));
+
+      // Apply custom WMS layers
+      var cfg = this._gisConfig;
+      if (cfg && cfg.enableCustomWms && Array.isArray(cfg.customWmsLayers) && cfg.customWmsLayers.length) {
+        cfg.customWmsLayers.forEach(function (wmsLayer) {
+          if (!wmsLayer.url || !wmsLayer.layers) return;
+          var instance = window.L.tileLayer.wms(wmsLayer.url, {
+            layers: wmsLayer.layers,
+            format: "image/png",
+            transparent: true,
+            opacity: wmsLayer.opacity != null ? wmsLayer.opacity : 0.7,
+            attribution: wmsLayer.label || "Custom WMS"
+          });
+          instance.addTo(map);
+          this._refLayerInstances["customWms_" + (wmsLayer.label || wmsLayer.layers)] = instance;
+        }.bind(this));
+      }
+    },
+
+    _addNorthArrow: function (map) {
+      var NorthArrow = window.L.Control.extend({
+        options: { position: "topright" },
+        onAdd: function () {
+          var div = window.L.DomUtil.create("div", "leaflet-north-arrow");
+          div.innerHTML = "<span title='North' style='font-size:20px;line-height:1;'>&#11014;</span>";
+          div.style.cssText = "background:#fff;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.3);cursor:default;";
+          return div;
+        }
+      });
+      new NorthArrow().addTo(map);
+    },
+
+    _addGpsControl: function (map) {
+      var self = this;
+      var GpsControl = window.L.Control.extend({
+        options: { position: "topleft" },
+        onAdd: function () {
+          var btn = window.L.DomUtil.create("button", "leaflet-gps-btn");
+          btn.title = "My Location";
+          btn.innerHTML = "&#9762;";
+          btn.style.cssText = "width:34px;height:34px;background:#fff;border:2px solid rgba(0,0,0,.2);border-radius:4px;font-size:18px;cursor:pointer;display:block;line-height:1;";
+          window.L.DomEvent.on(btn, "click", function () { self.onGpsLocate(); });
+          return btn;
+        }
+      });
+      new GpsControl().addTo(map);
+      map.on("locationfound", function (e) {
+        window.L.popup().setLatLng(e.latlng)
+          .setContent("<strong>Your location</strong><br>" + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5))
+          .openOn(map);
+        map.setView(e.latlng, 13);
+      });
+      map.on("locationerror", function () {
+        sap.m.MessageToast.show("Could not determine your location.");
+      });
+    },
+
+    // ─── GPS ──────────────────────────────────────────────────────────────────
+
+    onGpsLocate: function () {
+      if (!this._leafletMap) return;
+      this._leafletMap.locate({ setView: false, maxZoom: 14 });
+    },
+
+    // ─── Heat Map ─────────────────────────────────────────────────────────────
+
+    onToggleHeatmap: function (oEvent) {
+      var active = oEvent.getParameter("state");
+      this._vm().setProperty("/heatmapActive", active);
+      if (active) {
+        this._renderHeatmap();
+      } else if (this._heatLayer && this._leafletMap) {
+        this._leafletMap.removeLayer(this._heatLayer);
+        this._heatLayer = null;
+      }
+    },
+
+    _renderHeatmap: function () {
+      if (!this._leafletMap || !window.L || !window.L.heatLayer) return;
+      var bridges = this._vm().getProperty("/bridges") || [];
+      var cfg = this._gisConfig || {};
+      var points = bridges.filter(function (b) {
+        return Number.isFinite(b.latitude) && Number.isFinite(b.longitude);
+      }).map(function (b) {
+        var intensity = b.conditionRating != null ? (10 - b.conditionRating) / 10 : 0.5;
+        return [b.latitude, b.longitude, intensity];
+      });
+
+      if (this._heatLayer) {
+        this._leafletMap.removeLayer(this._heatLayer);
+      }
+      this._heatLayer = window.L.heatLayer(points, {
+        radius: cfg.heatmapRadius || 20,
+        blur: cfg.heatmapBlur || 15,
+        maxZoom: 17
+      }).addTo(this._leafletMap);
+    },
+
+    // ─── Condition Alerts ─────────────────────────────────────────────────────
+
+    onToggleConditionAlerts: function (oEvent) {
+      var active = oEvent.getParameter("state");
+      this._vm().setProperty("/conditionAlertsActive", active);
+      this._renderConditionAlerts();
+    },
+
+    _renderConditionAlerts: function () {
+      if (!this._leafletMap || !window.L) return;
+      var active = this._vm().getProperty("/conditionAlertsActive");
+      if (this._conditionAlertLayer) {
+        this._leafletMap.removeLayer(this._conditionAlertLayer);
+        this._conditionAlertLayer = null;
+      }
+      if (!active) return;
+
+      var threshold = (this._gisConfig && this._gisConfig.conditionAlertThreshold) || 3;
+      var bridges = this._vm().getProperty("/bridges") || [];
+      var alerts = bridges.filter(function (b) {
+        return b.conditionRating != null && b.conditionRating <= threshold;
+      });
+
+      this._conditionAlertLayer = window.L.layerGroup();
+      alerts.forEach(function (b) {
+        var icon = window.L.divIcon({
+          className: "",
+          html: "<div class='condAlert'>\u26A0</div>",
+          iconSize: [22, 22],
+          iconAnchor: [11, 11]
+        });
+        window.L.marker([b.latitude, b.longitude], { icon: icon })
+          .bindPopup("<strong>Condition Alert</strong><br>" + b.bridgeName + "<br>Rating: " + b.conditionRating)
+          .addTo(this._conditionAlertLayer);
+      }.bind(this));
+
+      this._conditionAlertLayer.addTo(this._leafletMap);
+    },
+
+    // ─── Statistics Panel ─────────────────────────────────────────────────────
+
+    _updateStats: function () {
+      var bridges = this._vm().getProperty("/bridges") || [];
+      if (!bridges.length) {
+        this._vm().setProperty("/stats", { total: 0, avgCondition: "—", poor: 0, restricted: 0, closed: 0 });
+        return;
+      }
+      var rated = bridges.filter(function (b) { return b.conditionRating != null; });
+      var avgCondition = rated.length
+        ? (rated.reduce(function (s, b) { return s + b.conditionRating; }, 0) / rated.length).toFixed(1)
+        : "—";
+      var threshold = (this._gisConfig && this._gisConfig.conditionAlertThreshold) || 3;
+      this._vm().setProperty("/stats", {
+        total: bridges.length,
+        avgCondition: avgCondition,
+        poor: bridges.filter(function (b) { return b.conditionRating != null && b.conditionRating <= threshold; }).length,
+        restricted: bridges.filter(function (b) { return b.postingStatus === "Restricted" || b.postingStatus === "Under Review"; }).length,
+        closed: bridges.filter(function (b) { return b.postingStatus === "Closed"; }).length
+      });
+    },
+
+    // ─── Time Slider ──────────────────────────────────────────────────────────
+
+    onTimeSliderChange: function (oEvent) {
+      var from = oEvent.getParameter("value");
+      var to = oEvent.getParameter("value2") !== undefined ? oEvent.getParameter("value2") : oEvent.getParameter("value");
+      this._vm().setProperty("/timeSlider/fromYear", from);
+      this._vm().setProperty("/timeSlider/toYear", to);
+      this._vm().setProperty("/timeSlider/active", true);
+      var filters = this._vm().getProperty("/filters") || {};
+      filters.minYear = from;
+      filters.maxYear = to;
+      this._vm().setProperty("/filters", filters);
+      this._applyFilters();
+    },
+
+    onResetTimeSlider: function () {
+      var limits = this._vm().getProperty("/limits");
+      this._vm().setProperty("/timeSlider/active", false);
+      var filters = this._vm().getProperty("/filters") || {};
+      filters.minYear = limits.minYear;
+      filters.maxYear = limits.maxYear;
+      this._vm().setProperty("/filters", filters);
+      this._applyFilters();
+    },
+
+    // ─── Proximity Analysis ───────────────────────────────────────────────────
+
+    onRunProximity: function () {
+      var model = this._vm();
+      var lat = model.getProperty("/proximity/lat");
+      var lng = model.getProperty("/proximity/lng");
+      var radius = model.getProperty("/proximity/radius") || 10;
+      if (!lat || !lng) {
+        if (this._leafletMap) {
+          var center = this._leafletMap.getCenter();
+          lat = center.lat.toFixed(5);
+          lng = center.lng.toFixed(5);
+          model.setProperty("/proximity/lat", lat);
+          model.setProperty("/proximity/lng", lng);
+        } else {
+          sap.m.MessageToast.show("Enter coordinates or pan the map first.");
+          return;
+        }
+      }
+      model.setProperty("/proximity/loading", true);
+      fetch("/map/api/proximity?lat=" + lat + "&lng=" + lng + "&radius=" + radius)
+        .then(function (res) { return res.ok ? res.json() : Promise.reject(res.statusText); })
+        .then(function (data) {
+          var results = data.bridges || [];
+          model.setProperty("/proximity/results", results);
+          model.setProperty("/proximity/count", results.length);
+          model.setProperty("/proximity/active", true);
+          model.setProperty("/proximity/loading", false);
+          this._renderProximityResults(lat, lng, radius, results);
+        }.bind(this))
+        .catch(function () {
+          model.setProperty("/proximity/loading", false);
+          sap.m.MessageToast.show("Proximity search failed.");
+        });
+    },
+
+    onClearProximity: function () {
+      var model = this._vm();
+      model.setProperty("/proximity/active", false);
+      model.setProperty("/proximity/results", []);
+      model.setProperty("/proximity/count", 0);
+      if (this._proximityCircle && this._leafletMap) {
+        this._leafletMap.removeLayer(this._proximityCircle);
+        this._proximityCircle = null;
+      }
+      if (this._proximityLayer && this._leafletMap) {
+        this._leafletMap.removeLayer(this._proximityLayer);
+        this._proximityLayer = null;
+      }
+    },
+
+    _renderProximityResults: function (lat, lng, radiusKm, results) {
+      if (!this._leafletMap || !window.L) return;
+      this.onClearProximity();
+      var center = [parseFloat(lat), parseFloat(lng)];
+      this._proximityCircle = window.L.circle(center, {
+        radius: radiusKm * 1000,
+        color: "#7c3aed",
+        weight: 2,
+        fillOpacity: 0.08,
+        dashArray: "6 4"
+      }).addTo(this._leafletMap);
+
+      this._proximityLayer = window.L.layerGroup();
+      results.forEach(function (b) {
+        window.L.circleMarker([b.latitude, b.longitude], {
+          radius: 8, color: "#7c3aed", fillColor: "#a78bfa", fillOpacity: 0.9, weight: 2
+        }).bindPopup("<strong>" + (b.bridgeName || "Bridge") + "</strong><br>" + (b.bridgeId || ""))
+          .addTo(this._proximityLayer);
+      }.bind(this));
+      this._proximityLayer.addTo(this._leafletMap);
+
+      if (results.length) {
+        var pts = results.map(function (b) { return [b.latitude, b.longitude]; });
+        pts.push(center);
+        this._leafletMap.fitBounds(window.L.latLngBounds(pts).pad(0.15));
+      }
+    },
+
+    // ─── MGA Coordinates ──────────────────────────────────────────────────────
+
+    _wgs84ToMga: function (lat, lng) {
+      var zone = Math.floor((lng + 180) / 6) + 1;
+      var cm = (zone - 1) * 6 - 180 + 3;
+      var a = 6378137.0, f = 1 / 298.257222101;
+      var b = a * (1 - f);
+      var e2 = (a * a - b * b) / (a * a);
+      var k0 = 0.9996, e0 = 500000, n0 = 10000000;
+      var latRad = lat * Math.PI / 180;
+      var dLng = (lng - cm) * Math.PI / 180;
+      var N = a / Math.sqrt(1 - e2 * Math.sin(latRad) * Math.sin(latRad));
+      var T = Math.tan(latRad) * Math.tan(latRad);
+      var C = e2 / (1 - e2) * Math.cos(latRad) * Math.cos(latRad);
+      var A2 = Math.cos(latRad) * dLng;
+      var M = a * ((1 - e2 / 4 - 3 * e2 * e2 / 64) * latRad
+        - (3 * e2 / 8 + 3 * e2 * e2 / 32) * Math.sin(2 * latRad)
+        + (15 * e2 * e2 / 256) * Math.sin(4 * latRad));
+      var easting = k0 * N * (A2 + (1 - T + C) * A2 * A2 * A2 / 6) + e0;
+      var northing = k0 * (M + N * Math.tan(latRad) * (A2 * A2 / 2 + (5 - T + 9 * C) * Math.pow(A2, 4) / 24)) + n0;
+      return { zone: zone, easting: Math.round(easting), northing: Math.round(northing) };
+    },
+
+    _updateMgaCoords: function (lat, lng) {
+      if (!this._feat("mgaCoords")) return;
+      var mga = this._wgs84ToMga(lat, lng);
+      this._vm().setProperty("/mgaCoords", {
+        zone: mga.zone,
+        easting: mga.easting,
+        northing: mga.northing,
+        text: "MGA Z" + mga.zone + " " + mga.easting + "E " + mga.northing + "N"
+      });
+    },
+
+    // ─── Minimap toggle ───────────────────────────────────────────────────────
+
+    onToggleMinimap: function (oEvent) {
+      var active = oEvent.getParameter("state");
+      this._vm().setProperty("/minimapActive", active);
+      if (this._minimapControl) {
+        if (active) {
+          this._minimapControl._restore && this._minimapControl._restore();
+        } else {
+          this._minimapControl._minimize && this._minimapControl._minimize();
+        }
+      }
     }
   });
 });

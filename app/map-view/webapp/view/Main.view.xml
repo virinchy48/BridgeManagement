@@ -223,6 +223,131 @@
               </content>
             </Panel>
 
+            <!-- Advanced GIS Tools -->
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="false" headerText="GIS Tools">
+              <content>
+                <VBox class="nhvrFilterSection">
+                  <!-- Heat Map -->
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow" visible="{view>/features/heatmap}">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://temperature" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Heat Map (Condition)" class="nhvrLayerLabel" />
+                    </HBox>
+                    <Switch state="{view>/heatmapActive}" change=".onToggleHeatmap" />
+                  </HBox>
+                  <!-- Condition Alerts -->
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow" visible="{view>/features/conditionAlerts}">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://alert" size="0.875rem" class="nhvrLayerIcon nhvrLayerIconWarning" />
+                      <Text text="Condition Alerts" class="nhvrLayerLabel" />
+                    </HBox>
+                    <Switch state="{view>/conditionAlertsActive}" change=".onToggleConditionAlerts" />
+                  </HBox>
+                  <!-- Minimap -->
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow" visible="{view>/features/minimap}">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://map-3" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Mini Map" class="nhvrLayerLabel" />
+                    </HBox>
+                    <Switch state="{view>/minimapActive}" change=".onToggleMinimap" />
+                  </HBox>
+                  <!-- Viewport loading -->
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                    <HBox alignItems="Center">
+                      <core:Icon src="sap-icon://show" size="0.875rem" class="nhvrLayerIcon" />
+                      <Text text="Viewport Loading" class="nhvrLayerLabel" />
+                    </HBox>
+                    <Switch state="{view>/viewportMode}" change=".onToggleViewportMode" />
+                  </HBox>
+                </VBox>
+              </content>
+            </Panel>
+
+            <!-- Proximity Analysis -->
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="false" headerText="Proximity Analysis"
+                   visible="{view>/features/proximity}">
+              <content>
+                <VBox class="nhvrFilterSection">
+                  <Text text="Find bridges within a radius of a point." class="nhvrLayerHint sapUiSmallMarginBottom" />
+                  <Label text="Latitude" class="nhvrFilterLabel" />
+                  <Input id="proxLat" value="{view>/proximity/lat}" placeholder="-33.8688" width="100%" />
+                  <Label text="Longitude" class="nhvrFilterLabel nhvrFilterLabelTop" />
+                  <Input id="proxLng" value="{view>/proximity/lng}" placeholder="151.2093" width="100%" />
+                  <Label text="Radius (km)" class="nhvrFilterLabel nhvrFilterLabelTop" />
+                  <StepInput id="proxRadius" value="{view>/proximity/radius}" min="1" max="500" step="5" width="100%" />
+                  <HBox justifyContent="SpaceBetween" class="nhvrFilterActions">
+                    <Button text="Clear" icon="sap-icon://clear-filter" press=".onClearProximity"
+                            enabled="{view>/proximity/active}" />
+                    <Button text="Find Bridges" icon="sap-icon://locate-me" type="Emphasized"
+                            press=".onRunProximity" busy="{view>/proximity/loading}" />
+                  </HBox>
+                  <ObjectStatus
+                    visible="{view>/proximity/active}"
+                    text="{= ${view>/proximity/count} + ' bridges within radius' }"
+                    state="Success"
+                    class="sapUiTinyMarginTop" />
+                </VBox>
+              </content>
+            </Panel>
+
+            <!-- Time Slider -->
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="false" headerText="Time Slider (Year Built)"
+                   visible="{view>/features/timeSlider}">
+              <content>
+                <VBox class="nhvrFilterSection">
+                  <Text text="{= 'Year: ' + ${view>/timeSlider/fromYear} + ' – ' + ${view>/timeSlider/toYear} }"
+                        class="nhvrLayerHint" />
+                  <RangeSlider
+                    id="timeSlider"
+                    min="{view>/limits/minYear}"
+                    max="{view>/limits/maxYear}"
+                    value="{view>/timeSlider/fromYear}"
+                    value2="{view>/timeSlider/toYear}"
+                    showAdvancedTooltip="true"
+                    enableTickmarks="false"
+                    step="1"
+                    width="100%"
+                    change=".onTimeSliderChange"
+                    class="sapUiSmallMarginTop" />
+                  <Button text="Reset" icon="sap-icon://reset" press=".onResetTimeSlider"
+                          visible="{view>/timeSlider/active}" class="sapUiTinyMarginTop" />
+                </VBox>
+              </content>
+            </Panel>
+
+            <!-- Statistics Panel -->
+            <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Statistics"
+                   visible="{view>/features/statsPanel}">
+              <content>
+                <VBox class="nhvrFilterSection">
+                  <HBox class="nhvrStatsRow">
+                    <VBox class="nhvrStatCard">
+                      <ObjectNumber number="{view>/stats/total}" emphasized="true" />
+                      <Text text="Visible" class="nhvrStatLabel" />
+                    </VBox>
+                    <VBox class="nhvrStatCard">
+                      <ObjectNumber number="{view>/stats/avgCondition}" emphasized="true" state="Success" />
+                      <Text text="Avg Condition" class="nhvrStatLabel" />
+                    </VBox>
+                  </HBox>
+                  <HBox class="nhvrStatsRow">
+                    <VBox class="nhvrStatCard">
+                      <ObjectNumber number="{view>/stats/poor}" emphasized="true" state="Error" />
+                      <Text text="Poor Condition" class="nhvrStatLabel" />
+                    </VBox>
+                    <VBox class="nhvrStatCard">
+                      <ObjectNumber number="{view>/stats/restricted}" emphasized="true" state="Warning" />
+                      <Text text="Restricted" class="nhvrStatLabel" />
+                    </VBox>
+                    <VBox class="nhvrStatCard">
+                      <ObjectNumber number="{view>/stats/closed}" emphasized="true" state="Error" />
+                      <Text text="Closed" class="nhvrStatLabel" />
+                    </VBox>
+                  </HBox>
+                </VBox>
+              </content>
+            </Panel>
+
             <Panel class="nhvrSidebarPanel nhvrSelectionPanel" expandable="false" headerText="Spatial Selection" visible="{view>/selectionActive}">
               <content>
                 <VBox class="nhvrFilterSection">
@@ -299,6 +424,9 @@
             <Toolbar design="Transparent" height="28px" visible="{= !!${view>/coordinateText} }" class="nhvrCoordinateBar">
               <ToolbarSpacer />
               <Text text="{view>/coordinateText}" class="nhvrCoordinateText" />
+              <Text text="{view>/mgaCoords/text}"
+                    visible="{= !!(${view>/features/mgaCoords} &amp;&amp; ${view>/mgaCoords/text}) }"
+                    class="nhvrCoordinateText nhvrMgaCoords" />
             </Toolbar>
 
             <VBox visible="{view>/showList}" class="nhvrListPanel">
