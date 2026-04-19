@@ -83,6 +83,38 @@ sap.ui.define([
 
     onTilePress: function () { /* informational only */ },
 
+    onTileInfo: function (oEvent) {
+      var sKey = oEvent.getSource().data("tileKey");
+      var oInfo = {
+        totalUsers: {
+          title: "Total Users",
+          html: "<p><strong>Total Users</strong> shows the count of all distinct users who have ever made an API call to BMS.</p>" +
+                "<p>This includes both active and inactive users. Role assignment is managed in SAP BTP Cockpit.</p>"
+        },
+        activeToday: {
+          title: "Active Today",
+          html: "<p><strong>Active Today</strong> counts users who have made at least one API request in the last 24 hours.</p>" +
+                "<p>A green indicator means healthy recent usage. This is updated in real time on refresh.</p>"
+        },
+        activeWeek: {
+          title: "Active This Week",
+          html: "<p><strong>Active This Week</strong> counts users seen in the last 7 days (but not necessarily today).</p>" +
+                "<p>Users active today are also included in this count. Shown in amber to indicate recent but not current activity.</p>"
+        }
+      };
+      var oEntry = oInfo[sKey] || { title: "Info", html: "<p>No additional information available.</p>" };
+      var oDialog = new Dialog({
+        title: oEntry.title,
+        contentWidth: "460px",
+        content: [new ScrollContainer({ width: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: oEntry.html, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
+    },
+
     _updateUserCount: function (count) {
       const t = this.byId("userCount");
       if (t) t.setText(count + " user" + (count !== 1 ? "s" : ""));

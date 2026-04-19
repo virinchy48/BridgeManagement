@@ -5,7 +5,7 @@
   xmlns:layout="sap.ui.layout"
   displayBlock="true">
 
-  <Page id="refDataPage" showHeader="false">
+  <Page id="refDataPage" showHeader="true">
 
     <customHeader>
       <Bar>

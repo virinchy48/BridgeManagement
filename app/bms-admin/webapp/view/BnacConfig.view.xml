@@ -5,7 +5,7 @@
   xmlns:core="sap.ui.core"
   displayBlock="true">
 
-  <Page id="bnacConfigPage" showHeader="false" class="sapUiContentPadding">
+  <Page id="bnacConfigPage" showHeader="true" class="sapUiContentPadding">
 
     <customHeader>
       <Bar>

@@ -8,7 +8,7 @@
   xmlns:t="sap.ui.table"
   displayBlock="true">
 
-  <Page id="changeDocPage" showHeader="false">
+  <Page id="changeDocPage" showHeader="true">
 
     <customHeader>
       <Bar>
@@ -72,15 +72,20 @@
         </Panel>
 
         <HBox id="kpiBox" wrap="Wrap" class="sapUiSmallMarginBottom" visible="false">
-          <GenericTile id="kpiTotal" header="Total Changes" class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
-            <tileContent>
-              <TileContent>
-                <content>
-                  <NumericContent id="kpiTotalVal" value="0" scale="" withMargin="false" />
-                </content>
-              </TileContent>
-            </tileContent>
-          </GenericTile>
+          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+            <GenericTile id="kpiTotal" header="Total Changes">
+              <tileContent>
+                <TileContent>
+                  <content>
+                    <NumericContent id="kpiTotalVal" value="0" scale="" withMargin="false" />
+                  </content>
+                </TileContent>
+              </tileContent>
+            </GenericTile>
+            <Button icon="sap-icon://sys-help" tooltip="About: Total Changes" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+              <customData><core:CustomData key="tileKey" value="totalChanges"/></customData>
+            </Button>
+          </VBox>
         </HBox>
 
         <Panel id="resultsPanel" expandable="false" visible="false">

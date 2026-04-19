@@ -2,9 +2,10 @@
   controllerName="BridgeManagement.bmsadmin.controller.UserAccess"
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
+  xmlns:core="sap.ui.core"
   displayBlock="true">
 
-  <Page id="userAccessPage" showHeader="false">
+  <Page id="userAccessPage" showHeader="true">
 
     <customHeader>
       <Bar>
@@ -26,15 +27,30 @@
           type="Information" showCloseButton="false" class="sapUiSmallMarginBottom" />
 
         <HBox wrap="Wrap" class="sapUiSmallMarginBottom">
-          <GenericTile id="tileTotalUsers"  header="Total Users"        subheader="All time"        press=".onTilePress" class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
-            <tileContent><TileContent><content><NumericContent id="numTotalUsers"  value="0" valueColor="Neutral"  icon="sap-icon://employee"  /></content></TileContent></tileContent>
-          </GenericTile>
-          <GenericTile id="tileActiveToday" header="Active Today"       subheader="Last 24 hours"   press=".onTilePress" class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
-            <tileContent><TileContent><content><NumericContent id="numActiveToday" value="0" valueColor="Good"     icon="sap-icon://activity-2" /></content></TileContent></tileContent>
-          </GenericTile>
-          <GenericTile id="tileActiveWeek"  header="Active This Week"   subheader="Last 7 days"     press=".onTilePress" class="sapUiTinyMarginBottom">
-            <tileContent><TileContent><content><NumericContent id="numActiveWeek"  value="0" valueColor="Critical" icon="sap-icon://calendar"   /></content></TileContent></tileContent>
-          </GenericTile>
+          <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+            <GenericTile id="tileTotalUsers" header="Total Users" subheader="All time" press=".onTilePress">
+              <tileContent><TileContent><content><NumericContent id="numTotalUsers" value="0" valueColor="Neutral" icon="sap-icon://employee" /></content></TileContent></tileContent>
+            </GenericTile>
+            <Button icon="sap-icon://sys-help" tooltip="About: Total Users" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+              <customData><core:CustomData key="tileKey" value="totalUsers"/></customData>
+            </Button>
+          </VBox>
+          <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+            <GenericTile id="tileActiveToday" header="Active Today" subheader="Last 24 hours" press=".onTilePress">
+              <tileContent><TileContent><content><NumericContent id="numActiveToday" value="0" valueColor="Good" icon="sap-icon://activity-2" /></content></TileContent></tileContent>
+            </GenericTile>
+            <Button icon="sap-icon://sys-help" tooltip="About: Active Today" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+              <customData><core:CustomData key="tileKey" value="activeToday"/></customData>
+            </Button>
+          </VBox>
+          <VBox class="sapUiTinyMarginBottom">
+            <GenericTile id="tileActiveWeek" header="Active This Week" subheader="Last 7 days" press=".onTilePress">
+              <tileContent><TileContent><content><NumericContent id="numActiveWeek" value="0" valueColor="Critical" icon="sap-icon://calendar" /></content></TileContent></tileContent>
+            </GenericTile>
+            <Button icon="sap-icon://sys-help" tooltip="About: Active This Week" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+              <customData><core:CustomData key="tileKey" value="activeWeek"/></customData>
+            </Button>
+          </VBox>
         </HBox>
 
         <Panel headerText="Recent User Activity" expandable="false">

@@ -57,7 +57,7 @@
   </Dialog>
 
   <!-- ── Page ──────────────────────────────────────────────────────── -->
-  <Page id="dataQualityRulesPage" showHeader="false">
+  <Page id="dataQualityRulesPage" showHeader="true">
 
     <customHeader>
       <Bar>
