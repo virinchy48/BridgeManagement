@@ -49,7 +49,7 @@
                     "title": "Map View",
                     "subtitle": "Geographic Explorer",
                     "icon": "sap-icon://map-2",
-                    "targetURL": "#MapView-display"
+                    "targetURL": "#Map-display"
                   }
                 }
               ]
@@ -148,8 +148,8 @@
                 "url": "/restrictions/webapp"
               }
             },
-            "MapView-display": {
-              "semanticObject": "MapView",
+            "Map-display": {
+              "semanticObject": "Map",
               "action": "display",
               "title": "Map View",
               "signature": {
