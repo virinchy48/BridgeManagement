@@ -31,6 +31,7 @@
       "libs": {
         "sap.m": {},
         "sap.tnt": {},
+        "sap.f": {},
         "sap.ui.layout": {},
         "sap.ui.table": {}
       }
@@ -62,15 +63,17 @@
         { "pattern": "reference-data", "name": "referenceData", "target": "referenceData" },
         { "pattern": "user-access", "name": "userAccess", "target": "userAccess" },
         { "pattern": "system-config", "name": "systemConfig", "target": "systemConfig" },
-        { "pattern": "bnac-config", "name": "bnacConfig", "target": "bnacConfig" }
+        { "pattern": "bnac-config", "name": "bnacConfig", "target": "bnacConfig" },
+        { "pattern": "attribute-config", "name": "attributeConfig", "target": "attributeConfig" }
       ],
       "targets": {
-        "changeDocuments": { "viewName": "ChangeDocuments", "viewLevel": 1 },
-        "dataQuality":     { "viewName": "DataQuality",     "viewLevel": 1 },
-        "referenceData":   { "viewName": "ReferenceData",   "viewLevel": 1 },
-        "userAccess":      { "viewName": "UserAccess",      "viewLevel": 1 },
-        "systemConfig":    { "viewName": "SystemConfig",    "viewLevel": 1 },
-        "bnacConfig":      { "viewName": "BnacConfig",      "viewLevel": 1 }
+        "changeDocuments": { "viewName": "ChangeDocuments",  "viewLevel": 1 },
+        "dataQuality":     { "viewName": "DataQuality",      "viewLevel": 1 },
+        "referenceData":   { "viewName": "ReferenceData",    "viewLevel": 1 },
+        "userAccess":      { "viewName": "UserAccess",       "viewLevel": 1 },
+        "systemConfig":    { "viewName": "SystemConfig",     "viewLevel": 1 },
+        "bnacConfig":      { "viewName": "BnacConfig",       "viewLevel": 1 },
+        "attributeConfig": { "viewName": "AttributeConfig",  "viewLevel": 1 }
       }
     },
     "contentDensities": { "compact": true, "cozy": true }

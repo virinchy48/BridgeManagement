@@ -10,7 +10,8 @@ sap.ui.define([
     referenceData:   "referenceData",
     userAccess:      "userAccess",
     systemConfig:    "systemConfig",
-    bnacConfig:      "bnacConfig"
+    bnacConfig:      "bnacConfig",
+    attributeConfig: "attributeConfig"
   };
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.Shell", {

@@ -71,13 +71,13 @@
                   }
                 },
                 {
-                  "id": "BusinessAdmin",
+                  "id": "BmsAdmin",
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
-                    "title": "BMS Business Admin",
-                    "subtitle": "Attributes, Lookups & Roles",
+                    "title": "BMS Administration",
+                    "subtitle": "Audit, Config & User Access",
                     "icon": "sap-icon://action-settings",
-                    "targetURL": "#Bridges-manage"
+                    "targetURL": "#BmsAdmin-manage"
                   }
                 },
                 {
@@ -105,6 +105,20 @@
       "adapter": {
         "config": {
           "inbounds": {
+            "ManageBmsAdmin": {
+              "semanticObject": "BmsAdmin",
+              "action": "manage",
+              "title": "BMS Administration",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.bmsadmin",
+                "url": "/bms-admin/webapp"
+              }
+            },
             "ManageRestrictions": {
               "semanticObject": "Restrictions",
               "action": "manage",
