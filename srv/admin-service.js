@@ -28,6 +28,42 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     }
   })
 
+  // Block hard deletes on active entities — drafts may still be discarded normally
+  this.before('DELETE', Bridges, req => {
+    if (req.data?.IsActiveEntity !== false) req.error(405, 'Hard delete is not permitted. Use the Deactivate action instead.')
+  })
+  this.before('DELETE', Restrictions, req => {
+    if (req.data?.IsActiveEntity !== false) req.error(405, 'Hard delete is not permitted. Use the Deactivate action instead.')
+  })
+
+  // Soft-delete: deactivate / reactivate Bridges (use db directly to bypass draft flow)
+  this.on('deactivate', Bridges, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.Bridges').set({ status: 'Inactive' }).where({ ID }))
+    return db.run(SELECT.one.from('bridge.management.Bridges').where({ ID }))
+  })
+  this.on('reactivate', Bridges, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.Bridges').set({ status: 'Open' }).where({ ID }))
+    return db.run(SELECT.one.from('bridge.management.Bridges').where({ ID }))
+  })
+
+  // Soft-delete: deactivate / reactivate Restrictions (use db directly to bypass draft flow)
+  this.on('deactivate', Restrictions, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.Restrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ ID }))
+    return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
+  })
+  this.on('reactivate', Restrictions, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.Restrictions').set({ active: true, restrictionStatus: 'Active' }).where({ ID }))
+    return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
+  })
+
   this.before ('NEW', Restrictions.drafts, async (req) => {
     if (!req.data.restrictionRef) {
       const total = await SELECT.from(Restrictions).columns('ID')

@@ -119,6 +119,7 @@
             "settings": {
               "entitySet": "Bridges",
               "editableHeaderContent": false,
+              "sharingEnabled": false,
               "content": {
                 "body": {
                   "sections": {

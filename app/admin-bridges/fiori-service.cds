@@ -9,25 +9,50 @@ using from '../common'; // to help UI linter get the complete annotations
 //
 
 annotate AdminService.Bridges with @(
-  Capabilities.InsertRestrictions.Insertable : true,
-  Capabilities.UpdateRestrictions.Updatable  : true,
-  Capabilities.DeleteRestrictions.Deletable  : true,
+  UI.HeaderInfo: {
+    TypeName      : 'Bridge',
+    TypeNamePlural: 'Bridges',
+    Title         : { Value: bridgeName },
+    Description   : { Value: bridgeId }
+  },
+  UI.SelectionFields: [
+    bridgeId, bridgeName, state, region,
+    condition, postingStatus, status,
+    highPriorityAsset, assetClass
+  ],
+  UI.LineItem: [
+    { Value: bridgeId,           Label: 'Bridge ID' },
+    { Value: bridgeName,         Label: 'Bridge Name' },
+    { Value: state,              Label: 'State' },
+    { Value: region,             Label: 'Region' },
+    { Value: condition,          Label: 'Condition' },
+    { Value: conditionRating,    Label: 'Rating' },
+    { Value: postingStatus,      Label: 'Posting Status' },
+    { Value: status,             Label: 'Status' },
+    { Value: lastInspectionDate, Label: 'Last Inspected' },
+    { Value: highPriorityAsset,  Label: 'High Priority' }
+  ]
+);
+
+annotate AdminService.Bridges with @(
+  Capabilities.InsertRestrictions.Insertable  : true,
+  Capabilities.UpdateRestrictions.Updatable   : true,
+  Capabilities.DeleteRestrictions.Deletable   : false,
   UI: {
     CreateHidden: false,
     UpdateHidden: false,
-    DeleteHidden: false,
+    DeleteHidden: true,
     Facets: [
-      {$Type: 'UI.ReferenceFacet', Label: 'Identity & Location', Target: '@UI.FieldGroup#IdentityLocation'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Asset Ownership', Target: '@UI.FieldGroup#AssetOwnership'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Physical Attributes', Target: '@UI.FieldGroup#PhysicalAttributes'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Condition & Status', Target: '@UI.FieldGroup#ConditionStatus'},
-      {$Type: 'UI.ReferenceFacet', Label: 'NHVR & Traffic', Target: '@UI.FieldGroup#NHVRTraffic'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Capacity', Target: 'capacities/@UI.LineItem'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Restrictions', Target: 'restrictions/@UI.LineItem'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Attributes', Target: 'attributes/@UI.LineItem'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessment', Target: 'scourAssessments/@UI.LineItem'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Data Provenance', Target: '@UI.FieldGroup#DataProvenance'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Bridge Geometry (GeoJSON)', Target: '@UI.FieldGroup#BridgeGeometry'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Identity & Location',       Target: '@UI.FieldGroup#IdentityLocation'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Physical Attributes',       Target: '@UI.FieldGroup#PhysicalAttributes'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Condition & Inspection',    Target: '@UI.FieldGroup#ConditionStatus'},
+      {$Type: 'UI.ReferenceFacet', Label: 'NHVR & Traffic Approvals',  Target: '@UI.FieldGroup#NHVRTraffic'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Capacity',                  Target: 'capacities/@UI.LineItem'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Restrictions',              Target: 'restrictions/@UI.LineItem'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessment',          Target: 'scourAssessments/@UI.LineItem'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Data Provenance',           Target: '@UI.FieldGroup#DataProvenance'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Audit Information',         Target: '@UI.FieldGroup#AuditInfo'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Bridge Geometry',           Target: '@UI.FieldGroup#BridgeGeometry'},
     ],
     FieldGroup#IdentityLocation: {
       Data: [
@@ -37,17 +62,14 @@ annotate AdminService.Bridges with @(
         {Value: state},
         {Value: region},
         {Value: lga},
+        {Value: location},
         {Value: route},
         {Value: routeNumber},
         {Value: latitude},
         {Value: longitude},
-        {Value: descr},
-      ]
-    },
-    FieldGroup#AssetOwnership: {
-      Data: [
         {Value: assetOwner},
         {Value: managingAuthority},
+        {Value: descr},
       ]
     },
     FieldGroup#PhysicalAttributes: {
@@ -71,15 +93,15 @@ annotate AdminService.Bridges with @(
         {Value: conditionRating},
         {Value: structuralAdequacyRating},
         {Value: postingStatus},
-        {Value: scourRisk},
+        {Value: highPriorityAsset},
         {Value: lastInspectionDate},
         {Value: conditionStandard},
         {Value: seismicZone},
         {Value: asBuiltDrawingReference},
+        {Value: scourRisk},
         {Value: scourDepthLastMeasured},
         {Value: floodImmunityAriYears},
         {Value: floodImpacted},
-        {Value: highPriorityAsset},
         {Value: remarks},
       ]
     },
@@ -90,14 +112,14 @@ annotate AdminService.Bridges with @(
         {Value: importanceLevel},
         {Value: averageDailyTraffic},
         {Value: heavyVehiclePercent},
-        {Value: gazetteReference},
-        {Value: nhvrReferenceUrl},
-        {Value: nhvrAssessed},
-        {Value: nhvrAssessmentDate},
         {Value: freightRoute},
         {Value: overMassRoute},
         {Value: hmlApproved},
         {Value: bDoubleApproved},
+        {Value: nhvrAssessed},
+        {Value: nhvrAssessmentDate},
+        {Value: gazetteReference},
+        {Value: nhvrReferenceUrl},
       ]
     },
     FieldGroup#DataProvenance: {
@@ -106,6 +128,10 @@ annotate AdminService.Bridges with @(
         {Value: sourceReferenceUrl},
         {Value: openDataReference},
         {Value: sourceRecordId},
+      ]
+    },
+    FieldGroup#AuditInfo: {
+      Data: [
         {Value: createdBy},
         {Value: createdAt},
         {Value: modifiedBy},
@@ -116,7 +142,23 @@ annotate AdminService.Bridges with @(
       Data: [
         {Value: geoJson},
       ]
-    }
+    },
+    Identification: [
+      {
+        $Type       : 'UI.DataFieldForAction',
+        Action      : 'AdminService.deactivate',
+        Label       : 'Deactivate',
+        Criticality : #Negative,
+        ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'status' }, 'Inactive'] } }
+      },
+      {
+        $Type       : 'UI.DataFieldForAction',
+        Action      : 'AdminService.reactivate',
+        Label       : 'Reactivate',
+        Criticality : #Positive,
+        ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Inactive'] } }
+      }
+    ]
   }
 );
 
@@ -210,6 +252,31 @@ annotate AdminService.Restrictions with {
 annotate AdminService.BridgeRestrictions with {
   ID @UI.Hidden;
   bridge @UI.Hidden;
+  restrictionRef      @title: 'Restriction Reference';
+  name                @title: 'Name';
+  descr               @title: 'Description';
+  restrictionCategory @title: 'Category';
+  restrictionType     @title: 'Restriction Type';
+  restrictionValue    @title: 'Value';
+  restrictionUnit     @title: 'Unit';
+  restrictionStatus   @title: 'Status';
+  appliesToVehicleClass @title: 'Applies to Vehicle Class';
+  grossMassLimit      @title: 'Gross Mass Limit (t)';
+  axleMassLimit       @title: 'Axle Mass Limit (t)';
+  heightLimit         @title: 'Height Limit (m)';
+  widthLimit          @title: 'Width Limit (m)';
+  lengthLimit         @title: 'Length Limit (m)';
+  speedLimit          @title: 'Speed Limit (km/h)';
+  permitRequired      @title: 'Permit Required';
+  escortRequired      @title: 'Escort Required';
+  temporary           @title: 'Temporary';
+  active              @title: 'Active';
+  effectiveFrom       @title: 'Effective From';
+  effectiveTo         @title: 'Effective To';
+  approvedBy          @title: 'Approved By';
+  direction           @title: 'Direction';
+  enforcementAuthority @title: 'Enforcement Authority';
+  remarks             @title: 'Remarks';
 };
 
 annotate AdminService.BridgeRestrictions with @(
@@ -287,11 +354,19 @@ annotate AdminService.BridgeCapacities with @(
     FieldGroup#CapacityGeneral: {
       Label: 'General',
       Data: [
-        {Value: capacityType,  Label: 'Capacity Type'},
-        {Value: vehicleClass,  Label: 'Vehicle Class'},
-        {Value: status,        Label: 'Status'},
-        {Value: effectiveFrom, Label: 'Effective From'},
-        {Value: effectiveTo,   Label: 'Effective To'}
+        {Value: capacityType},
+        {Value: vehicleClass},
+        {Value: grossMassLimit},
+        {Value: axleMassLimit},
+        {Value: heightLimit},
+        {Value: widthLimit},
+        {Value: lengthLimit},
+        {Value: speedLimit},
+        {Value: effectiveFrom},
+        {Value: effectiveTo},
+        {Value: status},
+        {Value: reportReference},
+        {Value: remarks}
       ]
     },
 
@@ -510,6 +585,51 @@ annotate AdminService.BridgeDocuments with @(
 annotate AdminService.BridgeCapacities with {
   ID @UI.Hidden;
   bridge @UI.Hidden;
+  capacityType     @title: 'Capacity Type';
+  vehicleClass     @title: 'Vehicle Class';
+  grossMassLimit        @title: 'Gross Mass Limit (t)';
+  grossCombined         @title: 'Gross Combined Mass (t)';
+  steerAxleLimit        @title: 'Steer Axle Limit (t)';
+  singleAxleLimit       @title: 'Single Axle Limit (t)';
+  tandemGroupLimit      @title: 'Tandem Group Limit (t)';
+  triAxleGroupLimit     @title: 'Tri-Axle Group Limit (t)';
+  quadAxleGroupLimit    @title: 'Quad-Axle Group Limit (t)';
+  minClearancePosted    @title: 'Min Clearance Posted (m)';
+  designClearanceHeight @title: 'Design Clearance Height (m)';
+  lane1Clearance        @title: 'Lane 1 Clearance (m)';
+  lane2Clearance        @title: 'Lane 2 Clearance (m)';
+  clearanceSurveyDate   @title: 'Clearance Survey Date';
+  clearanceSurveyMethod @title: 'Clearance Survey Method';
+  carriagewayWidth      @title: 'Carriageway Width (m)';
+  trafficableWidth      @title: 'Trafficable Width (m)';
+  laneWidth             @title: 'Lane Width (m)';
+  leftShoulderWidth     @title: 'Left Shoulder Width (m)';
+  rightShoulderWidth    @title: 'Right Shoulder Width (m)';
+  ratingStandard        @title: 'Rating Standard';
+  ratingMethod          @title: 'Rating Method';
+  ratingFactor          @title: 'Rating Factor';
+  ratingStatus          @title: 'Rating Status';
+  ratingEngineer        @title: 'Rating Engineer';
+  ratingDate            @title: 'Rating Date';
+  lastReviewedBy        @title: 'Last Reviewed By';
+  lastReviewedDate      @title: 'Last Reviewed Date';
+  nextReviewDue         @title: 'Next Review Due';
+  reportReference       @title: 'Report Reference';
+  scourCriticalDepth    @title: 'Scour Critical Depth (m)';
+  currentScourDepth     @title: 'Current Scour Depth (m)';
+  scourSafetyMargin     @title: 'Scour Safety Margin (m)';
+  floodClosureLevel     @title: 'Flood Closure Level (m AHD)';
+  windClosureSpeed      @title: 'Wind Closure Speed (km/h)';
+  designLife            @title: 'Design Fatigue Life (years)';
+  consumedLife          @title: 'Consumed Life (%)';
+  remainingLife         @title: 'Remaining Life (%)';
+  fatigueSensitive      @title: 'Fatigue-Sensitive Structure';
+  dynamicLoadAllowance  @title: 'Dynamic Load Allowance (%)';
+  speedForAssessment    @title: 'Speed for Assessment (km/h)';
+  heavyVehiclesPerDay   @title: 'Heavy Vehicles/Day';
+  effectiveFrom         @title: 'Effective From';
+  effectiveTo           @title: 'Effective To';
+  status                @title: 'Status';
 };
 
 annotate AdminService.BridgeAttributes with {
@@ -520,10 +640,20 @@ annotate AdminService.BridgeAttributes with {
 annotate AdminService.BridgeScourAssessments with {
   ID @UI.Hidden;
   bridge @UI.Hidden;
+  assessmentDate    @title: 'Assessment Date';
+  assessmentType    @title: 'Assessment Type';
   scourRisk @(
+    title: 'Scour Risk Level',
     ValueList.entity:'ScourRiskLevels',
     Common.ValueListWithFixedValues
   );
+  measuredDepth       @title: 'Measured Scour Depth (m)';
+  floodImmunityAriYears @title: 'Flood Immunity (ARI years)';
+  mitigationStatus    @title: 'Mitigation Status';
+  assessor            @title: 'Assessor';
+  nextReviewDate      @title: 'Next Review Date';
+  reportReference     @title: 'Report Reference';
+  remarks             @title: 'Remarks';
 };
 
 annotate AdminService.BridgeDocuments with {
@@ -583,4 +713,78 @@ annotate AdminService.Bridges with {
   stock @UI.Hidden;
   price @UI.Hidden;
   currency @UI.Hidden;
+}
+
+////////////////////////////////////////////////////////////
+//
+//  Field Labels — all Bridges fields
+//
+annotate AdminService.Bridges with {
+  bridgeId               @title: 'Bridge ID';
+  bridgeName             @title: 'Bridge Name';
+  assetClass             @title: 'Asset Class';
+  state                  @title: 'State';
+  region                 @title: 'Region';
+  lga                    @title: 'Local Government Area (LGA)';
+  location               @title: 'Location Description';
+  route                  @title: 'Route';
+  routeNumber            @title: 'Route Number';
+  latitude               @title: 'Latitude';
+  longitude              @title: 'Longitude';
+  descr                  @title: 'Description';
+  assetOwner             @title: 'Asset Owner';
+  managingAuthority      @title: 'Managing Authority';
+
+  structureType          @title: 'Structure Type';
+  material               @title: 'Material';
+  yearBuilt              @title: 'Year Built';
+  designLoad             @title: 'Design Load';
+  designStandard         @title: 'Design Standard';
+  clearanceHeight        @title: 'Clearance Height (m)';
+  spanLength             @title: 'Span Length (m)';
+  totalLength            @title: 'Total Length (m)';
+  deckWidth              @title: 'Deck Width (m)';
+  spanCount              @title: 'Number of Spans';
+  numberOfLanes          @title: 'Number of Lanes';
+
+  condition              @title: 'Condition State';
+  conditionRating        @title: 'Condition Rating (1–10)';
+  structuralAdequacyRating @title: 'Structural Adequacy Rating (1–10)';
+  postingStatus          @title: 'Posting Status';
+  highPriorityAsset      @title: 'High Priority Asset';
+  lastInspectionDate     @title: 'Last Inspection Date';
+  conditionStandard      @title: 'Condition Rating Standard';
+  seismicZone            @title: 'Seismic Zone';
+  asBuiltDrawingReference @title: 'As-Built Drawing Reference';
+  scourRisk              @title: 'Scour Risk Level';
+  scourDepthLastMeasured @title: 'Scour Depth Last Measured (m)';
+  floodImmunityAriYears  @title: 'Flood Immunity (ARI years)';
+  floodImpacted          @title: 'Flood Impacted';
+  remarks                @title: 'Remarks';
+
+  loadRating             @title: 'Load Rating (t)';
+  pbsApprovalClass       @title: 'PBS Approval Class';
+  importanceLevel        @title: 'Importance Level (1–4)';
+  averageDailyTraffic    @title: 'Average Daily Traffic (ADT)';
+  heavyVehiclePercent    @title: 'Heavy Vehicle Percentage (%)';
+  freightRoute           @title: 'Freight Route';
+  overMassRoute          @title: 'Over Mass Route';
+  hmlApproved            @title: 'HML Approved';
+  bDoubleApproved        @title: 'B-Double Approved';
+  nhvrAssessed           @title: 'NHVR Assessed';
+  nhvrAssessmentDate     @title: 'NHVR Assessment Date';
+  gazetteReference       @title: 'Gazette Reference';
+  nhvrReferenceUrl       @title: 'NHVR Reference URL';
+
+  dataSource             @title: 'Data Source';
+  sourceReferenceUrl     @title: 'Source Reference URL';
+  openDataReference      @title: 'Open Data Reference';
+  sourceRecordId         @title: 'Source Record ID';
+
+  createdBy              @title: 'Created By';
+  createdAt              @title: 'Created At';
+  modifiedBy             @title: 'Last Modified By';
+  modifiedAt             @title: 'Last Modified At';
+
+  geoJson                @title: 'Bridge Geometry (GeoJSON)';
 }

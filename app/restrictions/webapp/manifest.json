@@ -104,6 +104,7 @@
             "settings": {
               "contextPath": "/Restrictions",
               "editableHeaderContent": false,
+              "sharingEnabled": false,
               "content": {
                 "body": {
                   "sections": {

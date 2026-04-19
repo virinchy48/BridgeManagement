@@ -119,6 +119,54 @@ annotate Restrictions with @(UI : {
 
 annotate AdminService.Restrictions with @odata.draft.enabled;
 annotate bridge.management.Restrictions with @fiori.draft.enabled;
+
+annotate AdminService.Restrictions with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.HeaderInfo: {
+    TypeName      : 'Restriction',
+    TypeNamePlural: 'Restrictions',
+    Title         : { Value: restrictionRef },
+    Description   : { Value: bridge.bridgeName }
+  },
+  UI.SelectionFields: [
+    restrictionRef, bridgeRef, restrictionType,
+    restrictionStatus, permitRequired, temporary, active
+  ],
+  UI.LineItem: [
+    { Value: restrictionRef,          Label: '{i18n>RestrictionRef}' },
+    { Value: bridge.bridgeId,         Label: '{i18n>BridgeID}' },
+    { Value: bridge.bridgeName,       Label: '{i18n>Bridge}' },
+    { Value: restrictionType,         Label: '{i18n>RestrictionType}' },
+    { Value: restrictionValue,        Label: '{i18n>RestrictionValue}' },
+    { Value: restrictionUnit,         Label: '{i18n>RestrictionUnit}' },
+    { Value: appliesToVehicleClass,   Label: '{i18n>AppliesToVehicleClass}' },
+    { Value: restrictionStatus,       Label: '{i18n>RestrictionStatus}' },
+    { Value: temporary,               Label: '{i18n>Temp}' },
+    { Value: permitRequired,          Label: '{i18n>PermitRequired}' },
+    { Value: effectiveFrom,           Label: '{i18n>From}' },
+    { Value: effectiveTo,             Label: '{i18n>To}' },
+    { Value: legalReference,          Label: '{i18n>Gazette}' },
+    { Value: active,                  Label: '{i18n>Active}' },
+  ],
+  UI.Identification: [
+    {
+      $Type       : 'UI.DataFieldForAction',
+      Action      : 'AdminService.deactivate',
+      Label       : 'Deactivate',
+      Criticality : #Negative,
+      ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } }
+    },
+    {
+      $Type       : 'UI.DataFieldForAction',
+      Action      : 'AdminService.reactivate',
+      Label       : 'Reactivate',
+      Criticality : #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } }
+    }
+  ]
+);
 annotate AdminService.Restrictions with {
   ID @Core.Computed;
   name @UI.Hidden: false;

@@ -1,8 +1,14 @@
 using {bridge.management as my} from '../db/schema';
 
 service AdminService {
-  entity Bridges as projection on my.Bridges;
-  entity Restrictions as projection on my.Restrictions;
+  entity Bridges      as projection on my.Bridges      actions {
+    action deactivate() returns Bridges;
+    action reactivate() returns Bridges;
+  };
+  entity Restrictions as projection on my.Restrictions actions {
+    action deactivate() returns Restrictions;
+    action reactivate() returns Restrictions;
+  };
   entity BridgeRestrictions as projection on my.BridgeRestrictions;
   entity BridgeCapacities as projection on my.BridgeCapacities;
   entity BridgeAttributes as projection on my.BridgeAttributes;
