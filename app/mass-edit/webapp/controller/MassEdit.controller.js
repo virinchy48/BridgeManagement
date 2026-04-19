@@ -614,6 +614,40 @@ sap.ui.define([
     /* ─── Micro helpers ──────────────────────────────────────────────────── */
 
     _clone:  function (rows)      { return JSON.parse(JSON.stringify(rows || [])); },
+    onShowHelp: function () {
+      var sHtml = [
+        "<h2 style='margin-top:0'>Mass Edit — How to Use</h2>",
+        "<h3>Purpose</h3>",
+        "<p>Mass Edit lets you update multiple bridge or restriction records in a single session, then save all changes in one batch.</p>",
+        "<h3>Selecting Entity Type</h3>",
+        "<p>Use the <strong>Bridges / Restrictions</strong> toggle to switch between entity types. Unsaved changes will be discarded when switching.</p>",
+        "<h3>Filtering Records</h3>",
+        "<ul>",
+        "<li><strong>Search</strong> — Filter by name or ID in real time.</li>",
+        "<li><strong>State</strong> — Filter by state/territory (Bridges only).</li>",
+        "<li><strong>Status</strong> — Filter by posting status.</li>",
+        "<li><strong>Show Changed Only</strong> — Toggle to see only rows you have edited in this session.</li>",
+        "</ul>",
+        "<h3>Editing Records</h3>",
+        "<p>Click any editable cell in the table to change its value. Edited rows are highlighted in amber.</p>",
+        "<h3>Bulk Apply</h3>",
+        "<p>Use <strong>Bulk Apply</strong> to set the same value on all selected rows at once. Select rows using the row checkboxes, choose a field and value, then click Apply.</p>",
+        "<h3>Saving</h3>",
+        "<p>Click <strong>Save Changes</strong> to persist all edits. The dirty count shows how many rows have pending changes. Use <strong>Discard</strong> to revert all unsaved edits.</p>"
+      ].join("");
+      var oDialog = new Dialog({
+        title: "Mass Edit — Help",
+        contentWidth: "560px",
+        contentHeight: "440px",
+        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
+          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+        })],
+        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.open();
+    },
+
     _config: function ()          { return ENTITY_CONFIG[this._vm().getProperty("/entityKey") || "BRIDGE"]; },
     _t:      function (key, args) { return this.getView().getModel("i18n").getResourceBundle().getText(key, args); },
     _vm:     function ()          { return this.getView().getModel("view"); }

@@ -8,6 +8,9 @@
   height="100%">
   <App>
     <Page id="uploadPage" title="{i18n>appTitle}" showHeader="true" class="massUploadPage" busy="{view>/busy}">
+      <headerContent>
+        <Button icon="sap-icon://sys-help" tooltip="How to use Mass Upload" press=".onShowHelp" type="Transparent" />
+      </headerContent>
       <content>
         <VBox class="sapUiMediumMargin">
           <Text text="{i18n>pageIntro}" wrapping="true" class="sapUiSmallMarginBottom" />
