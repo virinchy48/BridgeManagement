@@ -39,7 +39,7 @@
                     "title": "Restrictions",
                     "subtitle": "Active & Scheduled",
                     "icon": "sap-icon://alert",
-                    "targetURL": "#Restrictions-display"
+                    "targetURL": "#Restrictions-manage"
                   }
                 },
                 {
@@ -130,13 +130,13 @@
               },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=bms.bridges",
-                "url": "/operations/bridges/webapp"
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
+                "url": "/admin-bridges/webapp"
               }
             },
-            "Restrictions-display": {
+            "Restrictions-manage": {
               "semanticObject": "Restrictions",
-              "action": "display",
+              "action": "manage",
               "title": "Restrictions",
               "signature": {
                 "parameters": {},
@@ -144,8 +144,8 @@
               },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=bms.restrictions",
-                "url": "/operations/restrictions/webapp"
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.restrictions",
+                "url": "/restrictions/webapp"
               }
             },
             "MapView-display": {
