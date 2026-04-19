@@ -267,39 +267,138 @@ annotate AdminService.BridgeCapacities with @(
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : true,
   UI: {
+
+    // ── Summary columns shown in the Bridge object page Capacity tab ─────────
     LineItem: [
-      {Value: capacityType, Label: 'Capacity Type'},
-      {Value: vehicleClass, Label: 'Vehicle Class'},
-      {Value: grossMassLimit, Label: 'Gross Mass'},
-      {Value: axleMassLimit, Label: 'Axle Mass'},
-      {Value: heightLimit, Label: 'Height'},
-      {Value: widthLimit, Label: 'Width'},
-      {Value: lengthLimit, Label: 'Length'},
-      {Value: status, Label: 'Status'}
+      {Value: capacityType,       Label: 'Capacity Type'},
+      {Value: vehicleClass,       Label: 'Vehicle Class'},
+      {Value: ratingStatus,       Label: 'Rating Status'},
+      {Value: grossMassLimit,     Label: 'GVM (t)'},
+      {Value: grossCombined,      Label: 'GCM (t)'},
+      {Value: minClearancePosted, Label: 'Min Clearance (m)'},
+      {Value: ratingFactor,       Label: 'RF'},
+      {Value: nextReviewDue,      Label: 'Next Review'},
+      {Value: effectiveFrom,      Label: 'Effective From'},
+      {Value: effectiveTo,        Label: 'Effective To'},
+      {Value: status,             Label: 'Status'}
     ],
-    FieldGroup#CapacityDetails: {
+
+    // ── General ──────────────────────────────────────────────────────────────
+    FieldGroup#CapacityGeneral: {
+      Label: 'General',
       Data: [
-        {Value: capacityType},
-        {Value: vehicleClass},
-        {Value: grossMassLimit},
-        {Value: axleMassLimit},
-        {Value: heightLimit},
-        {Value: widthLimit},
-        {Value: lengthLimit},
-        {Value: speedLimit},
-        {Value: pbsLevel},
-        {Value: effectiveFrom},
-        {Value: effectiveTo},
-        {Value: status},
-        {Value: sourceReference},
-        {Value: remarks}
+        {Value: capacityType,  Label: 'Capacity Type'},
+        {Value: vehicleClass,  Label: 'Vehicle Class'},
+        {Value: status,        Label: 'Status'},
+        {Value: effectiveFrom, Label: 'Effective From'},
+        {Value: effectiveTo,   Label: 'Effective To'}
       ]
     },
+
+    // ── Mass Limits (tonnes) ─────────────────────────────────────────────────
+    FieldGroup#CapacityMassLimits: {
+      Label: 'Mass Limits (tonnes)',
+      Data: [
+        {Value: grossMassLimit,     Label: 'Gross Mass Limit / GVM (t)'},
+        {Value: grossCombined,      Label: 'Gross Combined / GCM (t)'},
+        {Value: steerAxleLimit,     Label: 'Steer Axle (t)'},
+        {Value: singleAxleLimit,    Label: 'Single Axle (t)'},
+        {Value: tandemGroupLimit,   Label: 'Tandem Axle Group (t)'},
+        {Value: triAxleGroupLimit,  Label: 'Tri-Axle Group (t)'},
+        {Value: quadAxleGroupLimit, Label: 'Quad-Axle Group (t)'}
+      ]
+    },
+
+    // ── Vertical Clearance (metres) ──────────────────────────────────────────
+    FieldGroup#CapacityVerticalClearance: {
+      Label: 'Vertical Clearance (metres)',
+      Data: [
+        {Value: minClearancePosted,    Label: 'Min Clearance Posted (m)'},
+        {Value: designClearanceHeight, Label: 'Design Clearance (m)'},
+        {Value: lane1Clearance,        Label: 'Lane 1 Clearance (m)'},
+        {Value: lane2Clearance,        Label: 'Lane 2 Clearance (m)'},
+        {Value: clearanceSurveyDate,   Label: 'Survey Date'},
+        {Value: clearanceSurveyMethod, Label: 'Survey Method'}
+      ]
+    },
+
+    // ── Horizontal Geometry (metres) ─────────────────────────────────────────
+    FieldGroup#CapacityHorizontalGeometry: {
+      Label: 'Horizontal Geometry (metres)',
+      Data: [
+        {Value: carriagewayWidth,   Label: 'Carriageway Width (m)'},
+        {Value: trafficableWidth,   Label: 'Trafficable Width (m)'},
+        {Value: laneWidth,          Label: 'Lane Width (m)'},
+        {Value: leftShoulderWidth,  Label: 'Left Shoulder (m)'},
+        {Value: rightShoulderWidth, Label: 'Right Shoulder (m)'}
+      ]
+    },
+
+    // ── AS 5100.7 Load Rating ────────────────────────────────────────────────
+    FieldGroup#CapacityLoadRating: {
+      Label: 'AS 5100.7 Load Rating',
+      Data: [
+        {Value: ratingStandard,   Label: 'Standard'},
+        {Value: ratingMethod,     Label: 'Method'},
+        {Value: ratingFactor,     Label: 'Rating Factor (RF)'},
+        {Value: ratingStatus,     Label: 'Rated'},
+        {Value: ratingEngineer,   Label: 'Rating Engineer (NER/CPEng)'},
+        {Value: ratingDate,       Label: 'Rating Date'},
+        {Value: lastReviewedBy,   Label: 'Last Reviewed By'},
+        {Value: lastReviewedDate, Label: 'Last Reviewed'},
+        {Value: nextReviewDue,    Label: 'Next Review Due'},
+        {Value: reportReference,  Label: 'Report Reference'}
+      ]
+    },
+
+    // ── Scour & Environment ──────────────────────────────────────────────────
+    FieldGroup#CapacityScour: {
+      Label: 'Scour & Environment',
+      Data: [
+        {Value: scourCriticalDepth, Label: 'Scour Critical Depth (m)'},
+        {Value: currentScourDepth,  Label: 'Current Scour Depth (m)'},
+        {Value: scourSafetyMargin,  Label: 'Safety Margin (m)'},
+        {Value: floodClosureLevel,  Label: 'Flood Closure Level (m AHD)'},
+        {Value: windClosureSpeed,   Label: 'Wind Closure Speed (km/h)'}
+      ]
+    },
+
+    // ── Fatigue Life Assessment (AS 5100.7 S11) ──────────────────────────────
+    FieldGroup#CapacityFatigue: {
+      Label: 'Fatigue Life Assessment (AS 5100.7 S11)',
+      Data: [
+        {Value: designLife,            Label: 'Design Fatigue Life (years)'},
+        {Value: consumedLife,          Label: 'Consumed Life (%)'},
+        {Value: remainingLife,         Label: 'Remaining Life (%)'},
+        {Value: fatigueSensitive,      Label: 'Fatigue-Sensitive Structure'},
+        {Value: dynamicLoadAllowance,  Label: 'Dynamic Load Allowance (%)'},
+        {Value: speedForAssessment,    Label: 'Speed for Assessment (km/h)'},
+        {Value: heavyVehiclesPerDay,   Label: 'Heavy Vehicles/Day (HHVD)'},
+        {Value: reducedSpeedCondition, Label: 'Reduced Speed Condition'},
+        {Value: criticalElement,       Label: 'Critical Element'},
+        {Value: remarks,               Label: 'Remarks'}
+      ]
+    },
+
     Facets: [
-      {$Type: 'UI.ReferenceFacet', Label: 'Capacity Details', Target: '@UI.FieldGroup#CapacityDetails'}
+      {$Type: 'UI.ReferenceFacet', Label: 'General',                                 Target: '@UI.FieldGroup#CapacityGeneral'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Mass Limits',                             Target: '@UI.FieldGroup#CapacityMassLimits'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Vertical Clearance',                      Target: '@UI.FieldGroup#CapacityVerticalClearance'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Horizontal Geometry',                     Target: '@UI.FieldGroup#CapacityHorizontalGeometry'},
+      {$Type: 'UI.ReferenceFacet', Label: 'AS 5100.7 Load Rating',                   Target: '@UI.FieldGroup#CapacityLoadRating'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Scour & Environment',                     Target: '@UI.FieldGroup#CapacityScour'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Fatigue Life Assessment (AS 5100.7 S11)', Target: '@UI.FieldGroup#CapacityFatigue'}
     ]
   }
 );
+
+// Hide managed audit fields on BridgeCapacities (they come from cuid+managed mixin)
+annotate AdminService.BridgeCapacities with {
+  createdAt  @UI.Hidden;
+  createdBy  @UI.Hidden;
+  modifiedAt @UI.Hidden;
+  modifiedBy @UI.Hidden;
+}
 
 annotate AdminService.BridgeAttributes with @(
   Capabilities.InsertRestrictions.Insertable : true,
