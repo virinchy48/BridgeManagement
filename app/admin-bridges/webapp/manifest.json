@@ -129,6 +129,14 @@
                         "placement": "After",
                         "anchor": "GeneralInformation"
                       }
+                    },
+                    "customAttributesSection": {
+                      "template": "BridgeManagement.adminbridges.ext.fragment.CustomAttributes",
+                      "title": "Custom Attributes",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "mapSection"
+                      }
                     }
                   }
                 }

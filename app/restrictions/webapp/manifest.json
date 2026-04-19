@@ -102,7 +102,21 @@
           "options": {
             "settings": {
               "contextPath": "/Restrictions",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "content": {
+                "body": {
+                  "sections": {
+                    "customAttributesSection": {
+                      "template": "BridgeManagement.restrictions.ext.fragment.CustomAttributes",
+                      "title": "Custom Attributes",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "GeneralInformation"
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }

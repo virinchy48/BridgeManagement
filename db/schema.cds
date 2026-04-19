@@ -5,6 +5,8 @@ using {
   sap
 } from '@sap/cds/common';
 
+using from './attributes-schema';
+
 namespace bridge.management;
 
 entity Bridges : managed {
@@ -309,6 +311,21 @@ entity GISConfig {
   customWmsLayers             : LargeString;
 }
 
+
+// Change document — one row per field changed per save operation
+entity ChangeLog {
+  key ID           : UUID;
+  changedAt        : Timestamp;
+  changedBy        : String(111);
+  objectType       : String(40);   // Bridge | Restriction | GISConfig | Lookup
+  objectId         : String(111);
+  objectName       : String(255);  // bridgeName / restrictionRef for display
+  fieldName        : String(111);
+  oldValue         : LargeString;
+  newValue         : LargeString;
+  changeSource     : String(40);   // OData | MassEdit | MassUpload
+  batchId          : String(111);  // groups all fields changed in one save
+}
 
 // --------------------------------------------------------------------------------
 // Temporary workaround for this situation:

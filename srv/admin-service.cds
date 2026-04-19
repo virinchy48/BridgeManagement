@@ -24,4 +24,13 @@ service AdminService {
   @readonly entity RestrictionUnits as projection on my.RestrictionUnits;
   @readonly entity RestrictionDirections as projection on my.RestrictionDirections;
   entity GISConfig as projection on my.GISConfig;
+  @readonly entity ChangeLog as projection on my.ChangeLog;
+
+  // Configurable Attributes — admin-managed metadata
+  entity AttributeGroups           as projection on my.AttributeGroups;
+  entity AttributeDefinitions      as projection on my.AttributeDefinitions;
+  entity AttributeAllowedValues    as projection on my.AttributeAllowedValues;
+  entity AttributeObjectTypeConfig as projection on my.AttributeObjectTypeConfig;
+  @readonly entity AttributeValues       as projection on my.AttributeValues;
+  @readonly entity AttributeValueHistory as projection on my.AttributeValueHistory;
 }

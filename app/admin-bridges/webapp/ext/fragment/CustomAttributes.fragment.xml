@@ -1,0 +1,12 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+  <core:HTML id="customAttrsHost" content="
+    &lt;div id='ca-bridge-root' style='font-family:72,Arial,sans-serif;margin:0.5rem'&gt;&lt;/div&gt;
+    &lt;script&gt;
+      (function() {
+        var s = document.createElement('script');
+        s.src = '../webapp/ext/controller/CustomAttributesInit.js?' + Date.now();
+        document.head.appendChild(s);
+      })();
+    &lt;/script&gt;
+  "/>
+</core:FragmentDefinition>

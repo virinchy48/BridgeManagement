@@ -2,6 +2,7 @@ const cds = require('@sap/cds')
 const XLSX = require('xlsx')
 
 const { SELECT, INSERT, UPDATE } = cds.ql
+const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 
 const LOOKUP_COLUMNS = [
   column('code', 'string', { required: true }),
@@ -239,6 +240,40 @@ async function buildWorkbookTemplate() {
     XLSX.utils.book_append_sheet(workbook, sheet, dataset.name)
   }
 
+  // Attribute template sheets — one per object type
+  for (const objectType of ['bridge', 'restriction']) {
+    try {
+      const attrGroups = await db.run(
+        SELECT.from('bridge.management.AttributeGroups').where({ objectType, status: 'Active' }).orderBy('displayOrder')
+      );
+      if (!attrGroups.length) continue;
+      const allDefs = await db.run(
+        SELECT.from('bridge.management.AttributeDefinitions').where({ objectType, status: 'Active' }).orderBy('displayOrder')
+      );
+      const allConfigs = await db.run(
+        SELECT.from('bridge.management.AttributeObjectTypeConfig').where({ objectType, enabled: true })
+      );
+      const enabledDefIds = new Set(allConfigs.map(c => c.attribute_ID));
+      const activeDefs = allDefs.filter(d => enabledDefIds.has(d.ID));
+      if (!activeDefs.length) continue;
+
+      const idCol = objectType === 'bridge' ? 'bridgeId' : 'restrictionRef';
+      const attrHeaders = activeDefs.map(d => `${d.name} (${d.internalKey})`);
+      const requiredRow = [' ', ...activeDefs.map(d => {
+        const cfg = allConfigs.find(c => c.attribute_ID === d.ID);
+        return cfg?.required ? '*' : '';
+      })];
+      const headerRow = [idCol, ...attrHeaders];
+
+      const sheetLabel = `${objectType.charAt(0).toUpperCase()}${objectType.slice(1)}Attributes`;
+      const attrSheet = XLSX.utils.aoa_to_sheet([requiredRow, headerRow]);
+      attrSheet['!cols'] = headerRow.map(h => ({ wch: Math.max(h.length + 2, 16) }));
+      XLSX.utils.book_append_sheet(workbook, attrSheet, sheetLabel);
+    } catch (_) {
+      // Attribute tables may not exist in dev — skip gracefully
+    }
+  }
+
   const referenceSheet = XLSX.utils.aoa_to_sheet(buildReferenceExamplesRows(datasetRowsByName))
   referenceSheet['!cols'] = [{ wch: 18 }, { wch: 26 }, { wch: 16 }, { wch: 24 }, { wch: 120 }]
   XLSX.utils.book_append_sheet(workbook, referenceSheet, 'DropdownExamples')
@@ -257,7 +292,7 @@ async function buildCsvTemplate(datasetName) {
   return Buffer.from(XLSX.utils.sheet_to_csv(sheet), 'utf8')
 }
 
-async function importUpload({ buffer, fileName, datasetName }) {
+async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
   if (!buffer?.length) {
     throw new Error('Uploaded file is empty')
   }
@@ -265,6 +300,8 @@ async function importUpload({ buffer, fileName, datasetName }) {
   const lowerName = (fileName || '').toLowerCase()
   const db = await cds.connect.to('db')
   const tx = db.tx()
+  const batchId = cds.utils.uuid()
+  const auditContext = { db, batchId, changedBy: uploadedBy || 'system' }
 
   try {
     let summaries
@@ -272,12 +309,79 @@ async function importUpload({ buffer, fileName, datasetName }) {
     let warnings = []
 
     if (lowerName.endsWith('.xlsx')) {
-      const result = await importWorkbook(tx, buffer, datasetName)
+      const result = await importWorkbook(tx, buffer, datasetName, auditContext)
       summaries = result.summaries
       skipped = result.skipped
       warnings = result.warnings
+
+      // Process attribute value sheets (BridgeAttributes, RestrictionAttributes)
+      const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+      const attrSheetMap = { BridgeAttributes: 'bridge', RestrictionAttributes: 'restriction' }
+      for (const [sheetName, objectType] of Object.entries(attrSheetMap)) {
+        const attrSheet = workbook.Sheets[sheetName]
+        if (!attrSheet) continue
+        const attrRows = XLSX.utils.sheet_to_json(attrSheet, { header: 1, defval: null })
+        if (attrRows.length < 3) continue
+        // Row 0 = required flags, Row 1 = headers
+        const headerRow = attrRows[1] || []
+        const idCol = objectType === 'bridge' ? 'bridgeId' : 'restrictionRef'
+        const idColIdx = headerRow.findIndex(h => h === idCol)
+        if (idColIdx === -1) continue
+
+        const idLookupEntity = objectType === 'bridge' ? 'bridge.management.Bridges' : 'bridge.management.Restrictions'
+        const refField = objectType === 'bridge' ? 'bridgeId' : 'restrictionRef'
+        const allObjs = await db.run(SELECT.from(idLookupEntity).columns('ID', refField))
+        const idByRef = new Map(allObjs.map(o => [o[refField], String(o['ID'])]))
+
+        const allDefs = await db.run(
+          SELECT.from('bridge.management.AttributeDefinitions').where({ objectType, status: 'Active' })
+        )
+        const defByKey = new Map(allDefs.map(d => [d.internalKey, d]))
+
+        // Map column index → attribute key
+        const colAttrMap = headerRow.map(h => {
+          const m = String(h || '').match(/\(([^)]+)\)$/)
+          return m ? defByKey.get(m[1]) || null : null
+        })
+
+        for (let ri = 2; ri < attrRows.length; ri++) {
+          const row = attrRows[ri]
+          const refVal = row[idColIdx] != null ? String(row[idColIdx]).trim() : ''
+          if (!refVal) continue
+          const objectId = idByRef.get(refVal)
+          if (!objectId) continue
+
+          for (let ci = 0; ci < colAttrMap.length; ci++) {
+            const def = colAttrMap[ci]
+            if (!def) continue
+            const rawVal = row[ci]
+            if (rawVal === null || rawVal === undefined) continue
+            try {
+              // Upsert value
+              const existing = await db.run(
+                SELECT.one.from('bridge.management.AttributeValues')
+                  .where({ objectType, objectId, attributeKey: def.internalKey })
+              )
+              const typedEntry = {
+                objectType, objectId, attributeKey: def.internalKey,
+                valueText: ['Text','SingleSelect','MultiSelect'].includes(def.dataType) ? String(rawVal) : null,
+                valueInteger: def.dataType === 'Integer' ? parseInt(rawVal, 10) : null,
+                valueDecimal: def.dataType === 'Decimal' ? parseFloat(rawVal) : null,
+                valueDate: def.dataType === 'Date' ? String(rawVal) : null,
+                valueBoolean: def.dataType === 'Boolean' ? Boolean(rawVal) : null,
+                modifiedBy: 'import', modifiedAt: new Date().toISOString()
+              }
+              if (existing) {
+                await db.run(UPDATE('bridge.management.AttributeValues').set(typedEntry).where({ ID: existing.ID }))
+              } else {
+                await db.run(INSERT.into('bridge.management.AttributeValues').entries({ ID: cds.utils.uuid(), ...typedEntry, createdBy: 'import', createdAt: new Date().toISOString() }))
+              }
+            } catch (_) { /* skip bad rows */ }
+          }
+        }
+      }
     } else if (lowerName.endsWith('.csv')) {
-      const result = await importCsv(tx, buffer, datasetName)
+      const result = await importCsv(tx, buffer, datasetName, auditContext)
       summaries = [result.summary]
       warnings = result.warnings
     } else {
@@ -285,6 +389,13 @@ async function importUpload({ buffer, fileName, datasetName }) {
     }
 
     await tx.commit()
+
+    // Write audit after commit
+    if (auditContext._auditQueue) {
+      for (const entry of auditContext._auditQueue) {
+        await writeChangeLogs(db, entry)
+      }
+    }
 
     const processed = summaries.reduce((total, summary) => total + summary.processed, 0)
     return {
@@ -427,7 +538,7 @@ function buildValidationMessage(totalCount, validCount, warningCount, errorCount
   return `${totalCount} row(s) validated successfully.`
 }
 
-async function importWorkbook(tx, buffer, datasetName) {
+async function importWorkbook(tx, buffer, datasetName, auditContext) {
   const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
   const summaries = []
   const skipped = []
@@ -441,7 +552,7 @@ async function importWorkbook(tx, buffer, datasetName) {
       continue
     }
     const rows = parseSheetRows(sheet, dataset)
-    summaries.push(await dataset.importer(tx, dataset, rows, warnings))
+    summaries.push(await dataset.importer(tx, dataset, rows, warnings, auditContext))
   }
 
   if (!summaries.length) {
@@ -454,7 +565,7 @@ async function importWorkbook(tx, buffer, datasetName) {
   return { summaries, skipped, warnings }
 }
 
-async function importCsv(tx, buffer, datasetName) {
+async function importCsv(tx, buffer, datasetName, auditContext) {
   if (!datasetName || datasetName === 'All') {
     throw new Error('Select a specific dataset for CSV uploads, or use the Excel template for All.')
   }
@@ -470,7 +581,7 @@ async function importCsv(tx, buffer, datasetName) {
 
   const warnings = []
   const rows = parseSheetRows(sheet, dataset)
-  const summary = await dataset.importer(tx, dataset, rows, warnings)
+  const summary = await dataset.importer(tx, dataset, rows, warnings, auditContext)
   return { summary, warnings }
 }
 
@@ -480,7 +591,13 @@ async function readDatasetRows(dbOrTx, dataset) {
   )
 }
 
-async function importLookupRows(tx, dataset, rows, warnings) {
+function queueAudit(auditContext, entry) {
+  if (!auditContext) return
+  if (!auditContext._auditQueue) auditContext._auditQueue = []
+  auditContext._auditQueue.push(entry)
+}
+
+async function importLookupRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
 
   if (!normalized.length) {
@@ -503,20 +620,47 @@ async function importLookupRows(tx, dataset, rows, warnings) {
 
   if (inserts.length) {
     await tx.run(INSERT.into(dataset.entity).entries(inserts.map(stripMetadata)))
+    for (const row of inserts) {
+      queueAudit(auditContext, {
+        objectType: 'Lookup',
+        objectId:   `${dataset.name}:${row.code}`,
+        objectName: `${dataset.label} / ${row.code}`,
+        source:     'MassUpload',
+        batchId:    auditContext?.batchId,
+        changedBy:  auditContext?.changedBy || 'system',
+        changes:    [{ fieldName: 'code', oldValue: '', newValue: row.code },
+                     { fieldName: 'name', oldValue: '', newValue: row.name || '' }]
+      })
+    }
   }
 
   for (const row of updates) {
+    const oldRow = await fetchCurrentRecord(tx, dataset.entity, { code: row.code })
     await tx.run(
       UPDATE(dataset.entity)
         .set({ name: row.name, descr: row.descr })
         .where({ code: row.code })
     )
+    if (oldRow) {
+      const changes = diffRecords({ name: oldRow.name, descr: oldRow.descr }, { name: row.name, descr: row.descr })
+      if (changes.length) {
+        queueAudit(auditContext, {
+          objectType: 'Lookup',
+          objectId:   `${dataset.name}:${row.code}`,
+          objectName: `${dataset.label} / ${row.code}`,
+          source:     'MassUpload',
+          batchId:    auditContext?.batchId,
+          changedBy:  auditContext?.changedBy || 'system',
+          changes
+        })
+      }
+    }
   }
 
   return buildSummary(dataset, normalized.length, inserts.length, updates.length)
 }
 
-async function importBridgeRows(tx, dataset, rows, warnings) {
+async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
 
   if (!normalized.length) {
@@ -554,20 +698,52 @@ async function importBridgeRows(tx, dataset, rows, warnings) {
 
   if (inserts.length) {
     await tx.run(INSERT.into(dataset.entity).entries(inserts.map(stripMetadata)))
+    for (const row of inserts) {
+      queueAudit(auditContext, {
+        objectType: 'Bridge',
+        objectId:   String(row.ID),
+        objectName: row.bridgeName || String(row.ID),
+        source:     'MassUpload',
+        batchId:    auditContext?.batchId,
+        changedBy:  auditContext?.changedBy || 'system',
+        changes:    Object.entries(stripMetadata(row))
+          .filter(([k, v]) => !['__rowNumber'].includes(k) && v != null && v !== '')
+          .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+      })
+    }
   }
 
   for (const row of updates) {
+    const oldRecord = await fetchCurrentRecord(tx, dataset.entity, { ID: row.ID })
+    const patch = stripPrimaryKey(row, ['ID'])
     await tx.run(
       UPDATE(dataset.entity)
-        .set(stripPrimaryKey(row, ['ID']))
+        .set(patch)
         .where({ ID: row.ID })
     )
+    if (oldRecord) {
+      const changes = diffRecords(
+        Object.fromEntries(Object.keys(patch).map(k => [k, oldRecord[k]])),
+        patch
+      )
+      if (changes.length) {
+        queueAudit(auditContext, {
+          objectType: 'Bridge',
+          objectId:   String(row.ID),
+          objectName: oldRecord.bridgeName || row.bridgeName || String(row.ID),
+          source:     'MassUpload',
+          batchId:    auditContext?.batchId,
+          changedBy:  auditContext?.changedBy || 'system',
+          changes
+        })
+      }
+    }
   }
 
   return buildSummary(dataset, normalized.length, inserts.length, updates.length)
 }
 
-async function importRestrictionRows(tx, dataset, rows, warnings) {
+async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
 
   if (!normalized.length) {
@@ -614,14 +790,46 @@ async function importRestrictionRows(tx, dataset, rows, warnings) {
 
   if (inserts.length) {
     await tx.run(INSERT.into(dataset.entity).entries(inserts.map(stripMetadata)))
+    for (const row of inserts) {
+      queueAudit(auditContext, {
+        objectType: 'Restriction',
+        objectId:   row.ID,
+        objectName: row.restrictionRef || row.ID,
+        source:     'MassUpload',
+        batchId:    auditContext?.batchId,
+        changedBy:  auditContext?.changedBy || 'system',
+        changes:    Object.entries(stripMetadata(row))
+          .filter(([k, v]) => !['__rowNumber'].includes(k) && v != null && v !== '')
+          .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+      })
+    }
   }
 
   for (const row of updates) {
+    const oldRecord = await fetchCurrentRecord(tx, dataset.entity, { ID: row.ID })
+    const patch = stripPrimaryKey(row, ['ID'])
     await tx.run(
       UPDATE(dataset.entity)
-        .set(stripPrimaryKey(row, ['ID']))
+        .set(patch)
         .where({ ID: row.ID })
     )
+    if (oldRecord) {
+      const changes = diffRecords(
+        Object.fromEntries(Object.keys(patch).map(k => [k, oldRecord[k]])),
+        patch
+      )
+      if (changes.length) {
+        queueAudit(auditContext, {
+          objectType: 'Restriction',
+          objectId:   row.ID,
+          objectName: oldRecord.restrictionRef || row.restrictionRef || row.ID,
+          source:     'MassUpload',
+          batchId:    auditContext?.batchId,
+          changedBy:  auditContext?.changedBy || 'system',
+          changes
+        })
+      }
+    }
   }
 
   return buildSummary(dataset, normalized.length, inserts.length, updates.length)

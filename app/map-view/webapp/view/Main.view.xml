@@ -299,8 +299,8 @@
                         class="nhvrLayerHint" />
                   <RangeSlider
                     id="timeSlider"
-                    min="{view>/limits/minYear}"
-                    max="{view>/limits/maxYear}"
+                    min="1900"
+                    max="2030"
                     value="{view>/timeSlider/fromYear}"
                     value2="{view>/timeSlider/toYear}"
                     showAdvancedTooltip="true"

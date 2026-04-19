@@ -84,6 +84,14 @@ modules:
           artifacts:
             - restrictions.zip
           target-path: app/
+        - name: BridgeManagementauditreport
+          artifacts:
+            - audit-report.zip
+          target-path: app/
+        - name: BridgeManagementattributesadmin
+          artifacts:
+            - attributes-admin.zip
+          target-path: app/
     requires:
       - name: BridgeManagement-auth
       - name: srv-api
@@ -129,6 +137,28 @@ modules:
   - name: BridgeManagementrestrictions
     type: html5
     path: app/restrictions
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms:
+        []
+  - name: BridgeManagementauditreport
+    type: html5
+    path: app/audit-report
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms:
+        []
+  - name: BridgeManagementattributesadmin
+    type: html5
+    path: app/attributes-admin
     build-parameters:
       build-result: dist
       builder: custom

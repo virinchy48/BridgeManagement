@@ -9,6 +9,10 @@ const {
   validateUpload
 } = require('./mass-upload')
 
+const mountAttributesApi = require('./attributes-api')
+
+const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
+
 const { SELECT, UPDATE } = cds.ql
 
 const MASS_EDIT_COLUMNS = [
@@ -250,10 +254,12 @@ async function loadMassEditBridges() {
   }))
 }
 
-async function saveMassEditBridges(updates) {
+async function saveMassEditBridges(updates, { user } = {}) {
   const db = await cds.connect.to('db')
   const tx = db.tx()
   let updated = 0
+  const batchId = cds.utils.uuid()
+  const auditEntries = []
 
   try {
     for (const update of updates || []) {
@@ -276,15 +282,42 @@ async function saveMassEditBridges(updates) {
 
       if (!Object.keys(patch).length) continue
 
+      // Fetch old values before overwriting
+      const oldRecord = await fetchCurrentRecord(db, 'bridge.management.Bridges', { ID: id })
+
       await tx.run(
         UPDATE('bridge.management.Bridges')
           .set(patch)
           .where({ ID: id })
       )
       updated += 1
+
+      if (oldRecord) {
+        const changes = diffRecords(
+          Object.fromEntries(Object.keys(patch).map(k => [k, oldRecord[k]])),
+          patch
+        )
+        if (changes.length) {
+          auditEntries.push({
+            objectType: 'Bridge',
+            objectId:   String(id),
+            objectName: oldRecord.bridgeName || String(id),
+            source:     'MassEdit',
+            batchId,
+            changedBy:  user || 'system',
+            changes
+          })
+        }
+      }
     }
 
     await tx.commit()
+
+    // Write audit after commit so it is never rolled back with business data
+    for (const entry of auditEntries) {
+      await writeChangeLogs(db, entry)
+    }
+
     return { updated }
   } catch (error) {
     await tx.rollback(error)
@@ -315,10 +348,12 @@ async function loadMassEditRestrictions() {
   }))
 }
 
-async function saveMassEditRestrictions(updates) {
+async function saveMassEditRestrictions(updates, { user } = {}) {
   const db = await cds.connect.to('db')
   const tx = db.tx()
   let updated = 0
+  const batchId = cds.utils.uuid()
+  const auditEntries = []
 
   try {
     for (const update of updates || []) {
@@ -341,15 +376,40 @@ async function saveMassEditRestrictions(updates) {
 
       if (!Object.keys(patch).length) continue
 
+      const oldRecord = await fetchCurrentRecord(db, 'bridge.management.Restrictions', { ID: id })
+
       await tx.run(
         UPDATE('bridge.management.Restrictions')
           .set(patch)
           .where({ ID: id })
       )
       updated += 1
+
+      if (oldRecord) {
+        const changes = diffRecords(
+          Object.fromEntries(Object.keys(patch).map(k => [k, oldRecord[k]])),
+          patch
+        )
+        if (changes.length) {
+          auditEntries.push({
+            objectType: 'Restriction',
+            objectId:   id,
+            objectName: oldRecord.restrictionRef || id,
+            source:     'MassEdit',
+            batchId,
+            changedBy:  user || 'system',
+            changes
+          })
+        }
+      }
     }
 
     await tx.commit()
+
+    for (const entry of auditEntries) {
+      await writeChangeLogs(db, entry)
+    }
+
     return { updated }
   } catch (error) {
     await tx.rollback(error)
@@ -629,32 +689,52 @@ async function loadMapRestrictions({ bbox } = {}) {
     });
 }
 
-function buildBridgesCsv(bridges) {
+function buildBridgesCsv(bridges, attrCols = [], attrValues = new Map()) {
   const FIELDS = ['ID','bridgeId','bridgeName','state','latitude','longitude','postingStatus',
     'conditionRating','yearBuilt','structureType','route','region','clearanceHeight','spanLength',
     'assetOwner','scourRisk','nhvrAssessed','freightRoute','overMassRoute','hmlApproved','bDoubleApproved'];
-  const header = FIELDS.join(',');
-  const rows = bridges.map(b => FIELDS.map(f => {
-    const v = b[f];
-    if (v == null) return '';
-    const s = String(v);
-    return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
-  }).join(','));
+  const attrHeaders = attrCols.map(c => c.label);
+  const header = [...FIELDS, ...attrHeaders].join(',');
+  const rows = bridges.map(b => {
+    const objVals = attrValues.get(String(b.ID)) || new Map();
+    const coreVals = FIELDS.map(f => {
+      const v = b[f];
+      if (v == null) return '';
+      const s = String(v);
+      return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+    });
+    const attrVals = attrCols.map(c => {
+      const v = objVals.get(c.key) || '';
+      const s = String(v);
+      return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+    });
+    return [...coreVals, ...attrVals].join(',');
+  });
   return header + '\n' + rows.join('\n');
 }
 
-function buildRestrictionsCsv(restrictions) {
+function buildRestrictionsCsv(restrictions, attrCols = [], attrValues = new Map()) {
   const FIELDS = ['ID','restrictionRef','bridgeRef','bridgeName','state','restrictionType',
     'restrictionCategory','restrictionValue','restrictionUnit','restrictionStatus',
     'grossMassLimit','axleMassLimit','heightLimit','widthLimit','lengthLimit','speedLimit',
     'permitRequired','escortRequired','effectiveFrom','effectiveTo','approvedBy','direction'];
-  const header = FIELDS.join(',');
-  const rows = restrictions.map(r => FIELDS.map(f => {
-    const v = r[f];
-    if (v == null) return '';
-    const s = String(v);
-    return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
-  }).join(','));
+  const attrHeaders = attrCols.map(c => c.label);
+  const header = [...FIELDS, ...attrHeaders].join(',');
+  const rows = restrictions.map(r => {
+    const objVals = attrValues.get(String(r.ID)) || new Map();
+    const coreVals = FIELDS.map(f => {
+      const v = r[f];
+      if (v == null) return '';
+      const s = String(v);
+      return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+    });
+    const attrVals = attrCols.map(c => {
+      const v = objVals.get(c.key) || '';
+      const s = String(v);
+      return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+    });
+    return [...coreVals, ...attrVals].join(',');
+  });
   return header + '\n' + rows.join('\n');
 }
 
@@ -899,7 +979,8 @@ cds.on('bootstrap', (app) => {
       const result = await importUpload({
         buffer,
         fileName,
-        datasetName: dataset
+        datasetName: dataset,
+        uploadedBy: req.user?.id || req.headers['x-user-name'] || 'system'
       })
       res.json(result)
     } catch (error) {
@@ -970,10 +1051,38 @@ cds.on('bootstrap', (app) => {
       const layer = (req.query.layer || 'bridges').toLowerCase();
       const bbox = req.query.bbox;
 
+      // Helper: load attribute config + values for a layer
+      async function loadAttrData(objectType, objectIds) {
+        try {
+          const db2 = await cds.connect.to('db');
+          const configs = await db2.run(
+            SELECT.from('bridge.management.AttributeObjectTypeConfig').where({ objectType, enabled: true })
+          );
+          if (!configs.length) return { attrCols: [], attrValues: new Map() };
+          const defIds = configs.map(c => c.attribute_ID);
+          const defs = await db2.run(
+            SELECT.from('bridge.management.AttributeDefinitions')
+              .where({ status: 'Active' })
+          );
+          const activeDefs = defs.filter(d => defIds.includes(d.ID));
+          const attrCols = activeDefs.map(d => ({ label: `${d.name} (${d.internalKey})`, key: d.internalKey }));
+          const allVals = objectIds.length
+            ? await db2.run(SELECT.from('bridge.management.AttributeValues').where({ objectType }))
+            : [];
+          const attrValues = new Map();
+          for (const v of allVals) {
+            if (!attrValues.has(v.objectId)) attrValues.set(v.objectId, new Map());
+            attrValues.get(v.objectId).set(v.attributeKey, v.valueText ?? v.valueInteger ?? v.valueDecimal ?? v.valueDate ?? v.valueBoolean ?? '');
+          }
+          return { attrCols, attrValues };
+        } catch (_) { return { attrCols: [], attrValues: new Map() }; }
+      }
+
       if (layer === 'restrictions') {
         const restrictions = await loadMapRestrictions({ bbox });
+        const { attrCols, attrValues } = await loadAttrData('restriction', restrictions.map(r => String(r.ID)));
         if (format === 'csv') {
-          const csv = buildRestrictionsCsv(restrictions);
+          const csv = buildRestrictionsCsv(restrictions, attrCols, attrValues);
           res.setHeader('Content-Type', 'text/csv; charset=utf-8');
           res.setHeader('Content-Disposition', 'attachment; filename="bridge-restrictions.csv"');
           return res.send(csv);
@@ -993,8 +1102,9 @@ cds.on('bootstrap', (app) => {
 
       // default: bridges
       const bridges = await loadMapBridges({ bbox });
+      const { attrCols, attrValues } = await loadAttrData('bridge', bridges.map(b => String(b.ID)));
       if (format === 'csv') {
-        const csv = buildBridgesCsv(bridges);
+        const csv = buildBridgesCsv(bridges, attrCols, attrValues);
         res.setHeader('Content-Type', 'text/csv; charset=utf-8');
         res.setHeader('Content-Disposition', 'attachment; filename="bridges.csv"');
         return res.send(csv);
@@ -1101,7 +1211,8 @@ cds.on('bootstrap', (app) => {
       if (!Array.isArray(updates) || !updates.length) {
         return res.status(400).json({ error: { message: 'updates must be a non-empty array' } })
       }
-      const result = await saveMassEditBridges(updates)
+      const user = req.user?.id || req.headers['x-user-name'] || 'system'
+      const result = await saveMassEditBridges(updates, { user })
       res.json(result)
     } catch (error) {
       res.status(422).json({ error: { message: error.message || 'Failed to save bridge updates' } })
@@ -1114,7 +1225,8 @@ cds.on('bootstrap', (app) => {
       if (!Array.isArray(updates) || !updates.length) {
         return res.status(400).json({ error: { message: 'updates must be a non-empty array' } })
       }
-      const result = await saveMassEditRestrictions(updates)
+      const user = req.user?.id || req.headers['x-user-name'] || 'system'
+      const result = await saveMassEditRestrictions(updates, { user })
       res.json(result)
     } catch (error) {
       res.status(422).json({ error: { message: error.message || 'Failed to save restriction updates' } })
@@ -1122,6 +1234,63 @@ cds.on('bootstrap', (app) => {
   })
 
   app.use('/mass-edit/api', massEditRouter)
+  mountAttributesApi(app)
+
+  // ── Audit Report API ─────────────────────────────────────────────────────
+  const auditRouter = express.Router()
+
+  auditRouter.get('/changes', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const { objectType, objectId, user: changedBy, source, from, to, batchId } = req.query
+
+      let query = SELECT.from('bridge.management.ChangeLog')
+        .columns('ID','changedAt','changedBy','objectType','objectId','objectName',
+                 'fieldName','oldValue','newValue','changeSource','batchId')
+        .orderBy('changedAt desc', 'objectType', 'objectId', 'batchId')
+        .limit(5000)
+
+      const filters = []
+      if (objectType) filters.push({ objectType })
+      if (objectId)   filters.push({ objectId })
+      if (changedBy)  filters.push({ changedBy })
+      if (source)     filters.push({ changeSource: source })
+      if (batchId)    filters.push({ batchId })
+
+      for (const filter of filters) {
+        query = query.where(filter)
+      }
+      if (from) query = query.where('changedAt >=', new Date(from).toISOString())
+      if (to)   query = query.where('changedAt <=', new Date(to + 'T23:59:59Z').toISOString())
+
+      const rows = await db.run(query)
+      res.json({ changes: rows || [] })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load change log' } })
+    }
+  })
+
+  auditRouter.get('/summary', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const [totalChanges, byType, bySource, recentUsers] = await Promise.all([
+        db.run(SELECT.one.from('bridge.management.ChangeLog').columns('count(1) as cnt')),
+        db.run(SELECT.from('bridge.management.ChangeLog').columns('objectType', 'count(1) as cnt').groupBy('objectType')),
+        db.run(SELECT.from('bridge.management.ChangeLog').columns('changeSource', 'count(1) as cnt').groupBy('changeSource')),
+        db.run(SELECT.from('bridge.management.ChangeLog').columns('changedBy', 'count(1) as cnt').groupBy('changedBy').orderBy('cnt desc').limit(10))
+      ])
+      res.json({
+        totalChanges: Number(totalChanges?.cnt || 0),
+        byObjectType: byType || [],
+        bySource: bySource || [],
+        topUsers: recentUsers || []
+      })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load audit summary' } })
+    }
+  })
+
+  app.use('/audit/api', auditRouter)
 })
 
 cds.on('served', async () => {
