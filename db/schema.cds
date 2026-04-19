@@ -91,8 +91,10 @@ entity Bridges : managed {
       currency     : Currency;
 }
 
-/** Hierarchically organized Code List for Restrictions */
-entity Restrictions : cuid, sap.common.CodeList {
+/** Hierarchically organized Restrictions */
+entity Restrictions : cuid, managed {
+  name                : String(255);
+  descr               : LargeString;
   restrictionRef      : String(40);
   bridgeRef           : String(40);
   bridge              : Association to Bridges;

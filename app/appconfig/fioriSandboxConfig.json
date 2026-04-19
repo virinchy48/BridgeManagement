@@ -172,8 +172,8 @@
               },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=bms.massupload",
-                "url": "/bms-business-admin/mass-upload/webapp"
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.massupload",
+                "url": "/mass-upload/webapp"
               }
             },
             "BmsAdmin-manage": {
@@ -200,8 +200,8 @@
               },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=bms.massedit",
-                "url": "/bms-business-admin/mass-edit/webapp"
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.massedit",
+                "url": "/mass-edit/webapp"
               }
             }
           }
