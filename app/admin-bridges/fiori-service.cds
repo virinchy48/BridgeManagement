@@ -149,14 +149,20 @@ annotate AdminService.Bridges with @(
         Action      : 'AdminService.deactivate',
         Label       : 'Deactivate',
         Criticality : #Negative,
-        ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'status' }, 'Inactive'] } }
+        ![@UI.Hidden]: { $edmJson: { $Or: [
+          { $Eq: [{ $Path: 'status' }, 'Inactive'] },
+          { $Not: { $Path: 'IsActiveEntity' } }
+        ] } }
       },
       {
         $Type       : 'UI.DataFieldForAction',
         Action      : 'AdminService.reactivate',
         Label       : 'Reactivate',
         Criticality : #Positive,
-        ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Inactive'] } }
+        ![@UI.Hidden]: { $edmJson: { $Or: [
+          { $Ne: [{ $Path: 'status' }, 'Inactive'] },
+          { $Not: { $Path: 'IsActiveEntity' } }
+        ] } }
       }
     ]
   }

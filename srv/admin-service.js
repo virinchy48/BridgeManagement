@@ -37,6 +37,10 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   })
 
   // Soft-delete: deactivate / reactivate Bridges (use db directly to bypass draft flow)
+  // Block actions on draft entities — user must save/discard first
+  this.on('deactivate', Bridges.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate', Bridges.drafts, req => req.error(409, 'Save or discard your changes before reactivating.'))
+
   this.on('deactivate', Bridges, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
@@ -51,6 +55,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   })
 
   // Soft-delete: deactivate / reactivate Restrictions (use db directly to bypass draft flow)
+  this.on('deactivate', Restrictions.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate', Restrictions.drafts, req => req.error(409, 'Save or discard your changes before reactivating.'))
+
   this.on('deactivate', Restrictions, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')

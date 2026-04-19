@@ -156,14 +156,20 @@ annotate AdminService.Restrictions with @(
       Action      : 'AdminService.deactivate',
       Label       : 'Deactivate',
       Criticality : #Negative,
-      ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } }
+      ![@UI.Hidden]: { $edmJson: { $Or: [
+        { $Eq: [{ $Path: 'active' }, false] },
+        { $Not: { $Path: 'IsActiveEntity' } }
+      ] } }
     },
     {
       $Type       : 'UI.DataFieldForAction',
       Action      : 'AdminService.reactivate',
       Label       : 'Reactivate',
       Criticality : #Positive,
-      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } }
+      ![@UI.Hidden]: { $edmJson: { $Or: [
+        { $Ne: [{ $Path: 'active' }, false] },
+        { $Not: { $Path: 'IsActiveEntity' } }
+      ] } }
     }
   ]
 );

@@ -155,10 +155,10 @@ sap.ui.define([
   }
 
   return {
-    onContextChange: function (event) {
+    onContextChange: async function (event) {
       var host = event.getSource();
       var model = getModel(host);
-      var bridgeId = getBridgeId(host);
+      var bridgeId = await resolveBridgeId(host);
       if (bridgeId && bridgeId !== model.getProperty("/bridgeId")) {
         load(host);
       }

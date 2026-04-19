@@ -120,6 +120,20 @@
               "entitySet": "Bridges",
               "editableHeaderContent": false,
               "sharingEnabled": false,
+              "controlConfiguration": {
+                "capacities/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": { "enablePaste": false }
+                },
+                "restrictions/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": { "enablePaste": false }
+                },
+                "scourAssessments/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": { "enablePaste": false }
+                },
+                "documents/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": { "enablePaste": false }
+                }
+              },
               "content": {
                 "body": {
                   "sections": {
