@@ -34,7 +34,7 @@
             <ToolbarSpacer/>
             <Button icon="sap-icon://add" text="Add Group" press=".onAddGroup"/>
           </Toolbar>
-          <List id="groupList" mode="SingleSelectMaster" selectionChange=".onGroupSelect" noDataText="No groups defined">
+          <List id="groupList" items="{/}" mode="SingleSelectMaster" selectionChange=".onGroupSelect" noDataText="No groups defined">
             <StandardListItem title="{name}" description="{internalKey}" info="{status}" infoState="{= ${status} === 'Active' ? 'Success' : 'None'}"/>
           </List>
         </Panel>
@@ -47,7 +47,7 @@
             <ToolbarSpacer/>
             <Button icon="sap-icon://add" text="Add Attribute" press=".onAddAttribute"/>
           </Toolbar>
-          <List id="attrList" mode="SingleSelectMaster" selectionChange=".onAttrSelect" noDataText="No attributes in this group">
+          <List id="attrList" items="{/}" mode="SingleSelectMaster" selectionChange=".onAttrSelect" noDataText="No attributes in this group">
             <StandardListItem title="{name}" description="{= ${dataType} + (${unit} ? ' (' + ${unit} + ')' : '')}" info="{status}" infoState="{= ${status} === 'Active' ? 'Success' : 'None'}"/>
           </List>
         </Panel>
@@ -73,7 +73,7 @@
           </form:SimpleForm>
 
           <Title text="Object Type Configuration" level="H5" class="sapUiSmallMarginBegin sapUiTinyMarginTop"/>
-          <Table id="configTable" noDataText="No object type configs">
+          <Table id="configTable" items="{/}" noDataText="No object type configs">
             <columns>
               <Column><Text text="Object Type"/></Column>
               <Column><Text text="Enabled"/></Column>
@@ -99,7 +99,7 @@
             <ToolbarSpacer/>
             <Button icon="sap-icon://add" text="Add Value" press=".onAddAllowedValue"/>
           </Toolbar>
-          <Table id="allowedValuesTable" noDataText="Not applicable for this data type">
+          <Table id="allowedValuesTable" items="{/}" noDataText="Not applicable for this data type">
             <columns>
               <Column><Text text="Value"/></Column>
               <Column><Text text="Label"/></Column>

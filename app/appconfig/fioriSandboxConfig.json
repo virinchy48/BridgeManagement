@@ -3,6 +3,7 @@
     "LaunchPage": {
       "adapter": {
         "config": {
+          "catalogs": [],
           "groups": [
             {
               "id": "bms.group.operations",

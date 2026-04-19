@@ -33,10 +33,7 @@ sap.ui.define([
       fetch(BASE + "/AttributeGroups?$filter=objectType eq '" + self._objectType + "'&$orderby=displayOrder")
         .then(function (r) { return r.json(); })
         .then(function (d) {
-          var list = self.byId("groupList");
-          var model = new JSONModel(d.value || []);
-          list.setModel(model);
-          list.bindItems({ path: "/", template: list.getBindingInfo("items").template });
+          self.byId("groupList").setModel(new JSONModel(d.value || []));
           self._selectedGroup = null;
           self.byId("defsPanel").setVisible(false);
           self.byId("attrDetailPanel").setVisible(false);
@@ -48,10 +45,7 @@ sap.ui.define([
       fetch(BASE + "/AttributeDefinitions?$filter=group_ID eq " + groupId + "&$orderby=displayOrder")
         .then(function (r) { return r.json(); })
         .then(function (d) {
-          var list = self.byId("attrList");
-          var model = new JSONModel(d.value || []);
-          list.setModel(model);
-          list.bindItems({ path: "/", template: list.getBindingInfo("items").template });
+          self.byId("attrList").setModel(new JSONModel(d.value || []));
           self._selectedAttr = null;
           self.byId("attrDetailPanel").setVisible(false);
         });
@@ -77,24 +71,14 @@ sap.ui.define([
         self.byId("detailMax").setText(attr.maxValue != null ? String(attr.maxValue) : "");
         self.byId("detailStatus").setText(attr.status || "");
 
-        var avModel = new JSONModel(avs);
-        self.byId("allowedValuesTable").setModel(avModel);
-        self.byId("allowedValuesTable").bindItems({
-          path: "/",
-          template: self.byId("allowedValuesTable").getBindingInfo("items").template
-        });
+        self.byId("allowedValuesTable").setModel(new JSONModel(avs));
 
         var existingByType = {};
         cfgs.forEach(function (c) { existingByType[c.objectType] = c; });
         var configRows = OBJECT_TYPES.map(function (ot) {
           return existingByType[ot] || { objectType: ot, enabled: false, required: false, displayOrder: null, ID: null, attribute_ID: attrId };
         });
-        var cfgModel = new JSONModel(configRows);
-        self.byId("configTable").setModel(cfgModel);
-        self.byId("configTable").bindItems({
-          path: "/",
-          template: self.byId("configTable").getBindingInfo("items").template
-        });
+        self.byId("configTable").setModel(new JSONModel(configRows));
 
         self.byId("attrDetailPanel").setVisible(true);
       });
