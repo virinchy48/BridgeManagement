@@ -3,13 +3,12 @@ sap.ui.define([
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageBox",
   "sap/m/MessageToast",
-  "sap/m/Column",
+  "sap/ui/table/Column",
   "sap/m/Text",
   "sap/m/Input",
   "sap/m/Select",
   "sap/m/DatePicker",
   "sap/m/CheckBox",
-  "sap/m/ColumnListItem",
   "sap/ui/core/Item"
 ], function (
   Controller,
@@ -22,7 +21,6 @@ sap.ui.define([
   Select,
   DatePicker,
   CheckBox,
-  ColumnListItem,
   Item
 ) {
   "use strict";
@@ -108,6 +106,7 @@ sap.ui.define([
       this._allRows = [];
       this._baselineRows = [];
       this._lookupsLoaded = false;
+      this._suppressValueChange = false;
 
       this.getView().setModel(new JSONModel({
         busy: false,
@@ -217,22 +216,27 @@ sap.ui.define([
         return;
       }
 
-      const selectedItems = this.byId("massEditTable").getSelectedItems();
-      if (!selectedItems.length) {
+      const table = this.byId("massEditTable");
+      const selectedIndices = table.getSelectedIndices();
+      if (!selectedIndices.length) {
         MessageToast.show(this._text("bulkNoRows"));
         return;
       }
 
       const value = this._readBulkValue(field);
-      selectedItems.forEach(function (item) {
-        const rowPath = item.getBindingContext("view").getPath();
+      selectedIndices.forEach(function (index) {
+        const context = table.getContextByIndex(index);
+        if (!context) {
+          return;
+        }
+        const rowPath = context.getPath();
         this._setFieldValue(rowPath, field, value);
       }.bind(this));
 
-      this.byId("massEditTable").removeSelections(true);
+      table.clearSelection();
       this._vm().setProperty("/selectedCount", 0);
       this._vm().setProperty("/applyButtonText", this._text("applyToSelected", [0]));
-      MessageToast.show(this._text("bulkApplied", [selectedItems.length]));
+      MessageToast.show(this._text("bulkApplied", [selectedIndices.length]));
     },
 
     onSave: async function () {
@@ -287,14 +291,19 @@ sap.ui.define([
     },
 
     onTableSelectionChange: function () {
-      const selectedCount = this.byId("massEditTable").getSelectedItems().length;
+      const selectedCount = this.byId("massEditTable").getSelectedIndices().length;
       this._vm().setProperty("/selectedCount", selectedCount);
       this._vm().setProperty("/applyButtonText", this._text("applyToSelected", [selectedCount]));
     },
 
     _loadEntityData: async function () {
+      const model = this._vm();
+      const isInitialLoad = !model.getProperty("/initialized");
       try {
-        this._vm().setProperty("/busy", true);
+        if (isInitialLoad) {
+          model.setProperty("/busy", true);
+        }
+
         if (!this._lookupsLoaded) {
           const lookupResponse = await this._fetchJsonWithFallback("api/lookups", {
             headers: { Accept: "application/json" }
@@ -313,19 +322,19 @@ sap.ui.define([
         this._allRows = this._prepareRows(data[payloadKey] || []);
         this._baselineRows = this._cloneRows(this._allRows);
         this._applyFilters();
-        this._vm().setProperty("/initialized", true);
+        model.setProperty("/initialized", true);
       } catch (error) {
-        this._vm().setProperty("/initialized", true);
+        model.setProperty("/initialized", true);
         MessageBox.error(error.message || this._text("loadError"));
       } finally {
-        this._vm().setProperty("/busy", false);
+        model.setProperty("/busy", false);
       }
     },
 
     _applyLookups: function (lookups) {
       const model = this._vm();
       Object.keys(lookups || {}).forEach(function (key) {
-        model.setProperty("/options/" + key, this._withEmptyOption(lookups[key] || []));
+        model.setProperty("/options/" + key, this._withEmptyOption(lookups[key] || []), null, true);
       }.bind(this));
     },
 
@@ -334,8 +343,10 @@ sap.ui.define([
     },
 
     _applyFilters: function () {
+      this._suppressValueChange = true;
+      const model = this._vm();
       const config = this._config();
-      const filters = this._vm().getProperty("/filters");
+      const filters = model.getProperty("/filters");
       const search = (filters.search || "").trim().toLowerCase();
       const items = this._allRows.filter(function (row) {
         if (filters.onlyDirty && !row._dirty) return false;
@@ -347,24 +358,27 @@ sap.ui.define([
         });
       });
 
-      this._vm().setProperty("/items", items);
-      this._vm().setProperty("/tableTitle", this._text(config.key === "BRIDGE" ? "bridges" : "restrictions"));
-      this._vm().setProperty("/showStateFilter", Boolean(config.stateField));
-      this._vm().setProperty("/showStatusFilter", Boolean(config.statusField));
-      this._vm().setProperty("/statusFilterLabel", this._text(config.statusFilterLabelKey));
-      this._vm().setProperty("/statusFilterOptions", this._vm().getProperty(config.statusOptionsPath) || []);
-      this._vm().setProperty("/options/bulkFields", config.fields.filter(function (field) {
+      this._setIfChanged("/tableTitle", this._text(config.key === "BRIDGE" ? "bridges" : "restrictions"));
+      this._setIfChanged("/showStateFilter", Boolean(config.stateField));
+      this._setIfChanged("/showStatusFilter", Boolean(config.statusField));
+      this._setIfChanged("/statusFilterLabel", this._text(config.statusFilterLabelKey));
+      this._setIfChanged("/statusFilterOptions", model.getProperty(config.statusOptionsPath) || []);
+      this._setIfChanged("/options/bulkFields", config.fields.filter(function (field) {
         return field.editable;
       }).map(function (field) {
         return { key: field.key, text: this._text(field.labelKey) };
       }.bind(this)));
       const dirtyCount = this._allRows.filter(function (row) { return row._dirty; }).length;
-      this._vm().setProperty("/dirtyCount", dirtyCount);
-      this._vm().setProperty("/dirtyMessage", this._text("dirtyRows", [dirtyCount]));
-      this._vm().setProperty("/summaryText", this._text("records", [items.length]));
-      this.byId("massEditTable").removeSelections(true);
-      this._vm().setProperty("/selectedCount", 0);
-      this._vm().setProperty("/applyButtonText", this._text("applyToSelected", [0]));
+      this._setIfChanged("/dirtyCount", dirtyCount);
+      this._setIfChanged("/dirtyMessage", this._text("dirtyRows", [dirtyCount]));
+      this._setIfChanged("/summaryText", this._text("records", [items.length]));
+      this._clearTableSelection();
+      this._setIfChanged("/selectedCount", 0);
+      this._setIfChanged("/applyButtonText", this._text("applyToSelected", [0]));
+      model.setProperty("/items", items, null, true);
+      setTimeout(function () {
+        this._suppressValueChange = false;
+      }.bind(this), 0);
     },
 
     _prepareRows: function (rows) {
@@ -377,24 +391,17 @@ sap.ui.define([
       const table = this.byId("massEditTable");
       const config = this._config();
       table.destroyColumns();
-      table.unbindItems();
 
       config.fields.forEach(function (field) {
         table.addColumn(new Column({
           width: field.width,
-          header: new Text({ text: this._text(field.labelKey) })
+          label: new Text({ text: this._text(field.labelKey) }),
+          template: this._createCell(field),
+          sortProperty: field.key,
+          filterProperty: field.key,
+          autoResizable: true
         }));
       }.bind(this));
-
-      table.bindItems({
-        path: "view>/items",
-        template: new ColumnListItem({
-          highlight: "{= ${view>_dirty} ? 'Warning' : 'None' }",
-          cells: config.fields.map(function (field) {
-            return this._createCell(field);
-          }.bind(this))
-        })
-      });
     },
 
     _createCell: function (field) {
@@ -405,7 +412,10 @@ sap.ui.define([
       if (field.type === "select") {
         return new Select({
           width: "100%",
-          selectedKey: "{view>" + field.key + "}",
+          selectedKey: {
+            path: "view>" + field.key,
+            mode: "OneWay"
+          },
           items: {
             path: "view>" + field.optionsPath,
             template: new Item({
@@ -420,7 +430,10 @@ sap.ui.define([
 
       if (field.type === "boolean") {
         return new CheckBox({
-          selected: "{view>" + field.key + "}",
+          selected: {
+            path: "view>" + field.key,
+            mode: "OneWay"
+          },
           select: this._onValueChange.bind(this, field)
         });
       }
@@ -428,7 +441,10 @@ sap.ui.define([
       if (field.type === "date") {
         return new DatePicker({
           width: "100%",
-          value: "{view>" + field.key + "}",
+          value: {
+            path: "view>" + field.key,
+            mode: "OneWay"
+          },
           valueFormat: "yyyy-MM-dd",
           displayFormat: "dd/MM/yyyy",
           change: this._onValueChange.bind(this, field)
@@ -438,12 +454,19 @@ sap.ui.define([
       return new Input({
         width: "100%",
         type: field.type === "number" || field.type === "decimal" ? "Number" : "Text",
-        value: "{view>" + field.key + "}",
+        value: {
+          path: "view>" + field.key,
+          mode: "OneWay"
+        },
         change: this._onValueChange.bind(this, field)
       });
     },
 
     _onValueChange: function (field, event) {
+      if (this._suppressValueChange) {
+        return;
+      }
+
       const rowPath = event.getSource().getBindingContext("view").getPath();
       const value = this._extractControlValue(field, event.getSource());
       this._setFieldValue(rowPath, field, value);
@@ -535,25 +558,35 @@ sap.ui.define([
       return a === b;
     },
 
+    _setIfChanged: function (path, value) {
+      const model = this._vm();
+      const current = model.getProperty(path);
+      if (JSON.stringify(current) !== JSON.stringify(value)) {
+        model.setProperty(path, value, null, true);
+      }
+    },
+
+    _clearTableSelection: function () {
+      const table = this.byId("massEditTable");
+      if (table && table.getSelectedIndices().length) {
+        table.clearSelection();
+      }
+    },
+
     _cloneRows: function (rows) {
       return JSON.parse(JSON.stringify(rows || []));
     },
 
     _apiUrl: function (path) {
       const cleanPath = String(path || "").replace(/^\/+/, "");
-      const pathname = window.location.pathname || "";
-      if (pathname.indexOf("/mass-edit/webapp") !== -1) {
-        return "/mass-edit/" + cleanPath;
-      }
-      return cleanPath;
+      return "/mass-edit/" + cleanPath;
     },
 
     _fetchJsonWithFallback: async function (path, options) {
-      const candidates = [this._apiUrl(path)];
       const cleanPath = String(path || "").replace(/^\/+/, "");
-      const localFallback = "/mass-edit/" + cleanPath;
-      if (candidates.indexOf(localFallback) === -1) {
-        candidates.push(localFallback);
+      const candidates = [this._apiUrl(path)];
+      if (candidates.indexOf(cleanPath) === -1) {
+        candidates.push(cleanPath);
       }
 
       let lastError;

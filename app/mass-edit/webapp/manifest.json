@@ -41,7 +41,8 @@
       "libs": {
         "sap.f": {},
         "sap.m": {},
-        "sap.ui.core": {}
+        "sap.ui.core": {},
+        "sap.ui.table": {}
       }
     },
     "models": {

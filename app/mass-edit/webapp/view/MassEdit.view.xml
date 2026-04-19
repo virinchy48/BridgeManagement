@@ -4,6 +4,7 @@
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
   xmlns:f="sap.f"
+  xmlns:t="sap.ui.table"
   displayBlock="true">
 
   <f:DynamicPage id="massEditPage" class="massEditPage" toggleHeaderOnTitleClick="false">
@@ -107,28 +108,30 @@
 
     <f:content>
       <VBox class="massEditShell">
-        <BusyIndicator visible="{= ${view>/busy} &amp;&amp; !${view>/initialized} }" size="2rem" class="sapUiMediumMarginTop sapUiMediumMarginBottom"/>
         <MessageStrip text="{view>/dirtyMessage}" visible="{= ${view>/dirtyCount} > 0 }" type="Warning" showIcon="true"/>
 
-        <Table
+        <t:Table
           id="massEditTable"
-          mode="MultiSelect"
-          selectionChange="onTableSelectionChange"
-          fixedLayout="false"
-          growing="true"
-          growingThreshold="100"
+          rows="{view>/items}"
+          selectionMode="MultiToggle"
+          rowSelectionChange="onTableSelectionChange"
+          visibleRowCountMode="Fixed"
+          visibleRowCount="14"
+          rowHeight="40"
+          alternateRowColors="true"
+          enableColumnReordering="true"
+          busy="{view>/busy}"
+          busyIndicatorDelay="0"
           class="massEditTable sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginBottom"
-          visible="{view>/initialized}"
-          busy="{= ${view>/busy} &amp;&amp; ${view>/initialized} }"
-          noDataText="{i18n>noRecords}">
-          <headerToolbar>
+          noData="{i18n>noRecords}">
+          <t:extension>
             <OverflowToolbar>
               <Title text="{view>/tableTitle}" level="H3"/>
               <ToolbarSpacer/>
               <Text text="{view>/summaryText}"/>
             </OverflowToolbar>
-          </headerToolbar>
-        </Table>
+          </t:extension>
+        </t:Table>
       </VBox>
     </f:content>
   </f:DynamicPage>
