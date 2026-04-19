@@ -1739,108 +1739,164 @@ sap.ui.define([
 
     // ─── Help Popovers ────────────────────────────────────────────────────────
 
+    _buildHelpPopover: function (sTitle, sPlacement, sWidth, aItems, sPropName) {
+      var self = this;
+      var oBody = new VBox({ class: "nhvrHelpPopoverBody" });
+
+      aItems.forEach(function (t) {
+        var oDetailRows = new VBox({ class: "nhvrHelpItemDetails" });
+
+        [
+          { label: "Purpose:",    text: t.purpose },
+          { label: "How to use:", text: t.howToUse }
+        ].forEach(function (row) {
+          oDetailRows.addItem(
+            new HBox({
+              class: "nhvrHelpDetailRow",
+              alignItems: "Start",
+              items: [
+                new Label({ text: row.label, class: "nhvrHelpDetailLabel" }),
+                new Text({ text: row.text,   class: "nhvrHelpDetailText" })
+              ]
+            })
+          );
+        });
+
+        oBody.addItem(new VBox({
+          class: "nhvrHelpItem",
+          items: [
+            new HBox({
+              alignItems: "Center",
+              class: "nhvrHelpItemHeader",
+              items: [
+                new Icon({ src: t.icon, size: "1rem", color: t.color || "#0a6ed1", class: "nhvrHelpItemIcon" }),
+                new Title({ text: t.title, level: "H6", class: "nhvrHelpItemTitle" })
+              ]
+            }),
+            oDetailRows
+          ]
+        }));
+      });
+
+      var oPopover = new Popover({
+        title: sTitle,
+        placement: sPlacement,
+        contentWidth: sWidth,
+        showHeader: true,
+        content: [new ScrollContainer({ height: "30rem", vertical: true, content: [oBody] })],
+        footer: new HBox({
+          justifyContent: "End",
+          items: [new Button({ text: "Close", press: function () { self[sPropName].close(); } })]
+        })
+      });
+      this.getView().addDependent(oPopover);
+      return oPopover;
+    },
+
     onGisToolsHelp: function (oEvent) {
       if (!this._oGisHelpPopover) {
-        var aTools = [
-          { icon: "sap-icon://temperature",          title: "Heat Map",            body: "A colour-gradient overlay showing bridge density weighted by condition rating. Red/orange zones indicate clusters of poorly-rated bridges. Toggle it on and zoom in to isolate individual bridge conditions." },
-          { icon: "sap-icon://alert",                title: "Condition Alerts",     body: "Flags bridges whose condition rating is at or below the configured alert threshold (default: ≤ 3). Affected bridges are highlighted with a red ring marker. The threshold can be changed in GIS Configuration." },
-          { icon: "sap-icon://map-3",                title: "Mini Map",             body: "Displays a small overview inset in the bottom-right corner so you can track your viewport position relative to the whole country while zoomed into a specific region." },
-          { icon: "sap-icon://show",                 title: "Viewport Loading",     body: "Only bridges inside the current visible map extent are fetched from the server. Panning or zooming triggers a fresh load. Recommended when working with large national datasets — reduces initial page load significantly." },
-          { icon: "sap-icon://locate-me",            title: "Proximity Analysis",   body: "Enter a latitude/longitude and a search radius (km) to find all bridges within that distance. Matching bridges are highlighted on the map and listed in the results panel. Useful for corridor planning and impact assessments." },
-          { icon: "sap-icon://timeline",             title: "Time Slider",          body: "Filters the map to show only bridges built within a selected year range. Drag the slider handles to set the from/to years. Use Reset to clear the filter and restore all bridges." },
-          { icon: "sap-icon://bar-chart",            title: "Statistics Panel",     body: "Shows live counts for bridges currently visible on the map — total visible, average condition rating, poor-condition count, restricted count, and condition-alert count. Updates automatically as you pan, zoom, or change filters." }
-        ];
-
-        var oContent = new ScrollContainer({
-          height: "auto",
-          vertical: true,
-          content: [
-            new VBox({
-              class: "nhvrHelpPopoverBody",
-              items: aTools.map(function (t) {
-                return new VBox({
-                  class: "nhvrHelpItem",
-                  items: [
-                    new HBox({
-                      alignItems: "Center",
-                      items: [
-                        new Icon({ src: t.icon, size: "0.875rem", color: "#0a6ed1" }),
-                        new Title({ text: t.title, level: "H6", class: "nhvrHelpItemTitle" })
-                      ]
-                    }),
-                    new Text({ text: t.body, class: "nhvrHelpItemBody" })
-                  ]
-                });
-              })
-            })
-          ]
-        });
-
-        this._oGisHelpPopover = new Popover({
-          title: "GIS Tools — How they work",
-          placement: "Right",
-          contentWidth: "22rem",
-          showHeader: true,
-          content: [oContent],
-          footer: new HBox({
-            justifyContent: "End",
-            items: [new Button({ text: "Close", press: function () { this._oGisHelpPopover.close(); }.bind(this) })]
-          })
-        });
-        this.getView().addDependent(this._oGisHelpPopover);
+        this._oGisHelpPopover = this._buildHelpPopover(
+          "GIS Tools Guide", "Right", "26rem",
+          [
+            {
+              icon: "sap-icon://temperature", color: "#e35500",
+              title: "Heat Map",
+              purpose: "Reveal geographic clusters of poorly-rated bridges across the network at a single glance.",
+              howToUse: "Toggle on → a colour-gradient overlay appears (red = low-rated clusters, green = good). Zoom into red/orange zones to identify individual bridges. Best used at state or regional zoom levels."
+            },
+            {
+              icon: "sap-icon://alert", color: "#f59e0b",
+              title: "Condition Alerts",
+              purpose: "Instantly flag bridges that fall below an acceptable condition threshold so they can be prioritised for inspection or maintenance.",
+              howToUse: "Toggle on → bridges with a condition rating ≤ threshold (default: 3) are marked with a red alert ring. Click any flagged bridge to open its detail panel. Adjust the threshold in GIS Configuration → Condition Alert Threshold."
+            },
+            {
+              icon: "sap-icon://map-3", color: "#0a6ed1",
+              title: "Mini Map",
+              purpose: "Maintain geographic context while zoomed deep into a specific region.",
+              howToUse: "Toggle on → a small overview inset appears in the bottom-right corner, highlighting your current viewport on the full Australian map. Updates live as you pan and zoom. Toggle off to reclaim screen space."
+            },
+            {
+              icon: "sap-icon://show", color: "#0a6ed1",
+              title: "Viewport Loading",
+              purpose: "Improve map performance when working with very large national datasets by loading only what is currently visible.",
+              howToUse: "Toggle on → only bridges inside the visible map extent are fetched from the server. Pan or zoom to a new area to load bridges there. Toggle off to load all bridges at once (may be slower on large datasets)."
+            },
+            {
+              icon: "sap-icon://locate-me", color: "#7c3aed",
+              title: "Proximity Analysis",
+              purpose: "Find every bridge within a defined radius of any geographic point — ideal for corridor planning, impact assessments, and site investigations.",
+              howToUse: "Open the Proximity Analysis panel → enter a Latitude and Longitude → set a Radius in kilometres → click Find Bridges. Matching bridges are highlighted on the map and listed in the results panel. Click Clear to reset."
+            },
+            {
+              icon: "sap-icon://timeline", color: "#0a6ed1",
+              title: "Time Slider",
+              purpose: "Analyse infrastructure age distribution or focus on bridges built within a specific construction era.",
+              howToUse: "Open the Time Slider panel → drag the left handle to set the earliest year and the right handle to set the latest year → the map updates automatically to show only bridges built in that range. Click Reset to restore all bridges."
+            },
+            {
+              icon: "sap-icon://bar-chart", color: "#0a6ed1",
+              title: "Statistics Panel",
+              purpose: "Get a live summary of the condition and restriction status of bridges currently visible on the map.",
+              howToUse: "The Statistics panel is always visible at the bottom of the left panel — no action needed. Numbers (total visible, average condition, poor-condition count, restricted, closed) update automatically whenever you pan, zoom, or change filters."
+            }
+          ],
+          "_oGisHelpPopover"
+        );
       }
       this._oGisHelpPopover.openBy(oEvent.getSource());
     },
 
     onMapControlsHelp: function (oEvent) {
       if (!this._oMapHelpPopover) {
-        var aControls = [
-          { icon: "sap-icon://search",        title: "Bridge Search",        body: "Type any part of a bridge name to filter the map in real time. Matching bridges are highlighted and shown in the results list. Clear the field to restore all bridges." },
-          { icon: "sap-icon://map-2",         title: "Spatial Select",       body: "Activates drawing mode — draw a freehand polygon on the map to select all bridges within that area. The selection is highlighted and shown in the results list. Click again to cancel." },
-          { icon: "sap-icon://full-screen",   title: "Fit to Australia",     body: "Resets the map viewport to show the full extent of Australia and all loaded bridges." },
-          { icon: "sap-icon://resize",        title: "Zoom to Selection",    body: "Fits the map tightly around the currently selected bridges. Only active when at least one bridge is selected." },
-          { icon: "sap-icon://refresh",       title: "Refresh Data",         body: "Reloads all bridge and restriction data from the server, applying the current filter settings." },
-          { icon: "sap-icon://download",      title: "Export",               body: "Download bridge or restriction data in GeoJSON (includes geographic coordinates, suitable for QGIS/ArcGIS) or CSV (spreadsheet-compatible) formats." },
-          { icon: "sap-icon://list",          title: "Split / List View",    body: "Toggles the bridge results list alongside the map. In split view the map occupies the left half; in list view the full panel shows bridge records." }
-        ];
-
-        var oContent = new ScrollContainer({
-          height: "auto",
-          vertical: true,
-          content: [
-            new VBox({
-              class: "nhvrHelpPopoverBody",
-              items: aControls.map(function (t) {
-                return new VBox({
-                  class: "nhvrHelpItem",
-                  items: [
-                    new HBox({
-                      alignItems: "Center",
-                      items: [
-                        new Icon({ src: t.icon, size: "0.875rem", color: "#0a6ed1" }),
-                        new Title({ text: t.title, level: "H6", class: "nhvrHelpItemTitle" })
-                      ]
-                    }),
-                    new Text({ text: t.body, class: "nhvrHelpItemBody" })
-                  ]
-                });
-              })
-            })
-          ]
-        });
-
-        this._oMapHelpPopover = new Popover({
-          title: "Map Controls — How they work",
-          placement: "Bottom",
-          contentWidth: "24rem",
-          showHeader: true,
-          content: [oContent],
-          footer: new HBox({
-            justifyContent: "End",
-            items: [new Button({ text: "Close", press: function () { this._oMapHelpPopover.close(); }.bind(this) })]
-          })
-        });
-        this.getView().addDependent(this._oMapHelpPopover);
+        this._oMapHelpPopover = this._buildHelpPopover(
+          "Map Controls Guide", "Bottom", "26rem",
+          [
+            {
+              icon: "sap-icon://search", color: "#0a6ed1",
+              title: "Bridge Search",
+              purpose: "Quickly locate a specific bridge by name without manually scanning the map.",
+              howToUse: "Type any part of the bridge name in the search bar → matching bridges are highlighted on the map and shown in the results list. Clear the field to show all bridges again."
+            },
+            {
+              icon: "sap-icon://map-2", color: "#0a6ed1",
+              title: "Spatial Select",
+              purpose: "Select a custom set of bridges by drawing an area directly on the map.",
+              howToUse: "Click Spatial Select → draw a freehand polygon on the map by clicking and dragging → release to close the shape. All bridges inside the polygon are selected and shown in the results list. Click Spatial Select again to cancel drawing."
+            },
+            {
+              icon: "sap-icon://full-screen", color: "#0a6ed1",
+              title: "Fit to Australia",
+              purpose: "Instantly reset the map to show the full national extent.",
+              howToUse: "Click the Fit button → the map zooms and pans to show all of Australia with all loaded bridges in view."
+            },
+            {
+              icon: "sap-icon://resize", color: "#52616f",
+              title: "Zoom to Selection",
+              purpose: "Focus the map tightly on only the bridges you have selected.",
+              howToUse: "Select one or more bridges (via search, spatial select, or clicking markers) → click Zoom to Selection → the map fits to the bounding box of those bridges. Button is disabled when no selection is active."
+            },
+            {
+              icon: "sap-icon://refresh", color: "#0a6ed1",
+              title: "Refresh Data",
+              purpose: "Reload the latest bridge and restriction data from the server without leaving the map.",
+              howToUse: "Click Refresh → all bridge and restriction data is re-fetched from the server, applying the current filter settings. Use this after data updates have been saved in the Bridge Register."
+            },
+            {
+              icon: "sap-icon://download", color: "#0a6ed1",
+              title: "Export",
+              purpose: "Download the currently visible bridge or restriction data for use in external tools.",
+              howToUse: "Click Export → choose a format from the dropdown: GeoJSON (includes coordinates, compatible with QGIS and ArcGIS) or CSV (spreadsheet-compatible). Only bridges currently matching your filters are included."
+            },
+            {
+              icon: "sap-icon://list", color: "#0a6ed1",
+              title: "Split / List View",
+              purpose: "Switch between a full-screen map and a side-by-side map + bridge list layout.",
+              howToUse: "Click List → a bridge results table appears alongside the map (split view). Click again to hide the list and return to full-screen map mode. In the list you can sort, search, and click any row to highlight the bridge on the map."
+            }
+          ],
+          "_oMapHelpPopover"
+        );
       }
       this._oMapHelpPopover.openBy(oEvent.getSource());
     },

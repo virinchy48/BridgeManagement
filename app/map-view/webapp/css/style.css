@@ -914,30 +914,60 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
 
 /* GIS / Map help popover */
 .nhvrHelpPopoverBody {
-  padding: 0.5rem 0.75rem 0.25rem;
+  padding: 0.25rem 0.75rem 0.5rem;
   gap: 0;
 }
 
 .nhvrHelpItem {
-  padding: 0.6rem 0;
+  padding: 0.75rem 0;
   border-bottom: 1px solid #edf0f4;
-  gap: 0.2rem;
+  gap: 0.35rem;
 }
 
 .nhvrHelpItem:last-child {
   border-bottom: none;
 }
 
-.nhvrHelpItemTitle.sapMTitle {
-  font-size: 0.8125rem;
-  font-weight: 600;
-  color: #1d2b3a;
-  margin-left: 0.4rem;
+.nhvrHelpItemHeader {
+  gap: 0.45rem;
+  margin-bottom: 0.25rem;
 }
 
-.nhvrHelpItemBody.sapMText {
-  font-size: 0.78rem;
-  color: #52616f;
-  line-height: 1.45;
-  padding-left: 1.35rem;
+.nhvrHelpItemIcon {
+  flex-shrink: 0;
+}
+
+.nhvrHelpItemTitle.sapMTitle {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #1d2b3a;
+}
+
+.nhvrHelpItemDetails {
+  padding-left: 1.5rem;
+  gap: 0.3rem;
+}
+
+.nhvrHelpDetailRow {
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.nhvrHelpDetailLabel.sapMLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #8696a9;
+  white-space: nowrap;
+  min-width: 5.5rem;
+  flex-shrink: 0;
+  padding-top: 0.1rem;
+  line-height: 1.4;
+}
+
+.nhvrHelpDetailText.sapMText {
+  font-size: 0.8rem;
+  color: #354a5f;
+  line-height: 1.5;
 }
