@@ -43,14 +43,14 @@
                    mode="None"
                    noDataText="No rules configured. Click Add Rule to create one.">
               <columns>
-                <Column width="5rem"   hAlign="Center"><Text text="On/Off" /></Column>
-                <Column width="180px"><Text text="Rule Name" /></Column>
-                <Column width="150px"><Text text="Category" /></Column>
-                <Column width="80px"  hAlign="Center"><Text text="Severity" /></Column>
-                <Column width="120px"><Text text="Rule Type" /></Column>
-                <Column width="100px"><Text text="Field" /></Column>
-                <Column><Text text="Message" /></Column>
-                <Column width="6rem"  hAlign="Center"><Text text="Actions" /></Column>
+                <Column width="3.5rem" hAlign="Center"><Text text="On/Off" /></Column>
+                <Column><Text text="Rule Name" /></Column>
+                <Column width="7rem"><Text text="Category" /></Column>
+                <Column width="4.5rem" hAlign="Center"><Text text="Severity" /></Column>
+                <Column width="8rem"><Text text="Rule Type" /></Column>
+                <Column width="6rem" minScreenWidth="Desktop" demandPopin="true"><Text text="Field" /></Column>
+                <Column minScreenWidth="Desktop" demandPopin="true"><Text text="Message" /></Column>
+                <Column width="5rem" hAlign="Center"><Text text="Actions" /></Column>
               </columns>
               <items>
                 <ColumnListItem>
@@ -61,7 +61,7 @@
                     <ObjectStatus text="{severity}" state="{path: 'severity', formatter: '.formatSeverityState'}" />
                     <Text text="{ruleType}" wrapping="false" />
                     <Text text="{field}" wrapping="false" />
-                    <Text text="{message}" />
+                    <Text text="{message}" maxLines="2" />
                     <HBox>
                       <Button icon="sap-icon://edit"   type="Transparent" tooltip="Edit rule"   press=".onEditRule" />
                       <Button icon="sap-icon://delete" type="Transparent" tooltip="Delete rule" press=".onDeleteRule" />

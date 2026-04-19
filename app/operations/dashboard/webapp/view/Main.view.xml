@@ -1,5 +1,5 @@
 <mvc:View
-    controllerName="bms.dashboard.controller.Main"
+    controllerName="BridgeManagement.dashboard.controller.Main"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
     xmlns:l="sap.ui.layout"

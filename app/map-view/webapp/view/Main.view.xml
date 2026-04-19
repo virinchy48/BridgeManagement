@@ -117,7 +117,8 @@
             <Panel class="nhvrSidebarPanel" expandable="true" expanded="true" headerText="Reference Layers">
               <content>
                 <VBox class="nhvrFilterSection">
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow"
+                        visible="{view>/features/showStateBoundaries}">
                     <HBox alignItems="Center">
                       <core:Icon src="sap-icon://world" size="0.875rem" class="nhvrLayerIcon" />
                       <Text text="State &amp; Territory Boundaries" class="nhvrLayerLabel" />
@@ -126,7 +127,8 @@
                       <customData><core:CustomData key="layerKey" value="stateBoundaries" /></customData>
                     </Switch>
                   </HBox>
-                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow">
+                  <HBox alignItems="Center" justifyContent="SpaceBetween" class="nhvrLayerRow"
+                        visible="{view>/features/showLgaBoundaries}">
                     <HBox alignItems="Center">
                       <core:Icon src="sap-icon://geographic-bubble-chart" size="0.875rem" class="nhvrLayerIcon" />
                       <Text text="LGA Boundaries (ABS ASGS)" class="nhvrLayerLabel" />
@@ -135,7 +137,8 @@
                       <customData><core:CustomData key="layerKey" value="lgaBoundaries" /></customData>
                     </Switch>
                   </HBox>
-                  <Text text="Source: ABS ASGS 2021" class="nhvrLayerHint sapUiTinyMarginTop" />
+                  <Text text="Source: ABS ASGS 2021" class="nhvrLayerHint sapUiTinyMarginTop"
+                        visible="{= ${view>/features/showStateBoundaries} || ${view>/features/showLgaBoundaries} }" />
 
                   <!-- Dynamic reference layers loaded from GIS Config admin -->
                   <VBox visible="{= ${view>/dynRefGroups}.length > 0 }">

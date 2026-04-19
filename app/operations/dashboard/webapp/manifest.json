@@ -1,7 +1,7 @@
 {
   "_version": "1.8.0",
   "sap.app": {
-    "id": "bms.dashboard",
+    "id": "BridgeManagement.dashboard",
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -59,7 +59,7 @@
       }
     },
     "rootView": {
-      "viewName": "bms.dashboard.view.Main",
+      "viewName": "BridgeManagement.dashboard.view.Main",
       "type": "XML",
       "id": "app"
     },
@@ -67,7 +67,7 @@
       "config": {
         "routerClass": "sap.m.routing.Router",
         "viewType": "XML",
-        "viewPath": "bms.dashboard.view",
+        "viewPath": "BridgeManagement.dashboard.view",
         "controlAggregation": "pages",
         "controlId": "app",
         "async": true
