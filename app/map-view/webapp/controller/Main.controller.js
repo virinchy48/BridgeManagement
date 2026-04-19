@@ -246,7 +246,7 @@ sap.ui.define([
     },
 
     onNavHome: function () {
-      window.location.href = "#Dashboard-display";
+      this._navTo("#Dashboard-display");
     },
 
     onCenterMap: function () {
@@ -506,7 +506,7 @@ sap.ui.define([
     },
 
     onOpenBridgeDetail: function () {
-      window.location.href = "#Bridges-manage";
+      this._navTo("#Bridges-manage");
     },
 
     onListItemPress: function (oEvent) {
@@ -524,19 +524,28 @@ sap.ui.define([
     },
 
     onNavToBridgesFE: function () {
-      window.location.href = "#Bridges-manage";
+      this._navTo("#Bridges-manage");
     },
 
     onNavToReports: function () {
-      window.location.href = "#Reports-display";
+      this._navTo("#Reports-display");
     },
 
     onNavToUpload: function () {
-      window.location.href = "#Upload-display";
+      this._navTo("#MassUpload-manage");
     },
 
     onNavToMassEdit: function () {
-      window.location.href = "#MassEdit-manage";
+      this._navTo("#MassEdit-manage");
+    },
+
+    _navTo: function (hash) {
+      try {
+        const nav = sap && sap.ushell && sap.ushell.Container &&
+          sap.ushell.Container.getService("CrossApplicationNavigation");
+        if (nav) { nav.toExternal({ target: { shellHash: hash } }); return; }
+      } catch (e) { /* fall through */ }
+      window.location.href = hash;
     },
 
     _layerRow: function (path, label) {
@@ -609,7 +618,8 @@ sap.ui.define([
         this._applyFilters();
         this._checkUrlParams();
       } catch (error) {
-        MessageBox.error(this._text("mapError"));
+        console.error("[MapView] _loadData failed:", error);
+        MessageBox.error(this._text("mapError") + "\n" + (error && error.message ? error.message : ""));
       } finally {
         model.setProperty("/busy", false);
       }
@@ -794,11 +804,18 @@ sap.ui.define([
       if (!feature) return;
       const bridge = feature.type === "bridge" ? feature.data : null;
       const bridgeId = bridge ? bridge.ID : (feature.data && feature.data.bridge_ID);
-      if (bridgeId) {
-        window.location.href = "#Bridges-manage&/Bridges(ID=" + bridgeId + ",IsActiveEntity=true)";
-      } else {
-        window.location.href = "#Bridges-manage";
-      }
+      const hash = bridgeId
+        ? "#Bridges-manage&/Bridges(ID=" + bridgeId + ",IsActiveEntity=true)"
+        : "#Bridges-manage";
+      try {
+        const ushell = sap && sap.ushell && sap.ushell.Container;
+        const nav = ushell && ushell.getService("CrossApplicationNavigation");
+        if (nav) {
+          nav.toExternal({ target: { shellHash: hash } });
+          return;
+        }
+      } catch (e) { /* fall through */ }
+      window.open(hash, "_blank");
     },
 
     onViewBridgeFromRestriction: function () {
@@ -1561,7 +1578,15 @@ sap.ui.define([
     },
 
     _text: function (key) {
-      return this.getView().getModel("i18n").getResourceBundle().getText(key);
+      try {
+        var model = this.getView && this.getView() && this.getView().getModel("i18n");
+        if (!model) return key;
+        var bundle = model.getResourceBundle();
+        if (!bundle || typeof bundle.getText !== "function") return key;
+        return bundle.getText(key);
+      } catch (e) {
+        return key;
+      }
     },
 
     _vm: function () {
