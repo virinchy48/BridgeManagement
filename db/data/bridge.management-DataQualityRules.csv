@@ -1,0 +1,15 @@
+id,name,category,severity,ruleType,field,config,message,enabled,sortOrder
+a1000000-0000-0000-0000-000000000001,Bridge Name Required,Missing Mandatory Field,critical,required_field,bridgeName,,Mandatory field 'bridgeName' is missing or empty,true,10
+a1000000-0000-0000-0000-000000000002,State Required,Missing Mandatory Field,critical,required_field,state,,Mandatory field 'state' is missing or empty,true,20
+a1000000-0000-0000-0000-000000000003,Asset Owner Required,Missing Mandatory Field,critical,required_field,assetOwner,,Mandatory field 'assetOwner' is missing or empty,true,30
+a1000000-0000-0000-0000-000000000004,Latitude Must Be Set,Missing Location Data,critical,non_zero,latitude,,Latitude is missing or zero — bridge cannot appear on the map,true,40
+a1000000-0000-0000-0000-000000000005,Longitude Must Be Set,Missing Location Data,critical,non_zero,longitude,,Longitude is missing or zero — bridge cannot appear on the map,true,50
+a1000000-0000-0000-0000-000000000006,GeoJSON Geometry Missing,Missing GeoJSON,warning,required_field,geoJson,,GeoJSON geometry is missing — bridge outline will not display on map,true,60
+a1000000-0000-0000-0000-000000000007,Inspection Date Never Recorded,Stale Inspection,critical,required_field,lastInspectionDate,,Last inspection date has never been recorded,true,70
+a1000000-0000-0000-0000-000000000008,Inspection Overdue (2 Years),Stale Inspection,warning,not_older_than_days,lastInspectionDate,"{""days"":730}",Last inspection was over 2 years ago,true,80
+a1000000-0000-0000-0000-000000000009,Poor/Critical Condition Without Restriction,Condition Without Restriction,critical,condition_requires_restriction,,"{""conditions"":[""Poor"",""Critical""]}",Bridge is in Poor or Critical condition but has no active restriction,true,90
+a1000000-0000-0000-0000-000000000010,Condition Rating Missing,Missing Data,warning,required_field,conditionRating,,Condition rating is missing,true,100
+a1000000-0000-0000-0000-000000000011,Posting Status Missing,Missing Data,warning,required_field,postingStatus,,Posting status is missing,true,110
+a1000000-0000-0000-0000-000000000012,Structure Type Missing,Missing Data,info,required_field,structureType,,Structure type is missing,true,120
+a1000000-0000-0000-0000-000000000013,Year Built Missing,Missing Data,info,required_field,yearBuilt,,Year built is missing,true,130
+a1000000-0000-0000-0000-000000000014,Freight Route Without NHVR Assessment,NHVR Assessment,warning,freight_requires_nhvr,,,Bridge is on a freight route but NHVR assessment has not been completed,true,140

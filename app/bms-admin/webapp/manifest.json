@@ -59,7 +59,8 @@
       "routes": [
         { "pattern": "", "name": "home", "target": "changeDocuments" },
         { "pattern": "change-documents", "name": "changeDocuments", "target": "changeDocuments" },
-        { "pattern": "data-quality", "name": "dataQuality", "target": "dataQuality" },
+        { "pattern": "data-quality",       "name": "dataQuality",       "target": "dataQuality" },
+        { "pattern": "data-quality-rules", "name": "dataQualityRules", "target": "dataQualityRules" },
         { "pattern": "reference-data", "name": "referenceData", "target": "referenceData" },
         { "pattern": "user-access", "name": "userAccess", "target": "userAccess" },
         { "pattern": "system-config", "name": "systemConfig", "target": "systemConfig" },
@@ -69,7 +70,8 @@
       ],
       "targets": {
         "changeDocuments": { "viewName": "ChangeDocuments",  "viewLevel": 1 },
-        "dataQuality":     { "viewName": "DataQuality",      "viewLevel": 1 },
+        "dataQuality":      { "viewName": "DataQuality",      "viewLevel": 1 },
+        "dataQualityRules": { "viewName": "DataQualityRules", "viewLevel": 1 },
         "referenceData":   { "viewName": "ReferenceData",    "viewLevel": 1 },
         "userAccess":      { "viewName": "UserAccess",       "viewLevel": 1 },
         "systemConfig":    { "viewName": "SystemConfig",     "viewLevel": 1 },

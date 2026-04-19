@@ -1410,7 +1410,6 @@ cds.on('bootstrap', (app) => {
     'conditionRating', 'postingStatus', 'lastInspectionDate', 'geoJson'
   ]
 
-  // Load all bridges with the fields needed for quality checks
   async function loadQualityBridges() {
     const db = await cds.connect.to('db')
     const bridges = await db.run(
@@ -1424,7 +1423,6 @@ cds.on('bootstrap', (app) => {
     return bridges || []
   }
 
-  // Load active restriction bridge IDs (for poor/critical condition check)
   async function loadActiveRestrictionBridgeIds() {
     const db = await cds.connect.to('db')
     const rows = await db.run(
@@ -1433,6 +1431,64 @@ cds.on('bootstrap', (app) => {
         .where({ active: true })
     )
     return new Set((rows || []).map(r => r.bridge_ID).filter(Boolean))
+  }
+
+  async function loadEnabledRules() {
+    try {
+      const db = await cds.connect.to('db')
+      const rows = await db.run(
+        SELECT.from('bridge.management.DataQualityRules')
+          .where({ enabled: true })
+          .orderBy('sortOrder')
+      )
+      return (rows || []).map(r => {
+        let cfg = {}
+        try { cfg = JSON.parse(r.config || '{}') } catch (_) {}
+        return { ...r, _cfg: cfg }
+      })
+    } catch (_) {
+      return []
+    }
+  }
+
+  function execRule(rule, bridge, ctx) {
+    const { ruleType, field, _cfg } = rule
+    switch (ruleType) {
+      case 'required_field': {
+        const v = bridge[field]
+        return v == null || (typeof v === 'string' && v.trim() === '')
+      }
+      case 'non_zero': {
+        const v = Number(bridge[field])
+        return bridge[field] == null || !Number.isFinite(v) || v === 0
+      }
+      case 'not_older_than_days': {
+        if (!bridge[field]) return false // required_field handles the null case
+        const ms = (_cfg.days || 730) * 24 * 60 * 60 * 1000
+        return Date.now() - new Date(bridge[field]).getTime() > ms
+      }
+      case 'condition_requires_restriction': {
+        const conditions = _cfg.conditions || ['Poor', 'Critical']
+        if (!conditions.includes(bridge.condition)) return false
+        return !ctx.activeRestrictionBridgeIds.has(bridge.ID)
+      }
+      case 'freight_requires_nhvr': {
+        return !!(bridge.freightRoute && !bridge.nhvrAssessed)
+      }
+      default:
+        return false
+    }
+  }
+
+  function evaluateBridgeIssues(bridge, activeRestrictionBridgeIds, rules) {
+    const ctx = { activeRestrictionBridgeIds }
+    return rules
+      .filter(rule => execRule(rule, bridge, ctx))
+      .map(rule => ({
+        category: rule.category,
+        severity: rule.severity,
+        message:  rule.message
+      }))
   }
 
   function calcCompletenessScore(bridge) {
@@ -1446,96 +1502,6 @@ cds.on('bootstrap', (app) => {
     return Math.round((populated.length / QUALITY_COMPLETENESS_FIELDS.length) * 100)
   }
 
-  function evaluateBridgeIssues(bridge, activeRestrictionBridgeIds) {
-    const issues = []
-    const now = Date.now()
-    const TWO_YEARS_MS = 730 * 24 * 60 * 60 * 1000
-
-    // Rule 1: Missing mandatory fields
-    const mandatoryFields = ['bridgeName', 'state', 'assetOwner', 'latitude', 'longitude']
-    for (const field of mandatoryFields) {
-      const v = bridge[field]
-      const missing = v == null || (typeof v === 'string' && v.trim() === '') ||
-        ((field === 'latitude' || field === 'longitude') && (!Number.isFinite(Number(v)) || Number(v) === 0))
-      if (missing) {
-        issues.push({
-          category: 'Missing Mandatory Field',
-          severity: 'critical',
-          message: `Mandatory field "${field}" is missing or empty`
-        })
-      }
-    }
-
-    // Rule 2: Missing coordinates (latitude or longitude null/zero)
-    const lat = Number(bridge.latitude), lon = Number(bridge.longitude)
-    const missingLat = bridge.latitude == null || !Number.isFinite(lat) || lat === 0
-    const missingLon = bridge.longitude == null || !Number.isFinite(lon) || lon === 0
-    if ((missingLat || missingLon) && !mandatoryFields.some(f =>
-      (f === 'latitude' && missingLat) || (f === 'longitude' && missingLon))) {
-      // Already reported above; only add if not already covered
-    }
-    if (missingLat && !issues.some(i => i.message.includes('"latitude"'))) {
-      issues.push({ category: 'Missing Location Data', severity: 'critical', message: 'Latitude is missing or zero' })
-    }
-    if (missingLon && !issues.some(i => i.message.includes('"longitude"'))) {
-      issues.push({ category: 'Missing Location Data', severity: 'critical', message: 'Longitude is missing or zero' })
-    }
-
-    // Rule 3: No GeoJSON geometry
-    if (!bridge.geoJson || String(bridge.geoJson).trim() === '') {
-      issues.push({ category: 'Missing GeoJSON', severity: 'warning', message: 'GeoJSON geometry is missing' })
-    }
-
-    // Rule 4: Stale inspection
-    if (!bridge.lastInspectionDate) {
-      issues.push({ category: 'Stale Inspection', severity: 'critical', message: 'Last inspection date has never been recorded' })
-    } else {
-      const inspDate = new Date(bridge.lastInspectionDate).getTime()
-      if (now - inspDate > TWO_YEARS_MS) {
-        const inspStr = bridge.lastInspectionDate
-        issues.push({ category: 'Stale Inspection', severity: 'warning', message: `Last inspection was over 2 years ago (${inspStr})` })
-      }
-    }
-
-    // Rule 5: Poor/Critical condition with no active restriction
-    if (bridge.condition === 'Poor' || bridge.condition === 'Critical') {
-      if (!activeRestrictionBridgeIds.has(bridge.ID)) {
-        issues.push({
-          category: 'Condition Without Restriction',
-          severity: 'critical',
-          message: `Bridge is in ${bridge.condition} condition but has no active restriction`
-        })
-      }
-    }
-
-    // Rule 6: Missing condition rating
-    if (bridge.conditionRating == null) {
-      issues.push({ category: 'Missing Data', severity: 'warning', message: 'Condition rating is missing' })
-    }
-
-    // Rule 7: Missing posting status
-    if (!bridge.postingStatus || String(bridge.postingStatus).trim() === '') {
-      issues.push({ category: 'Missing Data', severity: 'warning', message: 'Posting status is missing' })
-    }
-
-    // Rule 8: Missing structure type
-    if (!bridge.structureType || String(bridge.structureType).trim() === '') {
-      issues.push({ category: 'Missing Data', severity: 'info', message: 'Structure type is missing' })
-    }
-
-    // Rule 9: Missing year built
-    if (bridge.yearBuilt == null) {
-      issues.push({ category: 'Missing Data', severity: 'info', message: 'Year built is missing' })
-    }
-
-    // Rule 10: NHVR not assessed for freight route
-    if (bridge.freightRoute && !bridge.nhvrAssessed) {
-      issues.push({ category: 'NHVR Assessment', severity: 'warning', message: 'Bridge is on a freight route but NHVR has not been assessed' })
-    }
-
-    return issues
-  }
-
   function maxSeverity(issues) {
     if (issues.some(i => i.severity === 'critical')) return 'critical'
     if (issues.some(i => i.severity === 'warning')) return 'warning'
@@ -1545,9 +1511,10 @@ cds.on('bootstrap', (app) => {
 
   qualityRouter.get('/summary', async (_req, res) => {
     try {
-      const [bridges, activeRestrictionBridgeIds] = await Promise.all([
+      const [bridges, activeRestrictionBridgeIds, rules] = await Promise.all([
         loadQualityBridges(),
-        loadActiveRestrictionBridgeIds()
+        loadActiveRestrictionBridgeIds(),
+        loadEnabledRules()
       ])
 
       const categoryCountMap = {}
@@ -1557,7 +1524,7 @@ cds.on('bootstrap', (app) => {
       let totalCompleteness = 0
 
       for (const bridge of bridges) {
-        const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds)
+        const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds, rules)
         totalCompleteness += calcCompletenessScore(bridge)
         if (issues.length > 0) issueCount++
         for (const issue of issues) {
@@ -1590,13 +1557,14 @@ cds.on('bootstrap', (app) => {
     try {
       const { severity, state, name } = req.query
 
-      const [bridges, activeRestrictionBridgeIds] = await Promise.all([
+      const [bridges, activeRestrictionBridgeIds, rules] = await Promise.all([
         loadQualityBridges(),
-        loadActiveRestrictionBridgeIds()
+        loadActiveRestrictionBridgeIds(),
+        loadEnabledRules()
       ])
 
       let results = bridges.map(bridge => {
-        const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds)
+        const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds, rules)
         return {
           ID: bridge.ID,
           bridgeId: bridge.bridgeId || null,
