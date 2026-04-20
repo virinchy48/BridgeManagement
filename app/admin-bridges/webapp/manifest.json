@@ -71,6 +71,11 @@
           "target": "BridgesDetails"
         },
         {
+          "pattern": "Bridges({key})/capacities({key2}):?query:",
+          "name": "BridgeCapacitiesDetails",
+          "target": "BridgeCapacitiesDetails"
+        },
+        {
           "pattern": "GISConfig:?query:",
           "name": "GISConfig",
           "target": "GISConfig"
@@ -124,9 +129,18 @@
               "entitySet": "Bridges",
               "editableHeaderContent": false,
               "sharingEnabled": false,
+              "navigation": {
+                "capacities": {
+                  "detail": {
+                    "route": "BridgeCapacitiesDetails"
+                  }
+                }
+              },
               "controlConfiguration": {
                 "capacities/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": { "enablePaste": false }
+                  "tableSettings": {
+                    "enablePaste": false
+                  }
                 },
                 "restrictions/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": { "enablePaste": false }
@@ -168,6 +182,18 @@
                   }
                 }
               }
+            }
+          }
+        },
+        "BridgeCapacitiesDetails": {
+          "type": "Component",
+          "id": "BridgeCapacitiesDetails",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeCapacities",
+              "editableHeaderContent": false,
+              "sharingEnabled": false
             }
           }
         }
