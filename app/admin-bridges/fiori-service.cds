@@ -9,8 +9,8 @@ annotate AdminService.Bridges with @(
   UI.HeaderInfo: {
     TypeName      : 'Bridge',
     TypeNamePlural: 'Bridges',
-    Title         : { Value: bridgeName },
-    Description   : { Value: bridgeId }
+    Title         : { $Type: 'UI.DataField', Value: bridgeName },
+    Description   : { $Type: 'UI.DataField', Value: bridgeId }
   },
   UI.SelectionFields: [
     bridgeId, bridgeName, state, region,
@@ -280,7 +280,7 @@ annotate AdminService.Bridges with {
   // GeoJSON is maintained on the object page, not in the create dialog
   geoJson    @Common.FieldControl: #Optional  @UI.MultiLineText  @title: 'Bridge Geometry (GeoJSON)';
   // Bridge ID auto-generated on create; never user-entered
-  bridgeId   @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Bridge ID';
+  bridgeId   @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Bridge ID (auto-generated)';
   // Legacy commerce fields — irrelevant in BMS context
   stock      @UI.Hidden;
   price      @UI.Hidden;

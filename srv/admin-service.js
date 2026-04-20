@@ -344,7 +344,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID:id1 } = await SELECT.one.from(Bridges).columns('max(ID) as ID')
     const { ID:id2 } = await SELECT.one.from(Bridges.drafts).columns('max(ID) as ID')
     req.data.ID = Math.max(id1||0, id2||0) + 1
-    if (req.data.state && !req.data.bridgeId) req.data.bridgeId = bridgeIdFor(req.data.ID, req.data.state)
+    if (!req.data.bridgeId) req.data.bridgeId = bridgeIdFor(req.data.ID, req.data.state)
   })
 
   // UAT-FIX-1 (AdminService): Derive condition + highPriorityAsset from conditionRating on SAVE.

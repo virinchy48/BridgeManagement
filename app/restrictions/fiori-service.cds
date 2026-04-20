@@ -226,7 +226,7 @@ annotate AdminService.Restrictions with {
   modifiedAt     @UI.Hidden;
   // Auto-generated on create (RST-NNNN); immutable after first save.
   // NOT marked Mandatory — the server pre-fills it; user may override before saving.
-  restrictionRef @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Reference No. (auto-generated)';
+  restrictionRef @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Restriction No. (auto-generated)';
   // Lifecycle managed exclusively by Deactivate / Reactivate actions
   active         @Common.FieldControl: #ReadOnly  @title: 'Active';
   // name is auto-set by server handler from restrictionRef; not user-facing
