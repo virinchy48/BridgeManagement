@@ -1,5 +1,4 @@
 const cds = require('@sap/cds')
-const LOG  = cds.log('bms-dashboard')
 
 module.exports = function registerDashboardHandlers (srv, { logAudit }) {
 
@@ -40,7 +39,7 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
             SELECT.from('nhvr.Restriction').where({ status: 'ACTIVE', isActive: true })
         )
         let summary = {}
-        restrictions.forEach(r => { summary[r.restrictionType] = (summary[r.restrictionType] || 0) + 1 })
+        restrictions.forEach(activeRestriction => { summary[activeRestriction.restrictionType] = (summary[activeRestriction.restrictionType] || 0) + 1 })
         return Object.entries(summary).map(([restrictionType, count]) => ({ restrictionType, count }))
     })
 

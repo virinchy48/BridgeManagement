@@ -34,39 +34,39 @@ sap.ui.define([
 
     _refresh: function () {
       var self = this;
-      var m = this.getView().getModel("demo");
+      var demoModel = this.getView().getModel("demo");
 
       // Fetch demoModeActive config key
       fetch(SYSTEM_CFG_URL, { headers: { Accept: "application/json" }, credentials: "same-origin" })
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.statusText); })
-        .then(function (cfg) {
-          var active = cfg.value === "true";
-          m.setProperty("/demoActive", active);
-          m.setProperty("/statusLabel", active ? "Demo Mode ACTIVE" : "Not Active");
-          m.setProperty("/statusState", active ? "Warning" : "Success");
-          m.setProperty("/statusText",  active
+        .then(function (demoModeResponse) { return demoModeResponse.ok ? demoModeResponse.json() : Promise.reject(demoModeResponse.statusText); })
+        .then(function (demoModeConfig) {
+          var active = demoModeConfig.value === "true";
+          demoModel.setProperty("/demoActive", active);
+          demoModel.setProperty("/statusLabel", active ? "Demo Mode ACTIVE" : "Not Active");
+          demoModel.setProperty("/statusState", active ? "Warning" : "Success");
+          demoModel.setProperty("/statusText",  active
             ? "⚠  Demo Mode is ACTIVE — the system is running NSW demonstration data. Users see demo bridges in Map View and Bridge Register."
             : "Demo Mode is not active. The system is in its normal state.");
-          m.setProperty("/statusType", active ? "Warning" : "Success");
-          m.setProperty("/dataSource", active ? "Transport for NSW — Public Demo Dataset (30 NSW bridges)" : "Production / empty");
+          demoModel.setProperty("/statusType", active ? "Warning" : "Success");
+          demoModel.setProperty("/dataSource", active ? "Transport for NSW — Public Demo Dataset (30 NSW bridges)" : "Production / empty");
         })
         .catch(function () {
           // Config key may not exist yet — treat as inactive
-          m.setProperty("/demoActive", false);
-          m.setProperty("/statusLabel", "Not Active");
-          m.setProperty("/statusState", "Success");
-          m.setProperty("/statusText",  "Demo Mode is not active.");
-          m.setProperty("/statusType",  "Success");
+          demoModel.setProperty("/demoActive", false);
+          demoModel.setProperty("/statusLabel", "Not Active");
+          demoModel.setProperty("/statusState", "Success");
+          demoModel.setProperty("/statusText",  "Demo Mode is not active.");
+          demoModel.setProperty("/statusType",  "Success");
         });
 
       // Fetch bridge count
       fetch(BRIDGES_URL, { headers: { Accept: "application/json" }, credentials: "same-origin" })
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.statusText); })
-        .then(function (d) {
-          m.setProperty("/bridgeCount", String(d["@odata.count"] || 0) + " bridges");
+        .then(function (bridgeCountResponse) { return bridgeCountResponse.ok ? bridgeCountResponse.json() : Promise.reject(bridgeCountResponse.statusText); })
+        .then(function (bridgeCountData) {
+          demoModel.setProperty("/bridgeCount", String(bridgeCountData["@odata.count"] || 0) + " bridges");
         })
         .catch(function () {
-          m.setProperty("/bridgeCount", "Unknown");
+          demoModel.setProperty("/bridgeCount", "Unknown");
         });
     },
 
@@ -116,7 +116,7 @@ sap.ui.define([
         credentials: "same-origin",
         body: JSON.stringify({})
       })
-        .then(function (r) { return r.ok ? r.json() : Promise.reject(r.statusText); })
+        .then(function (actionResponse) { return actionResponse.ok ? actionResponse.json() : Promise.reject(actionResponse.statusText); })
         .then(function () {
           MessageToast.show(successMsg);
           self._refresh();

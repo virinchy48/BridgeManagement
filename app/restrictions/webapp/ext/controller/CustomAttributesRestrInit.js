@@ -5,12 +5,12 @@
   var OBJECT_TYPE = 'restriction';
 
   function getRestrictionId() {
-    var m = (window.location.hash || '').match(/Restrictions\(ID='([^']+)'/);
-    return m ? m[1] : null;
+    var restrictionIdMatch = (window.location.hash || '').match(/Restrictions\(ID='([^']+)'/);
+    return restrictionIdMatch ? restrictionIdMatch[1] : null;
   }
 
-  function esc(s) {
-    return String(s == null ? '' : s)
+  function esc(displayText) {
+    return String(displayText == null ? '' : displayText)
       .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
@@ -51,26 +51,26 @@
   }
 
   function renderInput(attr, val) {
-    var v = val != null ? val : '';
+    var customFieldValue = val != null ? val : '';
     var id = 'car-input-' + attr.internalKey;
     var base = 'style="width:100%;padding:6px 8px;border:1px solid #c0c0c0;border-radius:4px;font-size:13px;box-sizing:border-box"';
     if (attr.dataType === 'Boolean') {
-      return '<select id="' + id + '" ' + base + '><option value="">—</option><option value="true"' + (v === true || v === 'true' ? ' selected' : '') + '>Yes</option><option value="false"' + (v === false || v === 'false' ? ' selected' : '') + '>No</option></select>';
+      return '<select id="' + id + '" ' + base + '><option value="">—</option><option value="true"' + (customFieldValue === true || customFieldValue === 'true' ? ' selected' : '') + '>Yes</option><option value="false"' + (customFieldValue === false || customFieldValue === 'false' ? ' selected' : '') + '>No</option></select>';
     }
     if (attr.dataType === 'SingleSelect') {
       var opts = '<option value="">—</option>';
       (attr.allowedValues || []).forEach(function (av) {
-        opts += '<option value="' + esc(av.value) + '"' + (String(v) === av.value ? ' selected' : '') + '>' + esc(av.label || av.value) + '</option>';
+        opts += '<option value="' + esc(av.value) + '"' + (String(customFieldValue) === av.value ? ' selected' : '') + '>' + esc(av.label || av.value) + '</option>';
       });
       return '<select id="' + id + '" ' + base + '>' + opts + '</select>';
     }
     if (attr.dataType === 'Date') {
-      return '<input id="' + id + '" type="date" value="' + esc(v) + '" ' + base + '/>';
+      return '<input id="' + id + '" type="date" value="' + esc(customFieldValue) + '" ' + base + '/>';
     }
     if (attr.dataType === 'Integer' || attr.dataType === 'Decimal') {
-      return '<input id="' + id + '" type="number" value="' + esc(v) + '" ' + base + (attr.minValue != null ? ' min="' + attr.minValue + '"' : '') + (attr.maxValue != null ? ' max="' + attr.maxValue + '"' : '') + '/>';
+      return '<input id="' + id + '" type="number" value="' + esc(customFieldValue) + '" ' + base + (attr.minValue != null ? ' min="' + attr.minValue + '"' : '') + (attr.maxValue != null ? ' max="' + attr.maxValue + '"' : '') + '/>';
     }
-    return '<input id="' + id + '" type="text" value="' + esc(v) + '" ' + base + '/>';
+    return '<input id="' + id + '" type="text" value="' + esc(customFieldValue) + '" ' + base + '/>';
   }
 
   function collectValues(groups) {
@@ -112,8 +112,8 @@
     root.innerHTML = '<div style="padding:1rem;color:#8696a9">Loading...</div>';
 
     Promise.all([
-      fetch(API_BASE + '/config?objectType=' + OBJECT_TYPE).then(function (r) { return r.json(); }),
-      fetch(API_BASE + '/values/' + OBJECT_TYPE + '/' + id).then(function (r) { return r.json(); })
+      fetch(API_BASE + '/config?objectType=' + OBJECT_TYPE).then(function (configResponse) { return configResponse.json(); }),
+      fetch(API_BASE + '/values/' + OBJECT_TYPE + '/' + id).then(function (valuesResponse) { return valuesResponse.json(); })
     ]).then(function (results) {
       _state.groups = results[0].groups || [];
       _state.values = results[1].values || {};
@@ -135,7 +135,7 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: values })
-    }).then(function (r) { return r.json(); }).then(function (result) {
+    }).then(function (saveResponse) { return saveResponse.json(); }).then(function (result) {
       if (result.errors) {
         alert('Validation errors:\n' + result.errors.join('\n'));
         return;
@@ -153,16 +153,16 @@
     var id = getRestrictionId();
     if (!id) return;
     fetch(API_BASE + '/history/' + OBJECT_TYPE + '/' + id + '/' + key)
-      .then(function (r) { return r.json(); })
+      .then(function (historyResponse) { return historyResponse.json(); })
       .then(function (data) {
         var rows = data.history || [];
         if (!rows.length) { alert('No history found for ' + label); return; }
         var msg = label + ' — Change History\n\n';
-        rows.forEach(function (h) {
-          var oldV = h.oldValueText ?? h.oldValueInteger ?? h.oldValueDecimal ?? h.oldValueDate ?? (h.oldValueBoolean != null ? (h.oldValueBoolean ? 'Yes' : 'No') : '') ?? '—';
-          var newV = h.newValueText ?? h.newValueInteger ?? h.newValueDecimal ?? h.newValueDate ?? (h.newValueBoolean != null ? (h.newValueBoolean ? 'Yes' : 'No') : '') ?? '—';
-          msg += (h.changedAt || '').slice(0,16).replace('T',' ') + '  ' + (h.changedBy || '') + '\n';
-          msg += '  ' + oldV + '  →  ' + newV + '  [' + (h.changeSource || '') + ']\n\n';
+        rows.forEach(function (historyEntry) {
+          var previousCustomFieldValue = historyEntry.oldValueText ?? historyEntry.oldValueInteger ?? historyEntry.oldValueDecimal ?? historyEntry.oldValueDate ?? (historyEntry.oldValueBoolean != null ? (historyEntry.oldValueBoolean ? 'Yes' : 'No') : '') ?? '—';
+          var newCustomFieldValue = historyEntry.newValueText ?? historyEntry.newValueInteger ?? historyEntry.newValueDecimal ?? historyEntry.newValueDate ?? (historyEntry.newValueBoolean != null ? (historyEntry.newValueBoolean ? 'Yes' : 'No') : '') ?? '—';
+          msg += (historyEntry.changedAt || '').slice(0,16).replace('T',' ') + '  ' + (historyEntry.changedBy || '') + '\n';
+          msg += '  ' + previousCustomFieldValue + '  →  ' + newCustomFieldValue + '  [' + (historyEntry.changeSource || '') + ']\n\n';
         });
         alert(msg);
       });

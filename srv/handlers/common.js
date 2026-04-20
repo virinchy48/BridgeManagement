@@ -27,8 +27,8 @@ module.exports = function registerCommonHelpers (srv) {
                 changes: typeof changes === 'object' ? JSON.stringify(changes) : changes,
                 description
             }))
-        } catch (e) {
-            LOG.warn('Audit log failed', e.message)
+        } catch (error) {
+            LOG.warn('Audit log failed', error.message)
         }
     }
 
@@ -38,7 +38,7 @@ module.exports = function registerCommonHelpers (srv) {
                   .where({ bridge_ID: bridgeID, status: 'ACTIVE', isActive: true })
         )
         let postingStatus = activeRestrictions.length === 0 ? 'UNRESTRICTED'
-            : activeRestrictions.some(r => r.restrictionType === 'CLOSURE') ? 'CLOSED'
+            : activeRestrictions.some(activeRestriction => activeRestriction.restrictionType === 'CLOSURE') ? 'CLOSED'
             : 'RESTRICTED'
         await db.run(UPDATE('nhvr.Bridge').set({ postingStatus }).where({ ID: bridgeID }))
     }

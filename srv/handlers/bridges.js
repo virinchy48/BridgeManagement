@@ -1,5 +1,4 @@
 const cds = require('@sap/cds')
-const LOG  = cds.log('bms-bridges')
 
 // FIX 1 — TfNSW Bridge Inspection Manual condition scale (1=Good, 5=Critical)
 // Reference: TfNSW Bridge Inspection Manual — Condition Rating definitions

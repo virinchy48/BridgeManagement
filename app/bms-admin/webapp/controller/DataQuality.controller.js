@@ -52,13 +52,13 @@ sap.ui.define([
     if (pct >= 50) return "Warning";
     return "Error";
   }
-  function enrichBridge(b) {
+  function enrichBridge(bridge) {
     return {
-      ...b,
-      maxSeverityState:  severityState(b.maxSeverity),
-      maxSeverityLabel:  severityLabel(b.maxSeverity),
-      maxSeverityIcon:   severityIcon(b.maxSeverity),
-      completenessState: completenessState(b.completenessScore)
+      ...bridge,
+      maxSeverityState:  severityState(bridge.maxSeverity),
+      maxSeverityLabel:  severityLabel(bridge.maxSeverity),
+      maxSeverityIcon:   severityIcon(bridge.maxSeverity),
+      completenessState: completenessState(bridge.completenessScore)
     };
   }
 
@@ -164,14 +164,14 @@ sap.ui.define([
       const bridges = model.getProperty("/bridges") || [];
       if (!bridges.length) { MessageToast.show("No data to export."); return; }
 
-      const escape  = v => { const s = (v == null ? "" : String(v)); return s.includes(",") || s.includes('"') || s.includes("\n") ? '"' + s.replace(/"/g, '""') + '"' : s; };
+      const escapeCsvCell  = bridgeCell => { const cellText = (bridgeCell == null ? "" : String(bridgeCell)); return cellText.includes(",") || cellText.includes('"') || cellText.includes("\n") ? '"' + cellText.replace(/"/g, '""') + '"' : cellText; };
       const FIELDS  = ["bridgeId","bridgeName","state","issueCount","maxSeverity","completenessScore"];
       const HEADERS = ["Bridge ID","Bridge Name","State","Issue Count","Max Severity","Completeness %"];
-      const rows    = bridges.map(b => FIELDS.map(f => escape(b[f])).join(","));
+      const rows    = bridges.map(bridge => FIELDS.map(qualityField => escapeCsvCell(bridge[qualityField])).join(","));
       const csv     = [HEADERS.join(","), ...rows].join("\n");
-      const a       = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })), download: "BMS_DataQuality_" + new Date().toISOString().slice(0,10) + ".csv" });
-      a.click();
-      URL.revokeObjectURL(a.href);
+      const downloadLink       = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })), download: "BMS_DataQuality_" + new Date().toISOString().slice(0,10) + ".csv" });
+      downloadLink.click();
+      URL.revokeObjectURL(downloadLink.href);
       MessageToast.show("Export downloaded.");
     },
 

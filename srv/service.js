@@ -1,5 +1,4 @@
 const cds = require('@sap/cds')
-const LOG  = cds.log('bms')
 
 const registerCommonHelpers   = require('./handlers/common')
 const registerDashboardHandlers = require('./handlers/dashboard')

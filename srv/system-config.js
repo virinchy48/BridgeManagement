@@ -17,11 +17,14 @@ async function getConfig(key) {
 }
 
 function getConfigInt(key, fallback = 0) {
-  return getConfig(key).then(v => { const n = parseInt(v, 10); return isNaN(n) ? fallback : n })
+  return getConfig(key).then(value => {
+    const parsedValue = parseInt(value, 10)
+    return isNaN(parsedValue) ? fallback : parsedValue
+  })
 }
 
 function getConfigBool(key, fallback = false) {
-  return getConfig(key).then(v => v === 'true' || v === '1' || v === 'yes')
+  return getConfig(key).then(value => value === 'true' || value === '1' || value === 'yes')
 }
 
 function invalidateCache(key) { _cache.delete(key) }

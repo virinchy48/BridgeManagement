@@ -179,7 +179,7 @@ sap.ui.define([
       var oSelect = function (label, path, items) {
         var sap_m = sap.m;
         var oSel = new sap_m.Select({ selectedKey: "{dlg>" + path.slice(1) + "}" });
-        items.forEach(function (k) { oSel.addItem(new sap.ui.core.Item({ key: k, text: k })); });
+        items.forEach(function (selectOption) { oSel.addItem(new sap.ui.core.Item({ key: selectOption, text: selectOption })); });
         return new VBox({ items: [new Label({ text: label }), oSel] }).addStyleClass("sapUiSmallMarginBottom");
       };
 
@@ -209,16 +209,16 @@ sap.ui.define([
           text: bEdit ? "Save" : "Add",
           type: "Emphasized",
           press: function () {
-            var d = oModel.getData();
-            if (!d.name || !d.url) { MessageToast.show("Name and URL are required."); return; }
+            var referenceLayer = oModel.getData();
+            if (!referenceLayer.name || !referenceLayer.url) { MessageToast.show("Name and URL are required."); return; }
             var method = bEdit ? "PATCH" : "POST";
-            var url    = bEdit ? REF_LAYER_URL + "('" + d.ID + "')" : REF_LAYER_URL;
-            var body   = Object.assign({}, d);
+            var url    = bEdit ? REF_LAYER_URL + "('" + referenceLayer.ID + "')" : REF_LAYER_URL;
+            var body   = Object.assign({}, referenceLayer);
             delete body["@context"]; delete body["@metadataEtag"];
             fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
               .then(function (res) { return res.ok ? res : Promise.reject(res.statusText); })
               .then(function () { self._loadRefLayers(); oDialog.close(); })
-              .catch(function (e) { MessageBox.error("Failed to save layer: " + e); });
+              .catch(function (error) { MessageBox.error("Failed to save layer: " + error); });
           }
         }),
         endButton: new Button({ text: "Cancel", press: function () { oDialog.close(); } }),

@@ -164,7 +164,7 @@ sap.ui.define([
 
     onSave: async function () {
       const vm    = this._vm();
-      const dirty = (vm.getProperty("/allItems") || []).filter(function (r) { return r._dirty; });
+      const dirty = (vm.getProperty("/allItems") || []).filter(function (bridgeRow) { return bridgeRow._dirty; });
       if (!dirty.length) { return; }
 
       vm.setProperty("/busy", true);
@@ -241,9 +241,9 @@ sap.ui.define([
     },
 
     onTableSelectionChange: function () {
-      const n = this.byId("massEditTable").getSelectedIndices().length;
-      this._vm().setProperty("/selectedCount",  n);
-      this._vm().setProperty("/applyButtonText", this._t("applyToSelected", [n]));
+      const selectedBridgeCount = this.byId("massEditTable").getSelectedIndices().length;
+      this._vm().setProperty("/selectedCount",  selectedBridgeCount);
+      this._vm().setProperty("/applyButtonText", this._t("applyToSelected", [selectedBridgeCount]));
     },
 
     /* ─── Bulk apply ─────────────────────────────────────────────────────── */
@@ -262,8 +262,8 @@ sap.ui.define([
     },
 
     onBulkFieldChange: function (oEvent) {
-      const field = this._config().fields.find(function (f) {
-        return f.key === oEvent.getSource().getSelectedKey();
+      const field = this._config().fields.find(function (bulkEditableField) {
+        return bulkEditableField.key === oEvent.getSource().getSelectedKey();
       });
       const vm = this._vm();
       vm.setProperty("/bulkInputType", field ? field.type : "text");
@@ -275,7 +275,7 @@ sap.ui.define([
     onBulkApply: function () {
       const vm       = this._vm();
       const fieldKey = vm.getProperty("/bulkFieldKey");
-      const field    = this._config().fields.find(function (f) { return f.key === fieldKey; });
+      const field    = this._config().fields.find(function (bulkEditableField) { return bulkEditableField.key === fieldKey; });
       if (!field) { MessageToast.show(this._t("bulkNoField")); return; }
 
       const table    = this.byId("massEditTable");
@@ -318,8 +318,8 @@ sap.ui.define([
         if (gen !== this._loadGeneration) { return; }
 
         const payloadKey = config.key === "BRIDGE" ? "bridges" : "restrictions";
-        const rows = (data[payloadKey] || []).map(function (r) {
-          return Object.assign({}, r, { _dirty: false });
+        const rows = (data[payloadKey] || []).map(function (businessRecord) {
+          return Object.assign({}, businessRecord, { _dirty: false });
         });
         this._baselineRows = this._clone(rows);
 
@@ -431,14 +431,14 @@ sap.ui.define([
     _markDirty: function (rowPath) {
       const vm       = this._vm();
       const row      = vm.getProperty(rowPath);
-      const baseline = this._baselineRows.find(function (b) {
-        return String(b.ID) === String(row.ID);
+      const baseline = this._baselineRows.find(function (baselineRecord) {
+        return String(baselineRecord.ID) === String(row.ID);
       });
       if (!baseline) { return; }
 
-      const dirty = this._config().fields.some(function (f) {
-        return String(row[f.key]      != null ? row[f.key]      : "") !==
-               String(baseline[f.key] != null ? baseline[f.key] : "");
+      const dirty = this._config().fields.some(function (editableField) {
+        return String(row[editableField.key]      != null ? row[editableField.key]      : "") !==
+               String(baseline[editableField.key] != null ? baseline[editableField.key] : "");
       });
       vm.setProperty(rowPath + "/_dirty", dirty);
       this._updateDirtyStats();
@@ -447,9 +447,9 @@ sap.ui.define([
     _updateDirtyStats: function () {
       const vm   = this._vm();
       const all  = vm.getProperty("/allItems") || [];
-      const n    = all.filter(function (r) { return r._dirty; }).length;
-      vm.setProperty("/dirtyCount",   n);
-      vm.setProperty("/dirtyMessage", this._t("dirtyRows", [n]));
+      const dirtyBridgeCount = all.filter(function (bridgeRow) { return bridgeRow._dirty; }).length;
+      vm.setProperty("/dirtyCount",   dirtyBridgeCount);
+      vm.setProperty("/dirtyMessage", this._t("dirtyRows", [dirtyBridgeCount]));
     },
 
     _extractValue: function (field, ctrl) {
@@ -463,8 +463,8 @@ sap.ui.define([
 
     _normalize: function (type, val) {
       if (val === "" || val == null) { return null; }
-      if (type === "number")  { const n = parseInt(val, 10);  return isFinite(n) ? n : null; }
-      if (type === "decimal") { const n = parseFloat(val);    return isFinite(n) ? n : null; }
+      if (type === "number")  { const bridgeInteger = parseInt(val, 10);  return isFinite(bridgeInteger) ? bridgeInteger : null; }
+      if (type === "decimal") { const bridgeDecimal = parseFloat(val);    return isFinite(bridgeDecimal) ? bridgeDecimal : null; }
       if (type === "boolean") { return Boolean(val); }
       return val;
     },
@@ -495,8 +495,8 @@ sap.ui.define([
         }
         if (search) {
           list.push(new Filter({
-            filters: config.searchFields.map(function (sf) {
-              return new Filter({ path: sf, test: function (v) { return String(v || "").toLowerCase().includes(search); } });
+            filters: config.searchFields.map(function (searchField) {
+              return new Filter({ path: searchField, test: function (cellValue) { return String(cellValue || "").toLowerCase().includes(search); } });
             }),
             and: false
           }));
@@ -531,8 +531,8 @@ sap.ui.define([
 
     _applyLookups: function (lookups) {
       const vm = this._vm();
-      Object.keys(lookups || {}).forEach(function (k) {
-        vm.setProperty("/options/" + k, [{ key: "", text: "—" }].concat(lookups[k] || []));
+      Object.keys(lookups || {}).forEach(function (lookupName) {
+        vm.setProperty("/options/" + lookupName, [{ key: "", text: "—" }].concat(lookups[lookupName] || []));
       });
     },
 
@@ -547,8 +547,8 @@ sap.ui.define([
       vm.setProperty("/bulkButtonText",    this._t("bulkApply"));
       vm.setProperty("/applyButtonText",   this._t("applyToSelected", [0]));
       vm.setProperty("/options/bulkFields", config.fields
-        .filter(function (f) { return f.editable; })
-        .map(function (f) { return { key: f.key, text: this._t(f.labelKey) }; }.bind(this)));
+        .filter(function (editableField) { return editableField.editable; })
+        .map(function (editableField) { return { key: editableField.key, text: this._t(editableField.labelKey) }; }.bind(this)));
     },
 
     /* ─── Bulk input helpers ─────────────────────────────────────────────── */
@@ -574,21 +574,21 @@ sap.ui.define([
     /* ─── Payload / network ──────────────────────────────────────────────── */
 
     _toPayload: function (row) {
-      const p = { ID: row.ID };
+      const bridgePatch = { ID: row.ID };
       // Sanitize values before sending to the backend:
       //   • date fields: only pass valid YYYY-MM-DD strings; send null for anything else
       //     (CAP can store Julian-epoch sentinels like "-4713-11-25" for NULLs)
       //   • empty strings → null
-      this._config().fields.forEach(function (f) {
-        if (!f.editable) { return; }
-        var val = row[f.key];
-        if (f.type === "date") {
-          p[f.key] = (typeof val === "string" && /^\d{4}-\d{2}-\d{2}$/.test(val)) ? val : null;
+      this._config().fields.forEach(function (bridgeField) {
+        if (!bridgeField.editable) { return; }
+        var bridgeCellValue = row[bridgeField.key];
+        if (bridgeField.type === "date") {
+          bridgePatch[bridgeField.key] = (typeof bridgeCellValue === "string" && /^\d{4}-\d{2}-\d{2}$/.test(bridgeCellValue)) ? bridgeCellValue : null;
         } else {
-          p[f.key] = (val === "") ? null : val;
+          bridgePatch[bridgeField.key] = (bridgeCellValue === "") ? null : bridgeCellValue;
         }
       });
-      return p;
+      return bridgePatch;
     },
 
     _fetchJson: async function (path, options) {

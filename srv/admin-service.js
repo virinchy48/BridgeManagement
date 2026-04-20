@@ -197,8 +197,8 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (!fresh) return
     // For creates, oldValue is empty for all fields that have a value
     const changes = Object.entries(fresh)
-      .filter(([k, v]) => !['modifiedAt','modifiedBy','createdAt','createdBy'].includes(k) && v != null && v !== '')
-      .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+      .filter(([bridgePropertyName, bridgePropertyData]) => !['modifiedAt','modifiedBy','createdAt','createdBy'].includes(bridgePropertyName) && bridgePropertyData != null && bridgePropertyData !== '')
+      .map(([bridgePropertyName, bridgePropertyData]) => ({ fieldName: bridgePropertyName, oldValue: '', newValue: String(bridgePropertyData) }))
     await writeChangeLogs(db, {
       objectType:  'Bridge',
       objectId:    String(result.ID),
@@ -241,8 +241,8 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const fresh = await fetchCurrentRecord(db, 'bridge.management.Restrictions', { ID: result.ID })
     if (!fresh) return
     const changes = Object.entries(fresh)
-      .filter(([k, v]) => !['modifiedAt','modifiedBy','createdAt','createdBy'].includes(k) && v != null && v !== '')
-      .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+      .filter(([restrictionPropertyName, restrictionPropertyData]) => !['modifiedAt','modifiedBy','createdAt','createdBy'].includes(restrictionPropertyName) && restrictionPropertyData != null && restrictionPropertyData !== '')
+      .map(([restrictionPropertyName, restrictionPropertyData]) => ({ fieldName: restrictionPropertyName, oldValue: '', newValue: String(restrictionPropertyData) }))
     await writeChangeLogs(db, {
       objectType:  'Restriction',
       objectId:    result.ID,

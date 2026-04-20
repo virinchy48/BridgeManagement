@@ -562,7 +562,7 @@ sap.ui.define([
         const nav = sap && sap.ushell && sap.ushell.Container &&
           sap.ushell.Container.getService("CrossApplicationNavigation");
         if (nav) { nav.toExternal({ target: { shellHash: hash } }); return; }
-      } catch (e) { /* fall through */ }
+      } catch (navigationError) { /* fall through */ }
       window.location.href = hash;
     },
 
@@ -690,49 +690,49 @@ sap.ui.define([
       };
     },
 
-    _normalizeRestriction: function (r) {
+    _normalizeRestriction: function (restriction) {
       return {
-        ID: r.ID,
-        restrictionRef: r.restrictionRef || "—",
-        bridgeRef: r.bridgeRef || "—",
-        bridge_ID: r.bridge_ID,
-        bridgeId: r.bridgeId || "—",
-        bridgeName: r.bridgeName || "Bridge",
-        state: r.state || null,
-        latitude: Number(r.latitude),
-        longitude: Number(r.longitude),
-        restrictionType: r.restrictionType || null,
-        restrictionCategory: r.restrictionCategory || null,
-        restrictionValue: r.restrictionValue || null,
-        restrictionUnit: r.restrictionUnit || null,
-        restrictionStatus: r.restrictionStatus || null,
-        restrictionStatusLabel: r.restrictionStatus || "Active",
-        restrictionStatusState: r.restrictionStatus === "Active" ? "Success" : "Warning",
-        grossMassLimit: r.grossMassLimit,
-        axleMassLimit: r.axleMassLimit,
-        heightLimit: r.heightLimit,
-        speedLimit: r.speedLimit,
-        permitRequired: Boolean(r.permitRequired),
-        escortRequired: Boolean(r.escortRequired),
-        effectiveFrom: r.effectiveFrom || null,
-        effectiveTo: r.effectiveTo || null,
-        approvedBy: r.approvedBy || null,
-        direction: r.direction || null,
-        remarks: r.remarks || null,
-        severityColor: this._restrictionSeverityColor(r),
-        severityClass: this._restrictionSeverityClass(r)
+        ID: restriction.ID,
+        restrictionRef: restriction.restrictionRef || "—",
+        bridgeRef: restriction.bridgeRef || "—",
+        bridge_ID: restriction.bridge_ID,
+        bridgeId: restriction.bridgeId || "—",
+        bridgeName: restriction.bridgeName || "Bridge",
+        state: restriction.state || null,
+        latitude: Number(restriction.latitude),
+        longitude: Number(restriction.longitude),
+        restrictionType: restriction.restrictionType || null,
+        restrictionCategory: restriction.restrictionCategory || null,
+        restrictionValue: restriction.restrictionValue || null,
+        restrictionUnit: restriction.restrictionUnit || null,
+        restrictionStatus: restriction.restrictionStatus || null,
+        restrictionStatusLabel: restriction.restrictionStatus || "Active",
+        restrictionStatusState: restriction.restrictionStatus === "Active" ? "Success" : "Warning",
+        grossMassLimit: restriction.grossMassLimit,
+        axleMassLimit: restriction.axleMassLimit,
+        heightLimit: restriction.heightLimit,
+        speedLimit: restriction.speedLimit,
+        permitRequired: Boolean(restriction.permitRequired),
+        escortRequired: Boolean(restriction.escortRequired),
+        effectiveFrom: restriction.effectiveFrom || null,
+        effectiveTo: restriction.effectiveTo || null,
+        approvedBy: restriction.approvedBy || null,
+        direction: restriction.direction || null,
+        remarks: restriction.remarks || null,
+        severityColor: this._restrictionSeverityColor(restriction),
+        severityClass: this._restrictionSeverityClass(restriction)
       };
     },
 
-    _restrictionSeverityColor: function (r) {
-      if (r.restrictionStatus === "Active" && (r.grossMassLimit || r.axleMassLimit)) return "#ef4444";
-      if (r.heightLimit || r.speedLimit) return "#f59e0b";
+    _restrictionSeverityColor: function (restriction) {
+      if (restriction.restrictionStatus === "Active" && (restriction.grossMassLimit || restriction.axleMassLimit)) return "#ef4444";
+      if (restriction.heightLimit || restriction.speedLimit) return "#f59e0b";
       return "#6366f1";
     },
 
-    _restrictionSeverityClass: function (r) {
-      if (r.restrictionStatus === "Active" && (r.grossMassLimit || r.axleMassLimit)) return "critical";
-      if (r.heightLimit || r.speedLimit) return "warning";
+    _restrictionSeverityClass: function (restriction) {
+      if (restriction.restrictionStatus === "Active" && (restriction.grossMassLimit || restriction.axleMassLimit)) return "critical";
+      if (restriction.heightLimit || restriction.speedLimit) return "warning";
       return "info";
     },
 
@@ -753,19 +753,19 @@ sap.ui.define([
         this._restrictionMarkerGroup.addTo(this._leafletMap);
       }
       const restrictions = this._vm().getProperty("/restrictionsData") || [];
-      restrictions.forEach(function (r) {
+      restrictions.forEach(function (restriction) {
         const icon = window.L.divIcon({
           className: "",
-          html: "<div class=\"rstrMarker rstrMarker--" + r.severityClass + "\">" +
-                "<span class=\"rstrMarkerLabel\">" + this._restrictionAbbr(r.restrictionType) + "</span>" +
+          html: "<div class=\"rstrMarker rstrMarker--" + restriction.severityClass + "\">" +
+                "<span class=\"rstrMarkerLabel\">" + this._restrictionAbbr(restriction.restrictionType) + "</span>" +
                 "</div>",
           iconSize: [28, 28],
           iconAnchor: [14, 14]
         });
-        const marker = window.L.marker([r.latitude, r.longitude], { icon: icon });
-        marker.bindPopup(this._restrictionPopupHtml(r), { maxWidth: 280 });
+        const marker = window.L.marker([restriction.latitude, restriction.longitude], { icon: icon });
+        marker.bindPopup(this._restrictionPopupHtml(restriction), { maxWidth: 280 });
         marker.on("click", function () {
-          this._selectFeature("restriction", r);
+          this._selectFeature("restriction", restriction);
         }.bind(this));
         this._restrictionMarkerGroup.addLayer(marker);
       }.bind(this));
@@ -779,18 +779,18 @@ sap.ui.define([
       return map[type] || type.substring(0, 2).toUpperCase();
     },
 
-    _restrictionPopupHtml: function (r) {
+    _restrictionPopupHtml: function (restriction) {
       const limits = [];
-      if (r.grossMassLimit) limits.push("GVM: " + r.grossMassLimit + " t");
-      if (r.heightLimit) limits.push("H: " + r.heightLimit + " m");
-      if (r.speedLimit) limits.push("Speed: " + r.speedLimit + " km/h");
+      if (restriction.grossMassLimit) limits.push("GVM: " + restriction.grossMassLimit + " t");
+      if (restriction.heightLimit) limits.push("H: " + restriction.heightLimit + " m");
+      if (restriction.speedLimit) limits.push("Speed: " + restriction.speedLimit + " km/h");
       return [
         "<div class='leafletPopup'>",
-        "<strong>", r.restrictionType || "Restriction", "</strong><br>",
-        "<em>", r.bridgeName, "</em><br>",
-        "Ref: ", r.restrictionRef, "<br>",
+        "<strong>", restriction.restrictionType || "Restriction", "</strong><br>",
+        "<em>", restriction.bridgeName, "</em><br>",
+        "Ref: ", restriction.restrictionRef, "<br>",
         limits.length ? limits.join(" · ") + "<br>" : "",
-        "Status: ", r.restrictionStatus || "Active",
+        "Status: ", restriction.restrictionStatus || "Active",
         "</div>"
       ].join("");
     },
@@ -832,16 +832,16 @@ sap.ui.define([
           nav.toExternal({ target: { shellHash: hash } });
           return;
         }
-      } catch (e) { /* fall through */ }
+      } catch (navigationError) { /* fall through */ }
       window.open(hash, "_blank");
     },
 
     onViewBridgeFromRestriction: function () {
       const feature = this._vm().getProperty("/selectedFeature");
       if (!feature || feature.type !== "restriction") return;
-      const r = feature.data;
+      const selectedRestriction = feature.data;
       const allBridges = this._vm().getProperty("/allBridges") || [];
-      const bridge = allBridges.find(function (b) { return b.ID === r.bridge_ID; });
+      const bridge = allBridges.find(function (candidateBridge) { return candidateBridge.ID === selectedRestriction.bridge_ID; });
       if (bridge) {
         this._selectFeature("bridge", bridge);
       }
@@ -873,12 +873,12 @@ sap.ui.define([
         ? bounds.getWest() + "," + bounds.getSouth() + "," + bounds.getEast() + "," + bounds.getNorth()
         : null;
       const url = "/map/api/export?layer=" + layer + "&format=" + format + (bbox ? "&bbox=" + bbox : "");
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "export." + format;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      const downloadLink = document.createElement("a");
+      downloadLink.href = url;
+      downloadLink.download = "export." + format;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
     },
 
     onShowExportMenu: function (oEvent) {
@@ -931,7 +931,7 @@ sap.ui.define([
       const bridgeId = params.get("bridgeId") || params.get("highlightId");
       if (bridgeId) {
         const allBridges = this._vm().getProperty("/allBridges") || [];
-        const bridge = allBridges.find(function (b) { return String(b.ID) === String(bridgeId) || b.bridgeId === bridgeId; });
+        const bridge = allBridges.find(function (candidateBridge) { return String(candidateBridge.ID) === String(bridgeId) || candidateBridge.bridgeId === bridgeId; });
         if (bridge) {
           setTimeout(function () { this._selectFeature("bridge", bridge); }.bind(this), 500);
         }
@@ -1505,13 +1505,13 @@ sap.ui.define([
 
     _pointInPolygon: function (point, polygon) {
       let inside = false;
-      for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-        const xi = polygon[i][0];
-        const yi = polygon[i][1];
-        const xj = polygon[j][0];
-        const yj = polygon[j][1];
-        const intersect = ((yi > point[1]) !== (yj > point[1])) &&
-          (point[0] < (xj - xi) * (point[1] - yi) / ((yj - yi) || Number.EPSILON) + xi);
+      for (let currentVertexIndex = 0, previousVertexIndex = polygon.length - 1; currentVertexIndex < polygon.length; previousVertexIndex = currentVertexIndex++) {
+        const currentLongitude = polygon[currentVertexIndex][0];
+        const currentLatitude = polygon[currentVertexIndex][1];
+        const previousLongitude = polygon[previousVertexIndex][0];
+        const previousLatitude = polygon[previousVertexIndex][1];
+        const intersect = ((currentLatitude > point[1]) !== (previousLatitude > point[1])) &&
+          (point[0] < (previousLongitude - currentLongitude) * (point[1] - currentLatitude) / ((previousLatitude - currentLatitude) || Number.EPSILON) + currentLongitude);
         if (intersect) inside = !inside;
       }
       return inside;
@@ -1602,7 +1602,7 @@ sap.ui.define([
         var bundle = model.getResourceBundle();
         if (!bundle || typeof bundle.getText !== "function") return key;
         return bundle.getText(key);
-      } catch (e) {
+      } catch (textBundleError) {
         return key;
       }
     },
@@ -1651,9 +1651,9 @@ sap.ui.define([
 
       // Check demo mode flag
       fetch("/odata/v4/admin/SystemConfig('demoModeActive')", { headers: { Accept: "application/json" } })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) {
-          if (d && d.value === "true") {
+        .then(function (demoModeResponse) { return demoModeResponse.ok ? demoModeResponse.json() : null; })
+        .then(function (demoModeConfig) {
+          if (demoModeConfig && demoModeConfig.value === "true") {
             this._vm().setProperty("/demoModeActive", true);
           }
         }.bind(this))
@@ -1667,27 +1667,27 @@ sap.ui.define([
       })
         .then(function (res) { return res.ok ? res.json() : Promise.reject(); })
         .then(function (data) {
-          var layers = (data.value || []).map(function (l) {
-            return Object.assign({}, l, { sessionActive: l.enabledByDefault === true });
+          var layers = (data.value || []).map(function (referenceLayer) {
+            return Object.assign({}, referenceLayer, { sessionActive: referenceLayer.enabledByDefault === true });
           });
           // Group into category objects for the view
           var grouped = [];
           var catOrder = [];
-          layers.forEach(function (l) {
-            if (catOrder.indexOf(l.category) === -1) catOrder.push(l.category);
+          layers.forEach(function (referenceLayer) {
+            if (catOrder.indexOf(referenceLayer.category) === -1) catOrder.push(referenceLayer.category);
           });
-          catOrder.forEach(function (cat) {
+          catOrder.forEach(function (referenceLayerCategory) {
             grouped.push({
-              category: cat,
-              items: layers.filter(function (l) { return l.category === cat; })
+              category: referenceLayerCategory,
+              items: layers.filter(function (referenceLayer) { return referenceLayer.category === referenceLayerCategory; })
             });
           });
           self._vm().setProperty("/dynRefLayers", layers);
           self._vm().setProperty("/dynRefGroups", grouped);
           // Auto-enable layers marked enabledByDefault once Leaflet is ready
           self._leafletReady.then(function () {
-            layers.filter(function (l) { return l.enabledByDefault; }).forEach(function (l) {
-              self._addDynamicRefLayer(l);
+            layers.filter(function (referenceLayer) { return referenceLayer.enabledByDefault; }).forEach(function (referenceLayer) {
+              self._addDynamicRefLayer(referenceLayer);
             });
           });
         })
@@ -1701,7 +1701,7 @@ sap.ui.define([
       var layerId = cd && cd.length ? cd[0].getValue() : null;
       if (!layerId) return;
       var layers = this._vm().getProperty("/dynRefLayers") || [];
-      var layer  = layers.find(function (l) { return l.ID === layerId; });
+      var layer  = layers.find(function (referenceLayer) { return referenceLayer.ID === layerId; });
       if (!layer) return;
       layer.sessionActive = state;
       this._vm().setProperty("/dynRefLayers", layers.slice());
@@ -1831,11 +1831,11 @@ sap.ui.define([
         }
       });
       new GpsControl().addTo(map);
-      map.on("locationfound", function (e) {
-        window.L.popup().setLatLng(e.latlng)
-          .setContent("<strong>Your location</strong><br>" + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5))
+      map.on("locationfound", function (locationEvent) {
+        window.L.popup().setLatLng(locationEvent.latlng)
+          .setContent("<strong>Your location</strong><br>" + locationEvent.latlng.lat.toFixed(5) + ", " + locationEvent.latlng.lng.toFixed(5))
           .openOn(map);
-        map.setView(e.latlng, 13);
+        map.setView(locationEvent.latlng, 13);
       });
       map.on("locationerror", function () {
         sap.m.MessageToast.show("Could not determine your location.");
@@ -1855,12 +1855,12 @@ sap.ui.define([
       var self = this;
       var oBody = new VBox({ class: "nhvrHelpPopoverBody" });
 
-      aItems.forEach(function (t) {
+      aItems.forEach(function (helpTopic) {
         var oDetailRows = new VBox({ class: "nhvrHelpItemDetails" });
 
         [
-          { label: "Purpose:",    text: t.purpose },
-          { label: "How to use:", text: t.howToUse }
+          { label: "Purpose:",    text: helpTopic.purpose },
+          { label: "How to use:", text: helpTopic.howToUse }
         ].forEach(function (row) {
           oDetailRows.addItem(
             new HBox({
@@ -2042,11 +2042,11 @@ sap.ui.define([
       if (!this._leafletMap || !window.L || !window.L.heatLayer) return;
       var bridges = this._vm().getProperty("/bridges") || [];
       var cfg = this._gisConfig || {};
-      var points = bridges.filter(function (b) {
-        return Number.isFinite(b.latitude) && Number.isFinite(b.longitude);
-      }).map(function (b) {
-        var intensity = b.conditionRating != null ? (10 - b.conditionRating) / 10 : 0.5;
-        return [b.latitude, b.longitude, intensity];
+      var points = bridges.filter(function (bridge) {
+        return Number.isFinite(bridge.latitude) && Number.isFinite(bridge.longitude);
+      }).map(function (bridge) {
+        var intensity = bridge.conditionRating != null ? (10 - bridge.conditionRating) / 10 : 0.5;
+        return [bridge.latitude, bridge.longitude, intensity];
       });
 
       if (this._heatLayer) {
@@ -2078,20 +2078,20 @@ sap.ui.define([
 
       var threshold = (this._gisConfig && this._gisConfig.conditionAlertThreshold) || 3;
       var bridges = this._vm().getProperty("/bridges") || [];
-      var alerts = bridges.filter(function (b) {
-        return b.conditionRating != null && b.conditionRating <= threshold;
+      var alerts = bridges.filter(function (bridge) {
+        return bridge.conditionRating != null && bridge.conditionRating <= threshold;
       });
 
       this._conditionAlertLayer = window.L.layerGroup();
-      alerts.forEach(function (b) {
+      alerts.forEach(function (bridge) {
         var icon = window.L.divIcon({
           className: "",
           html: "<div class='condAlert'>\u26A0</div>",
           iconSize: [22, 22],
           iconAnchor: [11, 11]
         });
-        window.L.marker([b.latitude, b.longitude], { icon: icon })
-          .bindPopup("<strong>Condition Alert</strong><br>" + b.bridgeName + "<br>Rating: " + b.conditionRating)
+        window.L.marker([bridge.latitude, bridge.longitude], { icon: icon })
+          .bindPopup("<strong>Condition Alert</strong><br>" + bridge.bridgeName + "<br>Rating: " + bridge.conditionRating)
           .addTo(this._conditionAlertLayer);
       }.bind(this));
 
@@ -2106,17 +2106,17 @@ sap.ui.define([
         this._vm().setProperty("/stats", { total: 0, avgCondition: "—", poor: 0, restricted: 0, closed: 0 });
         return;
       }
-      var rated = bridges.filter(function (b) { return b.conditionRating != null; });
+      var rated = bridges.filter(function (bridge) { return bridge.conditionRating != null; });
       var avgCondition = rated.length
-        ? (rated.reduce(function (s, b) { return s + b.conditionRating; }, 0) / rated.length).toFixed(1)
+        ? (rated.reduce(function (ratingTotal, bridge) { return ratingTotal + bridge.conditionRating; }, 0) / rated.length).toFixed(1)
         : "—";
       var threshold = (this._gisConfig && this._gisConfig.conditionAlertThreshold) || 3;
       this._vm().setProperty("/stats", {
         total: bridges.length,
         avgCondition: avgCondition,
-        poor: bridges.filter(function (b) { return b.conditionRating != null && b.conditionRating <= threshold; }).length,
-        restricted: bridges.filter(function (b) { return b.postingStatus === "Restricted" || b.postingStatus === "Under Review"; }).length,
-        closed: bridges.filter(function (b) { return b.postingStatus === "Closed"; }).length
+        poor: bridges.filter(function (bridge) { return bridge.conditionRating != null && bridge.conditionRating <= threshold; }).length,
+        restricted: bridges.filter(function (bridge) { return bridge.postingStatus === "Restricted" || bridge.postingStatus === "Under Review"; }).length,
+        closed: bridges.filter(function (bridge) { return bridge.postingStatus === "Closed"; }).length
       });
     },
 
@@ -2209,18 +2209,18 @@ sap.ui.define([
       }).addTo(this._leafletMap);
 
       this._proximityLayer = window.L.layerGroup();
-      results.forEach(function (b) {
-        window.L.circleMarker([b.latitude, b.longitude], {
+      results.forEach(function (nearbyBridge) {
+        window.L.circleMarker([nearbyBridge.latitude, nearbyBridge.longitude], {
           radius: 8, color: "#7c3aed", fillColor: "#a78bfa", fillOpacity: 0.9, weight: 2
-        }).bindPopup("<strong>" + (b.bridgeName || "Bridge") + "</strong><br>" + (b.bridgeId || ""))
+        }).bindPopup("<strong>" + (nearbyBridge.bridgeName || "Bridge") + "</strong><br>" + (nearbyBridge.bridgeId || ""))
           .addTo(this._proximityLayer);
       }.bind(this));
       this._proximityLayer.addTo(this._leafletMap);
 
       if (results.length) {
-        var pts = results.map(function (b) { return [b.latitude, b.longitude]; });
-        pts.push(center);
-        this._leafletMap.fitBounds(window.L.latLngBounds(pts).pad(0.15));
+        var nearbyBridgePoints = results.map(function (nearbyBridge) { return [nearbyBridge.latitude, nearbyBridge.longitude]; });
+        nearbyBridgePoints.push(center);
+        this._leafletMap.fitBounds(window.L.latLngBounds(nearbyBridgePoints).pad(0.15));
       }
     },
 
@@ -2229,21 +2229,21 @@ sap.ui.define([
     _wgs84ToMga: function (lat, lng) {
       var zone = Math.floor((lng + 180) / 6) + 1;
       var cm = (zone - 1) * 6 - 180 + 3;
-      var a = 6378137.0, f = 1 / 298.257222101;
-      var b = a * (1 - f);
-      var e2 = (a * a - b * b) / (a * a);
-      var k0 = 0.9996, e0 = 500000, n0 = 10000000;
+      var semiMajorAxis = 6378137.0, flattening = 1 / 298.257222101;
+      var semiMinorAxis = semiMajorAxis * (1 - flattening);
+      var eccentricitySquared = (semiMajorAxis * semiMajorAxis - semiMinorAxis * semiMinorAxis) / (semiMajorAxis * semiMajorAxis);
+      var scaleFactor = 0.9996, falseEasting = 500000, falseNorthing = 10000000;
       var latRad = lat * Math.PI / 180;
       var dLng = (lng - cm) * Math.PI / 180;
-      var N = a / Math.sqrt(1 - e2 * Math.sin(latRad) * Math.sin(latRad));
-      var T = Math.tan(latRad) * Math.tan(latRad);
-      var C = e2 / (1 - e2) * Math.cos(latRad) * Math.cos(latRad);
+      var radiusOfCurvature = semiMajorAxis / Math.sqrt(1 - eccentricitySquared * Math.sin(latRad) * Math.sin(latRad));
+      var tangentSquared = Math.tan(latRad) * Math.tan(latRad);
+      var secondEccentricityTerm = eccentricitySquared / (1 - eccentricitySquared) * Math.cos(latRad) * Math.cos(latRad);
       var A2 = Math.cos(latRad) * dLng;
-      var M = a * ((1 - e2 / 4 - 3 * e2 * e2 / 64) * latRad
-        - (3 * e2 / 8 + 3 * e2 * e2 / 32) * Math.sin(2 * latRad)
-        + (15 * e2 * e2 / 256) * Math.sin(4 * latRad));
-      var easting = k0 * N * (A2 + (1 - T + C) * A2 * A2 * A2 / 6) + e0;
-      var northing = k0 * (M + N * Math.tan(latRad) * (A2 * A2 / 2 + (5 - T + 9 * C) * Math.pow(A2, 4) / 24)) + n0;
+      var meridionalArc = semiMajorAxis * ((1 - eccentricitySquared / 4 - 3 * eccentricitySquared * eccentricitySquared / 64) * latRad
+        - (3 * eccentricitySquared / 8 + 3 * eccentricitySquared * eccentricitySquared / 32) * Math.sin(2 * latRad)
+        + (15 * eccentricitySquared * eccentricitySquared / 256) * Math.sin(4 * latRad));
+      var easting = scaleFactor * radiusOfCurvature * (A2 + (1 - tangentSquared + secondEccentricityTerm) * A2 * A2 * A2 / 6) + falseEasting;
+      var northing = scaleFactor * (meridionalArc + radiusOfCurvature * Math.tan(latRad) * (A2 * A2 / 2 + (5 - tangentSquared + 9 * secondEccentricityTerm) * Math.pow(A2, 4) / 24)) + falseNorthing;
       return { zone: zone, easting: Math.round(easting), northing: Math.round(northing) };
     },
 

@@ -115,17 +115,17 @@ sap.ui.define([
 
     _renderGroupedPanel: function (rows) {
       const groups = new Map();
-      for (const r of rows) {
-        const key = r.objectType + "|" + r.objectId;
+      for (const changeRow of rows) {
+        const key = changeRow.objectType + "|" + changeRow.objectId;
         if (!groups.has(key)) {
-          groups.set(key, { objectType: r.objectType, objectId: r.objectId, objectName: r.objectName, batches: new Map() });
+          groups.set(key, { objectType: changeRow.objectType, objectId: changeRow.objectId, objectName: changeRow.objectName, batches: new Map() });
         }
-        const g    = groups.get(key);
-        const bKey = r.batchId || r.changedAt || Math.random();
-        if (!g.batches.has(bKey)) {
-          g.batches.set(bKey, { changedAt: r.changedAt, changedAtDisplay: r.changedAtDisplay, changedBy: r.changedBy, source: r.changeSource, fields: [] });
+        const objectChangeGroup = groups.get(key);
+        const auditBatchKey = changeRow.batchId || changeRow.changedAt || Math.random();
+        if (!objectChangeGroup.batches.has(auditBatchKey)) {
+          objectChangeGroup.batches.set(auditBatchKey, { changedAt: changeRow.changedAt, changedAtDisplay: changeRow.changedAtDisplay, changedBy: changeRow.changedBy, source: changeRow.changeSource, fields: [] });
         }
-        g.batches.get(bKey).fields.push(r);
+        objectChangeGroup.batches.get(auditBatchKey).fields.push(changeRow);
       }
 
       const list = this.byId("objectGroupList");
@@ -146,17 +146,17 @@ sap.ui.define([
             expandable: true, expanded: false, class: "sapUiTinyMarginTop"
           });
           const fieldList = new sap.m.List({ mode: "None" });
-          for (const f of batch.fields) {
+          for (const fieldChange of batch.fields) {
             const row = new HBox({ alignItems: "Start", class: "sapUiTinyMarginTop sapUiTinyMarginBottom" });
-            const lbl = new Label({ text: f.fieldName, width: "180px", class: "sapUiSmallMarginEnd" });
-            const old = new Text({ text: f.oldValue || "—", wrapping: false });
-            const nw  = new Text({ text: f.newValue || "—", wrapping: false });
-            old.addStyleClass("bmsAuditOld");
-            nw.addStyleClass("bmsAuditNew");
-            row.addItem(lbl);
-            row.addItem(old);
+            const fieldLabel = new Label({ text: fieldChange.fieldName, width: "180px", class: "sapUiSmallMarginEnd" });
+            const previousValue = new Text({ text: fieldChange.oldValue || "—", wrapping: false });
+            const newValue = new Text({ text: fieldChange.newValue || "—", wrapping: false });
+            previousValue.addStyleClass("bmsAuditOld");
+            newValue.addStyleClass("bmsAuditNew");
+            row.addItem(fieldLabel);
+            row.addItem(previousValue);
             row.addItem(new sap.ui.core.Icon({ src: "sap-icon://arrow-right", class: "sapUiSmallMarginBeginEnd" }));
-            row.addItem(nw);
+            row.addItem(newValue);
             fieldList.addItem(new sap.m.CustomListItem({ content: [row] }));
           }
           batchPanel.addContent(fieldList);
@@ -178,11 +178,11 @@ sap.ui.define([
 
       const FIELDS  = ["changedAtDisplay","changedBy","objectType","objectName","objectId","fieldName","oldValue","newValue","changeSource","batchId"];
       const HEADERS = ["Changed At","Changed By","Object Type","Object Name","Object ID","Field","Old Value","New Value","Source","Batch ID"];
-      const escape  = v => { const s = (v == null ? "" : String(v)); return s.includes(",") || s.includes('"') || s.includes("\n") ? '"' + s.replace(/"/g, '""') + '"' : s; };
-      const csv     = [HEADERS.join(","), ...items.map(r => FIELDS.map(f => escape(r[f])).join(","))].join("\n");
-      const a       = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })), download: "BMS_ChangeDocument_" + new Date().toISOString().slice(0,10) + ".csv" });
-      a.click();
-      URL.revokeObjectURL(a.href);
+      const escapeCsvCell  = auditCell => { const cellText = (auditCell == null ? "" : String(auditCell)); return cellText.includes(",") || cellText.includes('"') || cellText.includes("\n") ? '"' + cellText.replace(/"/g, '""') + '"' : cellText; };
+      const csv     = [HEADERS.join(","), ...items.map(changeRow => FIELDS.map(auditField => escapeCsvCell(changeRow[auditField])).join(","))].join("\n");
+      const downloadLink       = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })), download: "BMS_ChangeDocument_" + new Date().toISOString().slice(0,10) + ".csv" });
+      downloadLink.click();
+      URL.revokeObjectURL(downloadLink.href);
       MessageToast.show("Export downloaded.");
     },
 

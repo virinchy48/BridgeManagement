@@ -116,8 +116,8 @@ sap.ui.define([
     },
 
     _updateUserCount: function (count) {
-      const t = this.byId("userCount");
-      if (t) t.setText(count + " user" + (count !== 1 ? "s" : ""));
+      const userCountText = this.byId("userCount");
+      if (userCountText) userCountText.setText(count + " user" + (count !== 1 ? "s" : ""));
     },
 
     onShowHelp: function () {

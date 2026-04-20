@@ -1,5 +1,4 @@
 const cds = require('@sap/cds')
-const LOG  = cds.log('bms-restrictions')
 
 // ─── Optimistic lock — before UPDATE ─────────────────────────────────────────
 const beforeUpdateRestriction = async (req) => {

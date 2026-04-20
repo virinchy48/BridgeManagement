@@ -9,12 +9,12 @@ const SKIP_FIELDS = new Set([
   '__rowNumber', 'texts'
 ])
 
-function valueToString(v) {
-  if (v === null || v === undefined) return ''
-  if (typeof v === 'boolean') return v ? 'true' : 'false'
-  if (v instanceof Date) return v.toISOString().slice(0, 10)
-  if (typeof v === 'object') return JSON.stringify(v)
-  return String(v)
+function valueToString(recordValue) {
+  if (recordValue === null || recordValue === undefined) return ''
+  if (typeof recordValue === 'boolean') return recordValue ? 'true' : 'false'
+  if (recordValue instanceof Date) return recordValue.toISOString().slice(0, 10)
+  if (typeof recordValue === 'object') return JSON.stringify(recordValue)
+  return String(recordValue)
 }
 
 function diffRecords(oldRecord, newRecord) {
@@ -54,9 +54,9 @@ async function writeChangeLogs(db, { objectType, objectId, objectName, source, b
 
   try {
     await db.run(INSERT.into('bridge.management.ChangeLog').entries(entries))
-  } catch (e) {
+  } catch (error) {
     // Never break a business transaction because of audit logging
-    console.error('[audit-log] Failed to write change log:', e.message)
+    console.error('[audit-log] Failed to write change log:', error.message)
   }
 }
 

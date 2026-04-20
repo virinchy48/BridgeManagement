@@ -35,10 +35,10 @@ sap.ui.define([
     _loadGroups: function () {
       var self = this;
       fetch(BASE + "/AttributeGroups?$filter=objectType eq '" + self._objectType + "'&$orderby=displayOrder")
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
+        .then(function (groupResponse) { return groupResponse.json(); })
+        .then(function (groupData) {
           var list = self.byId("groupList");
-          var model = new JSONModel(d.value || []);
+          var model = new JSONModel(groupData.value || []);
           list.setModel(model);
           list.bindItems({ path: "/", template: list.getBindingInfo("items").template });
           self._selectedGroup = null;
@@ -50,10 +50,10 @@ sap.ui.define([
     _loadAttributes: function (groupId) {
       var self = this;
       fetch(BASE + "/AttributeDefinitions?$filter=group_ID eq " + groupId + "&$orderby=displayOrder")
-        .then(function (r) { return r.json(); })
-        .then(function (d) {
+        .then(function (attributeResponse) { return attributeResponse.json(); })
+        .then(function (attributeData) {
           var list = self.byId("attrList");
-          var model = new JSONModel(d.value || []);
+          var model = new JSONModel(attributeData.value || []);
           list.setModel(model);
           list.bindItems({ path: "/", template: list.getBindingInfo("items").template });
           self._selectedAttr = null;
@@ -64,13 +64,13 @@ sap.ui.define([
     _loadAttrDetail: function (attrId) {
       var self = this;
       Promise.all([
-        fetch(BASE + "/AttributeDefinitions('" + attrId + "')").then(function (r) { return r.json(); }),
-        fetch(BASE + "/AttributeAllowedValues?$filter=attribute_ID eq '" + attrId + "'&$orderby=displayOrder").then(function (r) { return r.json(); }),
-        fetch(BASE + "/AttributeObjectTypeConfig?$filter=attribute_ID eq '" + attrId + "'").then(function (r) { return r.json(); })
+        fetch(BASE + "/AttributeDefinitions('" + attrId + "')").then(function (attributeResponse) { return attributeResponse.json(); }),
+        fetch(BASE + "/AttributeAllowedValues?$filter=attribute_ID eq '" + attrId + "'&$orderby=displayOrder").then(function (allowedValuesResponse) { return allowedValuesResponse.json(); }),
+        fetch(BASE + "/AttributeObjectTypeConfig?$filter=attribute_ID eq '" + attrId + "'").then(function (objectTypeConfigResponse) { return objectTypeConfigResponse.json(); })
       ]).then(function (results) {
         var attr = results[0];
-        var avs = results[1].value || [];
-        var cfgs = results[2].value || [];
+        var allowedValues = results[1].value || [];
+        var objectTypeConfigs = results[2].value || [];
 
         self.byId("detailName").setText(attr.name || "");
         self.byId("detailKey").setText(attr.internalKey || "");
@@ -82,7 +82,7 @@ sap.ui.define([
         self.byId("detailStatus").setText(attr.status || "");
 
         // Allowed values table
-        var avModel = new JSONModel(avs);
+        var avModel = new JSONModel(allowedValues);
         self.byId("allowedValuesTable").setModel(avModel);
         self.byId("allowedValuesTable").bindItems({
           path: "/",
@@ -91,9 +91,9 @@ sap.ui.define([
 
         // Config table — show existing + placeholder for missing object types
         var existingByType = {};
-        cfgs.forEach(function (c) { existingByType[c.objectType] = c; });
-        var configRows = OBJECT_TYPES.map(function (ot) {
-          return existingByType[ot] || { objectType: ot, enabled: false, required: false, displayOrder: null, ID: null, attribute_ID: attrId };
+        objectTypeConfigs.forEach(function (objectTypeConfig) { existingByType[objectTypeConfig.objectType] = objectTypeConfig; });
+        var configRows = OBJECT_TYPES.map(function (objectType) {
+          return existingByType[objectType] || { objectType: objectType, enabled: false, required: false, displayOrder: null, ID: null, attribute_ID: attrId };
         });
         var cfgModel = new JSONModel(configRows);
         self.byId("configTable").setModel(cfgModel);
@@ -139,28 +139,28 @@ sap.ui.define([
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: vals["dlg-name"], internalKey: vals["dlg-key"], objectType: self._objectType, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: "Active" })
-        }).then(function (r) { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+        }).then(function (createGroupResponse) { if (!createGroupResponse.ok) throw new Error(createGroupResponse.statusText); return createGroupResponse.json(); })
           .then(function () { self._loadGroups(); MessageToast.show("Group created."); })
-          .catch(function (e) { MessageBox.error("Failed to create group: " + e.message); });
+          .catch(function (error) { MessageBox.error("Failed to create group: " + error.message); });
       });
     },
 
     onEditGroup: function () {
       if (!this._selectedGroup) return;
       var self = this;
-      var g = self._selectedGroup;
-      self._showFormDialog("Edit Group: " + g.name, [
-        { label: "Group Name", id: "dlg-name", value: g.name, required: true },
-        { label: "Display Order", id: "dlg-order", value: String(g.displayOrder || 0), type: "number" },
-        { label: "Status", id: "dlg-status", type: "select", options: STATUS_OPTS, value: g.status }
+      var selectedGroup = self._selectedGroup;
+      self._showFormDialog("Edit Group: " + selectedGroup.name, [
+        { label: "Group Name", id: "dlg-name", value: selectedGroup.name, required: true },
+        { label: "Display Order", id: "dlg-order", value: String(selectedGroup.displayOrder || 0), type: "number" },
+        { label: "Status", id: "dlg-status", type: "select", options: STATUS_OPTS, value: selectedGroup.status }
       ], function (vals) {
-        fetch(BASE + "/AttributeGroups('" + g.ID + "')", {
+        fetch(BASE + "/AttributeGroups('" + selectedGroup.ID + "')", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: vals["dlg-name"], displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: vals["dlg-status"] })
-        }).then(function (r) { if (!r.ok) throw new Error(r.statusText); })
+        }).then(function (updateGroupResponse) { if (!updateGroupResponse.ok) throw new Error(updateGroupResponse.statusText); })
           .then(function () { self._loadGroups(); MessageToast.show("Group updated."); })
-          .catch(function (e) { MessageBox.error("Failed to update group: " + e.message); });
+          .catch(function (error) { MessageBox.error("Failed to update group: " + error.message); });
       });
     },
 
@@ -171,9 +171,9 @@ sap.ui.define([
         onClose: function (action) {
           if (action !== "OK") return;
           fetch(BASE + "/AttributeGroups('" + self._selectedGroup.ID + "')", { method: "DELETE" })
-            .then(function (r) { if (!r.ok && r.status !== 204) throw new Error(r.statusText); })
+            .then(function (deleteGroupResponse) { if (!deleteGroupResponse.ok && deleteGroupResponse.status !== 204) throw new Error(deleteGroupResponse.statusText); })
             .then(function () { self._loadGroups(); MessageToast.show("Group deleted."); })
-            .catch(function (e) { MessageBox.error("Failed to delete group: " + e.message); });
+            .catch(function (error) { MessageBox.error("Failed to delete group: " + error.message); });
         }
       });
     },
@@ -209,30 +209,30 @@ sap.ui.define([
             maxValue: vals["dlg-max"] ? parseFloat(vals["dlg-max"]) : null,
             status: "Active"
           })
-        }).then(function (r) { if (!r.ok) throw new Error(r.statusText); return r.json(); })
+        }).then(function (createAttributeResponse) { if (!createAttributeResponse.ok) throw new Error(createAttributeResponse.statusText); return createAttributeResponse.json(); })
           .then(function () { self._loadAttributes(self._selectedGroup.ID); MessageToast.show("Attribute created."); })
-          .catch(function (e) { MessageBox.error("Failed: " + e.message); });
+          .catch(function (error) { MessageBox.error("Failed: " + error.message); });
       });
     },
 
     onEditAttribute: function () {
       if (!this._selectedAttr) return;
       var self = this;
-      var a = self._selectedAttr;
-      self._showFormDialog("Edit Attribute: " + a.name, [
-        { label: "Attribute Name", id: "dlg-name", value: a.name, required: true },
-        { label: "Unit", id: "dlg-unit", value: a.unit || "" },
-        { label: "Help Text", id: "dlg-help", value: a.helpText || "" },
-        { label: "Display Order", id: "dlg-order", value: String(a.displayOrder || 0), type: "number" },
-        { label: "Status", id: "dlg-status", type: "select", options: STATUS_OPTS, value: a.status }
+      var selectedAttribute = self._selectedAttr;
+      self._showFormDialog("Edit Attribute: " + selectedAttribute.name, [
+        { label: "Attribute Name", id: "dlg-name", value: selectedAttribute.name, required: true },
+        { label: "Unit", id: "dlg-unit", value: selectedAttribute.unit || "" },
+        { label: "Help Text", id: "dlg-help", value: selectedAttribute.helpText || "" },
+        { label: "Display Order", id: "dlg-order", value: String(selectedAttribute.displayOrder || 0), type: "number" },
+        { label: "Status", id: "dlg-status", type: "select", options: STATUS_OPTS, value: selectedAttribute.status }
       ], function (vals) {
-        fetch(BASE + "/AttributeDefinitions('" + a.ID + "')", {
+        fetch(BASE + "/AttributeDefinitions('" + selectedAttribute.ID + "')", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: vals["dlg-name"], unit: vals["dlg-unit"] || null, helpText: vals["dlg-help"] || null, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: vals["dlg-status"] })
-        }).then(function (r) { if (!r.ok) throw new Error(r.statusText); })
-          .then(function () { self._loadAttributes(self._selectedGroup.ID); self._loadAttrDetail(a.ID); MessageToast.show("Attribute updated."); })
-          .catch(function (e) { MessageBox.error("Failed: " + e.message); });
+        }).then(function (updateAttributeResponse) { if (!updateAttributeResponse.ok) throw new Error(updateAttributeResponse.statusText); })
+          .then(function () { self._loadAttributes(self._selectedGroup.ID); self._loadAttrDetail(selectedAttribute.ID); MessageToast.show("Attribute updated."); })
+          .catch(function (error) { MessageBox.error("Failed: " + error.message); });
       });
     },
 
@@ -243,13 +243,13 @@ sap.ui.define([
         onClose: function (action) {
           if (action !== "OK") return;
           fetch(BASE + "/AttributeDefinitions('" + self._selectedAttr.ID + "')", { method: "DELETE" })
-            .then(function (r) {
-              if (!r.ok && r.status !== 204) {
-                return r.json().then(function (e) { throw new Error(e.error?.message || r.statusText); });
+            .then(function (deleteAttributeResponse) {
+              if (!deleteAttributeResponse.ok && deleteAttributeResponse.status !== 204) {
+                return deleteAttributeResponse.json().then(function (errorBody) { throw new Error(errorBody.error?.message || deleteAttributeResponse.statusText); });
               }
             })
             .then(function () { self._loadAttributes(self._selectedGroup.ID); self.byId("attrDetailPanel").setVisible(false); MessageToast.show("Attribute deleted."); })
-            .catch(function (e) { MessageBox.error(e.message); });
+            .catch(function (error) { MessageBox.error(error.message); });
         }
       });
     },
@@ -268,27 +268,27 @@ sap.ui.define([
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ attribute_ID: self._selectedAttr.ID, value: vals["dlg-val"], label: vals["dlg-label"] || null, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: "Active" })
-        }).then(function (r) { if (!r.ok) throw new Error(r.statusText); })
+        }).then(function (createAllowedValueResponse) { if (!createAllowedValueResponse.ok) throw new Error(createAllowedValueResponse.statusText); })
           .then(function () { self._loadAttrDetail(self._selectedAttr.ID); MessageToast.show("Value added."); })
-          .catch(function (e) { MessageBox.error("Failed: " + e.message); });
+          .catch(function (error) { MessageBox.error("Failed: " + error.message); });
       });
     },
 
     onDeleteAllowedValue: function (oEvent) {
-      var ctx = oEvent.getSource().getBindingContext();
-      var av = ctx.getObject();
+      var allowedValueContext = oEvent.getSource().getBindingContext();
+      var allowedValue = allowedValueContext.getObject();
       var self = this;
-      MessageBox.confirm("Delete allowed value \"" + av.value + "\"?", {
+      MessageBox.confirm("Delete allowed value \"" + allowedValue.value + "\"?", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(BASE + "/AttributeAllowedValues('" + av.ID + "')", { method: "DELETE" })
-            .then(function (r) {
-              if (!r.ok && r.status !== 204) {
-                return r.json().then(function (e) { throw new Error(e.error?.message || r.statusText); });
+          fetch(BASE + "/AttributeAllowedValues('" + allowedValue.ID + "')", { method: "DELETE" })
+            .then(function (deleteAllowedValueResponse) {
+              if (!deleteAllowedValueResponse.ok && deleteAllowedValueResponse.status !== 204) {
+                return deleteAllowedValueResponse.json().then(function (errorBody) { throw new Error(errorBody.error?.message || deleteAllowedValueResponse.statusText); });
               }
             })
             .then(function () { self._loadAttrDetail(self._selectedAttr.ID); MessageToast.show("Value deleted."); })
-            .catch(function (e) { MessageBox.error(e.message); });
+            .catch(function (error) { MessageBox.error(error.message); });
         }
       });
     },
@@ -317,9 +317,9 @@ sap.ui.define([
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ attribute_ID: row.attribute_ID, objectType: row.objectType, enabled: true, required: false })
-      }).then(function (r) { if (!r.ok) throw new Error(r.statusText); })
+      }).then(function (createConfigResponse) { if (!createConfigResponse.ok) throw new Error(createConfigResponse.statusText); })
         .then(function () { self._loadAttrDetail(self._selectedAttr.ID); MessageToast.show("Config added."); })
-        .catch(function (e) { MessageBox.error("Failed: " + e.message); });
+        .catch(function (error) { MessageBox.error("Failed: " + error.message); });
     },
 
     // ── Template export ──────────────────────────────────────────────────────
@@ -335,17 +335,17 @@ sap.ui.define([
       var content = new VBox({ width: "100%" });
       var inputMap = {};
 
-      fields.forEach(function (f) {
-        var lbl = new Label({ text: f.label, required: !!f.required, labelFor: f.id });
+      fields.forEach(function (dialogField) {
+        var lbl = new Label({ text: dialogField.label, required: !!dialogField.required, labelFor: dialogField.id });
         var ctrl;
-        if (f.type === "select") {
-          ctrl = new Select({ id: f.id, width: "100%" });
-          (f.options || []).forEach(function (opt) { ctrl.addItem(new Item({ key: opt, text: opt })); });
-          if (f.value) ctrl.setSelectedKey(f.value);
+        if (dialogField.type === "select") {
+          ctrl = new Select({ id: dialogField.id, width: "100%" });
+          (dialogField.options || []).forEach(function (optionValue) { ctrl.addItem(new Item({ key: optionValue, text: optionValue })); });
+          if (dialogField.value) ctrl.setSelectedKey(dialogField.value);
         } else {
-          ctrl = new Input({ id: f.id, value: f.value || "", type: f.type === "number" ? "Number" : "Text" });
+          ctrl = new Input({ id: dialogField.id, value: dialogField.value || "", type: dialogField.type === "number" ? "Number" : "Text" });
         }
-        inputMap[f.id] = ctrl;
+        inputMap[dialogField.id] = ctrl;
         content.addItem(new VBox({ items: [lbl, ctrl], class: "sapUiTinyMarginBottom" }));
       });
 
@@ -357,11 +357,11 @@ sap.ui.define([
           type: "Emphasized",
           press: function () {
             var vals = {};
-            fields.forEach(function (f) {
-              var ctrl = inputMap[f.id];
-              vals[f.id] = ctrl.getSelectedKey ? ctrl.getSelectedKey() : ctrl.getValue();
-              if (f.required && !vals[f.id]) {
-                MessageToast.show(f.label + " is required");
+            fields.forEach(function (dialogField) {
+              var ctrl = inputMap[dialogField.id];
+              vals[dialogField.id] = ctrl.getSelectedKey ? ctrl.getSelectedKey() : ctrl.getValue();
+              if (dialogField.required && !vals[dialogField.id]) {
+                MessageToast.show(dialogField.label + " is required");
                 return;
               }
             });

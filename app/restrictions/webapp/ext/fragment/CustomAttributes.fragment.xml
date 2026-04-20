@@ -3,9 +3,9 @@
     &lt;div id='ca-restriction-root' style='font-family:72,Arial,sans-serif;margin:0.5rem'&gt;&lt;/div&gt;
     &lt;script&gt;
       (function() {
-        var s = document.createElement('script');
-        s.src = '../webapp/ext/controller/CustomAttributesRestrInit.js?' + Date.now();
-        document.head.appendChild(s);
+        var customAttributesScript = document.createElement('script');
+        customAttributesScript.src = '../webapp/ext/controller/CustomAttributesRestrInit.js?' + Date.now();
+        document.head.appendChild(customAttributesScript);
       })();
     &lt;/script&gt;
   "/>

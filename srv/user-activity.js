@@ -30,9 +30,9 @@ async function recordActivity(userId, displayName, path) {
         })
       )
     }
-  } catch (e) {
+  } catch (error) {
     // Never block the request
-    console.error('[user-activity]', e.message)
+    console.error('[user-activity]', error.message)
   }
 }
 

@@ -650,8 +650,8 @@ module.exports = (srv) => {
 
       req.notify(200, `Demo data loaded — ${rows.length} real NSW bridges activated.`);
       return `Demo data loaded — ${rows.length} bridges.`;
-    } catch (e) {
-      req.error(500, "Failed to load demo data: " + e.message);
+    } catch (error) {
+      req.error(500, "Failed to load demo data: " + error.message);
     }
   });
 
@@ -674,8 +674,8 @@ module.exports = (srv) => {
 
       req.notify(200, "Demo data cleared. System ready for production data load.");
       return "Demo data cleared.";
-    } catch (e) {
-      req.error(500, "Failed to clear demo data: " + e.message);
+    } catch (error) {
+      req.error(500, "Failed to clear demo data: " + error.message);
     }
   });
 

@@ -14,8 +14,8 @@
 
     function getId() {
         // Bridge.ID is an Integer — hash looks like: /Bridges(ID=42,IsActiveEntity=true)
-        var m = (window.location.hash || "").match(/Bridges\(ID=(\d+)/);
-        return m ? m[1] : null;
+        var bridgeIdMatch = (window.location.hash || "").match(/Bridges\(ID=(\d+)/);
+        return bridgeIdMatch ? bridgeIdMatch[1] : null;
     }
 
     window._gisInit = function () {
@@ -25,13 +25,13 @@
         if (!id) { setCoord("No bridge ID in URL"); return; }
         fetch(SERVICE + "/Bridges(ID=" + id + ",IsActiveEntity=true)" +
               "?$select=latitude,longitude,bridgeName,bridgeId,state,postingStatus")
-            .then(function (r) { return r.json(); })
+            .then(function (bridgeResponse) { return bridgeResponse.json(); })
             .then(draw)
-            .catch(function (e) { setCoord("Error: " + e.message); });
+            .catch(function (error) { setCoord("Error: " + error.message); });
     };
 
-    function draw(d) {
-        var lat = parseFloat(d.latitude), lng = parseFloat(d.longitude);
+    function draw(bridgeLocation) {
+        var lat = parseFloat(bridgeLocation.latitude), lng = parseFloat(bridgeLocation.longitude);
         var noEl = document.getElementById("gisNoCoords");
         var canv = document.getElementById("gisMapCanvas");
         if (isNaN(lat) || isNaN(lng)) {
@@ -44,15 +44,15 @@
         if (noEl) noEl.style.display = "none";
         if (canv) canv.style.display = "block";
         loadLeaflet(function () {
-            if (_map) { try { _map.remove(); } catch (e) {} _map = null; }
+            if (_map) { try { _map.remove(); } catch (error) {} _map = null; }
             var map = window.L.map(canv, { zoomControl: true, scrollWheelZoom: false });
             window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
                 { attribution: "\u00a9 OpenStreetMap", maxZoom: 19 }).addTo(map);
-            var colour = STATUS_COLOR[d.postingStatus] || "#0a6ed1";
+            var colour = STATUS_COLOR[bridgeLocation.postingStatus] || "#0a6ed1";
             window.L.circleMarker([lat, lng],
                 { radius: 10, color: "#fff", weight: 2, fillColor: colour, fillOpacity: 0.9 })
-                .bindPopup("<b>" + (d.bridgeName || "") + "</b><br><small>" +
-                           (d.bridgeId || "") + " \u00b7 " + (d.state || "") + "</small>")
+                .bindPopup("<b>" + (bridgeLocation.bridgeName || "") + "</b><br><small>" +
+                           (bridgeLocation.bridgeId || "") + " \u00b7 " + (bridgeLocation.state || "") + "</small>")
                 .addTo(map);
             map.setView([lat, lng], 14);
             _map = map;
@@ -62,13 +62,13 @@
     function loadLeaflet(cb) {
         if (window.L) { cb(); return; }
         if (!document.getElementById("_gis_css")) {
-            var l = document.createElement("link");
-            l.id = "_gis_css"; l.rel = "stylesheet"; l.href = LEAFLET + "/leaflet.css";
-            document.head.appendChild(l);
+            var leafletStylesheet = document.createElement("link");
+            leafletStylesheet.id = "_gis_css"; leafletStylesheet.rel = "stylesheet"; leafletStylesheet.href = LEAFLET + "/leaflet.css";
+            document.head.appendChild(leafletStylesheet);
         }
-        var s = document.createElement("script");
-        s.src = LEAFLET + "/leaflet.js";
-        s.onload = function () {
+        var leafletScript = document.createElement("script");
+        leafletScript.src = LEAFLET + "/leaflet.js";
+        leafletScript.onload = function () {
             if (window.L && window.L.Icon && window.L.Icon.Default)
                 window.L.Icon.Default.mergeOptions({
                     iconUrl:       LEAFLET + "/images/marker-icon.png",
@@ -77,18 +77,18 @@
                 });
             cb();
         };
-        s.onerror = function () {
-            var s2 = document.createElement("script");
-            s2.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
-            s2.onload = cb;
-            document.head.appendChild(s2);
+        leafletScript.onerror = function () {
+            var fallbackLeafletScript = document.createElement("script");
+            fallbackLeafletScript.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+            fallbackLeafletScript.onload = cb;
+            document.head.appendChild(fallbackLeafletScript);
         };
-        document.head.appendChild(s);
+        document.head.appendChild(leafletScript);
     }
 
     function setCoord(html) {
-        var e = document.getElementById("gisCoordBar");
-        if (e) e.innerHTML = "\uD83D\uDCCD " + html;
+        var coordinateBar = document.getElementById("gisCoordBar");
+        if (coordinateBar) coordinateBar.innerHTML = "\uD83D\uDCCD " + html;
     }
 
     window._gisOpen = function () {
@@ -105,13 +105,13 @@
         var id = getId();
         if (!id) return;
         fetch(SERVICE + "/Bridges(ID=" + id + ",IsActiveEntity=true)?$select=latitude,longitude")
-            .then(function (r) { return r.json(); })
-            .then(function (d) {
-                if (d.latitude && d.longitude) {
-                    var t = d.latitude + ", " + d.longitude;
+            .then(function (bridgeResponse) { return bridgeResponse.json(); })
+            .then(function (bridgeLocation) {
+                if (bridgeLocation.latitude && bridgeLocation.longitude) {
+                    var bridgeCoordinates = bridgeLocation.latitude + ", " + bridgeLocation.longitude;
                     if (navigator.clipboard) {
-                        navigator.clipboard.writeText(t).then(function () {
-                            try { sap.m.MessageToast.show("Copied: " + t); } catch (e) {}
+                        navigator.clipboard.writeText(bridgeCoordinates).then(function () {
+                            try { sap.m.MessageToast.show("Copied: " + bridgeCoordinates); } catch (error) {}
                         });
                     }
                 }

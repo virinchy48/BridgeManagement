@@ -8,10 +8,10 @@ sap.ui.define([
 
     function startGIS() {
         if (!document.getElementById("_gis_script")) {
-            var s = document.createElement("script");
-            s.id = "_gis_script";
-            s.src = GIS_SCRIPT;
-            document.head.appendChild(s);
+            var gisScript = document.createElement("script");
+            gisScript.id = "_gis_script";
+            gisScript.src = GIS_SCRIPT;
+            document.head.appendChild(gisScript);
         }
         var obs = new MutationObserver(function () {
             var el = document.getElementById("gisMapCanvas");

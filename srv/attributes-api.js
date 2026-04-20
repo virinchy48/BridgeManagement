@@ -128,11 +128,11 @@ async function loadActiveConfig(db, objectType) {
   }
 
   return groups
-    .map(g => groupMap.get(g.ID))
-    .filter(g => g.attributes.length > 0)
-    .map(g => ({
-      ...g,
-      attributes: g.attributes.sort((a, b) => a.displayOrder - b.displayOrder)
+    .map(group => groupMap.get(group.ID))
+    .filter(group => group.attributes.length > 0)
+    .map(group => ({
+      ...group,
+      attributes: group.attributes.sort((currentDefinition, nextDefinition) => currentDefinition.displayOrder - nextDefinition.displayOrder)
     }))
 }
 
@@ -270,8 +270,8 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
       const db = await cds.connect.to('db')
       const values = await loadValues(db, objectType, objectId)
       const flat = {}
-      for (const v of values) {
-        flat[v.attributeKey] = v.valueText ?? v.valueInteger ?? v.valueDecimal ?? v.valueDate ?? v.valueBoolean ?? null
+      for (const savedCustomField of values) {
+        flat[savedCustomField.attributeKey] = savedCustomField.valueText ?? savedCustomField.valueInteger ?? savedCustomField.valueDecimal ?? savedCustomField.valueDate ?? savedCustomField.valueBoolean ?? null
       }
       res.json({ objectType, objectId, values: flat })
     } catch (err) {
@@ -305,9 +305,9 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
           // Validate allowed values for select types
           if ((attr.dataType === 'SingleSelect' || attr.dataType === 'MultiSelect') && coerced !== null) {
             const allowed = attr.allowedValues.map(av => av.value)
-            const vals = attr.dataType === 'MultiSelect' ? coerced.split(',').map(v => v.trim()) : [coerced]
-            for (const v of vals) {
-              if (!allowed.includes(v)) errors.push(`${attr.name}: "${v}" is not an allowed value`)
+            const selectedValues = attr.dataType === 'MultiSelect' ? coerced.split(',').map(value => value.trim()) : [coerced]
+            for (const selectedValue of selectedValues) {
+              if (!allowed.includes(selectedValue)) errors.push(`${attr.name}: "${selectedValue}" is not an allowed value`)
             }
           }
           // Validate range
@@ -318,8 +318,8 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
             errors.push(`${attr.name}: value ${coerced} exceeds maximum ${attr.maxValue}`)
           }
           updates.push({ attributeKey: key, dataType: attr.dataType, coercedValue: coerced })
-        } catch (e) {
-          errors.push(`${attr.name}: ${e.message}`)
+        } catch (error) {
+          errors.push(`${attr.name}: ${error.message}`)
         }
       }
 
@@ -359,18 +359,18 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
       const changedBy = currentUser(req)
       const now = new Date().toISOString()
 
-      for (const v of existing) {
+      for (const existingCustomField of existing) {
         await db.run(
           INSERT.into('bridge.management.AttributeValueHistory').entries({
             historyId:       cds.utils.uuid(),
             objectType,
             objectId:        String(objectId),
-            attributeKey:    v.attributeKey,
-            oldValueText:    v.valueText,
-            oldValueInteger: v.valueInteger,
-            oldValueDecimal: v.valueDecimal,
-            oldValueDate:    v.valueDate,
-            oldValueBoolean: v.valueBoolean,
+            attributeKey:    existingCustomField.attributeKey,
+            oldValueText:    existingCustomField.valueText,
+            oldValueInteger: existingCustomField.valueInteger,
+            oldValueDecimal: existingCustomField.valueDecimal,
+            oldValueDate:    existingCustomField.valueDate,
+            oldValueBoolean: existingCustomField.valueBoolean,
             changedBy,
             changedAt:       now,
             changeSource:    'manual'
@@ -499,12 +499,12 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
 
       // Map header index → attribute key
       const colMap = []
-      for (let i = 0; i < headerRow.length; i++) {
-        const h = String(headerRow[i] || '')
-        if (h === idCol) { colMap[i] = { type: 'id' }; continue }
-        const match = h.match(/\(([^)]+)\)$/)
+      for (let headerIndex = 0; headerIndex < headerRow.length; headerIndex++) {
+        const spreadsheetHeader = String(headerRow[headerIndex] || '')
+        if (spreadsheetHeader === idCol) { colMap[headerIndex] = { type: 'id' }; continue }
+        const match = spreadsheetHeader.match(/\(([^)]+)\)$/)
         if (match && attrByKey.has(match[1])) {
-          colMap[i] = { type: 'attr', key: match[1], col: attrByKey.get(match[1]) }
+          colMap[headerIndex] = { type: 'attr', key: match[1], col: attrByKey.get(match[1]) }
         }
       }
 
@@ -549,14 +549,14 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
             }
             if ((col.dataType === 'SingleSelect' || col.dataType === 'MultiSelect') && coerced !== null) {
               const allowed = col.allowedValues.map(av => av.value)
-              const vals = col.dataType === 'MultiSelect' ? coerced.split(',').map(v => v.trim()) : [coerced]
-              for (const v of vals) {
-                if (!allowed.includes(v)) errors.push(`${col.label.split(' (')[0]}: "${v}" is not an allowed value`)
+              const selectedValues = col.dataType === 'MultiSelect' ? coerced.split(',').map(value => value.trim()) : [coerced]
+              for (const selectedValue of selectedValues) {
+                if (!allowed.includes(selectedValue)) errors.push(`${col.label.split(' (')[0]}: "${selectedValue}" is not an allowed value`)
               }
             }
             updates.push({ attributeKey: key, dataType: col.dataType, coercedValue: coerced })
-          } catch (e) {
-            errors.push(`${col.label.split(' (')[0]}: ${e.message}`)
+          } catch (error) {
+            errors.push(`${col.label.split(' (')[0]}: ${error.message}`)
           }
         }
 
@@ -612,13 +612,13 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
 
       // Index values: objectId → key → display value
       const valueMap = new Map()
-      for (const v of allValues) {
-        if (!valueMap.has(v.objectId)) valueMap.set(v.objectId, new Map())
-        const displayVal = v.valueText ?? v.valueInteger ?? v.valueDecimal ?? v.valueDate ?? v.valueBoolean ?? ''
-        valueMap.get(v.objectId).set(v.attributeKey, displayVal != null ? String(displayVal) : '')
+      for (const exportedCustomField of allValues) {
+        if (!valueMap.has(exportedCustomField.objectId)) valueMap.set(exportedCustomField.objectId, new Map())
+        const exportDisplayText = exportedCustomField.valueText ?? exportedCustomField.valueInteger ?? exportedCustomField.valueDecimal ?? exportedCustomField.valueDate ?? exportedCustomField.valueBoolean ?? ''
+        valueMap.get(exportedCustomField.objectId).set(exportedCustomField.attributeKey, exportDisplayText != null ? String(exportDisplayText) : '')
       }
 
-      const headerRow = [...coreFields, ...attrCols.map(c => c.label)]
+      const headerRow = [...coreFields, ...attrCols.map(attributeColumn => attributeColumn.label)]
       const dataRows = objects.map(obj => {
         const objValues = valueMap.get(String(obj[idField])) || new Map()
         return [

@@ -775,51 +775,51 @@ async function loadMapRestrictions({ bbox } = {}) {
     });
 }
 
-function buildBridgesCsv(bridges, attrCols = [], attrValues = new Map()) {
-  const FIELDS = ['ID','bridgeId','bridgeName','state','latitude','longitude','postingStatus',
+function buildBridgesCsv(bridges, customAttributeColumns = [], customFieldValuesByObjectId = new Map()) {
+  const BRIDGE_EXPORT_FIELDS = ['ID','bridgeId','bridgeName','state','latitude','longitude','postingStatus',
     'conditionRating','yearBuilt','structureType','route','region','clearanceHeight','spanLength',
     'assetOwner','scourRisk','nhvrAssessed','freightRoute','overMassRoute','hmlApproved','bDoubleApproved'];
-  const attrHeaders = attrCols.map(c => c.label);
-  const header = [...FIELDS, ...attrHeaders].join(',');
-  const rows = bridges.map(b => {
-    const objVals = attrValues.get(String(b.ID)) || new Map();
-    const coreVals = FIELDS.map(f => {
-      const v = b[f];
-      if (v == null) return '';
-      const s = String(v);
-      return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+  const customFieldHeaders = customAttributeColumns.map(customFieldColumn => customFieldColumn.label);
+  const header = [...BRIDGE_EXPORT_FIELDS, ...customFieldHeaders].join(',');
+  const rows = bridges.map(bridge => {
+    const bridgeCustomFields = customFieldValuesByObjectId.get(String(bridge.ID)) || new Map();
+    const bridgeExportCells = BRIDGE_EXPORT_FIELDS.map(bridgePropertyName => {
+      const bridgeProperty = bridge[bridgePropertyName];
+      if (bridgeProperty == null) return '';
+      const csvCellText = String(bridgeProperty);
+      return csvCellText.includes(',') || csvCellText.includes('"') ? '"' + csvCellText.replace(/"/g,'""') + '"' : csvCellText;
     });
-    const attrVals = attrCols.map(c => {
-      const v = objVals.get(c.key) || '';
-      const s = String(v);
-      return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+    const customFieldCells = customAttributeColumns.map(customFieldColumn => {
+      const customFieldEntry = bridgeCustomFields.get(customFieldColumn.key) || '';
+      const csvCellText = String(customFieldEntry);
+      return csvCellText.includes(',') || csvCellText.includes('"') ? '"' + csvCellText.replace(/"/g,'""') + '"' : csvCellText;
     });
-    return [...coreVals, ...attrVals].join(',');
+    return [...bridgeExportCells, ...customFieldCells].join(',');
   });
   return header + '\n' + rows.join('\n');
 }
 
-function buildRestrictionsCsv(restrictions, attrCols = [], attrValues = new Map()) {
-  const FIELDS = ['ID','restrictionRef','bridgeRef','bridgeName','state','restrictionType',
+function buildRestrictionsCsv(restrictions, customAttributeColumns = [], customFieldValuesByObjectId = new Map()) {
+  const RESTRICTION_EXPORT_FIELDS = ['ID','restrictionRef','bridgeRef','bridgeName','state','restrictionType',
     'restrictionCategory','restrictionValue','restrictionUnit','restrictionStatus',
     'grossMassLimit','axleMassLimit','heightLimit','widthLimit','lengthLimit','speedLimit',
     'permitRequired','escortRequired','effectiveFrom','effectiveTo','approvedBy','direction'];
-  const attrHeaders = attrCols.map(c => c.label);
-  const header = [...FIELDS, ...attrHeaders].join(',');
-  const rows = restrictions.map(r => {
-    const objVals = attrValues.get(String(r.ID)) || new Map();
-    const coreVals = FIELDS.map(f => {
-      const v = r[f];
-      if (v == null) return '';
-      const s = String(v);
-      return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+  const customFieldHeaders = customAttributeColumns.map(customFieldColumn => customFieldColumn.label);
+  const header = [...RESTRICTION_EXPORT_FIELDS, ...customFieldHeaders].join(',');
+  const rows = restrictions.map(restriction => {
+    const restrictionCustomFields = customFieldValuesByObjectId.get(String(restriction.ID)) || new Map();
+    const restrictionExportCells = RESTRICTION_EXPORT_FIELDS.map(restrictionPropertyName => {
+      const restrictionProperty = restriction[restrictionPropertyName];
+      if (restrictionProperty == null) return '';
+      const csvCellText = String(restrictionProperty);
+      return csvCellText.includes(',') || csvCellText.includes('"') ? '"' + csvCellText.replace(/"/g,'""') + '"' : csvCellText;
     });
-    const attrVals = attrCols.map(c => {
-      const v = objVals.get(c.key) || '';
-      const s = String(v);
-      return s.includes(',') || s.includes('"') ? '"' + s.replace(/"/g,'""') + '"' : s;
+    const customFieldCells = customAttributeColumns.map(customFieldColumn => {
+      const customFieldEntry = restrictionCustomFields.get(customFieldColumn.key) || '';
+      const csvCellText = String(customFieldEntry);
+      return csvCellText.includes(',') || csvCellText.includes('"') ? '"' + csvCellText.replace(/"/g,'""') + '"' : csvCellText;
     });
-    return [...coreVals, ...attrVals].join(',');
+    return [...restrictionExportCells, ...customFieldCells].join(',');
   });
   return header + '\n' + rows.join('\n');
 }
@@ -950,12 +950,12 @@ async function loadClusters({ bbox, zoom = 6 } = {}) {
 }
 
 function haversineDistanceKm(lat1, lng1, lat2, lng2) {
-  const R = 6371;
+  const earthRadiusKm = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
   const dLng = (lng2 - lng1) * Math.PI / 180;
-  const a = Math.sin(dLat / 2) ** 2 +
+  const haversineTerm = Math.sin(dLat / 2) ** 2 +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return earthRadiusKm * 2 * Math.atan2(Math.sqrt(haversineTerm), Math.sqrt(1 - haversineTerm));
 }
 
 async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
@@ -1003,7 +1003,7 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
         distanceKm: haversineDistanceKm(latN, lngN, Number(b.latitude), Number(b.longitude))
       }))
       .filter(b => b.distanceKm <= radN)
-      .sort((a, b) => a.distanceKm - b.distanceKm);
+      .sort((nearerBridge, fartherBridge) => nearerBridge.distanceKm - fartherBridge.distanceKm);
   }
 
   return (bridges || []).map(b => ({
@@ -1233,9 +1233,9 @@ cds.on('bootstrap', (app) => {
             ? await db2.run(SELECT.from('bridge.management.AttributeValues').where({ objectType }))
             : [];
           const attrValues = new Map();
-          for (const v of allVals) {
-            if (!attrValues.has(v.objectId)) attrValues.set(v.objectId, new Map());
-            attrValues.get(v.objectId).set(v.attributeKey, v.valueText ?? v.valueInteger ?? v.valueDecimal ?? v.valueDate ?? v.valueBoolean ?? '');
+          for (const exportedCustomField of allVals) {
+            if (!attrValues.has(exportedCustomField.objectId)) attrValues.set(exportedCustomField.objectId, new Map());
+            attrValues.get(exportedCustomField.objectId).set(exportedCustomField.attributeKey, exportedCustomField.valueText ?? exportedCustomField.valueInteger ?? exportedCustomField.valueDecimal ?? exportedCustomField.valueDate ?? exportedCustomField.valueBoolean ?? '');
           }
           return { attrCols, attrValues };
         } catch (_) { return { attrCols: [], attrValues: new Map() }; }
@@ -1468,8 +1468,8 @@ cds.on('bootstrap', (app) => {
           .limit(200)
       )
       res.json({ users: users || [] })
-    } catch (e) {
-      res.status(500).json({ error: { message: e.message } })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message } })
     }
   })
 
@@ -1488,8 +1488,8 @@ cds.on('bootstrap', (app) => {
         activeToday: Number(activeToday?.cnt || 0),
         activeThisWeek: Number(activeThisWeek?.cnt || 0)
       })
-    } catch (e) {
-      res.status(500).json({ error: { message: e.message } })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message } })
     }
   })
 
@@ -1554,26 +1554,26 @@ cds.on('bootstrap', (app) => {
     }
   }
 
-  function execRule(rule, bridge, ctx) {
+  function execRule(rule, bridge, ruleEvaluation) {
     const { ruleType, field, _cfg } = rule
     switch (ruleType) {
       case 'required_field': {
-        const v = bridge[field]
-        return v == null || (typeof v === 'string' && v.trim() === '')
+        const requiredBridgeProperty = bridge[field]
+        return requiredBridgeProperty == null || (typeof requiredBridgeProperty === 'string' && requiredBridgeProperty.trim() === '')
       }
       case 'non_zero': {
-        const v = Number(bridge[field])
-        return bridge[field] == null || !Number.isFinite(v) || v === 0
+        const numericValue = Number(bridge[field])
+        return bridge[field] == null || !Number.isFinite(numericValue) || numericValue === 0
       }
       case 'not_older_than_days': {
         if (!bridge[field]) return false // required_field handles the null case
-        const ms = (_cfg.days || 730) * 24 * 60 * 60 * 1000
-        return Date.now() - new Date(bridge[field]).getTime() > ms
+        const maxAgeMs = (_cfg.days || 730) * 24 * 60 * 60 * 1000
+        return Date.now() - new Date(bridge[field]).getTime() > maxAgeMs
       }
       case 'condition_requires_restriction': {
         const conditions = _cfg.conditions || ['Poor', 'Critical']
         if (!conditions.includes(bridge.condition)) return false
-        return !ctx.activeRestrictionBridgeIds.has(bridge.ID)
+        return !ruleEvaluation.activeRestrictionBridgeIds.has(bridge.ID)
       }
       case 'freight_requires_nhvr': {
         return !!(bridge.freightRoute && !bridge.nhvrAssessed)
@@ -1584,9 +1584,9 @@ cds.on('bootstrap', (app) => {
   }
 
   function evaluateBridgeIssues(bridge, activeRestrictionBridgeIds, rules) {
-    const ctx = { activeRestrictionBridgeIds }
+    const ruleEvaluation = { activeRestrictionBridgeIds }
     return rules
-      .filter(rule => execRule(rule, bridge, ctx))
+      .filter(rule => execRule(rule, bridge, ruleEvaluation))
       .map(rule => ({
         category: rule.category,
         severity: rule.severity,
@@ -1596,11 +1596,11 @@ cds.on('bootstrap', (app) => {
 
   function calcCompletenessScore(bridge, completenessFields) {
     const fields = completenessFields || QUALITY_COMPLETENESS_FIELDS_DEFAULT
-    const populated = fields.filter(f => {
-      const v = bridge[f]
-      if (v == null) return false
-      if (typeof v === 'string' && v.trim() === '') return false
-      if (f === 'latitude' || f === 'longitude') return Number(v) !== 0 && Number.isFinite(Number(v))
+    const populated = fields.filter(completenessField => {
+      const bridgeCompletenessValue = bridge[completenessField]
+      if (bridgeCompletenessValue == null) return false
+      if (typeof bridgeCompletenessValue === 'string' && bridgeCompletenessValue.trim() === '') return false
+      if (completenessField === 'latitude' || completenessField === 'longitude') return Number(bridgeCompletenessValue) !== 0 && Number.isFinite(Number(bridgeCompletenessValue))
       return true
     })
     return fields.length > 0 ? Math.round((populated.length / fields.length) * 100) : 100
@@ -1643,7 +1643,7 @@ cds.on('bootstrap', (app) => {
       const completenessPercent = total > 0 ? Math.round(totalCompleteness / total) : 0
       const byCategory = Object.entries(categoryCountMap)
         .map(([category, count]) => ({ category, count }))
-        .sort((a, b) => b.count - a.count)
+        .sort((lowerIssueCategory, higherIssueCategory) => higherIssueCategory.count - lowerIssueCategory.count)
 
       res.json({
         totalBridges: total,
@@ -1681,32 +1681,32 @@ cds.on('bootstrap', (app) => {
           maxSeverity: maxSeverity(issues),
           completenessScore: calcCompletenessScore(bridge, completenessFields)
         }
-      }).filter(b => b.issueCount > 0)
+      }).filter(bridge => bridge.issueCount > 0)
 
       // Apply filters
       if (severity) {
         const sev = severity.toLowerCase()
-        results = results.filter(b =>
-          b.issues.some(i => i.severity === sev) || b.maxSeverity === sev
+        results = results.filter(bridge =>
+          bridge.issues.some(issue => issue.severity === sev) || bridge.maxSeverity === sev
         )
       }
       if (state) {
         const st = state.toUpperCase()
-        results = results.filter(b => (b.state || '').toUpperCase() === st)
+        results = results.filter(bridge => (bridge.state || '').toUpperCase() === st)
       }
       if (name) {
         const needle = name.toLowerCase()
-        results = results.filter(b =>
-          (b.bridgeName || '').toLowerCase().includes(needle) ||
-          (b.bridgeId || '').toLowerCase().includes(needle)
+        results = results.filter(bridge =>
+          (bridge.bridgeName || '').toLowerCase().includes(needle) ||
+          (bridge.bridgeId || '').toLowerCase().includes(needle)
         )
       }
 
       // Sort: critical first, then by issue count desc
-      results.sort((a, b) => {
+      results.sort((higherPriorityBridge, lowerPriorityBridge) => {
         const sevOrder = { critical: 0, warning: 1, info: 2, none: 3 }
-        const diff = (sevOrder[a.maxSeverity] || 3) - (sevOrder[b.maxSeverity] || 3)
-        return diff !== 0 ? diff : b.issueCount - a.issueCount
+        const diff = (sevOrder[higherPriorityBridge.maxSeverity] || 3) - (sevOrder[lowerPriorityBridge.maxSeverity] || 3)
+        return diff !== 0 ? diff : lowerPriorityBridge.issueCount - higherPriorityBridge.issueCount
       })
 
       res.json({ bridges: results })
@@ -1728,7 +1728,7 @@ cds.on('bootstrap', (app) => {
         SELECT.from('bridge.management.SystemConfig').orderBy('category', 'sortOrder')
       )
       res.json({ configs: rows || [] })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   sysRouter.patch('/config/:key', async (req, res) => {
@@ -1748,7 +1748,7 @@ cds.on('bootstrap', (app) => {
       const { invalidateCache } = require('./system-config')
       invalidateCache(key)
       res.json({ success: true })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   sysRouter.get('/banner', async (_req, res) => {
@@ -1760,7 +1760,7 @@ cds.on('bootstrap', (app) => {
       ])
       const active = modeRow?.value === 'true'
       res.json({ active, message: active ? (msgRow?.value || '') : '' })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   app.use('/system/api', requiresAuthentication, validateCsrfToken, sysRouter)
@@ -1912,7 +1912,7 @@ cds.on('bootstrap', (app) => {
       const db = await cds.connect.to('db')
       const rows = await db.run(SELECT.from('bridge.management.BnacEnvironment').orderBy('environment'))
       res.json({ environments: rows || [] })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   // POST add environment
@@ -1930,7 +1930,7 @@ cds.on('bootstrap', (app) => {
         modifiedBy: req.user?.id || 'system'
       }))
       res.json({ success: true })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   // PATCH update environment
@@ -1945,7 +1945,7 @@ cds.on('bootstrap', (app) => {
       if (active !== undefined) patch.active = active
       await db.run(UPDATE('bridge.management.BnacEnvironment').set(patch).where({ environment: env }))
       res.json({ success: true })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   // DELETE environment
@@ -1955,7 +1955,7 @@ cds.on('bootstrap', (app) => {
       const db = await cds.connect.to('db')
       await db.run(DELETE.from('bridge.management.BnacEnvironment').where({ environment: env }))
       res.json({ success: true })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   // GET load history
@@ -1964,7 +1964,7 @@ cds.on('bootstrap', (app) => {
       const db = await cds.connect.to('db')
       const rows = await db.run(SELECT.from('bridge.management.BnacLoadHistory').orderBy('loadedAt desc').limit(100))
       res.json({ history: rows || [] })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   // GET object ID mappings (for a bridge)
@@ -1973,7 +1973,7 @@ cds.on('bootstrap', (app) => {
       const db = await cds.connect.to('db')
       const row = await db.run(SELECT.one.from('bridge.management.BnacObjectIdMap').where({ bridgeId: req.params.bridgeId }))
       res.json({ mapping: row || null })
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   // POST CSV upload of bridgeId,bnacObjectId
@@ -2038,11 +2038,11 @@ cds.on('bootstrap', (app) => {
 
         await tx.commit()
         res.json({ success, failed, total: dataLines.length, batchId, errors: errors.slice(0, 20) })
-      } catch (e) {
+      } catch (error) {
         await tx.rollback()
-        throw e
+        throw error
       }
-    } catch (e) { res.status(500).json({ error: { message: e.message } }) }
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
   app.use('/bnac/api', requiresAuthentication, validateCsrfToken, bnacRouter)
@@ -2062,7 +2062,7 @@ cds.on('served', async () => {
     await db.run(`UPDATE "BRIDGE_MANAGEMENT_BRIDGES"
       SET "GEOLOCATION" = NEW ST_Point("LONGITUDE", "LATITUDE", 4326)
       WHERE "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL AND "GEOLOCATION" IS NULL`);
-  } catch (e) {
+  } catch (error) {
     // Spatial column may not exist in dev — ignore
   }
 });

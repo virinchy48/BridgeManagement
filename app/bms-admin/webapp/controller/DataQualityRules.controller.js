@@ -38,11 +38,11 @@ sap.ui.define([
           this._model.setProperty("/rules", d.value || []);
           this._updateCount((d.value || []).length);
         })
-        .catch(e => MessageBox.error("Failed to load rules: " + e));
+        .catch(error => MessageBox.error("Failed to load rules: " + error));
     },
 
-    _updateCount: function (n) {
-      this.byId("ruleCount").setText(n + " rule" + (n !== 1 ? "s" : ""));
+    _updateCount: function (qualityRuleCount) {
+      this.byId("ruleCount").setText(qualityRuleCount + " rule" + (qualityRuleCount !== 1 ? "s" : ""));
     },
 
     onRefresh: function () { this._loadRules(); MessageToast.show("Refreshed."); },

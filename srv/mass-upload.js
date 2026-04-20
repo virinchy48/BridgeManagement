@@ -339,9 +339,9 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
         const defByKey = new Map(allDefs.map(d => [d.internalKey, d]))
 
         // Map column index → attribute key
-        const colAttrMap = headerRow.map(h => {
-          const m = String(h || '').match(/\(([^)]+)\)$/)
-          return m ? defByKey.get(m[1]) || null : null
+        const colAttrMap = headerRow.map(spreadsheetHeader => {
+          const attributeKeyMatch = String(spreadsheetHeader || '').match(/\(([^)]+)\)$/)
+          return attributeKeyMatch ? defByKey.get(attributeKeyMatch[1]) || null : null
         })
 
         for (let ri = 2; ri < attrRows.length; ri++) {
@@ -707,8 +707,8 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
         batchId:    auditContext?.batchId,
         changedBy:  auditContext?.changedBy || 'system',
         changes:    Object.entries(stripMetadata(row))
-          .filter(([k, v]) => !['__rowNumber'].includes(k) && v != null && v !== '')
-          .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+          .filter(([changedBridgeField, changedBridgeData]) => !['__rowNumber'].includes(changedBridgeField) && changedBridgeData != null && changedBridgeData !== '')
+          .map(([changedBridgeField, changedBridgeData]) => ({ fieldName: changedBridgeField, oldValue: '', newValue: String(changedBridgeData) }))
       })
     }
   }
@@ -799,8 +799,8 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
         batchId:    auditContext?.batchId,
         changedBy:  auditContext?.changedBy || 'system',
         changes:    Object.entries(stripMetadata(row))
-          .filter(([k, v]) => !['__rowNumber'].includes(k) && v != null && v !== '')
-          .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+          .filter(([changedRestrictionField, changedRestrictionData]) => !['__rowNumber'].includes(changedRestrictionField) && changedRestrictionData != null && changedRestrictionData !== '')
+          .map(([changedRestrictionField, changedRestrictionData]) => ({ fieldName: changedRestrictionField, oldValue: '', newValue: String(changedRestrictionData) }))
       })
     }
   }
