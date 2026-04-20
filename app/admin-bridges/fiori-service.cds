@@ -277,8 +277,8 @@ annotate AdminService.Bridges with {
   modifiedAt @Core.Computed  @title: 'Last Modified At';
   // Bridge status is managed exclusively by Deactivate / Reactivate actions
   status     @Common.FieldControl: #ReadOnly  @title: 'Bridge Status';
-  // GeoJSON loaded from external GIS source — not hand-editable
-  geoJson    @Core.Immutable  @UI.MultiLineText  @title: 'Bridge Geometry (GeoJSON)';
+  // GeoJSON is maintained on the object page, not in the create dialog
+  geoJson    @Common.FieldControl: #Optional  @UI.MultiLineText  @title: 'Bridge Geometry (GeoJSON)';
   // Bridge ID auto-generated on create; never user-entered
   bridgeId   @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Bridge ID';
   // Legacy commerce fields — irrelevant in BMS context
