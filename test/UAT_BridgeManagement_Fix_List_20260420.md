@@ -99,12 +99,35 @@
 
 ## Summary Table
 
-| ID | Priority | Area | Status |
-|---|---|---|---|
-| P2-001 | P2 | Map API auth + spatial column | Open |
-| P2-002 | P2 | Condition derivation on create | Open |
-| P2-003 | P2 | Condition label draft lifecycle | Open |
-| P2-004 | P2 | nextInspectionDueDate computed | Open |
-| P3-001 | P3 | restrictionRef auto-generation | Open |
-| P3-002 | P3 | Map bbox spatial column | Open |
-| P3-003 | P3 | Dashboard API KPIs | Open |
+| ID | Priority | Area | Status | Fix Commit |
+|---|---|---|---|---|
+| P2-001 | P2 | Map API auth + spatial column | ✅ Fixed | cf7f847, 3abbb73 |
+| P2-002 | P2 | Condition derivation on create | ✅ Fixed | cf7f847 |
+| P2-003 | P2 | Condition label draft lifecycle | ✅ Fixed | cf7f847 |
+| P2-004 | P2 | nextInspectionDueDate computed | ⚠️ N/A for AdminService | — |
+| P3-001 | P3 | restrictionRef auto-generation | ✅ Fixed (pre-existing) | admin-service.js |
+| P3-002 | P3 | Map bbox spatial column | ✅ Fixed | cf7f847, 3abbb73 |
+| P3-003 | P3 | Dashboard API KPIs | ✅ Fixed | cf7f847 |
+
+### Post-Fix Verification (2026-04-20, BTP prod draftv5 commit 3abbb73)
+
+| Check | Result |
+|---|---|
+| Condition derivation on CREATE (conditionRating=7→FAIR, 9→GOOD, 3→VERY_POOR) | ✅ |
+| highPriorityAsset derived correctly (≤4 = true) | ✅ |
+| Map `/map/api/bridges` returns all 4 bridges with Bearer token | ✅ |
+| Map `/map/api/bridges?bbox=151.0,-34.0,152.0,-33.0` returns 1 Sydney bridge | ✅ |
+| Dashboard `/dashboard/api/analytics` returns live KPIs | ✅ |
+| Dashboard `/dashboard/api/overview` returns same data (alias route) | ✅ |
+| OData bridges list (4 bridges, correct conditions) | ✅ |
+| Restrictions list (1 active restriction) | ✅ |
+
+### Fix Notes
+
+**P2-004** (`nextInspectionDueDate`): `bridge.management.Bridges` (AdminService entity) does not have
+`inspectionFrequencyYrs` or `nextInspectionDueDate` columns — these are on `nhvr.Bridge` only.
+The computation is not applicable to AdminService. If needed, add those columns to
+`db/schema.cds` and redeploy the HDI schema.
+
+**P3-001** (`restrictionRef`): Already handled in `admin-service.js` via `this.before('NEW', Restrictions.drafts)` —
+auto-generates `RST-{seq}` format if not provided by the user.
