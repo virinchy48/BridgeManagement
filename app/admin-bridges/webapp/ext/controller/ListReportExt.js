@@ -1,4 +1,4 @@
-sap.ui.define([], function () {
+sap.ui.define(["sap/m/MessageToast"], function (MessageToast) {
   "use strict";
   return {
     onOpenGISConfig: function () {
@@ -8,6 +8,17 @@ sap.ui.define([], function () {
       } else {
         window.location.hash = "#GISConfig";
       }
+    },
+
+    onExportCsv: function () {
+      var url = "/admin-bridges/api/bridges/export";
+      var a = document.createElement("a");
+      a.href = url;
+      a.download = "";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      MessageToast.show("Bridge list export started");
     }
   };
 });

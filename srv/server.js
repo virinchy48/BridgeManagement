@@ -1027,6 +1027,16 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
+  // ── Health probe (no auth — used by BTP health checks and load balancers) ──
+  app.get('/health', (_req, res) => {
+    res.json({
+      status: 'ok',
+      ts: new Date().toISOString(),
+      version: process.env.npm_package_version || '1.0.0',
+      env: process.env.NODE_ENV || 'development'
+    })
+  })
+
   // ── Security middleware ────────────────────────────────────────────────────
 
   // FIX 3: Authentication guard — blocks unauthenticated requests in production.
@@ -1834,6 +1844,42 @@ cds.on('bootstrap', (app) => {
       res.send(content)
     } catch (error) {
       res.status(error.status || 500).json({ error: { message: error.message || 'Failed to open attachment' } })
+    }
+  })
+
+  // ── Bridge list CSV export ─────────────────────────────────────────────────
+  const EXPORT_COLUMNS = [
+    'bridgeId', 'bridgeName', 'state', 'route', 'region', 'assetOwner',
+    'structureType', 'yearBuilt', 'condition', 'conditionRating',
+    'postingStatus', 'lastInspectionDate', 'scourRisk',
+    'latitude', 'longitude',
+    'nhvrAssessed', 'freightRoute', 'overMassRoute',
+    'hmlApproved', 'bDoubleApproved', 'pbsApprovalClass',
+    'remarks'
+  ]
+
+  function csvEscape(v) {
+    if (v == null) return ''
+    const s = String(v)
+    return /[,"\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
+  }
+
+  adminBridgeRouter.get('/bridges/export', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const bridges = await db.run(
+        SELECT.from('bridge.management.Bridges').columns(...EXPORT_COLUMNS).orderBy('bridgeId')
+      )
+      const rows = bridges || []
+      const header = EXPORT_COLUMNS.join(',')
+      const lines = rows.map(b => EXPORT_COLUMNS.map(c => csvEscape(b[c])).join(','))
+      const csv = [header, ...lines].join('\r\n')
+      const filename = `bridges-export-${new Date().toISOString().slice(0, 10)}.csv`
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8')
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+      res.send(csv)
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Export failed' } })
     }
   })
 

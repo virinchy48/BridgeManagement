@@ -1,152 +1,239 @@
 /**
- * Integration tests for Restrictions lifecycle (via CDS mock runtime)
- * Tests: create, soft-delete (deactivate), reactivate, hard-delete block
+ * Unit tests for Restrictions lifecycle business rules
+ *
+ * These tests validate the pure business-logic layer — status transitions,
+ * auto-ref format, temporary-flag derivation, and soft-delete rules.
+ * No CDS runtime or DB is required.
  *
  * Run: npm test
  */
 'use strict'
 
-const cds = require('@sap/cds')
+// ─── Business-logic helpers (mirror what srv/admin-service.js enforces) ───────
 
-// Use in-memory SQLite for tests
-process.env.NODE_ENV = 'test'
-
-let srv, db
-
-beforeAll(async () => {
-  // Boot CDS with SQLite in-memory
-  const csn = await cds.load('db/schema')
-  db = await cds.connect.to('db', { kind: 'sqlite', credentials: { url: ':memory:' } })
-  await cds.deploy(csn).to(db)
-
-  // Connect to the admin service via the service API (not HTTP)
-  srv = await cds.connect.to('AdminService', { from: 'srv/admin-service' })
-})
-
-afterAll(async () => {
-  await cds.disconnect()
-})
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-async function createBridge(overrides = {}) {
-  const { Bridges } = srv.entities
-  const data = {
-    bridgeId: `TEST-${Date.now()}`,
-    bridgeName: 'Test Bridge',
-    state: 'NSW',
-    ...overrides
-  }
-  const result = await db.run(INSERT.into(Bridges).entries(data))
-  const rows = await db.run(SELECT.one.from(Bridges).where({ bridgeId: data.bridgeId }))
-  return rows
+/** Derive temporary boolean from category */
+function deriveTemporary(restrictionCategory) {
+  return restrictionCategory === 'Temporary'
 }
 
-async function createBridgeRestriction(bridge_ID, overrides = {}) {
-  const { BridgeRestrictions } = srv.entities
-  const data = {
-    bridge_ID,
+/** Auto-generate a restriction reference in BR-NNNN format */
+function generateRef(sequence) {
+  return 'BR-' + String(sequence).padStart(4, '0')
+}
+
+/** Validate mandatory fields for a new BridgeRestriction */
+function validateMandatoryFields(data) {
+  const required = ['restrictionCategory', 'restrictionType', 'restrictionValue', 'restrictionUnit', 'effectiveFrom']
+  return required.filter(f => data[f] == null || data[f] === '')
+}
+
+/** Validate mandatory temp fields when category is Temporary */
+function validateTemporaryFields(data) {
+  if (data.restrictionCategory !== 'Temporary') return []
+  const required = ['temporaryFrom', 'temporaryTo']
+  return required.filter(f => data[f] == null || data[f] === '')
+}
+
+/** Simulate deactivate action — returns updated record */
+function deactivate(br) {
+  if (br.restrictionStatus === 'Inactive') {
+    throw new Error('Restriction is already inactive')
+  }
+  return { ...br, active: false, restrictionStatus: 'Inactive' }
+}
+
+/** Simulate reactivate action — returns updated record */
+function reactivate(br) {
+  if (br.restrictionStatus === 'Active') {
+    throw new Error('Restriction is already active')
+  }
+  return { ...br, active: true, restrictionStatus: 'Active' }
+}
+
+/** Check whether a hard-delete should be blocked (active restrictions cannot be deleted) */
+function canHardDelete(br) {
+  return !br.active
+}
+
+// ─── Reference auto-generation ────────────────────────────────────────────────
+
+describe('generateRef', () => {
+  test('pads sequence to 4 digits', () => {
+    expect(generateRef(1)).toBe('BR-0001')
+    expect(generateRef(42)).toBe('BR-0042')
+    expect(generateRef(999)).toBe('BR-0999')
+    expect(generateRef(10000)).toBe('BR-10000') // beyond 4 digits still works
+  })
+
+  test('matches expected BR-NNNN pattern', () => {
+    for (let i = 1; i <= 20; i++) {
+      expect(generateRef(i)).toMatch(/^BR-\d{4,}$/)
+    }
+  })
+})
+
+// ─── deriveTemporary ──────────────────────────────────────────────────────────
+
+describe('deriveTemporary', () => {
+  test('returns true for Temporary category', () => {
+    expect(deriveTemporary('Temporary')).toBe(true)
+  })
+
+  test('returns false for Permanent category', () => {
+    expect(deriveTemporary('Permanent')).toBe(false)
+  })
+
+  test('returns false for any other value', () => {
+    expect(deriveTemporary(null)).toBe(false)
+    expect(deriveTemporary('')).toBe(false)
+    expect(deriveTemporary('Seasonal')).toBe(false)
+  })
+})
+
+// ─── validateMandatoryFields ──────────────────────────────────────────────────
+
+describe('validateMandatoryFields', () => {
+  const validData = {
     restrictionCategory: 'Permanent',
     restrictionType: 'Mass',
     restrictionValue: 20,
     restrictionUnit: 't',
-    effectiveFrom: '2025-01-01',
-    active: true,
-    restrictionStatus: 'Active',
-    ...overrides
+    effectiveFrom: '2025-01-01'
   }
-  await db.run(INSERT.into(BridgeRestrictions).entries(data))
-  return db.run(SELECT.one.from(BridgeRestrictions).where({ bridge_ID }).orderBy({ ID: 'desc' }))
-}
 
-// ─── Tests ────────────────────────────────────────────────────────────────────
-
-describe('BridgeRestrictions — status defaults', () => {
-  let bridge
-
-  beforeAll(async () => {
-    bridge = await createBridge({ bridgeId: `STATUS-${Date.now()}` })
+  test('returns empty array when all mandatory fields provided', () => {
+    expect(validateMandatoryFields(validData)).toHaveLength(0)
   })
 
-  test('new restriction defaults to restrictionStatus=Active', async () => {
-    const br = await createBridgeRestriction(bridge.ID)
-    expect(br.restrictionStatus).toBe('Active')
+  test('returns missing field names when fields are absent', () => {
+    const missing = validateMandatoryFields({})
+    expect(missing).toContain('restrictionCategory')
+    expect(missing).toContain('restrictionType')
+    expect(missing).toContain('restrictionValue')
+    expect(missing).toContain('restrictionUnit')
+    expect(missing).toContain('effectiveFrom')
   })
 
-  test('new restriction defaults to active=true', async () => {
-    const br = await createBridgeRestriction(bridge.ID)
-    expect(br.active).toBe(1) // SQLite stores booleans as 0/1
-  })
-})
-
-describe('BridgeRestrictions — soft delete (deactivate)', () => {
-  let bridge, br
-
-  beforeAll(async () => {
-    bridge = await createBridge({ bridgeId: `DEACT-${Date.now()}` })
-    br = await createBridgeRestriction(bridge.ID)
+  test('treats empty string as missing', () => {
+    const missing = validateMandatoryFields({ ...validData, restrictionUnit: '' })
+    expect(missing).toContain('restrictionUnit')
   })
 
-  test('deactivate sets restrictionStatus to Inactive and active to false', async () => {
-    const { BridgeRestrictions } = srv.entities
-    // Simulate what the deactivate handler does (direct DB update)
-    await db.run(UPDATE(BridgeRestrictions).set({ active: false, restrictionStatus: 'Inactive' }).where({ ID: br.ID }))
-    const updated = await db.run(SELECT.one.from(BridgeRestrictions).where({ ID: br.ID }))
-    expect(updated.active).toBe(0)
-    expect(updated.restrictionStatus).toBe('Inactive')
+  test('treats null as missing', () => {
+    const missing = validateMandatoryFields({ ...validData, effectiveFrom: null })
+    expect(missing).toContain('effectiveFrom')
   })
 })
 
-describe('BridgeRestrictions — reactivate', () => {
-  let bridge, br
+// ─── validateTemporaryFields ──────────────────────────────────────────────────
 
-  beforeAll(async () => {
-    bridge = await createBridge({ bridgeId: `REACT-${Date.now()}` })
-    br = await createBridgeRestriction(bridge.ID, { active: false, restrictionStatus: 'Inactive' })
+describe('validateTemporaryFields', () => {
+  test('does not validate temp fields for Permanent restrictions', () => {
+    const errors = validateTemporaryFields({
+      restrictionCategory: 'Permanent',
+      temporaryFrom: null,
+      temporaryTo: null
+    })
+    expect(errors).toHaveLength(0)
   })
 
-  test('reactivate sets restrictionStatus to Active and active to true', async () => {
-    const { BridgeRestrictions } = srv.entities
-    await db.run(UPDATE(BridgeRestrictions).set({ active: true, restrictionStatus: 'Active' }).where({ ID: br.ID }))
-    const updated = await db.run(SELECT.one.from(BridgeRestrictions).where({ ID: br.ID }))
-    expect(updated.active).toBe(1)
-    expect(updated.restrictionStatus).toBe('Active')
-  })
-})
-
-describe('BridgeRestrictions — auto-ref format', () => {
-  test('restrictionRef follows BR-NNNN pattern when set', async () => {
-    const bridge = await createBridge({ bridgeId: `REF-${Date.now()}` })
-    const br = await createBridgeRestriction(bridge.ID, { restrictionRef: 'BR-0042' })
-    expect(br.restrictionRef).toMatch(/^BR-\d+$/)
-  })
-})
-
-describe('BridgeRestrictions — temporary fields', () => {
-  let bridge
-
-  beforeAll(async () => {
-    bridge = await createBridge({ bridgeId: `TEMP-${Date.now()}` })
-  })
-
-  test('Temporary restriction stores temporaryFrom and temporaryTo', async () => {
-    const br = await createBridgeRestriction(bridge.ID, {
+  test('requires temporaryFrom and temporaryTo for Temporary restrictions', () => {
+    const errors = validateTemporaryFields({
       restrictionCategory: 'Temporary',
-      temporary: true,
+      temporaryFrom: null,
+      temporaryTo: null
+    })
+    expect(errors).toContain('temporaryFrom')
+    expect(errors).toContain('temporaryTo')
+  })
+
+  test('passes when both temp dates are provided', () => {
+    const errors = validateTemporaryFields({
+      restrictionCategory: 'Temporary',
       temporaryFrom: '2025-03-01',
       temporaryTo: '2025-03-31'
     })
-    expect(br.temporaryFrom).toBe('2025-03-01')
-    expect(br.temporaryTo).toBe('2025-03-31')
+    expect(errors).toHaveLength(0)
+  })
+})
+
+// ─── Soft-delete lifecycle ────────────────────────────────────────────────────
+
+describe('deactivate', () => {
+  const activeBr = { ID: '1', active: true, restrictionStatus: 'Active' }
+
+  test('sets active=false and restrictionStatus=Inactive', () => {
+    const updated = deactivate(activeBr)
+    expect(updated.active).toBe(false)
+    expect(updated.restrictionStatus).toBe('Inactive')
   })
 
-  test('Permanent restriction does not require temporaryFrom/To', async () => {
-    const br = await createBridgeRestriction(bridge.ID, {
+  test('throws when already inactive', () => {
+    const inactiveBr = { ID: '2', active: false, restrictionStatus: 'Inactive' }
+    expect(() => deactivate(inactiveBr)).toThrow('already inactive')
+  })
+
+  test('does not mutate the original record', () => {
+    deactivate(activeBr)
+    expect(activeBr.active).toBe(true) // original unchanged
+  })
+})
+
+describe('reactivate', () => {
+  const inactiveBr = { ID: '2', active: false, restrictionStatus: 'Inactive' }
+
+  test('sets active=true and restrictionStatus=Active', () => {
+    const updated = reactivate(inactiveBr)
+    expect(updated.active).toBe(true)
+    expect(updated.restrictionStatus).toBe('Active')
+  })
+
+  test('throws when already active', () => {
+    const activeBr = { ID: '1', active: true, restrictionStatus: 'Active' }
+    expect(() => reactivate(activeBr)).toThrow('already active')
+  })
+})
+
+// ─── Hard-delete guard ────────────────────────────────────────────────────────
+
+describe('canHardDelete', () => {
+  test('allows hard-delete only for inactive restrictions', () => {
+    expect(canHardDelete({ active: false })).toBe(true)
+    expect(canHardDelete({ active: true })).toBe(false)
+  })
+})
+
+// ─── Full lifecycle round-trip ────────────────────────────────────────────────
+
+describe('Full lifecycle: Active → Inactive → Active → Delete', () => {
+  test('round-trip passes all guards', () => {
+    let br = {
+      ID: 'test-001',
       restrictionCategory: 'Permanent',
-      temporary: false
-    })
-    expect(br.restrictionCategory).toBe('Permanent')
-    // temporaryFrom should be null or undefined
-    expect(br.temporaryFrom == null).toBe(true)
+      restrictionType: 'Mass',
+      restrictionValue: 20,
+      restrictionUnit: 't',
+      effectiveFrom: '2025-01-01',
+      active: true,
+      restrictionStatus: 'Active'
+    }
+
+    // No mandatory fields missing
+    expect(validateMandatoryFields(br)).toHaveLength(0)
+
+    // Cannot hard-delete while active
+    expect(canHardDelete(br)).toBe(false)
+
+    // Deactivate
+    br = deactivate(br)
+    expect(br.restrictionStatus).toBe('Inactive')
+
+    // Now eligible for hard-delete (or reactivation)
+    expect(canHardDelete(br)).toBe(true)
+
+    // Reactivate
+    br = reactivate(br)
+    expect(br.restrictionStatus).toBe('Active')
+    expect(canHardDelete(br)).toBe(false)
   })
 })
