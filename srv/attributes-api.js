@@ -21,7 +21,10 @@ const { SELECT, INSERT, UPDATE } = cds.ql
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function currentUser(req) {
-  return req.user?.id || req.headers['x-user'] || 'system'
+  // Only trust the x-user header in non-production environments (e.g. local dev / test).
+  // In production the authenticated identity must come from req.user set by the auth middleware.
+  const xUser = process.env.NODE_ENV !== 'production' ? req.headers['x-user'] : undefined
+  return req.user?.id || xUser || 'system'
 }
 
 function getTypedValueColumn(dataType) {
@@ -243,7 +246,7 @@ async function buildAttributeColumns(db, objectType) {
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
-module.exports = function mountAttributesApi(app) {
+module.exports = function mountAttributesApi(app, requiresAuthentication, validateCsrfToken) {
   const router = express.Router()
   router.use(express.json({ limit: '10mb' }))
 
@@ -646,5 +649,15 @@ module.exports = function mountAttributesApi(app) {
     }
   })
 
-  app.use('/attributes/api', router)
+  // Apply authentication guard (and CSRF guard for state-changing routes) if provided.
+  // When called from server.js these are always passed; the fallback keeps the module
+  // usable in isolation (e.g. unit tests) without breaking.
+  const authMiddleware = typeof requiresAuthentication === 'function'
+    ? requiresAuthentication
+    : (_req, _res, next) => next()
+  const csrfMiddleware = typeof validateCsrfToken === 'function'
+    ? validateCsrfToken
+    : (_req, _res, next) => next()
+
+  app.use('/attributes/api', authMiddleware, csrfMiddleware, router)
 }

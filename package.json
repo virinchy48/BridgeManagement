@@ -17,6 +17,12 @@
   },
   "private": true,
   "cds": {
+    "query": {
+      "limit": {
+        "max": 1000,
+        "default": 200
+      }
+    },
     "requires": {
       "[development]": {
         "auth": {

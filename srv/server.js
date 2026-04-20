@@ -1387,7 +1387,7 @@ cds.on('bootstrap', (app) => {
   })
 
   app.use('/mass-edit/api', requiresAuthentication, validateCsrfToken, massEditRouter)
-  mountAttributesApi(app)
+  mountAttributesApi(app, requiresAuthentication, validateCsrfToken)
 
   // ── Audit Report API ─────────────────────────────────────────────────────
   const auditRouter = express.Router()

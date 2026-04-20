@@ -622,6 +622,7 @@ const DEMO_BRIDGES = [
 module.exports = (srv) => {
 
   srv.on("loadDemoData", async (req) => {
+    if (!req.user?.is('admin')) return req.reject(403, 'Admin role required');
     const { Bridges, SystemConfig } = srv.entities;
     const db = await cds.connect.to("db");
 
@@ -655,6 +656,7 @@ module.exports = (srv) => {
   });
 
   srv.on("clearDemoData", async (req) => {
+    if (!req.user?.is('admin')) return req.reject(403, 'Admin role required');
     const { Bridges, SystemConfig } = srv.entities;
     const db = await cds.connect.to("db");
 
