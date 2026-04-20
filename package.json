@@ -13,7 +13,7 @@
     "@sap/cds-dk": "^9"
   },
   "scripts": {
-    "start": "PORT=8009 cds-serve"
+    "start": "cds-serve"
   },
   "private": true,
   "cds": {
