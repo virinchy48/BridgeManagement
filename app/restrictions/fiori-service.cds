@@ -122,12 +122,12 @@ annotate AdminService.Restrictions with @(
     // Tab 1 — Classification
     FieldGroup#RstIdentification: {
       Data: [
-        {Value: restrictionRef},   // @Core.Immutable — auto-generated, locked after creation
+        {Value: restrictionRef},   // auto-generated (RST-NNNN); immutable after first save
         {Value: bridgeRef},
         {Value: restrictionCategory},
         {Value: restrictionType},
         {Value: restrictionStatus},
-        {Value: active},           // @Common.FieldControl #ReadOnly — managed by actions
+        {Value: active},           // read-only — managed by Deactivate / Reactivate actions
       ]
     },
     FieldGroup#RstApplicability: {
@@ -136,7 +136,7 @@ annotate AdminService.Restrictions with @(
         {Value: direction},
         {Value: permitRequired},
         {Value: escortRequired},
-        {Value: temporary},
+        // 'temporary' boolean is auto-derived from restrictionCategory — not shown in form
       ]
     },
     FieldGroup#RstValue: {
@@ -165,15 +165,28 @@ annotate AdminService.Restrictions with @(
     // Tab 3 — Validity & Approval
     FieldGroup#RstEffective: {
       Data: [
-        {Value: effectiveFrom},
+        {Value: effectiveFrom},   // mandatory — see field annotation below
         {Value: effectiveTo},
       ]
     },
+    // Temporary-only fields — hidden when restrictionCategory != 'Temporary'
     FieldGroup#RstTemporary: {
       Data: [
-        {Value: temporaryFrom},
-        {Value: temporaryTo},
-        {Value: temporaryReason},
+        {
+          $Type : 'UI.DataField',
+          Value : temporaryFrom,
+          ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'restrictionCategory' }, 'Temporary'] } }
+        },
+        {
+          $Type : 'UI.DataField',
+          Value : temporaryTo,
+          ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'restrictionCategory' }, 'Temporary'] } }
+        },
+        {
+          $Type : 'UI.DataField',
+          Value : temporaryReason,
+          ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'restrictionCategory' }, 'Temporary'] } }
+        },
       ]
     },
     FieldGroup#RstApproval: {
@@ -211,8 +224,9 @@ annotate AdminService.Restrictions with {
   createdAt      @UI.Hidden;
   modifiedBy     @UI.Hidden;
   modifiedAt     @UI.Hidden;
-  // Auto-generated on create; locked thereafter
-  restrictionRef @Core.Immutable  @Common.FieldControl: #Mandatory  @title: 'Restriction Reference';
+  // Auto-generated on create (RST-NNNN); immutable after first save.
+  // NOT marked Mandatory — the server pre-fills it; user may override before saving.
+  restrictionRef @Core.Immutable  @Common.FieldControl: #Optional  @title: 'Reference No. (auto-generated)';
   // Lifecycle managed exclusively by Deactivate / Reactivate actions
   active         @Common.FieldControl: #ReadOnly  @title: 'Active';
   // name is auto-set by server handler from restrictionRef; not user-facing
@@ -271,8 +285,8 @@ annotate AdminService.Restrictions with {
     Common.ValueListWithFixedValues
   )  @title: 'Direction';
 
-  // Labels
-  temporary            @title: 'Temporary';
+  // Labels + mandatory rules
+  temporary            @UI.Hidden;  // auto-derived from restrictionCategory; not shown in form
   permitRequired       @title: 'Permit Required';
   escortRequired       @title: 'Escort Required';
   grossMassLimit       @title: 'Gross Mass Limit (t)';
@@ -281,7 +295,7 @@ annotate AdminService.Restrictions with {
   widthLimit           @title: 'Width Limit (m)';
   lengthLimit          @title: 'Length Limit (m)';
   speedLimit           @title: 'Speed Limit (km/h)';
-  effectiveFrom        @title: 'Effective From';
+  effectiveFrom        @title: 'Effective From'  @Common.FieldControl: #Mandatory;
   effectiveTo          @title: 'Effective To';
   temporaryFrom        @title: 'Temporary From';
   temporaryTo          @title: 'Temporary To';

@@ -380,13 +380,44 @@ annotate AdminService.BridgeRestrictions with {
   ID    @UI.Hidden;
   bridge @UI.Hidden;
   createdAt @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
-  restrictionRef        @title: 'Restriction Reference';
-  restrictionCategory   @title: 'Category';
-  restrictionType       @title: 'Restriction Type';
-  restrictionValue      @title: 'Value';
-  restrictionUnit       @title: 'Unit';
-  restrictionStatus     @title: 'Status';
-  appliesToVehicleClass @title: 'Applies to Vehicle Class';
+  // Auto-generated (BR-NNNN); immutable after first save — server pre-fills, user may override
+  restrictionRef        @Core.Immutable  @Common.FieldControl: #Optional  @title: 'Reference (auto-generated)';
+  // Mandatory classification fields
+  restrictionCategory @(
+    Common.FieldControl: #Mandatory,
+    ValueList.entity:'RestrictionCategories',
+    Common.ValueListWithFixedValues
+  )  @title: 'Category';
+  restrictionType @(
+    Common.FieldControl: #Mandatory,
+    ValueList.entity:'RestrictionTypes',
+    Common.ValueListWithFixedValues
+  )  @title: 'Restriction Type';
+  restrictionValue      @Common.FieldControl: #Mandatory  @title: 'Value';
+  restrictionUnit @(
+    Common.FieldControl: #Mandatory,
+    ValueList.entity:'RestrictionUnits',
+    Common.ValueListWithFixedValues
+  )  @title: 'Unit';
+  // Status — auto-defaulted to Active on create; managed by Deactivate / Reactivate actions thereafter
+  restrictionStatus @(
+    ValueList.entity:'RestrictionStatuses',
+    Common.ValueListWithFixedValues
+  )  @title: 'Status';
+  // Active flag — read-only; controlled by Deactivate / Reactivate actions only
+  active                @Common.FieldControl: #ReadOnly  @title: 'Active';
+  // temporary boolean auto-derived from category — not shown in form
+  temporary             @UI.Hidden;
+  appliesToVehicleClass @(
+    ValueList.entity:'VehicleClasses',
+    Common.ValueListWithFixedValues
+  )  @title: 'Applies to Vehicle Class';
+  direction @(
+    ValueList.entity:'RestrictionDirections',
+    Common.ValueListWithFixedValues
+  )  @title: 'Direction';
+  effectiveFrom         @Common.FieldControl: #Mandatory  @title: 'Effective From';
+  effectiveTo           @title: 'Effective To';
   grossMassLimit        @title: 'Gross Mass Limit (t)';
   axleMassLimit         @title: 'Axle Mass Limit (t)';
   heightLimit           @title: 'Height Limit (m)';
@@ -395,15 +426,10 @@ annotate AdminService.BridgeRestrictions with {
   speedLimit            @title: 'Speed Limit (km/h)';
   permitRequired        @title: 'Permit Required';
   escortRequired        @title: 'Escort Required';
-  temporary             @title: 'Temporary';
-  active                @title: 'Active';
-  effectiveFrom         @title: 'Effective From';
-  effectiveTo           @title: 'Effective To';
   approvedBy            @title: 'Approved By';
   approvalReference     @title: 'Approval Reference';
   legalReference        @title: 'Gazette / Legal Reference';
   issuingAuthority      @title: 'Issuing Authority';
-  direction             @title: 'Direction';
   enforcementAuthority  @title: 'Enforcement Authority';
   temporaryFrom         @title: 'Temporary From';
   temporaryTo           @title: 'Temporary To';
@@ -416,8 +442,32 @@ annotate AdminService.BridgeRestrictions with {
 annotate AdminService.BridgeRestrictions with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
+  // Deletable kept true so draft-mode rows can be removed; server blocks delete on committed records
   Capabilities.DeleteRestrictions.Deletable  : true,
   UI: {
+    // ── Inline table actions — deactivate / reactivate committed restriction rows ──
+    Identification: [
+      {
+        $Type       : 'UI.DataFieldForAction',
+        Action      : 'AdminService.deactivate',
+        Label       : 'Retire (Soft-Delete)',
+        Criticality : #Negative,
+        ![@UI.Hidden]: { $edmJson: { $Or: [
+          { $Eq: [{ $Path: 'active' }, false] },
+          { $Not: { $Path: 'IsActiveEntity' } }
+        ] } }
+      },
+      {
+        $Type       : 'UI.DataFieldForAction',
+        Action      : 'AdminService.reactivate',
+        Label       : 'Reactivate',
+        Criticality : #Positive,
+        ![@UI.Hidden]: { $edmJson: { $Or: [
+          { $Ne: [{ $Path: 'active' }, false] },
+          { $Not: { $Path: 'IsActiveEntity' } }
+        ] } }
+      }
+    ],
     LineItem: [
       {Value: restrictionRef,        Label: 'Reference'},
       {Value: restrictionCategory,   Label: 'Category'},
@@ -430,6 +480,29 @@ annotate AdminService.BridgeRestrictions with @(
       {Value: effectiveFrom,         Label: 'From'},
       {Value: effectiveTo,           Label: 'To'},
       {Value: active,                Label: 'Active'},
+      // Inline Retire / Reactivate action buttons per row
+      {
+        $Type       : 'UI.DataFieldForAction',
+        Action      : 'AdminService.BridgeRestrictions/AdminService.deactivate',
+        Label       : 'Retire',
+        Criticality : #Negative,
+        Inline      : true,
+        ![@UI.Hidden]: { $edmJson: { $Or: [
+          { $Eq: [{ $Path: 'active' }, false] },
+          { $Not: { $Path: 'IsActiveEntity' } }
+        ] } }
+      },
+      {
+        $Type       : 'UI.DataFieldForAction',
+        Action      : 'AdminService.BridgeRestrictions/AdminService.reactivate',
+        Label       : 'Reactivate',
+        Criticality : #Positive,
+        Inline      : true,
+        ![@UI.Hidden]: { $edmJson: { $Or: [
+          { $Ne: [{ $Path: 'active' }, false] },
+          { $Not: { $Path: 'IsActiveEntity' } }
+        ] } }
+      },
     ],
     Facets: [
       {
@@ -456,6 +529,7 @@ annotate AdminService.BridgeRestrictions with @(
         ID    : 'BRValidity',
         Facets: [
           {$Type: 'UI.ReferenceFacet', Label: 'Effective Period',    Target: '@UI.FieldGroup#BREffective'},
+          // Temporary Condition sub-section shown only for Temporary restrictions (fields self-hide otherwise)
           {$Type: 'UI.ReferenceFacet', Label: 'Temporary Condition', Target: '@UI.FieldGroup#BRTemporary'},
           {$Type: 'UI.ReferenceFacet', Label: 'Approval & Legal',    Target: '@UI.FieldGroup#BRApproval'},
           {$Type: 'UI.ReferenceFacet', Label: 'Enforcement',         Target: '@UI.FieldGroup#BREnforcement'},
@@ -464,13 +538,13 @@ annotate AdminService.BridgeRestrictions with @(
     ],
     FieldGroup#BRDetails: {
       Data: [
-        {Value: restrictionRef},
+        {Value: restrictionRef},    // auto-generated BR-NNNN
         {Value: restrictionCategory},
         {Value: restrictionType},
         {Value: restrictionValue},
         {Value: restrictionUnit},
         {Value: restrictionStatus},
-        {Value: active},
+        {Value: active},            // read-only — use Retire / Reactivate buttons
       ]
     },
     FieldGroup#BRApplicability: {
@@ -479,7 +553,7 @@ annotate AdminService.BridgeRestrictions with @(
         {Value: direction},
         {Value: permitRequired},
         {Value: escortRequired},
-        {Value: temporary},
+        // 'temporary' boolean auto-derived from restrictionCategory — not shown in form
       ]
     },
     FieldGroup#BRMassLimits: {
@@ -498,15 +572,28 @@ annotate AdminService.BridgeRestrictions with @(
     },
     FieldGroup#BREffective: {
       Data: [
-        {Value: effectiveFrom},
+        {Value: effectiveFrom},   // mandatory — see field annotation
         {Value: effectiveTo},
       ]
     },
+    // Temporary-only fields — hidden when restrictionCategory != 'Temporary'
     FieldGroup#BRTemporary: {
       Data: [
-        {Value: temporaryFrom},
-        {Value: temporaryTo},
-        {Value: temporaryReason},
+        {
+          $Type : 'UI.DataField',
+          Value : temporaryFrom,
+          ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'restrictionCategory' }, 'Temporary'] } }
+        },
+        {
+          $Type : 'UI.DataField',
+          Value : temporaryTo,
+          ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'restrictionCategory' }, 'Temporary'] } }
+        },
+        {
+          $Type : 'UI.DataField',
+          Value : temporaryReason,
+          ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'restrictionCategory' }, 'Temporary'] } }
+        },
       ]
     },
     FieldGroup#BRApproval: {

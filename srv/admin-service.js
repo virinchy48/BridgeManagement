@@ -81,6 +81,69 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       const { cnt } = await SELECT.one.from(Restrictions).columns('count(1) as cnt')
       req.data.restrictionRef = `RST-${String((cnt || 0) + 1).padStart(4, '0')}`
     }
+    // Default status to Active so newly created restrictions are immediately enforceable
+    if (!req.data.restrictionStatus) req.data.restrictionStatus = 'Active'
+  })
+
+  // ── BridgeRestrictions lifecycle — auto-ref, defaults, soft-delete ──────
+  this.before('NEW', BridgeRestrictions.drafts, async (req) => {
+    if (!req.data.restrictionRef) {
+      const { cnt } = await SELECT.one.from(BridgeRestrictions).columns('count(1) as cnt')
+      req.data.restrictionRef = `BR-${String((cnt || 0) + 1).padStart(4, '0')}`
+    }
+    if (!req.data.restrictionStatus) req.data.restrictionStatus = 'Active'
+    if (req.data.active === undefined) req.data.active = true
+  })
+
+  // Sync the `temporary` flag from category; also applies on update
+  this.before(['CREATE', 'UPDATE'], BridgeRestrictions, req => {
+    if (req.data.restrictionCategory !== undefined) {
+      req.data.temporary = req.data.restrictionCategory === 'Temporary'
+    }
+    if (!req.data.name && (req.data.restrictionRef || req.data.restrictionType)) {
+      req.data.name = req.data.restrictionRef || req.data.restrictionType
+    }
+  })
+
+  // Soft-delete: deactivate / reactivate BridgeRestrictions
+  this.on('deactivate', BridgeRestrictions, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.BridgeRestrictions', { ID })
+    await db.run(UPDATE('bridge.management.BridgeRestrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'BridgeRestriction',
+      objectId:   ID,
+      objectName: old?.restrictionRef || ID,
+      source:     'OData',
+      batchId:    cds.utils.uuid(),
+      changedBy:  req.user?.id || 'system',
+      changes: [
+        { fieldName: 'active',            oldValue: String(old?.active ?? true),               newValue: 'false' },
+        { fieldName: 'restrictionStatus', oldValue: old?.restrictionStatus || '',              newValue: 'Retired' }
+      ]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeRestrictions').where({ ID }))
+  })
+
+  this.on('reactivate', BridgeRestrictions, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.BridgeRestrictions', { ID })
+    await db.run(UPDATE('bridge.management.BridgeRestrictions').set({ active: true, restrictionStatus: 'Active' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'BridgeRestriction',
+      objectId:   ID,
+      objectName: old?.restrictionRef || ID,
+      source:     'OData',
+      batchId:    cds.utils.uuid(),
+      changedBy:  req.user?.id || 'system',
+      changes: [
+        { fieldName: 'active',            oldValue: String(old?.active ?? false),              newValue: 'true' },
+        { fieldName: 'restrictionStatus', oldValue: old?.restrictionStatus || 'Retired',       newValue: 'Active' }
+      ]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeRestrictions').where({ ID }))
   })
 
   this.before (['CREATE', 'UPDATE'], Restrictions, req => {
@@ -182,6 +245,50 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
     await writeChangeLogs(db, {
       objectType:  'Restriction',
+      objectId:    result.ID,
+      objectName:  fresh.restrictionRef || result.ID,
+      source:      'OData',
+      batchId:     cds.utils.uuid(),
+      changedBy:   req.user?.id || 'system',
+      changes
+    })
+  })
+
+  // ── Audit: BridgeRestrictions ─────────────────────────────────────────────
+  this.before('UPDATE', BridgeRestrictions, async (req) => {
+    if (!req.data?.ID) return
+    const db = await cds.connect.to('db')
+    req._auditOld = await fetchCurrentRecord(db, 'bridge.management.BridgeRestrictions', { ID: req.data.ID })
+  })
+
+  this.after('UPDATE', BridgeRestrictions, async (_result, req) => {
+    if (!req._auditOld) return
+    const db = await cds.connect.to('db')
+    const fresh = await fetchCurrentRecord(db, 'bridge.management.BridgeRestrictions', { ID: req._auditOld.ID })
+    if (!fresh) return
+    const changes = diffRecords(req._auditOld, fresh)
+    if (!changes.length) return
+    await writeChangeLogs(db, {
+      objectType:  'BridgeRestriction',
+      objectId:    req._auditOld.ID,
+      objectName:  fresh.restrictionRef || req._auditOld.restrictionRef || req._auditOld.ID,
+      source:      'OData',
+      batchId:     cds.utils.uuid(),
+      changedBy:   req.user?.id || 'system',
+      changes
+    })
+  })
+
+  this.after('CREATE', BridgeRestrictions, async (result, req) => {
+    if (!result?.ID) return
+    const db = await cds.connect.to('db')
+    const fresh = await fetchCurrentRecord(db, 'bridge.management.BridgeRestrictions', { ID: result.ID })
+    if (!fresh) return
+    const changes = Object.entries(fresh)
+      .filter(([k, v]) => !['modifiedAt','modifiedBy','createdAt','createdBy'].includes(k) && v != null && v !== '')
+      .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+    await writeChangeLogs(db, {
+      objectType:  'BridgeRestriction',
       objectId:    result.ID,
       objectName:  fresh.restrictionRef || result.ID,
       source:      'OData',
