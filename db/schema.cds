@@ -26,8 +26,8 @@ entity Bridges : managed {
       region       : String(80);
       lga          : String(111);
       routeNumber  : String(40);
-      latitude     : Decimal(9,6) @mandatory @assert.range: [-90,90];
-      longitude    : Decimal(9,6) @mandatory @assert.range: [-180,180];
+      latitude     : Decimal(15,6) @mandatory;
+      longitude    : Decimal(15,6) @mandatory;
       location     : String(255);
       assetOwner   : String(111) @mandatory;
       managingAuthority : String(111);
@@ -43,8 +43,8 @@ entity Bridges : managed {
       deckWidth    : Decimal(9,2);
       numberOfLanes : Integer;
       condition    : String(40);
-      conditionRating : Integer @assert.range: [1,10];
-      structuralAdequacyRating : Integer @assert.range: [1,10];
+      conditionRating : Integer;
+      structuralAdequacyRating : Integer;
       postingStatus : String(40);
       conditionStandard : String(111);
       seismicZone  : String(40);
@@ -61,7 +61,7 @@ entity Bridges : managed {
       nhvrAssessmentDate : Date;
       loadRating   : Decimal(9,2);
       pbsApprovalClass : String(40);
-      importanceLevel : Integer @assert.range: [1,4];
+      importanceLevel : Integer;
       averageDailyTraffic : Integer;
       heavyVehiclePercent : Decimal(5,2);
       gazetteReference : String(111);

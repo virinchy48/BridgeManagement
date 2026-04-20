@@ -50,39 +50,288 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     ]
   }
 
+  const numericFields = {
+    Bridges: {
+      integer: [
+        ['yearBuilt', 'Year Built'],
+        ['spanCount', 'Number of Spans'],
+        ['numberOfLanes', 'Number of Lanes'],
+        ['conditionRating', 'Condition Rating'],
+        ['structuralAdequacyRating', 'Structural Adequacy Rating'],
+        ['floodImmunityAriYears', 'Flood Immunity'],
+        ['importanceLevel', 'Importance Level'],
+        ['averageDailyTraffic', 'Average Daily Traffic']
+      ],
+      decimal: [
+        ['latitude', 'Latitude'],
+        ['longitude', 'Longitude'],
+        ['clearanceHeight', 'Clearance Height'],
+        ['spanLength', 'Span Length'],
+        ['totalLength', 'Total Length'],
+        ['deckWidth', 'Deck Width'],
+        ['scourDepthLastMeasured', 'Scour Depth Last Measured'],
+        ['loadRating', 'Load Rating'],
+        ['heavyVehiclePercent', 'Heavy Vehicle Percentage']
+      ],
+      range: [
+        ['latitude', 'Latitude', -90, 90],
+        ['longitude', 'Longitude', -180, 180],
+        ['yearBuilt', 'Year Built', 1800, 2100],
+        ['spanCount', 'Number of Spans', 1, 999],
+        ['numberOfLanes', 'Number of Lanes', 1, 20],
+        ['conditionRating', 'Condition Rating', 1, 10],
+        ['structuralAdequacyRating', 'Structural Adequacy Rating', 1, 10],
+        ['clearanceHeight', 'Clearance Height', 0, 9999999.99],
+        ['spanLength', 'Span Length', 0, 9999999.99],
+        ['totalLength', 'Total Length', 0, 9999999.99],
+        ['deckWidth', 'Deck Width', 0, 9999999.99],
+        ['scourDepthLastMeasured', 'Scour Depth Last Measured', 0, 9999999.99],
+        ['floodImmunityAriYears', 'Flood Immunity', 0, 10000],
+        ['loadRating', 'Load Rating', 0, 9999999.99],
+        ['importanceLevel', 'Importance Level', 1, 4],
+        ['averageDailyTraffic', 'Average Daily Traffic', 0, 1000000],
+        ['heavyVehiclePercent', 'Heavy Vehicle Percentage', 0, 100]
+      ]
+    },
+    Restrictions: {
+      integer: [
+        ['speedLimit', 'Speed Limit']
+      ],
+      decimal: [
+        ['grossMassLimit', 'Gross Mass Limit'],
+        ['axleMassLimit', 'Axle Mass Limit'],
+        ['heightLimit', 'Height Limit'],
+        ['widthLimit', 'Width Limit'],
+        ['lengthLimit', 'Length Limit']
+      ],
+      range: [
+        ['grossMassLimit', 'Gross Mass Limit', 0, 9999999.99],
+        ['axleMassLimit', 'Axle Mass Limit', 0, 9999999.99],
+        ['heightLimit', 'Height Limit', 0, 9999999.99],
+        ['widthLimit', 'Width Limit', 0, 9999999.99],
+        ['lengthLimit', 'Length Limit', 0, 9999999.99],
+        ['speedLimit', 'Speed Limit', 0, 130]
+      ]
+    },
+    BridgeRestrictions: {
+      integer: [
+        ['speedLimit', 'Speed Limit']
+      ],
+      decimal: [
+        ['grossMassLimit', 'Gross Mass Limit'],
+        ['axleMassLimit', 'Axle Mass Limit'],
+        ['heightLimit', 'Height Limit'],
+        ['widthLimit', 'Width Limit'],
+        ['lengthLimit', 'Length Limit']
+      ],
+      range: [
+        ['grossMassLimit', 'Gross Mass Limit', 0, 9999999.99],
+        ['axleMassLimit', 'Axle Mass Limit', 0, 9999999.99],
+        ['heightLimit', 'Height Limit', 0, 9999999.99],
+        ['widthLimit', 'Width Limit', 0, 9999999.99],
+        ['lengthLimit', 'Length Limit', 0, 9999999.99],
+        ['speedLimit', 'Speed Limit', 0, 130]
+      ]
+    },
+    BridgeCapacities: {
+      integer: [
+        ['designLife', 'Design Fatigue Life'],
+        ['speedForAssessment', 'Speed for Assessment'],
+        ['heavyVehiclesPerDay', 'Heavy Vehicles Per Day']
+      ],
+      decimal: [
+        ['grossMassLimit', 'Gross Mass Limit'],
+        ['grossCombined', 'Gross Combined'],
+        ['steerAxleLimit', 'Steer Axle'],
+        ['singleAxleLimit', 'Single Axle'],
+        ['tandemGroupLimit', 'Tandem Axle Group'],
+        ['triAxleGroupLimit', 'Tri-Axle Group'],
+        ['quadAxleGroupLimit', 'Quad-Axle Group'],
+        ['minClearancePosted', 'Min Clearance Posted'],
+        ['designClearanceHeight', 'Design Clearance Height'],
+        ['lane1Clearance', 'Lane 1 Clearance'],
+        ['lane2Clearance', 'Lane 2 Clearance'],
+        ['carriagewayWidth', 'Carriageway Width'],
+        ['trafficableWidth', 'Trafficable Width'],
+        ['laneWidth', 'Lane Width'],
+        ['leftShoulderWidth', 'Left Shoulder Width'],
+        ['rightShoulderWidth', 'Right Shoulder Width'],
+        ['ratingFactor', 'Rating Factor'],
+        ['scourCriticalDepth', 'Scour Critical Depth'],
+        ['currentScourDepth', 'Current Scour Depth'],
+        ['scourSafetyMargin', 'Scour Safety Margin'],
+        ['floodClosureLevel', 'Flood Closure Level'],
+        ['windClosureSpeed', 'Wind Closure Speed'],
+        ['consumedLife', 'Consumed Life'],
+        ['remainingLife', 'Remaining Life'],
+        ['dynamicLoadAllowance', 'Dynamic Load Allowance']
+      ],
+      range: [
+        ['grossMassLimit', 'Gross Mass Limit', 0, 9999999.99],
+        ['grossCombined', 'Gross Combined', 0, 9999999.99],
+        ['steerAxleLimit', 'Steer Axle', 0, 9999999.99],
+        ['singleAxleLimit', 'Single Axle', 0, 9999999.99],
+        ['tandemGroupLimit', 'Tandem Axle Group', 0, 9999999.99],
+        ['triAxleGroupLimit', 'Tri-Axle Group', 0, 9999999.99],
+        ['quadAxleGroupLimit', 'Quad-Axle Group', 0, 9999999.99],
+        ['minClearancePosted', 'Min Clearance Posted', 0, 9999999.99],
+        ['designClearanceHeight', 'Design Clearance Height', 0, 9999999.99],
+        ['lane1Clearance', 'Lane 1 Clearance', 0, 9999999.99],
+        ['lane2Clearance', 'Lane 2 Clearance', 0, 9999999.99],
+        ['carriagewayWidth', 'Carriageway Width', 0, 9999999.99],
+        ['trafficableWidth', 'Trafficable Width', 0, 9999999.99],
+        ['laneWidth', 'Lane Width', 0, 9999999.99],
+        ['leftShoulderWidth', 'Left Shoulder Width', 0, 9999999.99],
+        ['rightShoulderWidth', 'Right Shoulder Width', 0, 9999999.99],
+        ['ratingFactor', 'Rating Factor', 0, 9999999.9999],
+        ['scourCriticalDepth', 'Scour Critical Depth', 0, 9999999.99],
+        ['currentScourDepth', 'Current Scour Depth', 0, 9999999.99],
+        ['scourSafetyMargin', 'Scour Safety Margin', 0, 9999999.99],
+        ['floodClosureLevel', 'Flood Closure Level', 0, 9999999.99],
+        ['windClosureSpeed', 'Wind Closure Speed', 0, 9999999.99],
+        ['designLife', 'Design Fatigue Life', 0, 200],
+        ['consumedLife', 'Consumed Life', 0, 100],
+        ['remainingLife', 'Remaining Life', 0, 100],
+        ['dynamicLoadAllowance', 'Dynamic Load Allowance', 0, 100],
+        ['speedForAssessment', 'Speed for Assessment', 0, 130],
+        ['heavyVehiclesPerDay', 'Heavy Vehicles Per Day', 0, 1000000]
+      ]
+    },
+    BridgeScourAssessments: {
+      integer: [
+        ['floodImmunityAriYears', 'Flood Immunity']
+      ],
+      decimal: [
+        ['measuredDepth', 'Measured Scour Depth']
+      ],
+      range: [
+        ['measuredDepth', 'Measured Scour Depth', 0, 9999999.99],
+        ['floodImmunityAriYears', 'Flood Immunity', 0, 10000]
+      ]
+    }
+  }
+
   const isBlank = value => value === null || value === undefined || (typeof value === 'string' && value.trim() === '')
+
+  const validationHints = {
+    latitude: 'Use decimal degrees, for example -33.852300.',
+    longitude: 'Use decimal degrees, for example 151.210800.',
+    conditionRating: 'Use a whole number from 1 to 10.',
+    structuralAdequacyRating: 'Use a whole number from 1 to 10.',
+    importanceLevel: 'Use a whole number from 1 to 4.',
+    heavyVehiclePercent: 'Enter a percentage from 0 to 100.',
+    consumedLife: 'Enter a percentage from 0 to 100.',
+    remainingLife: 'Enter a percentage from 0 to 100.',
+    dynamicLoadAllowance: 'Enter a percentage from 0 to 100.'
+  }
+
+  const message = (key, req, args = {}) => cds.i18n.messages.at(key, req.locale || cds.context?.locale, args) || key
+
+  const rangeByField = rules => new Map((rules.range || []).map(([field, label, min, max]) => [field, { label, min, max }]))
 
   const validateRequiredFields = (entityName, req, data = req.data) => {
     for (const [field, label] of requiredFields[entityName] || []) {
       if (!isBlank(data[field])) continue
       req.error({
         code: 'MANDATORY_FIELD_MISSING',
-        message: `${label} is required.`,
+        message: message('MANDATORY_FIELD_MISSING', req, { label }),
         target: field,
         status: 400
       })
     }
   }
 
-  const validateRequiredFieldsWithExisting = async (entity, entityName, req) => {
-    if (req.event !== 'UPDATE') return validateRequiredFields(entityName, req)
-
-    const ID = req.data?.ID || req.params?.[0]?.ID
-    if (!ID) return validateRequiredFields(entityName, req)
-
-    const existing = await SELECT.one.from(entity).where({ ID })
-    validateRequiredFields(entityName, req, { ...existing, ...req.data })
+  const isIntegerValue = value => {
+    if (typeof value === 'number') return Number.isInteger(value)
+    if (typeof value === 'string') return /^-?\d+$/.test(value.trim())
+    return false
   }
 
-  this.before('SAVE', Bridges, req => validateRequiredFields('Bridges', req))
-  this.before('SAVE', BridgeRestrictions, req => validateRequiredFields('BridgeRestrictions', req))
-  this.before('SAVE', BridgeCapacities, req => validateRequiredFields('BridgeCapacities', req))
-  this.before('SAVE', BridgeScourAssessments, req => validateRequiredFields('BridgeScourAssessments', req))
+  const isDecimalValue = value => {
+    if (typeof value === 'number') return Number.isFinite(value)
+    if (typeof value === 'string') return /^-?(?:\d+|\d*\.\d+)$/.test(value.trim())
+    return false
+  }
+
+  const validateNumericFields = (entityName, req, data = req.data) => {
+    const rules = numericFields[entityName] || {}
+    const ranges = rangeByField(rules)
+
+    for (const [field, label] of rules.integer || []) {
+      if (!(field in data) || isBlank(data[field])) continue
+      if (isIntegerValue(data[field])) continue
+      const range = ranges.get(field)
+      req.error({
+        code: range ? 'INVALID_INTEGER_WITH_RANGE' : 'INVALID_INTEGER',
+        message: range
+          ? message('INVALID_INTEGER_WITH_RANGE', req, { label, min: range.min, max: range.max })
+          : message('INVALID_INTEGER', req, { label }),
+        target: field,
+        status: 400
+      })
+    }
+
+    for (const [field, label] of rules.decimal || []) {
+      if (!(field in data) || isBlank(data[field])) continue
+      if (isDecimalValue(data[field])) continue
+      const range = ranges.get(field)
+      req.error({
+        code: range ? 'INVALID_NUMBER_WITH_RANGE' : 'INVALID_NUMBER',
+        message: range
+          ? message('INVALID_NUMBER_WITH_RANGE', req, {
+              label,
+              min: range.min,
+              max: range.max,
+              hint: validationHints[field] || ''
+            })
+          : message('INVALID_NUMBER', req, { label }),
+        target: field,
+        status: 400
+      })
+    }
+
+    for (const [field, label, min, max] of rules.range || []) {
+      if (!(field in data) || isBlank(data[field]) || !isDecimalValue(data[field])) continue
+      const value = Number(data[field])
+      if (value >= min && value <= max) continue
+      req.error({
+        code: 'VALUE_OUT_OF_RANGE',
+        message: message('VALUE_OUT_OF_RANGE', req, {
+          label,
+          min,
+          max,
+          hint: validationHints[field] || ''
+        }),
+        target: field,
+        status: 400
+      })
+    }
+  }
+
+  const validateEntityFields = (entityName, req, data = req.data) => {
+    validateRequiredFields(entityName, req, data)
+    validateNumericFields(entityName, req, data)
+  }
+
+  const validateRequiredFieldsWithExisting = async (entity, entityName, req) => {
+    if (req.event !== 'UPDATE') return validateEntityFields(entityName, req)
+
+    const ID = req.data?.ID || req.params?.[0]?.ID
+    if (!ID) return validateEntityFields(entityName, req)
+
+    const existing = await SELECT.one.from(entity).where({ ID })
+    validateEntityFields(entityName, req, { ...existing, ...req.data })
+  }
+
+  this.before('SAVE', Bridges, req => validateEntityFields('Bridges', req))
+  this.before('SAVE', BridgeRestrictions, req => validateEntityFields('BridgeRestrictions', req))
+  this.before('SAVE', BridgeCapacities, req => validateEntityFields('BridgeCapacities', req))
+  this.before('SAVE', BridgeScourAssessments, req => validateEntityFields('BridgeScourAssessments', req))
   this.before(['CREATE', 'UPDATE'], Bridges, req => validateRequiredFieldsWithExisting(Bridges, 'Bridges', req))
   this.before(['CREATE', 'UPDATE'], BridgeRestrictions, req => validateRequiredFieldsWithExisting(BridgeRestrictions, 'BridgeRestrictions', req))
   this.before(['CREATE', 'UPDATE'], BridgeCapacities, req => validateRequiredFieldsWithExisting(BridgeCapacities, 'BridgeCapacities', req))
   this.before(['CREATE', 'UPDATE'], BridgeScourAssessments, req => validateRequiredFieldsWithExisting(BridgeScourAssessments, 'BridgeScourAssessments', req))
-  this.before('CREATE', Restrictions, req => validateRequiredFields('Restrictions', req))
+  this.before('CREATE', Restrictions, req => validateEntityFields('Restrictions', req))
   this.before('UPDATE', Restrictions, async req => {
     await validateRequiredFieldsWithExisting(Restrictions, 'Restrictions', req)
   })

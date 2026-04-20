@@ -5,14 +5,18 @@ sap.ui.define([
     "use strict";
 
     var GIS_SCRIPT = "/admin-bridges/webapp/ext/controller/gisMapInit.js";
+    var NUMERIC_GUARD_SCRIPT = "/admin-bridges/webapp/ext/controller/NumericInputGuard.js";
+
+    function loadScript(id, src) {
+        if (document.getElementById(id)) return;
+        var script = document.createElement("script");
+        script.id = id;
+        script.src = src;
+        document.head.appendChild(script);
+    }
 
     function startGIS() {
-        if (!document.getElementById("_gis_script")) {
-            var gisScript = document.createElement("script");
-            gisScript.id = "_gis_script";
-            gisScript.src = GIS_SCRIPT;
-            document.head.appendChild(gisScript);
-        }
+        loadScript("_gis_script", GIS_SCRIPT);
         var obs = new MutationObserver(function () {
             var el = document.getElementById("gisMapCanvas");
             if (el && !el._gisReady) {
@@ -23,11 +27,16 @@ sap.ui.define([
         obs.observe(document.body, { childList: true, subtree: true });
     }
 
+    function startNumericInputGuard() {
+        loadScript("_bms_numeric_guard_script", NUMERIC_GUARD_SCRIPT);
+    }
+
     return AppComponent.extend("BridgeManagement.adminbridges.Component", {
         metadata: { manifest: "json" },
         init: function () {
             AppComponent.prototype.init.apply(this, arguments);
             startGIS();
+            startNumericInputGuard();
         }
     });
 });
