@@ -20,7 +20,7 @@
       <VBox class="sapUiMediumMargin">
 
         <MessageStrip
-          text="Use mass upload to import or update bridge records from a CSV or Excel file. Download the template first to see the required column format. Rows are upserted by Bridge ID — existing bridges are updated, new ones are created."
+          text="Download the Excel template to get a single workbook covering all datasets (lookup tables, Bridges, Restrictions). Each lookup column includes an in-cell dropdown showing allowed values. Select 'All Datasets' to upload the full workbook at once, or pick a specific dataset to upload a single sheet or CSV."
           type="Information" showCloseButton="false" class="sapUiSmallMarginBottom" />
 
         <!-- ── Upload Panel ─────────────────────────────────────────────── -->

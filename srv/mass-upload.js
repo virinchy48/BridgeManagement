@@ -925,7 +925,7 @@ function parseSheetRows(sheet, dataset) {
   if (!rows.length) return []
 
   const headers = Object.keys(rows[0])
-  const normalizedHeaders = new Map(headers.map((header) => [String(header).replace(/\*$/, '').trim().toLowerCase(), header]))
+  const normalizedHeaders = new Map(headers.map((header) => [String(header).replace(/^\uFEFF/, '').replace(/\*$/, '').trim().toLowerCase(), header]))
 
   for (const columnDef of dataset.columns) {
     if (!normalizedHeaders.has(columnDef.name.toLowerCase())) {

@@ -23,17 +23,25 @@ sap.ui.define([
 
     // ── Load dataset list ───────────────────────────────────────────────────
     _loadDatasets: function () {
+      var sel = this.byId("datasetSelect");
+      sel.removeAllItems();
+      sel.addItem(new sap.ui.core.Item({ key: "All", text: "All Datasets (Excel only)" }));
+
       fetch(BASE + "/datasets")
         .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
         .then(data => {
-          var sel = this.byId("datasetSelect");
-          sel.removeAllItems();
-          (data.datasets || [{ key: "bridges", text: "Bridges" }]).forEach(function (ds) {
-            sel.addItem(new sap.ui.core.Item({ key: ds.key || ds, text: ds.text || ds }));
+          (data.datasets || []).forEach(function (ds) {
+            sel.addItem(new sap.ui.core.Item({ key: ds.name, text: ds.label || ds.name }));
           });
-          if (sel.getItems().length) sel.setSelectedItem(sel.getItems()[0]);
+          var bridgesItem = sel.getItems().find(function (i) { return i.getKey() === "Bridges"; });
+          if (bridgesItem) sel.setSelectedItem(bridgesItem);
+          else sel.setSelectedItem(sel.getItems()[0]);
         })
-        .catch(function () { /* keep default "Bridges" item already rendered */ });
+        .catch(function () {
+          ["Bridges", "Restrictions", "AssetClasses", "States", "Regions"].forEach(function (name) {
+            sel.addItem(new sap.ui.core.Item({ key: name, text: name }));
+          });
+        });
     },
 
     // ── Download template ───────────────────────────────────────────────────
@@ -130,39 +138,54 @@ sap.ui.define([
     },
 
     _showResults: function (data, isUpload) {
-      var total    = data.total    || 0;
-      var inserted = data.inserted || 0;
-      var updated  = data.updated  || 0;
-      var skipped  = data.skipped  || 0;
-      var errors   = data.errors   || [];
+      var total = 0, inserted = 0, updated = 0, skipped = 0;
+      var warnings = [];
+
+      if (isUpload) {
+        (data.summaries || []).forEach(function (s) {
+          total    += (s.processed || 0);
+          inserted += (s.inserted  || 0);
+          updated  += (s.updated   || 0);
+        });
+        skipped  = (data.skipped  || []).length;
+        warnings = (data.warnings || []).map(function (w) {
+          return { rowNumber: "-", severity: "Warning", severityState: "Warning", field: "", message: String(w) };
+        });
+      } else {
+        total   = data.totalCount  || 0;
+        inserted = data.validCount || 0;
+        skipped = data.errorCount  || 0;
+        (data.previewRows || []).filter(function (r) { return r.statusState !== "Success"; }).forEach(function (r) {
+          warnings.push({ rowNumber: r.rowNum || "-", severity: r.validText || "Error",
+            severityState: r.statusState || "Error", field: "", message: r.message || "" });
+        });
+      }
 
       this.byId("numTotal").setValue(String(total));
       this.byId("numInserted").setValue(String(inserted));
       this.byId("numUpdated").setValue(String(updated));
       this.byId("numSkipped").setValue(String(skipped));
-      this.byId("numErrors").setValue(String(errors.length));
-
-      var enriched = errors.map(function (e) {
-        return {
-          rowNumber:    e.row || e.rowNumber || "-",
-          severity:     e.severity || "Error",
-          severityState: (e.severity || "error").toLowerCase() === "warning" ? "Warning" : "Error",
-          field:        e.field || "",
-          message:      e.message || String(e)
-        };
-      });
-      this._model.setProperty("/errors", enriched);
+      this.byId("numErrors").setValue(String(warnings.length));
+      this._model.setProperty("/errors", warnings);
 
       var panelTitle = isUpload ? "Upload Results" : "Validation Results";
-      var summaryText = total + " rows — " + (isUpload ? inserted + " inserted, " + updated + " updated, " + skipped + " skipped, " : "") + errors.length + " error(s)";
+      var summaryText;
+      if (isUpload) {
+        var datasetCount = (data.summaries || []).length;
+        summaryText = total + " rows across " + datasetCount + " dataset(s) — " +
+          inserted + " inserted, " + updated + " updated, " + skipped + " skipped";
+        if (warnings.length) summaryText += ", " + warnings.length + " warning(s)";
+      } else {
+        summaryText = total + " rows validated — " + inserted + " valid, " + skipped + " error(s)";
+      }
       this.byId("resultsPanelTitle").setText(panelTitle);
       this.byId("resultsSummaryText").setText(summaryText);
       this.byId("resultsPanel").setVisible(true);
 
-      if (isUpload && errors.length === 0) {
+      if (isUpload && warnings.length === 0) {
         MessageToast.show("Upload complete: " + inserted + " inserted, " + updated + " updated.");
-      } else if (isUpload && errors.length > 0) {
-        MessageToast.show("Upload finished with " + errors.length + " error(s). See table below.");
+      } else if (isUpload) {
+        MessageToast.show("Upload finished with " + warnings.length + " warning(s). See table below.");
       }
     },
 
@@ -181,18 +204,19 @@ sap.ui.define([
       var sHtml = [
         "<p><strong>Mass Upload — How It Works</strong></p>",
         "<p><strong>1. Download the template</strong></p>",
-        "<p>Click <em>Download Template (.xlsx)</em> to get the column structure. Do not rename or reorder the columns.</p>",
+        "<p>Click <em>Download Template (.xlsx)</em> to get a single workbook covering <strong>all datasets</strong>: every lookup table, Bridges, and Restrictions. Lookup columns have in-cell dropdowns so you can pick valid values directly in Excel.</p>",
         "<p><strong>2. Fill in your data</strong></p>",
-        "<p>Each row is one bridge record. The <code>bridgeId</code> column is the unique key — if a row's Bridge ID already exists in BMS, that record is <strong>updated</strong>. If it does not exist, a new bridge is <strong>created</strong>.</p>",
-        "<p><strong>3. Validate before uploading</strong></p>",
-        "<p>Use <em>Validate Only</em> to check your file for errors without making any changes to the database. Fix any errors shown in the results table, then upload.</p>",
-        "<p><strong>4. Upload</strong></p>",
-        "<p>Click <em>Upload</em> to commit the data. The results panel shows how many rows were inserted, updated, skipped, and any errors by row.</p>",
+        "<p>For bridges, <code>bridgeId</code> is the unique key — matching rows are updated, new IDs are created. For restrictions use <code>restrictionRef</code>. For lookup tables use <code>code</code>.</p>",
+        "<p><strong>3. Choose a dataset</strong></p>",
+        "<p>Select <em>All Datasets</em> to process the full workbook in one upload, or pick a specific dataset to upload only that sheet.</p>",
+        "<p><strong>4. Validate before uploading</strong></p>",
+        "<p>Use <em>Validate Only</em> to check for errors without touching the database. Fix any issues, then upload.</p>",
+        "<p><strong>5. Upload</strong></p>",
+        "<p>Click <em>Upload</em> to commit. Results show inserts, updates, skips, and warnings per dataset.</p>",
         "<p><strong>File limits</strong></p>",
-        "<ul><li>Formats: .xlsx, .xls, .csv</li>",
-        "<li>Max file size: 50 MB</li>",
-        "<li>Max rows per file: 50,000</li></ul>",
-        "<p><strong>Tip</strong></p>",
+        "<ul><li>Formats: .xlsx, .csv (CSV = one dataset at a time)</li>",
+        "<li>Max file size: 50 MB</li></ul>",
+        "<p><strong>Audit trail</strong></p>",
         "<p>All uploads are audit-logged — the Change Documents page records every field change made via mass upload, attributed to your user account.</p>"
       ].join("");
       var oDialog = new Dialog({
