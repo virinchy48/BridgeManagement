@@ -29,3 +29,4 @@ db/data/mass-upload-bridges-nsw-bulk.csv
 
 # FUSE temp files (created when a file is deleted while still open by a process)
 .fuse_hidden*
+mta-op-*/
