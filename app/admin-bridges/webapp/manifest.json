@@ -100,12 +100,16 @@
                   }
                 }
               },
-              "actions": {
-                "openGISConfig": {
-                  "press": "BridgeManagement.adminbridges.ext.controller.ListReportExt.onOpenGISConfig",
-                  "text": "GIS Configuration",
-                  "enabled": true,
-                  "type": "ForAction"
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "actions": {
+                    "openGISConfig": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.ListReportExt.onOpenGISConfig",
+                      "text": "GIS Configuration",
+                      "enabled": true,
+                      "requiresSelection": false
+                    }
+                  }
                 }
               }
             }

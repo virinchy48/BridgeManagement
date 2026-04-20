@@ -272,7 +272,6 @@ annotate AdminService.Restrictions with {
   )  @title: 'Direction';
 
   // Labels
-  restrictionCategory  @title: 'Category';
   temporary            @title: 'Temporary';
   permitRequired       @title: 'Permit Required';
   escortRequired       @title: 'Escort Required';
