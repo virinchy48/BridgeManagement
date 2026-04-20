@@ -149,11 +149,19 @@
               "controlConfiguration": {
                 "capacities/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
-                    "enablePaste": false
+                    "enablePaste": false,
+                    "creationMode": {
+                      "name": "NewPage"
+                    }
                   }
                 },
                 "restrictions/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": { "enablePaste": false }
+                  "tableSettings": {
+                    "enablePaste": false,
+                    "creationMode": {
+                      "name": "NewPage"
+                    }
+                  }
                 },
                 "scourAssessments/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": { "enablePaste": false }
