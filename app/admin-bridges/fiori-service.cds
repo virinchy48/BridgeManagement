@@ -282,7 +282,6 @@ annotate AdminService.Bridges with {
   // Bridge ID auto-generated on create; never user-entered
   bridgeId   @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Bridge ID';
   // Legacy commerce fields — irrelevant in BMS context
-  title      @UI.Hidden;
   stock      @UI.Hidden;
   price      @UI.Hidden;
   currency   @UI.Hidden;
@@ -295,8 +294,8 @@ annotate AdminService.Bridges with {
                @(ValueList.entity:'States', Common.ValueListWithFixedValues)
                @title: 'State';
   assetOwner   @Common.FieldControl: #Mandatory  @title: 'Asset Owner';
-  latitude     @Common.FieldControl: #Mandatory  @title: 'Latitude (°)';
-  longitude    @Common.FieldControl: #Mandatory  @title: 'Longitude (°)';
+  latitude     @Common.FieldControl: #Mandatory  @title: 'Latitude (°)'  @Common.QuickInfo: 'Valid range: -90 to 90';
+  longitude    @Common.FieldControl: #Mandatory  @title: 'Longitude (°)'  @Common.QuickInfo: 'Valid range: -180 to 180';
   postingStatus @Common.FieldControl: #Mandatory
                @(ValueList.entity:'PostingStatuses', Common.ValueListWithFixedValues)
                @title: 'Posting Status';
@@ -928,34 +927,8 @@ annotate AdminService.BridgeAttributes with {
 };
 
 ////////////////////////////////////////////////////////////////////////////
-//  Draft — Bridges (localized entity)
+//  Draft — Bridges
 ////////////////////////////////////////////////////////////////////////////
 
 annotate bridge.management.Bridges with @fiori.draft.enabled;
 annotate AdminService.Bridges with @odata.draft.enabled;
-
-annotate AdminService.Bridges.texts with @(
-  UI: {
-    Identification : [{ Value: title }],
-    SelectionFields: [ locale, title ],
-    LineItem: [
-      {Value: locale, Label: 'Locale'},
-      {Value: title,  Label: 'Title'},
-      {Value: descr,  Label: 'Description'},
-    ]
-  }
-);
-
-annotate AdminService.Bridges.texts with {
-  ID       @UI.Hidden;
-  ID_texts @UI.Hidden;
-};
-
-annotate AdminService.Bridges.texts {
-  locale @(ValueList.entity:'Languages', Common.ValueListWithFixedValues)
-}
-
-using { sap } from '@sap/cds/common';
-extend service AdminService {
-  @readonly entity Languages as projection on sap.common.Languages;
-}

@@ -16,8 +16,7 @@ namespace bridge.management;
 
 entity Bridges : managed {
   key ID           : Integer;
-      title        : localized String;
-      descr        : localized String;
+      descr        : String(2000);
       bridgeId     : String(40);
       bridgeName   : String(111) @mandatory;
       assetClass   : String(40);
@@ -26,13 +25,13 @@ entity Bridges : managed {
       region       : String(80);
       lga          : String(111);
       routeNumber  : String(40);
-      latitude     : Decimal(15,6) @mandatory;
-      longitude    : Decimal(15,6) @mandatory;
+      latitude     : Decimal(15,6) @mandatory @assert.range: [-90, 90];
+      longitude    : Decimal(15,6) @mandatory @assert.range: [-180, 180];
       location     : String(255);
       assetOwner   : String(111) @mandatory;
       managingAuthority : String(111);
       structureType : String(60);
-      yearBuilt    : Integer;
+      yearBuilt    : Integer @assert.range: [1800, 2100];
       designLoad   : String(40);
       designStandard : String(111);
       clearanceHeight : Decimal(9,2);
@@ -43,8 +42,8 @@ entity Bridges : managed {
       deckWidth    : Decimal(9,2);
       numberOfLanes : Integer;
       condition    : String(40);
-      conditionRating : Integer;
-      structuralAdequacyRating : Integer;
+      conditionRating : Integer @assert.range: [1, 10];
+      structuralAdequacyRating : Integer @assert.range: [1, 10];
       postingStatus : String(40);
       conditionStandard : String(111);
       seismicZone  : String(40);
@@ -61,9 +60,9 @@ entity Bridges : managed {
       nhvrAssessmentDate : Date;
       loadRating   : Decimal(9,2);
       pbsApprovalClass : String(40);
-      importanceLevel : Integer;
+      importanceLevel : Integer @assert.range: [1, 4];
       averageDailyTraffic : Integer;
-      heavyVehiclePercent : Decimal(5,2);
+      heavyVehiclePercent : Decimal(5,2) @assert.range: [0, 100];
       gazetteReference : String(111);
       nhvrReferenceUrl : String(255);
       freightRoute : Boolean;
@@ -109,7 +108,7 @@ entity Restrictions : cuid, managed {
   heightLimit         : Decimal(9,2);
   widthLimit          : Decimal(9,2);
   lengthLimit         : Decimal(9,2);
-  speedLimit          : Integer;
+  speedLimit          : Integer @assert.range: [0, 130];
   permitRequired      : Boolean;
   escortRequired      : Boolean;
   temporary           : Boolean;
@@ -147,7 +146,7 @@ entity BridgeRestrictions : cuid, managed {
   heightLimit         : Decimal(9,2);
   widthLimit          : Decimal(9,2);
   lengthLimit         : Decimal(9,2);
-  speedLimit          : Integer;
+  speedLimit          : Integer @assert.range: [0, 130];
   permitRequired      : Boolean;
   escortRequired      : Boolean;
   temporary           : Boolean;
