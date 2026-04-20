@@ -102,7 +102,7 @@ entity Restrictions : cuid, managed {
   restrictionType     : String(40);
   restrictionValue    : String(60);
   restrictionUnit     : String(20);
-  restrictionStatus   : String(20);
+  restrictionStatus   : String(20) default 'Active';
   appliesToVehicleClass : String(40);
   grossMassLimit      : Decimal(9,2);
   axleMassLimit       : Decimal(9,2);
@@ -140,7 +140,7 @@ entity BridgeRestrictions : cuid, managed {
   restrictionType     : String(40);
   restrictionValue    : String(60);
   restrictionUnit     : String(20);
-  restrictionStatus   : String(20);
+  restrictionStatus   : String(20) default 'Active';
   appliesToVehicleClass : String(40);
   grossMassLimit      : Decimal(9,2);
   axleMassLimit       : Decimal(9,2);

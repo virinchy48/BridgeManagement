@@ -3,7 +3,7 @@ const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-lo
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
-  const { Bridges, Restrictions } = this.entities
+  const { Bridges, Restrictions, BridgeRestrictions } = this.entities
 
   /**
    * Generate IDs for new Bridges drafts
@@ -36,6 +36,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   })
   this.before('DELETE', Restrictions, req => {
     if (req.data?.IsActiveEntity !== false) req.error(405, 'Hard delete is not permitted. Use the Deactivate action instead.')
+  })
+  this.before('DELETE', BridgeRestrictions, req => {
+    if (req.data?.IsActiveEntity !== false) req.error(405, 'Hard delete is not permitted. Use the Deactivate action to retire this restriction.')
   })
 
   // Soft-delete: deactivate / reactivate Bridges (use db directly to bypass draft flow)
