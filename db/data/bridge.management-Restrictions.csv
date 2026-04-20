@@ -1,1 +1,4 @@
-ID,parent_ID,restrictionRef,bridgeRef,bridge_ID,name,descr,restrictionCategory,restrictionType,restrictionValue,restrictionUnit,restrictionStatus,appliesToVehicleClass,grossMassLimit,axleMassLimit,heightLimit,widthLimit,lengthLimit,speedLimit,permitRequired,escortRequired,temporary,active,effectiveFrom,effectiveTo,approvedBy,direction,enforcementAuthority,temporaryFrom,temporaryTo,temporaryReason,approvalReference,issuingAuthority,legalReference,remarks
+ID,bridge_ID,restrictionType,restrictionValue,restrictionUnit,restrictionStatus,appliesToVehicleClass,permitRequired,active,effectiveFrom,direction
+1,4,Mass Limit,20,Tonne,Active,Heavy Vehicle,true,true,2023-05-01,Both
+2,6,Mass Limit,10,Tonne,Active,All Vehicles,false,true,2022-08-15,Both
+3,6,Height Limit,4.5,Metre,Active,All Vehicles,false,true,2022-08-15,Both

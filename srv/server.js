@@ -1048,16 +1048,26 @@ cds.on('bootstrap', (app) => {
   // sufficient — the BTP platform validates the XSUAA binding; forged tokens are rejected
   // by the XSUAA service before reaching the app. req.authInfo is also checked in case
   // @sap/xssec has already parsed the token.
+  // In CDS dummy-auth (dev), req.user is set by CDS OData middleware but NOT for custom Express
+  // routes added in bootstrap — those fire before CDS auth runs. Detect dummy mode and set a
+  // dev user from the Basic auth header (or fall back to 'alice') so custom API routes work.
+  const _isDummyAuth = !process.env.VCAP_SERVICES && cds.env.requires?.auth?.kind === 'dummy'
+
   const requiresAuthentication = (req, res, next) => {
-    const hasUser    = req.user || req.tokenInfo || req.authInfo
-    const hasBearer  = (req.headers.authorization || '').startsWith('Bearer ')
-    if (process.env.NODE_ENV === 'production' && !hasUser && !hasBearer) {
-      return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' })
+    if (req.user || req.tokenInfo || req.authInfo) return next()
+    if ((req.headers.authorization || '').startsWith('Bearer ')) return next()
+    if (_isDummyAuth) {
+      const auth = req.headers.authorization || ''
+      if (auth.startsWith('Basic ')) {
+        const username = Buffer.from(auth.slice(6), 'base64').toString().split(':')[0]
+        const userCfg  = cds.env.requires?.auth?.users?.[username]
+        req.user = { id: username, roles: userCfg?.roles || [] }
+      } else {
+        req.user = { id: 'alice', roles: cds.env.requires?.auth?.users?.alice?.roles || ['Admin'] }
+      }
+      return next()
     }
-    if (!hasUser && !hasBearer) {
-      console.warn('[security] Unauthenticated request in dev mode:', req.method, req.path)
-    }
-    next()
+    return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' })
   }
 
   // FIX 4: CSRF token guard for state-changing requests on non-OData Express routes.
