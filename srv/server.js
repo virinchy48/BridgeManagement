@@ -1022,11 +1022,6 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
-  // ── Root redirect — avoids "Cannot GET /" when hitting the srv URL directly ──
-  app.get('/', (_req, res) => {
-    res.redirect('/odata/v4/admin')
-  })
-
   // ── Health probe (no auth — used by BTP health checks and load balancers) ──
   app.get('/health', (_req, res) => {
     res.json({
