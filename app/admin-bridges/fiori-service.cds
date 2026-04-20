@@ -161,14 +161,15 @@ annotate AdminService.Bridges with @(
     // Tab 3 — Condition & Inspection
     FieldGroup#ConditionAssessment: {
       Data: [
-        {Value: condition},
         {Value: conditionRating},
-        {Value: conditionStandard},
-        {Value: structuralAdequacyRating},
+        {Value: conditionSummary},
         {Value: postingStatus},
         {Value: lastInspectionDate},
+        {Value: conditionAssessor},
+        {Value: conditionReportRef},
+        {Value: structuralAdequacy},
         {Value: highPriorityAsset},
-        {Value: asBuiltDrawingReference},
+        {Value: conditionNotes},
       ]
     },
     FieldGroup#RiskResilience: {
@@ -417,6 +418,23 @@ annotate AdminService.Bridges with {
   sourceReferenceUrl     @title: 'Source Reference URL';
   openDataReference      @title: 'Open Data Reference';
   sourceRecordId         @title: 'Source Record ID';
+  conditionSummary @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'ConditionSummaries', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: conditionSummary, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Condition Summary';
+  conditionAssessor      @title: 'Assessed By';
+  conditionReportRef     @title: 'Report Reference';
+  structuralAdequacy @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'StructuralAdequacyTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: structuralAdequacy, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Structural Adequacy';
+  conditionNotes         @title: 'Condition Notes'  @UI.MultiLineText;
 };
 
 // Hide the ID on the Restrictions VH so it doesn't appear as a column

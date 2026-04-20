@@ -27,6 +27,8 @@ service AdminService {
   entity ConditionStates as projection on my.ConditionStates;
   entity ScourRiskLevels as projection on my.ScourRiskLevels;
   entity PbsApprovalClasses as projection on my.PbsApprovalClasses;
+  entity ConditionSummaries as projection on my.ConditionSummaries;
+  entity StructuralAdequacyTypes as projection on my.StructuralAdequacyTypes;
   entity RestrictionTypes as projection on my.RestrictionTypes;
   entity RestrictionStatuses as projection on my.RestrictionStatuses;
   entity VehicleClasses as projection on my.VehicleClasses;

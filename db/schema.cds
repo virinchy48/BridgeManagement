@@ -88,6 +88,11 @@ entity Bridges : managed {
       stock        : Integer;
       price        : Price;
       currency     : Currency;
+      conditionSummary    : String(60);
+      conditionAssessor   : String(111);
+      conditionReportRef  : String(111);
+      structuralAdequacy  : String(40);
+      conditionNotes      : LargeString;
 }
 
 /** Hierarchically organized Restrictions */
@@ -301,6 +306,14 @@ entity ScourRiskLevels : sap.common.CodeList {
 }
 
 entity PbsApprovalClasses : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity ConditionSummaries : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity StructuralAdequacyTypes : sap.common.CodeList {
   key code : String(40);
 }
 
