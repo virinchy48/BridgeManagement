@@ -188,10 +188,13 @@ sap.ui.define([
 
     _objectTypeState: function (type) {
       switch ((type || "").toLowerCase()) {
-        case "bridge":      return "Success";
-        case "restriction": return "Warning";
-        case "gisconfig":   return "Information";
-        default:            return "None";
+        case "bridge":             return "Success";
+        case "restriction":        return "Warning";
+        case "bridgerestriction":  return "Warning";
+        case "bridgecapacity":     return "Information";
+        case "scourassessment":    return "Information";
+        case "gisconfig":          return "None";
+        default:                   return "None";
       }
     },
 

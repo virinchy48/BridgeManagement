@@ -3,7 +3,7 @@ const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-lo
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
-  const { Bridges, Restrictions, BridgeRestrictions } = this.entities
+  const { Bridges, Restrictions, BridgeRestrictions, BridgeCapacities, BridgeScourAssessments } = this.entities
 
   /**
    * Generate IDs for new Bridges drafts
@@ -295,6 +295,129 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       batchId:     cds.utils.uuid(),
       changedBy:   req.user?.id || 'system',
       changes
+    })
+  })
+
+  // ── Audit: BridgeCapacities ───────────────────────────────────────────────
+  this.before('UPDATE', BridgeCapacities, async (req) => {
+    if (!req.data?.ID) return
+    const db = await cds.connect.to('db')
+    req._auditOld = await fetchCurrentRecord(db, 'bridge.management.BridgeCapacities', { ID: req.data.ID })
+  })
+
+  this.after('UPDATE', BridgeCapacities, async (_result, req) => {
+    if (!req._auditOld) return
+    const db = await cds.connect.to('db')
+    const fresh = await fetchCurrentRecord(db, 'bridge.management.BridgeCapacities', { ID: req._auditOld.ID })
+    if (!fresh) return
+    const changes = diffRecords(req._auditOld, fresh)
+    if (!changes.length) return
+    await writeChangeLogs(db, {
+      objectType:  'BridgeCapacity',
+      objectId:    req._auditOld.ID,
+      objectName:  fresh.capacityType || req._auditOld.capacityType || req._auditOld.ID,
+      source:      'OData',
+      batchId:     cds.utils.uuid(),
+      changedBy:   req.user?.id || 'system',
+      changes
+    })
+  })
+
+  this.after('CREATE', BridgeCapacities, async (result, req) => {
+    if (!result?.ID) return
+    const db = await cds.connect.to('db')
+    const fresh = await fetchCurrentRecord(db, 'bridge.management.BridgeCapacities', { ID: result.ID })
+    if (!fresh) return
+    const changes = Object.entries(fresh)
+      .filter(([k, v]) => !['modifiedAt','modifiedBy','createdAt','createdBy'].includes(k) && v != null && v !== '')
+      .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+    await writeChangeLogs(db, {
+      objectType:  'BridgeCapacity',
+      objectId:    result.ID,
+      objectName:  fresh.capacityType || result.ID,
+      source:      'OData',
+      batchId:     cds.utils.uuid(),
+      changedBy:   req.user?.id || 'system',
+      changes
+    })
+  })
+
+  this.before('DELETE', BridgeCapacities, async (req) => {
+    // Log deletion before it happens so the audit trail is preserved
+    const id = req.data?.ID
+    if (!id) return
+    const db = await cds.connect.to('db')
+    const record = await fetchCurrentRecord(db, 'bridge.management.BridgeCapacities', { ID: id })
+    if (!record) return
+    await writeChangeLogs(db, {
+      objectType: 'BridgeCapacity',
+      objectId:   id,
+      objectName: record.capacityType || id,
+      source:     'OData',
+      batchId:    cds.utils.uuid(),
+      changedBy:  req.user?.id || 'system',
+      changes:    [{ fieldName: '_record', oldValue: JSON.stringify(record), newValue: 'DELETED' }]
+    })
+  })
+
+  // ── Audit: BridgeScourAssessments ─────────────────────────────────────────
+  this.before('UPDATE', BridgeScourAssessments, async (req) => {
+    if (!req.data?.ID) return
+    const db = await cds.connect.to('db')
+    req._auditOld = await fetchCurrentRecord(db, 'bridge.management.BridgeScourAssessments', { ID: req.data.ID })
+  })
+
+  this.after('UPDATE', BridgeScourAssessments, async (_result, req) => {
+    if (!req._auditOld) return
+    const db = await cds.connect.to('db')
+    const fresh = await fetchCurrentRecord(db, 'bridge.management.BridgeScourAssessments', { ID: req._auditOld.ID })
+    if (!fresh) return
+    const changes = diffRecords(req._auditOld, fresh)
+    if (!changes.length) return
+    await writeChangeLogs(db, {
+      objectType:  'ScourAssessment',
+      objectId:    req._auditOld.ID,
+      objectName:  fresh.assessmentType || req._auditOld.assessmentType || req._auditOld.ID,
+      source:      'OData',
+      batchId:     cds.utils.uuid(),
+      changedBy:   req.user?.id || 'system',
+      changes
+    })
+  })
+
+  this.after('CREATE', BridgeScourAssessments, async (result, req) => {
+    if (!result?.ID) return
+    const db = await cds.connect.to('db')
+    const fresh = await fetchCurrentRecord(db, 'bridge.management.BridgeScourAssessments', { ID: result.ID })
+    if (!fresh) return
+    const changes = Object.entries(fresh)
+      .filter(([k, v]) => !['modifiedAt','modifiedBy','createdAt','createdBy'].includes(k) && v != null && v !== '')
+      .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+    await writeChangeLogs(db, {
+      objectType:  'ScourAssessment',
+      objectId:    result.ID,
+      objectName:  fresh.assessmentType || result.ID,
+      source:      'OData',
+      batchId:     cds.utils.uuid(),
+      changedBy:   req.user?.id || 'system',
+      changes
+    })
+  })
+
+  this.before('DELETE', BridgeScourAssessments, async (req) => {
+    const id = req.data?.ID
+    if (!id) return
+    const db = await cds.connect.to('db')
+    const record = await fetchCurrentRecord(db, 'bridge.management.BridgeScourAssessments', { ID: id })
+    if (!record) return
+    await writeChangeLogs(db, {
+      objectType: 'ScourAssessment',
+      objectId:   id,
+      objectName: record.assessmentType || id,
+      source:     'OData',
+      batchId:    cds.utils.uuid(),
+      changedBy:  req.user?.id || 'system',
+      changes:    [{ fieldName: '_record', oldValue: JSON.stringify(record), newValue: 'DELETED' }]
     })
   })
 

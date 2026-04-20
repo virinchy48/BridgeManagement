@@ -305,7 +305,7 @@ annotate AdminService.Bridges with {
   // Value lists
   assetClass    @(ValueList.entity:'AssetClasses',  Common.ValueListWithFixedValues)  @title: 'Asset Class';
   region        @(ValueList.entity:'Regions',        Common.ValueListWithFixedValues)  @title: 'Region';
-  structureType @(ValueList.entity:'StructureTypes', Common.ValueListWithFixedValues)  @title: 'Structure Type';
+  structureType @(Common.FieldControl: #Mandatory, ValueList.entity:'StructureTypes', Common.ValueListWithFixedValues)  @title: 'Structure Type';
   designLoad    @(ValueList.entity:'DesignLoads',    Common.ValueListWithFixedValues)  @title: 'Design Load';
   condition     @(ValueList.entity:'ConditionStates', Common.ValueListWithFixedValues) @title: 'Condition State';
   scourRisk     @(ValueList.entity:'ScourRiskLevels', Common.ValueListWithFixedValues) @title: 'Scour Risk Level';
@@ -341,7 +341,7 @@ annotate AdminService.Bridges with {
   numberOfLanes          @title: 'Number of Lanes';
   conditionStandard      @title: 'Condition Rating Standard';
   structuralAdequacyRating @title: 'Structural Adequacy Rating (1–10)';
-  lastInspectionDate     @title: 'Last Inspection Date';
+  lastInspectionDate     @Common.FieldControl: #Mandatory  @title: 'Last Inspection Date';
   highPriorityAsset      @title: 'High Priority Asset';
   asBuiltDrawingReference @title: 'As-Built Drawing Reference';
   seismicZone            @title: 'Seismic Zone';
@@ -621,10 +621,10 @@ annotate AdminService.BridgeCapacities with {
   ID         @UI.Hidden;
   bridge     @UI.Hidden;
   createdAt  @UI.Hidden;  createdBy  @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
-  capacityType          @title: 'Capacity Type';
+  capacityType          @Common.FieldControl: #Mandatory  @title: 'Capacity Type';
   vehicleClass          @title: 'Vehicle Class';
   status                @title: 'Status';
-  effectiveFrom         @title: 'Effective From';
+  effectiveFrom         @Common.FieldControl: #Mandatory  @title: 'Effective From';
   effectiveTo           @title: 'Effective To';
   grossMassLimit        @title: 'Gross Mass Limit / GVM (t)';
   grossCombined         @title: 'Gross Combined / GCM (t)';
@@ -806,13 +806,13 @@ annotate AdminService.BridgeScourAssessments with {
   ID     @UI.Hidden;
   bridge @UI.Hidden;
   createdAt @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
-  assessmentDate        @title: 'Assessment Date';
-  assessmentType        @title: 'Assessment Type';
-  scourRisk             @(title: 'Scour Risk Level', ValueList.entity:'ScourRiskLevels', Common.ValueListWithFixedValues);
+  assessmentDate        @Common.FieldControl: #Mandatory  @title: 'Assessment Date';
+  assessmentType        @Common.FieldControl: #Mandatory  @title: 'Assessment Type';
+  scourRisk             @Common.FieldControl: #Mandatory  @(title: 'Scour Risk Level', ValueList.entity:'ScourRiskLevels', Common.ValueListWithFixedValues);
   measuredDepth         @title: 'Measured Scour Depth (m)';
   floodImmunityAriYears @title: 'Flood Immunity (ARI years)';
   mitigationStatus      @title: 'Mitigation Status';
-  assessor              @title: 'Assessor';
+  assessor              @Common.FieldControl: #Mandatory  @title: 'Assessor';
   nextReviewDate        @title: 'Next Review Date';
   reportReference       @title: 'Report Reference';
   remarks               @title: 'Remarks'  @UI.MultiLineText;
