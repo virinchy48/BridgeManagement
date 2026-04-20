@@ -12,20 +12,33 @@
     };
     var _map = null;
 
+    function getBridgeKeyPredicate() {
+        // Bridge.ID is an Integer — hash looks like: /Bridges(ID=42,IsActiveEntity=false)
+        var bridgeKeyMatch = (window.location.hash || "").match(/Bridges\(ID=(\d+),IsActiveEntity=(true|false)\)/);
+        if (!bridgeKeyMatch) return null;
+        return "ID=" + bridgeKeyMatch[1] + ",IsActiveEntity=" + bridgeKeyMatch[2];
+    }
+
     function getId() {
-        // Bridge.ID is an Integer — hash looks like: /Bridges(ID=42,IsActiveEntity=true)
-        var bridgeIdMatch = (window.location.hash || "").match(/Bridges\(ID=(\d+)/);
-        return bridgeIdMatch ? bridgeIdMatch[1] : null;
+        var bridgeKeyMatch = (window.location.hash || "").match(/Bridges\(ID=(\d+)/);
+        return bridgeKeyMatch ? bridgeKeyMatch[1] : null;
+    }
+
+    function readBridge(select) {
+        var keyPredicate = getBridgeKeyPredicate();
+        if (!keyPredicate) return Promise.reject(new Error("No bridge ID in URL"));
+        return fetch(SERVICE + "/Bridges(" + keyPredicate + ")?$select=" + select)
+            .then(function (bridgeResponse) {
+                if (!bridgeResponse.ok) throw new Error("Bridge location is not available for this draft.");
+                return bridgeResponse.json();
+            });
     }
 
     window._gisInit = function () {
         var el = document.getElementById("gisMapCanvas");
         if (!el) return;
-        var id = getId();
-        if (!id) { setCoord("No bridge ID in URL"); return; }
-        fetch(SERVICE + "/Bridges(ID=" + id + ",IsActiveEntity=true)" +
-              "?$select=latitude,longitude,bridgeName,bridgeId,state,postingStatus")
-            .then(function (bridgeResponse) { return bridgeResponse.json(); })
+        if (!getBridgeKeyPredicate()) { setCoord("No bridge ID in URL"); return; }
+        readBridge("latitude,longitude,bridgeName,bridgeId,state,postingStatus")
             .then(draw)
             .catch(function (error) { setCoord("Error: " + error.message); });
     };
@@ -102,10 +115,8 @@
     };
 
     window._gisCopy = function () {
-        var id = getId();
-        if (!id) return;
-        fetch(SERVICE + "/Bridges(ID=" + id + ",IsActiveEntity=true)?$select=latitude,longitude")
-            .then(function (bridgeResponse) { return bridgeResponse.json(); })
+        if (!getBridgeKeyPredicate()) return;
+        readBridge("latitude,longitude")
             .then(function (bridgeLocation) {
                 if (bridgeLocation.latitude && bridgeLocation.longitude) {
                     var bridgeCoordinates = bridgeLocation.latitude + ", " + bridgeLocation.longitude;

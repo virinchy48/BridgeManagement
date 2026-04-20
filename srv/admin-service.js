@@ -11,6 +11,82 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     return `BRG-${stateCode}-${String(ID).padStart(3, '0')}`
   }
 
+  const requiredFields = {
+    Bridges: [
+      ['bridgeName', 'Bridge Name'],
+      ['state', 'State'],
+      ['assetOwner', 'Asset Owner'],
+      ['latitude', 'Latitude'],
+      ['longitude', 'Longitude'],
+      ['postingStatus', 'Posting Status'],
+      ['conditionRating', 'Condition Rating'],
+      ['structureType', 'Structure Type'],
+      ['lastInspectionDate', 'Last Inspection Date']
+    ],
+    Restrictions: [
+      ['bridgeRef', 'Bridge'],
+      ['restrictionCategory', 'Category'],
+      ['restrictionType', 'Restriction Type'],
+      ['restrictionValue', 'Value'],
+      ['restrictionUnit', 'Unit'],
+      ['effectiveFrom', 'Effective From']
+    ],
+    BridgeRestrictions: [
+      ['restrictionCategory', 'Category'],
+      ['restrictionType', 'Restriction Type'],
+      ['restrictionValue', 'Value'],
+      ['restrictionUnit', 'Unit'],
+      ['effectiveFrom', 'Effective From']
+    ],
+    BridgeCapacities: [
+      ['capacityType', 'Capacity Type'],
+      ['effectiveFrom', 'Effective From']
+    ],
+    BridgeScourAssessments: [
+      ['assessmentDate', 'Assessment Date'],
+      ['assessmentType', 'Assessment Type'],
+      ['scourRisk', 'Scour Risk Level'],
+      ['assessor', 'Assessor']
+    ]
+  }
+
+  const isBlank = value => value === null || value === undefined || (typeof value === 'string' && value.trim() === '')
+
+  const validateRequiredFields = (entityName, req, data = req.data) => {
+    for (const [field, label] of requiredFields[entityName] || []) {
+      if (!isBlank(data[field])) continue
+      req.error({
+        code: 'MANDATORY_FIELD_MISSING',
+        message: `${label} is required.`,
+        target: field,
+        status: 400
+      })
+    }
+  }
+
+  const validateRequiredFieldsWithExisting = async (entity, entityName, req) => {
+    if (req.event !== 'UPDATE') return validateRequiredFields(entityName, req)
+
+    const ID = req.data?.ID || req.params?.[0]?.ID
+    if (!ID) return validateRequiredFields(entityName, req)
+
+    const existing = await SELECT.one.from(entity).where({ ID })
+    validateRequiredFields(entityName, req, { ...existing, ...req.data })
+  }
+
+  this.before('SAVE', Bridges, req => validateRequiredFields('Bridges', req))
+  this.before('SAVE', BridgeRestrictions, req => validateRequiredFields('BridgeRestrictions', req))
+  this.before('SAVE', BridgeCapacities, req => validateRequiredFields('BridgeCapacities', req))
+  this.before('SAVE', BridgeScourAssessments, req => validateRequiredFields('BridgeScourAssessments', req))
+  this.before(['CREATE', 'UPDATE'], Bridges, req => validateRequiredFieldsWithExisting(Bridges, 'Bridges', req))
+  this.before(['CREATE', 'UPDATE'], BridgeRestrictions, req => validateRequiredFieldsWithExisting(BridgeRestrictions, 'BridgeRestrictions', req))
+  this.before(['CREATE', 'UPDATE'], BridgeCapacities, req => validateRequiredFieldsWithExisting(BridgeCapacities, 'BridgeCapacities', req))
+  this.before(['CREATE', 'UPDATE'], BridgeScourAssessments, req => validateRequiredFieldsWithExisting(BridgeScourAssessments, 'BridgeScourAssessments', req))
+  this.before('CREATE', Restrictions, req => validateRequiredFields('Restrictions', req))
+  this.before('UPDATE', Restrictions, async req => {
+    await validateRequiredFieldsWithExisting(Restrictions, 'Restrictions', req)
+  })
+
   /**
    * Generate IDs for new Bridges drafts
    */
