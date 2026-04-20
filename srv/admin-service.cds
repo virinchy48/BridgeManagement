@@ -2,8 +2,8 @@ using {bridge.management as my} from '../db/schema';
 
 service AdminService {
   entity Bridges      as projection on my.Bridges      actions {
-    action deactivate() returns Bridges;
-    action reactivate() returns Bridges;
+    action deactivate()   returns Bridges;
+    action reactivate()   returns Bridges;
   };
   entity Restrictions as projection on my.Restrictions actions {
     action deactivate() returns Restrictions;
@@ -22,7 +22,8 @@ service AdminService {
   entity Regions as projection on my.Regions;
   entity StructureTypes as projection on my.StructureTypes;
   entity DesignLoads as projection on my.DesignLoads;
-  entity PostingStatuses as projection on my.PostingStatuses;
+  entity PostingStatuses    as projection on my.PostingStatuses;
+  entity CapacityStatuses   as projection on my.CapacityStatuses;
   entity ConditionStates as projection on my.ConditionStates;
   entity ScourRiskLevels as projection on my.ScourRiskLevels;
   entity PbsApprovalClasses as projection on my.PbsApprovalClasses;

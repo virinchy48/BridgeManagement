@@ -170,10 +170,6 @@ entity BridgeCapacities : cuid, managed {
 
   // ── General ─────────────────────────────────────────────────────────────
   capacityType          : String(40);     // e.g. AS 5100.7, AS 1170
-  vehicleClass          : String(40);
-  status                : String(40);     // e.g. NOT_RATED, CURRENT, SUPERSEDED
-  effectiveFrom         : Date;
-  effectiveTo           : Date;
 
   // ── Mass Limits (tonnes) ─────────────────────────────────────────────────
   grossMassLimit        : Decimal(9,2);   // Gross Mass Limit / GVM (t)
@@ -182,11 +178,9 @@ entity BridgeCapacities : cuid, managed {
   singleAxleLimit       : Decimal(9,2);   // Single Axle (t)
   tandemGroupLimit      : Decimal(9,2);   // Tandem Axle Group (t)
   triAxleGroupLimit     : Decimal(9,2);   // Tri-Axle Group (t)
-  quadAxleGroupLimit    : Decimal(9,2);   // Quad-Axle Group (t)
 
   // ── Vertical Clearance (metres) ──────────────────────────────────────────
   minClearancePosted    : Decimal(9,2);   // Min Clearance posted (m)
-  designClearanceHeight : Decimal(9,2);   // Design Clearance (m)
   lane1Clearance        : Decimal(9,2);   // Lane 1 Clearance (m)
   lane2Clearance        : Decimal(9,2);   // Lane 2 Clearance (m)
   clearanceSurveyDate   : Date;
@@ -196,39 +190,33 @@ entity BridgeCapacities : cuid, managed {
   carriagewayWidth      : Decimal(9,2);   // Carriageway Width (m)
   trafficableWidth      : Decimal(9,2);   // Trafficable Width (m)
   laneWidth             : Decimal(9,2);   // Lane Width (m)
-  leftShoulderWidth     : Decimal(9,2);   // Left Shoulder (m)
-  rightShoulderWidth    : Decimal(9,2);   // Right Shoulder (m)
 
   // ── Load Rating (AS 5100.7) ──────────────────────────────────────────────
   ratingStandard        : String(40);     // e.g. AS 5100.7:2017
-  ratingMethod          : String(111);    // Rating Method / approach
   ratingFactor          : Decimal(9,4);   // Rating Factor (RF)
-  ratingStatus          : String(40);     // e.g. NOT_RATED, CURRENT, INTERIM
   ratingEngineer        : String(111);    // NER/CPEng number
   ratingDate            : Date;           // Date rating completed
-  lastReviewedBy        : String(111);    // Last Reviewed By
-  lastReviewedDate      : Date;           // Last Reviewed date
   nextReviewDue         : Date;
   reportReference       : String(111);
 
   // ── Scour & Environment ──────────────────────────────────────────────────
   scourCriticalDepth    : Decimal(9,2);   // Scour Critical Depth (m)
   currentScourDepth     : Decimal(9,2);   // Current Scour Depth (m)
-  scourSafetyMargin     : Decimal(9,2);   // Safety Margin (m)
   floodClosureLevel     : Decimal(9,2);   // Flood Closure Level (m AHD)
-  windClosureSpeed      : Decimal(9,2);   // Wind Closure Speed (km/h)
 
   // ── Fatigue Life Assessment (AS 5100.7 S11) ──────────────────────────────
   designLife            : Integer;        // Design Fatigue Life (years)
   consumedLife          : Decimal(9,2);   // Consumed Life (%)
-  remainingLife         : Decimal(9,2);   // Remaining Life (%)
   fatigueSensitive      : Boolean;        // Fatigue-Sensitive Structure
-  dynamicLoadAllowance  : Decimal(5,2);   // Dynamic Load Allowance (%)
-  speedForAssessment    : Integer;        // Speed for Assessment (km/h)
-  heavyVehiclesPerDay   : Integer;        // Heavy Vehicles/Day (HHVD)
-  reducedSpeedCondition : String(255);    // Reduced Speed Condition
   criticalElement       : String(255);    // Critical fatigue element
-  remarks               : LargeString;
+
+  // ── Capacity Status ───────────────────────────────────────────────────────
+  capacityStatus        : String(40);     // e.g. Current, Under Review, Superseded
+  lastReviewedBy        : String(111);    // Engineer name + NER/CPEng
+  statusReviewDue       : Date;           // Next review due date
+
+  // ── Engineering Notes ─────────────────────────────────────────────────────
+  engineeringNotes      : LargeString;    // Assessment notes, conditions, limitations
 }
 
 entity BridgeAttributes : cuid, managed {
@@ -297,6 +285,10 @@ entity DesignLoads : sap.common.CodeList {
 }
 
 entity PostingStatuses : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity CapacityStatuses : sap.common.CodeList {
   key code : String(40);
 }
 

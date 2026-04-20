@@ -4,8 +4,7 @@
   var INTEGER_FIELDS = [
     "yearBuilt", "spanCount", "numberOfLanes", "conditionRating",
     "structuralAdequacyRating", "floodImmunityAriYears", "importanceLevel",
-    "averageDailyTraffic", "speedLimit", "designLife", "speedForAssessment",
-    "heavyVehiclesPerDay"
+    "averageDailyTraffic", "speedLimit", "designLife"
   ];
 
   var DECIMAL_FIELDS = [
@@ -13,13 +12,10 @@
     "deckWidth", "scourDepthLastMeasured", "loadRating", "heavyVehiclePercent",
     "grossMassLimit", "axleMassLimit", "heightLimit", "widthLimit", "lengthLimit",
     "grossCombined", "steerAxleLimit", "singleAxleLimit", "tandemGroupLimit",
-    "triAxleGroupLimit", "quadAxleGroupLimit", "minClearancePosted",
-    "designClearanceHeight", "lane1Clearance", "lane2Clearance",
-    "carriagewayWidth", "trafficableWidth", "laneWidth", "leftShoulderWidth",
-    "rightShoulderWidth", "ratingFactor", "scourCriticalDepth",
-    "currentScourDepth", "scourSafetyMargin", "floodClosureLevel",
-    "windClosureSpeed", "consumedLife", "remainingLife", "dynamicLoadAllowance",
-    "measuredDepth"
+    "triAxleGroupLimit", "minClearancePosted", "lane1Clearance", "lane2Clearance",
+    "carriagewayWidth", "trafficableWidth", "laneWidth", "ratingFactor",
+    "scourCriticalDepth", "currentScourDepth", "floodClosureLevel",
+    "consumedLife", "measuredDepth"
   ];
 
   var INTEGER_PATTERN = /^-?\d*$/;

@@ -692,53 +692,44 @@ annotate AdminService.BridgeCapacities with {
   bridge     @UI.Hidden;
   createdAt  @UI.Hidden;  createdBy  @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
   capacityType          @Common.FieldControl: #Mandatory  @title: 'Capacity Type';
-  vehicleClass          @title: 'Vehicle Class';
-  status                @title: 'Status';
-  effectiveFrom         @Common.FieldControl: #Mandatory  @title: 'Effective From';
-  effectiveTo           @title: 'Effective To';
-  grossMassLimit        @title: 'Gross Mass Limit / GVM (t)';
-  grossCombined         @title: 'Gross Combined / GCM (t)';
+  grossMassLimit        @Common.FieldControl: #Mandatory  @title: 'Gross Mass Limit (t)';
+  grossCombined         @title: 'Gross Combined (t)';
   steerAxleLimit        @title: 'Steer Axle (t)';
   singleAxleLimit       @title: 'Single Axle (t)';
   tandemGroupLimit      @title: 'Tandem Axle Group (t)';
   triAxleGroupLimit     @title: 'Tri-Axle Group (t)';
-  quadAxleGroupLimit    @title: 'Quad-Axle Group (t)';
-  minClearancePosted    @title: 'Min Clearance Posted (m)';
-  designClearanceHeight @title: 'Design Clearance Height (m)';
+  minClearancePosted    @Common.FieldControl: #Mandatory  @title: 'Min Clearance (posted)';
   lane1Clearance        @title: 'Lane 1 Clearance (m)';
   lane2Clearance        @title: 'Lane 2 Clearance (m)';
-  clearanceSurveyDate   @title: 'Clearance Survey Date';
-  clearanceSurveyMethod @title: 'Clearance Survey Method';
+  clearanceSurveyDate   @title: 'Survey Date';
+  clearanceSurveyMethod @title: 'Survey Method';
   carriagewayWidth      @title: 'Carriageway Width (m)';
   trafficableWidth      @title: 'Trafficable Width (m)';
   laneWidth             @title: 'Lane Width (m)';
-  leftShoulderWidth     @title: 'Left Shoulder Width (m)';
-  rightShoulderWidth    @title: 'Right Shoulder Width (m)';
-  ratingStandard        @title: 'Rating Standard';
-  ratingMethod          @title: 'Rating Method';
+  ratingStandard        @title: 'Standard';
   ratingFactor          @title: 'Rating Factor (RF)';
-  ratingStatus          @title: 'Rating Status';
   ratingEngineer        @title: 'Rating Engineer (NER/CPEng)';
   ratingDate            @title: 'Rating Date';
-  lastReviewedBy        @title: 'Last Reviewed By';
-  lastReviewedDate      @title: 'Last Reviewed Date';
   nextReviewDue         @title: 'Next Review Due';
   reportReference       @title: 'Report Reference';
   scourCriticalDepth    @title: 'Scour Critical Depth (m)';
   currentScourDepth     @title: 'Current Scour Depth (m)';
-  scourSafetyMargin     @title: 'Scour Safety Margin (m)';
   floodClosureLevel     @title: 'Flood Closure Level (m AHD)';
-  windClosureSpeed      @title: 'Wind Closure Speed (km/h)';
-  designLife            @title: 'Design Fatigue Life (years)';
+  designLife            @title: 'Design Life (years)';
   consumedLife          @title: 'Consumed Life (%)';
-  remainingLife         @title: 'Remaining Life (%)';
-  fatigueSensitive      @title: 'Fatigue-Sensitive Structure';
-  dynamicLoadAllowance  @title: 'Dynamic Load Allowance (%)';
-  speedForAssessment    @title: 'Speed for Assessment (km/h)';
-  heavyVehiclesPerDay   @title: 'Heavy Vehicles/Day (HHVD)';
-  reducedSpeedCondition @title: 'Reduced Speed Condition';
-  criticalElement       @title: 'Critical Fatigue Element';
-  remarks               @title: 'Remarks'  @UI.MultiLineText;
+  fatigueSensitive      @title: 'Fatigue-Sensitive';
+  criticalElement       @title: 'Critical Element';
+  capacityStatus @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'CapacityStatuses', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: capacityStatus, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Status';
+  lastReviewedBy   @title: 'Last Reviewed By';
+  statusReviewDue  @title: 'Next Review Due';
+  engineeringNotes @UI.MultiLineText  @title: 'Engineering Notes';
 };
 
 annotate AdminService.BridgeCapacities with @(
@@ -748,16 +739,12 @@ annotate AdminService.BridgeCapacities with @(
   UI: {
     LineItem: [
       {Value: capacityType,       Label: 'Capacity Type'},
-      {Value: vehicleClass,       Label: 'Vehicle Class'},
-      {Value: ratingStatus,       Label: 'Rating Status'},
       {Value: grossMassLimit,     Label: 'GVM (t)'},
       {Value: grossCombined,      Label: 'GCM (t)'},
       {Value: minClearancePosted, Label: 'Min Clearance (m)'},
       {Value: ratingFactor,       Label: 'RF'},
       {Value: nextReviewDue,      Label: 'Next Review'},
-      {Value: effectiveFrom,      Label: 'From'},
-      {Value: effectiveTo,        Label: 'To'},
-      {Value: status,             Label: 'Status'},
+      {Value: capacityStatus,     Label: 'Status'},
     ],
     Facets: [
       {
@@ -765,37 +752,21 @@ annotate AdminService.BridgeCapacities with @(
         Label : 'General',
         ID    : 'CapGeneral',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Capacity Record',      Target: '@UI.FieldGroup#CapacityGeneral'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Mass Limits (tonnes)', Target: '@UI.FieldGroup#CapacityMassLimits'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Capacity Type', Target: '@UI.FieldGroup#CapacityGeneral'},
         ]
       },
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Clearance & Geometry',
-        ID    : 'CapClearance',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Vertical Clearance (m)', Target: '@UI.FieldGroup#CapacityVerticalClearance'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Horizontal Geometry (m)', Target: '@UI.FieldGroup#CapacityHorizontalGeometry'},
-        ]
-      },
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'AS 5100.7 Load Rating',
-        ID    : 'CapRating',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Load Rating',          Target: '@UI.FieldGroup#CapacityLoadRating'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Scour & Environment',  Target: '@UI.FieldGroup#CapacityScour'},
-        ]
-      },
-      {$Type: 'UI.ReferenceFacet', Label: 'Fatigue Life Assessment (AS 5100.7 S11)', Target: '@UI.FieldGroup#CapacityFatigue'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Mass Limits (tonnes)', Target: '@UI.FieldGroup#CapacityMassLimits'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Vertical Clearance (metres)', Target: '@UI.FieldGroup#CapacityVerticalClearance'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Horizontal Geometry (metres)', Target: '@UI.FieldGroup#CapacityHorizontalGeometry'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Load Rating (AS 5100.7)', Target: '@UI.FieldGroup#CapacityLoadRating'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessment', Target: '@UI.FieldGroup#CapacityScour'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Fatigue Life', Target: '@UI.FieldGroup#CapacityFatigue'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Capacity Status', Target: '@UI.FieldGroup#CapacityStatus'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Engineering Notes', Target: '@UI.FieldGroup#CapacityEngineeringNotes'},
     ],
     FieldGroup#CapacityGeneral: {
       Data: [
         {Value: capacityType},
-        {Value: vehicleClass},
-        {Value: status},
-        {Value: effectiveFrom},
-        {Value: effectiveTo},
       ]
     },
     FieldGroup#CapacityMassLimits: {
@@ -806,13 +777,11 @@ annotate AdminService.BridgeCapacities with @(
         {Value: singleAxleLimit},
         {Value: tandemGroupLimit},
         {Value: triAxleGroupLimit},
-        {Value: quadAxleGroupLimit},
       ]
     },
     FieldGroup#CapacityVerticalClearance: {
       Data: [
         {Value: minClearancePosted},
-        {Value: designClearanceHeight},
         {Value: lane1Clearance},
         {Value: lane2Clearance},
         {Value: clearanceSurveyDate},
@@ -824,20 +793,14 @@ annotate AdminService.BridgeCapacities with @(
         {Value: carriagewayWidth},
         {Value: trafficableWidth},
         {Value: laneWidth},
-        {Value: leftShoulderWidth},
-        {Value: rightShoulderWidth},
       ]
     },
     FieldGroup#CapacityLoadRating: {
       Data: [
         {Value: ratingStandard},
-        {Value: ratingMethod},
         {Value: ratingFactor},
-        {Value: ratingStatus},
         {Value: ratingEngineer},
         {Value: ratingDate},
-        {Value: lastReviewedBy},
-        {Value: lastReviewedDate},
         {Value: nextReviewDue},
         {Value: reportReference},
       ]
@@ -846,23 +809,27 @@ annotate AdminService.BridgeCapacities with @(
       Data: [
         {Value: scourCriticalDepth},
         {Value: currentScourDepth},
-        {Value: scourSafetyMargin},
         {Value: floodClosureLevel},
-        {Value: windClosureSpeed},
       ]
     },
     FieldGroup#CapacityFatigue: {
       Data: [
         {Value: designLife},
         {Value: consumedLife},
-        {Value: remainingLife},
         {Value: fatigueSensitive},
-        {Value: dynamicLoadAllowance},
-        {Value: speedForAssessment},
-        {Value: heavyVehiclesPerDay},
-        {Value: reducedSpeedCondition},
         {Value: criticalElement},
-        {Value: remarks},
+      ]
+    },
+    FieldGroup#CapacityStatus: {
+      Data: [
+        {Value: capacityStatus},
+        {Value: lastReviewedBy},
+        {Value: statusReviewDue},
+      ]
+    },
+    FieldGroup#CapacityEngineeringNotes: {
+      Data: [
+        {Value: engineeringNotes},
       ]
     },
   }
@@ -1037,28 +1004,18 @@ annotate AdminService.BridgeCapacities with {
   singleAxleLimit       @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
   tandemGroupLimit      @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
   triAxleGroupLimit     @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
-  quadAxleGroupLimit    @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
   minClearancePosted    @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100 m';
-  designClearanceHeight @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100 m';
   lane1Clearance        @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100 m';
   lane2Clearance        @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100 m';
   carriagewayWidth      @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 m';
   trafficableWidth      @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 m';
   laneWidth             @assert.range: [0, 50]     @Common.QuickInfo: 'Valid range: 0 – 50 m';
-  leftShoulderWidth     @assert.range: [0, 50]     @Common.QuickInfo: 'Valid range: 0 – 50 m';
-  rightShoulderWidth    @assert.range: [0, 50]     @Common.QuickInfo: 'Valid range: 0 – 50 m';
   ratingFactor          @assert.range: [0, 10]     @Common.QuickInfo: 'Valid range: 0 – 10';
-  dynamicLoadAllowance  @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100%';
   consumedLife          @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200%';
-  remainingLife         @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200%';
-  speedForAssessment    @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 km/h';
-  windClosureSpeed      @assert.range: [0, 300]    @Common.QuickInfo: 'Valid range: 0 – 300 km/h';
-  heavyVehiclesPerDay   @assert.range: [0, 100000] @Common.QuickInfo: 'Valid range: 0 – 100,000 vehicles/day';
   designLife            @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 years';
   floodClosureLevel     @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 m AHD';
   scourCriticalDepth    @assert.range: [0, 500]    @Common.QuickInfo: 'Valid range: 0 – 500 m';
   currentScourDepth     @assert.range: [0, 500]    @Common.QuickInfo: 'Valid range: 0 – 500 m';
-  scourSafetyMargin     @assert.range: [0, 500]    @Common.QuickInfo: 'Valid range: 0 – 500 m';
 };
 
 annotate AdminService.BridgeScourAssessments with {

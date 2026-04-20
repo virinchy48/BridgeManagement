@@ -40,7 +40,8 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     ],
     BridgeCapacities: [
       ['capacityType', 'Capacity Type'],
-      ['effectiveFrom', 'Effective From']
+      ['grossMassLimit', 'Gross Mass Limit'],
+      ['minClearancePosted', 'Min Clearance Posted']
     ],
     BridgeScourAssessments: [
       ['assessmentDate', 'Assessment Date'],
@@ -135,9 +136,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     },
     BridgeCapacities: {
       integer: [
-        ['designLife', 'Design Fatigue Life'],
-        ['speedForAssessment', 'Speed for Assessment'],
-        ['heavyVehiclesPerDay', 'Heavy Vehicles Per Day']
+        ['designLife', 'Design Fatigue Life']
       ],
       decimal: [
         ['grossMassLimit', 'Gross Mass Limit'],
@@ -146,25 +145,17 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
         ['singleAxleLimit', 'Single Axle'],
         ['tandemGroupLimit', 'Tandem Axle Group'],
         ['triAxleGroupLimit', 'Tri-Axle Group'],
-        ['quadAxleGroupLimit', 'Quad-Axle Group'],
         ['minClearancePosted', 'Min Clearance Posted'],
-        ['designClearanceHeight', 'Design Clearance Height'],
         ['lane1Clearance', 'Lane 1 Clearance'],
         ['lane2Clearance', 'Lane 2 Clearance'],
         ['carriagewayWidth', 'Carriageway Width'],
         ['trafficableWidth', 'Trafficable Width'],
         ['laneWidth', 'Lane Width'],
-        ['leftShoulderWidth', 'Left Shoulder Width'],
-        ['rightShoulderWidth', 'Right Shoulder Width'],
         ['ratingFactor', 'Rating Factor'],
         ['scourCriticalDepth', 'Scour Critical Depth'],
         ['currentScourDepth', 'Current Scour Depth'],
-        ['scourSafetyMargin', 'Scour Safety Margin'],
         ['floodClosureLevel', 'Flood Closure Level'],
-        ['windClosureSpeed', 'Wind Closure Speed'],
-        ['consumedLife', 'Consumed Life'],
-        ['remainingLife', 'Remaining Life'],
-        ['dynamicLoadAllowance', 'Dynamic Load Allowance']
+        ['consumedLife', 'Consumed Life']
       ],
       range: [
         ['grossMassLimit', 'Gross Mass Limit', 0, 9999999.99],
@@ -173,28 +164,18 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
         ['singleAxleLimit', 'Single Axle', 0, 9999999.99],
         ['tandemGroupLimit', 'Tandem Axle Group', 0, 9999999.99],
         ['triAxleGroupLimit', 'Tri-Axle Group', 0, 9999999.99],
-        ['quadAxleGroupLimit', 'Quad-Axle Group', 0, 9999999.99],
         ['minClearancePosted', 'Min Clearance Posted', 0, 9999999.99],
-        ['designClearanceHeight', 'Design Clearance Height', 0, 9999999.99],
         ['lane1Clearance', 'Lane 1 Clearance', 0, 9999999.99],
         ['lane2Clearance', 'Lane 2 Clearance', 0, 9999999.99],
         ['carriagewayWidth', 'Carriageway Width', 0, 9999999.99],
         ['trafficableWidth', 'Trafficable Width', 0, 9999999.99],
         ['laneWidth', 'Lane Width', 0, 9999999.99],
-        ['leftShoulderWidth', 'Left Shoulder Width', 0, 9999999.99],
-        ['rightShoulderWidth', 'Right Shoulder Width', 0, 9999999.99],
         ['ratingFactor', 'Rating Factor', 0, 9999999.9999],
         ['scourCriticalDepth', 'Scour Critical Depth', 0, 9999999.99],
         ['currentScourDepth', 'Current Scour Depth', 0, 9999999.99],
-        ['scourSafetyMargin', 'Scour Safety Margin', 0, 9999999.99],
         ['floodClosureLevel', 'Flood Closure Level', 0, 9999999.99],
-        ['windClosureSpeed', 'Wind Closure Speed', 0, 9999999.99],
         ['designLife', 'Design Fatigue Life', 0, 200],
-        ['consumedLife', 'Consumed Life', 0, 100],
-        ['remainingLife', 'Remaining Life', 0, 100],
-        ['dynamicLoadAllowance', 'Dynamic Load Allowance', 0, 100],
-        ['speedForAssessment', 'Speed for Assessment', 0, 130],
-        ['heavyVehiclesPerDay', 'Heavy Vehicles Per Day', 0, 1000000]
+        ['consumedLife', 'Consumed Life', 0, 100]
       ]
     },
     BridgeScourAssessments: {
@@ -220,9 +201,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     structuralAdequacyRating: 'Use a whole number from 1 to 10.',
     importanceLevel: 'Use a whole number from 1 to 4.',
     heavyVehiclePercent: 'Enter a percentage from 0 to 100.',
-    consumedLife: 'Enter a percentage from 0 to 100.',
-    remainingLife: 'Enter a percentage from 0 to 100.',
-    dynamicLoadAllowance: 'Enter a percentage from 0 to 100.'
+    consumedLife: 'Enter a percentage from 0 to 100.'
   }
 
   const message = (key, req, args = {}) => cds.i18n.messages.at(key, req.locale || cds.context?.locale, args) || key
@@ -393,8 +372,8 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
 
   // Soft-delete: deactivate / reactivate Bridges (use db directly to bypass draft flow)
   // Block actions on draft entities — user must save/discard first
-  this.on('deactivate', Bridges.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
-  this.on('reactivate', Bridges.drafts, req => req.error(409, 'Save or discard your changes before reactivating.'))
+  this.on('deactivate',   Bridges.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',   Bridges.drafts, req => req.error(409, 'Save or discard your changes before reactivating.'))
 
   this.on('deactivate', Bridges, async (req) => {
     const { ID } = req.params[0]
@@ -408,6 +387,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     await db.run(UPDATE('bridge.management.Bridges').set({ status: 'Active' }).where({ ID }))
     return db.run(SELECT.one.from('bridge.management.Bridges').where({ ID }))
   })
+
 
   // Soft-delete: deactivate / reactivate Restrictions (use db directly to bypass draft flow)
   this.on('deactivate', Restrictions.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
