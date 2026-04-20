@@ -54,10 +54,10 @@
         "viewPath": "BridgeManagement.bmsadmin.view",
         "controlId": "adminNavContainer",
         "controlAggregation": "pages",
-        "bypassed": { "target": "changeDocuments" }
+        "bypassed": { "target": "massUpload" }
       },
       "routes": [
-        { "pattern": "", "name": "home", "target": "changeDocuments" },
+        { "pattern": "", "name": "home", "target": "massUpload" },
         { "pattern": "change-documents", "name": "changeDocuments", "target": "changeDocuments" },
         { "pattern": "data-quality",       "name": "dataQuality",       "target": "dataQuality" },
         { "pattern": "data-quality-rules", "name": "dataQualityRules", "target": "dataQualityRules" },

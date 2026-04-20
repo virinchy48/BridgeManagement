@@ -31,9 +31,7 @@
           <content>
             <VBox class="sapUiSmallMargin">
               <Label text="Dataset" class="sapUiTinyMarginTop" />
-              <Select id="datasetSelect" width="320px" change=".onDatasetChange">
-                <items><core:Item xmlns:core="sap.ui.core" key="bridges" text="Bridges" /></items>
-              </Select>
+              <Select id="datasetSelect" width="320px" change=".onDatasetChange" />
 
               <Label text="File (.xlsx or .csv, max 50 MB)" class="sapUiTinyMarginTop" />
               <HBox alignItems="Center">
@@ -41,7 +39,7 @@
                 <Text id="fileNameText" text="No file selected" class="sapUiSmallMarginBegin" />
               </HBox>
               <!-- hidden native file input -->
-              <HTML id="fileInputHtml" content="&lt;input type='file' id='bmsUploadInput' accept='.xlsx,.xls,.csv' style='display:none'/&gt;" />
+              <HTML id="fileInputHtml" content="&lt;input type='file' id='bmsUploadInput' accept='.xlsx,.csv' style='display:none'/&gt;" />
 
               <HBox class="sapUiSmallMarginTop">
                 <Button id="validateBtn" text="Validate Only" icon="sap-icon://accept" press=".onValidate" type="Default" enabled="false" />
@@ -92,6 +90,10 @@
                 <tileContent><TileContent><content><NumericContent id="numErrors"   value="0" valueColor="Critical" /></content></TileContent></tileContent>
               </GenericTile>
             </HBox>
+
+            <!-- P2-003: truncation notice -->
+            <MessageStrip id="truncationStrip" type="Warning" showCloseButton="false" visible="false"
+              class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginBottom" />
 
             <!-- Error / warning rows -->
             <Table id="errorsTable"

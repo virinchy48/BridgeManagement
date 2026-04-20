@@ -91,8 +91,10 @@ sap.ui.define([
     // ── Upload ──────────────────────────────────────────────────────────────
     onUpload: function () {
       if (!this._fileBuffer) { MessageToast.show("Please choose a file first."); return; }
+      var selItem = this.byId("datasetSelect").getSelectedItem();
+      var datasetLabel = selItem ? selItem.getText() : "records";
       MessageBox.confirm(
-        "Upload and upsert bridge records from \"" + this._fileName + "\"?\n\nExisting bridges (matched by Bridge ID) will be updated. New Bridge IDs will be created.",
+        "Upload and upsert " + datasetLabel + " records from \"" + this._fileName + "\"?\n\nExisting entries (matched by their unique key) will be updated. New entries will be created.",
         {
           title: "Confirm Upload",
           actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
@@ -168,6 +170,20 @@ sap.ui.define([
       this.byId("numErrors").setValue(String(warnings.length));
       this._model.setProperty("/errors", warnings);
 
+      // P2-002: dynamic tile label — "Valid" during validate, "Inserted" during upload
+      this.byId("tileInserted").setHeader(isUpload ? "Inserted" : "Valid");
+      // P3-002: hide Updated tile during validate — it has no meaning for a dry run
+      this.byId("tileUpdated").setVisible(!!isUpload);
+
+      // P2-003: show truncation notice when preview is capped
+      var truncStrip = this.byId("truncationStrip");
+      if (!isUpload && data.previewTruncated) {
+        truncStrip.setText("Showing first 10 rows only. Fix these errors and re-validate to see remaining issues.");
+        truncStrip.setVisible(true);
+      } else {
+        truncStrip.setVisible(false);
+      }
+
       var panelTitle = isUpload ? "Upload Results" : "Validation Results";
       var summaryText;
       if (isUpload) {
@@ -181,6 +197,11 @@ sap.ui.define([
       this.byId("resultsPanelTitle").setText(panelTitle);
       this.byId("resultsSummaryText").setText(summaryText);
       this.byId("resultsPanel").setVisible(true);
+
+      // P3-005: keep upload disabled when validate found errors
+      if (!isUpload && skipped > 0) {
+        this.byId("uploadBtn").setEnabled(false);
+      }
 
       if (isUpload && warnings.length === 0) {
         MessageToast.show("Upload complete: " + inserted + " inserted, " + updated + " updated.");

@@ -1,4 +1,0 @@
-ID,restrictionRef,name,bridgeRef,bridge_ID,restrictionCategory,restrictionType,restrictionValue,restrictionUnit,restrictionStatus,appliesToVehicleClass,grossMassLimit,heightLimit,permitRequired,active,effectiveFrom,direction
-1,R-0001,Mass Limit 20T — Parramatta Rail Bridge,BMS-004,4,Permanent,Mass Limit,20,Tonne,Active,Heavy Vehicle,20,,true,true,2023-05-01,Both
-2,R-0002,Mass Limit 10T — Mulgoa Creek Bridge,BMS-006,6,Permanent,Mass Limit,10,Tonne,Active,All Vehicles,10,,false,true,2022-08-15,Both
-3,R-0003,Height Limit 4.5m — Mulgoa Creek Bridge,BMS-006,6,Permanent,Height Limit,4.5,Metre,Active,All Vehicles,,4.5,false,true,2022-08-15,Both

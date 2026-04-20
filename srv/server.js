@@ -1089,7 +1089,7 @@ cds.on('bootstrap', (app) => {
 
   const router = express.Router()
 
-  router.use(express.json({ limit: '25mb' })) // configurable via SystemConfig.massUploadMaxMb
+  router.use(express.json({ limit: '70mb' })) // configurable via SystemConfig.massUploadMaxMb
 
   router.get('/datasets', (_req, res) => {
     res.json({ datasets: getDatasets() })

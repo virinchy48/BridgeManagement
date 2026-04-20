@@ -85,9 +85,6 @@ entity Bridges : managed {
       documents    : Composition of many BridgeDocuments
                        on documents.bridge = $self;
       geoJson      : LargeString;
-      stock        : Integer;
-      price        : Price;
-      currency     : Currency;
       conditionSummary    : String(60);
       conditionAssessor   : String(111);
       conditionReportRef  : String(111);

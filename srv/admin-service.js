@@ -40,6 +40,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     ],
     BridgeCapacities: [
       ['capacityType', 'Capacity Type'],
+      ['capacityStatus', 'Capacity Status'],
       ['grossMassLimit', 'Gross Mass Limit'],
       ['minClearancePosted', 'Min Clearance Posted']
     ],

@@ -12,7 +12,6 @@ const LOOKUP_COLUMNS = [
 
 const BRIDGE_COLUMNS = [
   column('ID', 'integer'),
-  column('title', 'string'),
   column('descr', 'string'),
   column('bridgeId', 'string'),
   column('bridgeName', 'string', { required: true }),
@@ -71,10 +70,7 @@ const BRIDGE_COLUMNS = [
   column('openDataReference', 'string'),
   column('sourceRecordId', 'string'),
   column('restriction_ID', 'string'),
-  column('geoJson', 'string'),
-  column('stock', 'integer'),
-  column('price', 'decimal'),
-  column('currency_code', 'string')
+  column('geoJson', 'string')
 ]
 
 const RESTRICTION_COLUMNS = [
@@ -487,6 +483,7 @@ async function validateUpload({ buffer, fileName, datasetName }) {
     previewTitle: `Parsed ${totalCount} row(s) - showing the first ${Math.min(totalCount, 10)}.`,
     previewColumns: previewColumns.map((column) => column.label),
     previewRows: previewRows.slice(0, 10),
+    previewTruncated: totalCount > 10,
     message: buildValidationMessage(totalCount, validCount, warningCount, errorCount)
   }
 }

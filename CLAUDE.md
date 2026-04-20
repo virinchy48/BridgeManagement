@@ -35,17 +35,17 @@ assets, restrictions, inspections, and NHVR heavy-vehicle approvals across Austr
 ## Running locally
 
 ```bash
-npm start          # cds-serve on http://localhost:5050
+npm start          # cds-serve on http://localhost:8008
 npm test           # Jest test suite
 ```
 
-Fiori launchpad: `http://localhost:5050/fiori-apps.html`  
-Mass upload UI: `http://localhost:5050/fiori-apps.html#BmsAdmin-manage&/mass-upload`  
-Mass upload API: `http://localhost:5050/mass-upload/api/`  
-Admin OData: `http://localhost:5050/odata/v4/admin/`  
-Public OData: `http://localhost:5050/bridge-management/`
+Fiori launchpad: `http://localhost:8008/fiori-apps.html`  
+Mass upload UI: `http://localhost:8008/fiori-apps.html#BmsAdmin-manage&/mass-upload`  
+Mass upload API: `http://localhost:8008/mass-upload/api/`  
+Admin OData: `http://localhost:8008/odata/v4/admin/`  
+Public OData: `http://localhost:8008/bridge-management/`
 
-> **Note:** Port 5050 is used because port 4004 is occupied by a separate project (`31 Bridge Info system`) on this machine. The port is set via `cds-serve --port 5050` in `package.json`. If you change the port, update all references in this file and `.claude/launch.json`.
+> **Note:** Port 8008 is used because port 4004 is occupied by a separate project (`31 Bridge Info system`) on this machine. The port is set via `PORT=8008 cds-serve` in `package.json`. If you change the port, update all references in this file and `.claude/launch.json`.
 
 ---
 
