@@ -15,6 +15,7 @@ mta_archives/
 *_mta_build_tmp
 *.mtar
 Makefile_*.mta
+db/data/mass-upload-bridges-nsw-bulk.csv
 
 # Other
 .DS_Store
