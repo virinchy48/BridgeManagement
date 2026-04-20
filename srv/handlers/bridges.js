@@ -105,6 +105,28 @@ function registerBridgeHandlers (srv, { logAudit, validateEnum }) {
         }
     })
 
+    // UAT-FIX-1 — Fire condition derivation on draft SAVE (draftActivate lifecycle)
+    // The before CREATE/UPDATE hook runs on the draft write but computed fields are
+    // lost through activation. The SAVE event fires at draftActivate time on the final data.
+    srv.before('SAVE', 'Bridges', async req => {
+        let data = req.data
+        if (data.conditionRating !== undefined && data.conditionRating !== null) {
+            let rating = data.conditionRating
+            const tfnswRating         = LEGACY_RATING_TO_TFNSW[rating] || rating
+            data.conditionRatingTfnsw = tfnswRating
+            data.condition            = CONDITION_LABELS[tfnswRating]
+            data.conditionScore       = Math.round((rating / 10) * 100)
+            data.highPriorityAsset    = rating <= 4
+            data.conditionRatingDate  = data.conditionRatingDate || new Date().toISOString().split('T')[0]
+        }
+        // Compute nextInspectionDueDate from lastInspectionDate + inspectionFrequencyYrs
+        const inspDate = data.lastInspectionDate || data.inspectionDate
+        if (data.inspectionFrequencyYrs && inspDate) {
+            const next = addYearsSafe(inspDate, data.inspectionFrequencyYrs)
+            if (next) data.nextInspectionDueDate = next.toISOString().split('T')[0]
+        }
+    })
+
     // FIX 3 — Optimistic lock: before UPDATE, verify version and increment
     srv.before('UPDATE', 'Bridges', beforeUpdateBridge)
 

@@ -595,16 +595,20 @@ async function loadMapBridges({ bbox } = {}) {
   )
 
   if (bboxParsed) {
+    // UAT-FIX-2: Use LATITUDE/LONGITUDE Decimal columns for bbox filter on both HANA and SQLite.
+    // The previous HANA path used ST_Within("GEOLOCATION",...) which requires a spatial column
+    // that does not exist in the bridge.management.Bridges entity.
+    const { minLat, maxLat, minLon, maxLon } = bboxParsed
     if (isHanaDb()) {
-      const { minLon, minLat, maxLon, maxLat } = bboxParsed
       const bridges = await db.run(
         `SELECT * FROM "BRIDGE_MANAGEMENT_BRIDGES"
-         WHERE ST_Within("GEOLOCATION", NEW ST_Rectangle(?, ?, ?, ?)) = 1`,
-        [minLon, minLat, maxLon, maxLat]
+         WHERE "LATITUDE" BETWEEN ? AND ?
+           AND "LONGITUDE" BETWEEN ? AND ?
+           AND "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL`,
+        [minLat, maxLat, minLon, maxLon]
       )
       return _mapBridgeRows(bridges, db)
     } else {
-      const { minLat, maxLat, minLon, maxLon } = bboxParsed
       query = query
         .where('latitude >=', minLat)
         .and('latitude <=', maxLat)
@@ -1027,10 +1031,15 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
+  // ── Root redirect — avoids "Cannot GET /" when hitting the srv URL directly ──
+  app.get('/', (_req, res) => {
+    res.redirect('/odata/v4/admin')
+  })
+
   // ── Health probe (no auth — used by BTP health checks and load balancers) ──
   app.get('/health', (_req, res) => {
     res.json({
-      status: 'ok',
+      status: 'UP',
       ts: new Date().toISOString(),
       version: process.env.npm_package_version || '1.0.0',
       env: process.env.NODE_ENV || 'development'
