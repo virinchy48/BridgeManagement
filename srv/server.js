@@ -595,26 +595,17 @@ async function loadMapBridges({ bbox } = {}) {
   )
 
   if (bboxParsed) {
-    // UAT-FIX-2: Use LATITUDE/LONGITUDE Decimal columns for bbox filter on both HANA and SQLite.
+    // UAT-FIX-2 (revised): Use CDS WHERE clause for bbox filter on both HANA and SQLite.
     // The previous HANA path used ST_Within("GEOLOCATION",...) which requires a spatial column
-    // that does not exist in the bridge.management.Bridges entity.
+    // that does not exist in the bridge.management.Bridges entity (only Decimal lat/lon exist).
+    // Using the CDS query builder instead of raw SQL avoids HANA column-name quoting issues
+    // (e.g. "LATITUDE" vs "latitude") and works identically on SQLite and HANA.
     const { minLat, maxLat, minLon, maxLon } = bboxParsed
-    if (isHanaDb()) {
-      const bridges = await db.run(
-        `SELECT * FROM "BRIDGE_MANAGEMENT_BRIDGES"
-         WHERE "LATITUDE" BETWEEN ? AND ?
-           AND "LONGITUDE" BETWEEN ? AND ?
-           AND "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL`,
-        [minLat, maxLat, minLon, maxLon]
-      )
-      return _mapBridgeRows(bridges, db)
-    } else {
-      query = query
-        .where('latitude >=', minLat)
-        .and('latitude <=', maxLat)
-        .and('longitude >=', minLon)
-        .and('longitude <=', maxLon)
-    }
+    query = query
+      .where('latitude >=', minLat)
+      .and('latitude <=', maxLat)
+      .and('longitude >=', minLon)
+      .and('longitude <=', maxLon)
   }
 
   const bridges = await db.run(query)
