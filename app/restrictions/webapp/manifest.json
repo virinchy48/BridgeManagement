@@ -27,6 +27,7 @@
           },
           "title": "{{appTitle}}",
           "subTitle": "{{appSubTitle}}",
+          "icon": "sap-icon://alert",
           "semanticObject": "Restrictions",
           "action": "manage"
         }
@@ -35,7 +36,7 @@
   },
   "sap.ui5": {
     "dependencies": {
-      "minUI5Version": "1.120.0",
+      "minUI5Version": "1.136.0",
       "libs": {
         "sap.fe.templates": {}
       }

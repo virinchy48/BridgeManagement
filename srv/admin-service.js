@@ -14,7 +14,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID:id2 } = await SELECT.one.from(Bridges.drafts).columns('max(ID) as ID')
     req.data.ID = Math.max(id1||0, id2||0) + 1
     if (!req.data.bridgeId) {
-      req.data.bridgeId = `BRG-NSW001-${String(req.data.ID).padStart(3, '0')}`
+      const stateCodes = { NSW:'NSW', VIC:'VIC', QLD:'QLD', WA:'WA', SA:'SA', TAS:'TAS', ACT:'ACT', NT:'NT' }
+      const stateCode = stateCodes[req.data.state] || 'AUS'
+      req.data.bridgeId = `BRG-${stateCode}-${String(req.data.ID).padStart(3, '0')}`
     }
   })
 
@@ -50,7 +52,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   this.on('reactivate', Bridges, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
-    await db.run(UPDATE('bridge.management.Bridges').set({ status: 'Open' }).where({ ID }))
+    await db.run(UPDATE('bridge.management.Bridges').set({ status: 'Active' }).where({ ID }))
     return db.run(SELECT.one.from('bridge.management.Bridges').where({ ID }))
   })
 
@@ -73,8 +75,8 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
 
   this.before ('NEW', Restrictions.drafts, async (req) => {
     if (!req.data.restrictionRef) {
-      const total = await SELECT.from(Restrictions).columns('ID')
-      req.data.restrictionRef = `RST-${String((total?.length || 0) + 1).padStart(4, '0')}`
+      const { cnt } = await SELECT.one.from(Restrictions).columns('count(1) as cnt')
+      req.data.restrictionRef = `RST-${String((cnt || 0) + 1).padStart(4, '0')}`
     }
   })
 

@@ -71,6 +71,6 @@
   },
   "sap.fiori": {
     "registrationIds": [],
-    "archeType": "application"
+    "archeType": "transactional"
   }
 }
