@@ -50,9 +50,11 @@ sap.ui.define([
           ep("GET",    "/admin-bridges/api/bridges/:bridgeId/attachments",                         "List all attachments for a bridge"),
           ep("POST",   "/admin-bridges/api/bridges/:bridgeId/attachments",                         "Upload attachment. Body: { fileName, mediaType, fileSize, contentBase64 }. Max 75 MB."),
           ep("GET",    "/admin-bridges/api/bridges/:bridgeId/attachments/:attachmentId/content",   "Stream attachment content (view in browser)"),
-          ep("DELETE", "/admin-bridges/api/bridges/:bridgeId/attachments/:attachmentId",           "Delete attachment permanently")
+          ep("DELETE", "/admin-bridges/api/bridges/:bridgeId/attachments/:attachmentId",           "Delete attachment permanently"),
+          ep("GET",    "/admin-bridges/api/bridges/export",                                        "Download all bridges as CSV. Returns dated file: bridges-export-YYYY-MM-DD.csv (22 fields)")
         ],
         systemEndpoints: [
+          ep("GET",   "/health",                 "BTP health probe (no auth). Returns { status: 'UP', ts, version, env }. Used by load balancers and CF health checks."),
           ep("GET",   "/system/api/config",      "All SystemConfig key/value pairs"),
           ep("PATCH", "/system/api/config/:key", "Update a config value. Body: { value: '...' }"),
           ep("GET",   "/system/api/banner",      "Maintenance banner status — { active: bool, message: string }")
