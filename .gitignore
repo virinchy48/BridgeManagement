@@ -3,7 +3,6 @@ target/
 _out/
 gen/
 .gen/
-test/
 dist/
 
 .cdsrc-private.json

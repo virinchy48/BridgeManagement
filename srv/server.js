@@ -1488,12 +1488,20 @@ cds.on('bootstrap', (app) => {
   // ── Data Quality API ──────────────────────────────────────────────────────
   const qualityRouter = express.Router()
 
-  // Fields used for completeness scoring (13 key fields)
-  const QUALITY_COMPLETENESS_FIELDS = [
+  // Default completeness fields — used as fallback when no required_field rules are configured
+  const QUALITY_COMPLETENESS_FIELDS_DEFAULT = [
     'bridgeName', 'bridgeId', 'state', 'region', 'assetOwner',
     'latitude', 'longitude', 'structureType', 'condition',
     'conditionRating', 'postingStatus', 'lastInspectionDate', 'geoJson'
   ]
+
+  /** Derive completeness fields from active required_field rules; fall back to defaults */
+  function getCompletenessFields(rules) {
+    const fromRules = rules
+      .filter(r => r.ruleType === 'required_field' && r.field)
+      .map(r => r.field)
+    return fromRules.length > 0 ? fromRules : QUALITY_COMPLETENESS_FIELDS_DEFAULT
+  }
 
   async function loadQualityBridges() {
     const db = await cds.connect.to('db')
@@ -1576,15 +1584,16 @@ cds.on('bootstrap', (app) => {
       }))
   }
 
-  function calcCompletenessScore(bridge) {
-    const populated = QUALITY_COMPLETENESS_FIELDS.filter(f => {
+  function calcCompletenessScore(bridge, completenessFields) {
+    const fields = completenessFields || QUALITY_COMPLETENESS_FIELDS_DEFAULT
+    const populated = fields.filter(f => {
       const v = bridge[f]
       if (v == null) return false
       if (typeof v === 'string' && v.trim() === '') return false
       if (f === 'latitude' || f === 'longitude') return Number(v) !== 0 && Number.isFinite(Number(v))
       return true
     })
-    return Math.round((populated.length / QUALITY_COMPLETENESS_FIELDS.length) * 100)
+    return fields.length > 0 ? Math.round((populated.length / fields.length) * 100) : 100
   }
 
   function maxSeverity(issues) {
@@ -1602,6 +1611,7 @@ cds.on('bootstrap', (app) => {
         loadEnabledRules()
       ])
 
+      const completenessFields = getCompletenessFields(rules)
       const categoryCountMap = {}
       let issueCount = 0
       let criticalCount = 0
@@ -1610,7 +1620,7 @@ cds.on('bootstrap', (app) => {
 
       for (const bridge of bridges) {
         const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds, rules)
-        totalCompleteness += calcCompletenessScore(bridge)
+        totalCompleteness += calcCompletenessScore(bridge, completenessFields)
         if (issues.length > 0) issueCount++
         for (const issue of issues) {
           if (issue.severity === 'critical') criticalCount++
@@ -1648,6 +1658,7 @@ cds.on('bootstrap', (app) => {
         loadEnabledRules()
       ])
 
+      const completenessFields = getCompletenessFields(rules)
       let results = bridges.map(bridge => {
         const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds, rules)
         return {
@@ -1658,7 +1669,7 @@ cds.on('bootstrap', (app) => {
           issues,
           issueCount: issues.length,
           maxSeverity: maxSeverity(issues),
-          completenessScore: calcCompletenessScore(bridge)
+          completenessScore: calcCompletenessScore(bridge, completenessFields)
         }
       }).filter(b => b.issueCount > 0)
 

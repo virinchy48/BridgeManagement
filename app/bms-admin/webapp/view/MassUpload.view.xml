@@ -1,0 +1,125 @@
+<mvc:View
+  controllerName="BridgeManagement.bmsadmin.controller.MassUpload"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:u="sap.ui.unified"
+  displayBlock="true">
+
+  <Page id="massUploadPage" showHeader="true">
+    <customHeader>
+      <Bar>
+        <contentLeft><Title text="Mass Upload" level="H3" /></contentLeft>
+        <contentRight>
+          <Button text="Download Template (.xlsx)" icon="sap-icon://download" press=".onDownloadTemplate" type="Emphasized" />
+          <Button icon="sap-icon://sys-help" press=".onShowHelp" type="Transparent" tooltip="How to use mass upload" class="sapUiSmallMarginBegin" />
+        </contentRight>
+      </Bar>
+    </customHeader>
+
+    <content>
+      <VBox class="sapUiMediumMargin">
+
+        <MessageStrip
+          text="Use mass upload to import or update bridge records from a CSV or Excel file. Download the template first to see the required column format. Rows are upserted by Bridge ID — existing bridges are updated, new ones are created."
+          type="Information" showCloseButton="false" class="sapUiSmallMarginBottom" />
+
+        <!-- ── Upload Panel ─────────────────────────────────────────────── -->
+        <Panel expandable="false" class="sapUiSmallMarginBottom">
+          <headerToolbar>
+            <Toolbar><Title text="Select File" level="H4" /></Toolbar>
+          </headerToolbar>
+          <content>
+            <VBox class="sapUiSmallMargin">
+              <Label text="Dataset" class="sapUiTinyMarginTop" />
+              <Select id="datasetSelect" width="320px" change=".onDatasetChange">
+                <items><core:Item xmlns:core="sap.ui.core" key="bridges" text="Bridges" /></items>
+              </Select>
+
+              <Label text="File (.xlsx or .csv, max 50 MB)" class="sapUiTinyMarginTop" />
+              <HBox alignItems="Center">
+                <Button id="chooseFileBtn" text="Choose File…" icon="sap-icon://attachment" press=".onChooseFile" />
+                <Text id="fileNameText" text="No file selected" class="sapUiSmallMarginBegin" />
+              </HBox>
+              <!-- hidden native file input -->
+              <HTML id="fileInputHtml" content="&lt;input type='file' id='bmsUploadInput' accept='.xlsx,.xls,.csv' style='display:none'/&gt;" />
+
+              <HBox class="sapUiSmallMarginTop">
+                <Button id="validateBtn" text="Validate Only" icon="sap-icon://accept" press=".onValidate" type="Default" enabled="false" />
+                <Button id="uploadBtn"   text="Upload"        icon="sap-icon://upload"  press=".onUpload"   type="Emphasized" enabled="false" class="sapUiSmallMarginBegin" />
+              </HBox>
+            </VBox>
+          </content>
+        </Panel>
+
+        <!-- ── Progress / Status ───────────────────────────────────────── -->
+        <Panel id="progressPanel" visible="false" expandable="false" class="sapUiSmallMarginBottom">
+          <headerToolbar>
+            <Toolbar><Title text="Processing…" level="H4" /></Toolbar>
+          </headerToolbar>
+          <content>
+            <VBox class="sapUiSmallMargin">
+              <BusyIndicator id="uploadBusy" size="1rem" />
+              <Text id="progressText" text="" class="sapUiTinyMarginTop" />
+            </VBox>
+          </content>
+        </Panel>
+
+        <!-- ── Results Panel ───────────────────────────────────────────── -->
+        <Panel id="resultsPanel" visible="false" expandable="false">
+          <headerToolbar>
+            <Toolbar>
+              <Title id="resultsPanelTitle" text="Results" level="H4" />
+              <ToolbarSpacer />
+              <Text id="resultsSummaryText" text="" />
+            </Toolbar>
+          </headerToolbar>
+          <content>
+            <!-- KPI strip -->
+            <HBox class="sapUiSmallMargin sapUiSmallMarginBottom" wrap="Wrap">
+              <GenericTile id="tileTotal"    header="Total Rows"  class="sapUiTinyMarginEnd" tileContent="[sap.m.TileContent]">
+                <tileContent><TileContent><content><NumericContent id="numTotal"    value="0" /></content></TileContent></tileContent>
+              </GenericTile>
+              <GenericTile id="tileInserted" header="Inserted"   class="sapUiTinyMarginEnd" tileContent="[sap.m.TileContent]">
+                <tileContent><TileContent><content><NumericContent id="numInserted" value="0" valueColor="Good" /></content></TileContent></tileContent>
+              </GenericTile>
+              <GenericTile id="tileUpdated"  header="Updated"    class="sapUiTinyMarginEnd" tileContent="[sap.m.TileContent]">
+                <tileContent><TileContent><content><NumericContent id="numUpdated"  value="0" valueColor="Neutral" /></content></TileContent></tileContent>
+              </GenericTile>
+              <GenericTile id="tileSkipped"  header="Skipped"    class="sapUiTinyMarginEnd" tileContent="[sap.m.TileContent]">
+                <tileContent><TileContent><content><NumericContent id="numSkipped"  value="0" valueColor="Neutral" /></content></TileContent></tileContent>
+              </GenericTile>
+              <GenericTile id="tileErrors"   header="Errors"     class="sapUiTinyMarginEnd" tileContent="[sap.m.TileContent]">
+                <tileContent><TileContent><content><NumericContent id="numErrors"   value="0" valueColor="Critical" /></content></TileContent></tileContent>
+              </GenericTile>
+            </HBox>
+
+            <!-- Error / warning rows -->
+            <Table id="errorsTable"
+                   items="{/errors}"
+                   noDataText="No errors — all rows processed successfully."
+                   class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginBottom">
+              <columns>
+                <Column width="4rem" hAlign="Center"><Text text="Row" /></Column>
+                <Column width="6rem"><Text text="Severity" /></Column>
+                <Column width="8rem"><Text text="Field" /></Column>
+                <Column><Text text="Message" /></Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Text text="{rowNumber}" />
+                    <ObjectStatus text="{severity}" state="{severityState}" />
+                    <Text text="{field}" wrapping="false" />
+                    <Text text="{message}" />
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+          </content>
+        </Panel>
+
+      </VBox>
+    </content>
+  </Page>
+
+</mvc:View>
