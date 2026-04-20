@@ -5,6 +5,12 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
 
   const { Bridges, Restrictions, BridgeRestrictions, BridgeCapacities, BridgeScourAssessments } = this.entities
 
+  const bridgeIdFor = (ID, state) => {
+    const stateMap = { NSW:'NSW', VIC:'VIC', QLD:'QLD', WA:'WA', SA:'SA', TAS:'TAS', ACT:'ACT', NT:'NT' }
+    const stateCode = stateMap[state] || 'AUS'
+    return `BRG-${stateCode}-${String(ID).padStart(3, '0')}`
+  }
+
   /**
    * Generate IDs for new Bridges drafts
    */
@@ -13,11 +19,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID:id1 } = await SELECT.one.from(Bridges).columns('max(ID) as ID')
     const { ID:id2 } = await SELECT.one.from(Bridges.drafts).columns('max(ID) as ID')
     req.data.ID = Math.max(id1||0, id2||0) + 1
-    if (!req.data.bridgeId) {
-      const stateMap = { NSW:'NSW', VIC:'VIC', QLD:'QLD', WA:'WA', SA:'SA', TAS:'TAS', ACT:'ACT', NT:'NT' }
-      const stateCode = stateMap[req.data.state] || 'AUS'
-      req.data.bridgeId = `BRG-${stateCode}-${String(req.data.ID).padStart(3, '0')}`
-    }
+    if (req.data.state && !req.data.bridgeId) req.data.bridgeId = bridgeIdFor(req.data.ID, req.data.state)
   })
 
   // UAT-FIX-1 (AdminService): Derive condition + highPriorityAsset from conditionRating on SAVE.
@@ -30,6 +32,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
 
   this.before('SAVE', Bridges, req => {
     const data = req.data
+    if (data.ID && (!data.bridgeId || /^BRG-AUS-/.test(data.bridgeId))) {
+      data.bridgeId = bridgeIdFor(data.ID, data.state)
+    }
     if (data.conditionRating != null) {
       const r      = Number(data.conditionRating)
       const tfnsw  = LEGACY_TO_TFNSW_ADMIN[r] || (r >= 1 && r <= 5 ? r : null)

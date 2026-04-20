@@ -111,7 +111,7 @@ annotate AdminService.Bridges with @(
     // Tab 1 — Core Identity & Location
     FieldGroup#AssetIdentity: {
       Data: [
-        {Value: bridgeId},      // @Core.Immutable — shown, not editable after creation
+        {Value: bridgeId},      // server-generated and read-only
         {Value: bridgeName},
         {Value: assetClass},
         {Value: status},        // @Common.FieldControl #ReadOnly — lifecycle managed by actions
@@ -279,8 +279,8 @@ annotate AdminService.Bridges with {
   status     @Common.FieldControl: #ReadOnly  @title: 'Bridge Status';
   // GeoJSON loaded from external GIS source — not hand-editable
   geoJson    @Core.Immutable  @UI.MultiLineText  @title: 'Bridge Geometry (GeoJSON)';
-  // Bridge ID auto-generated on create; locked thereafter
-  bridgeId   @Core.Immutable  @title: 'Bridge ID';
+  // Bridge ID auto-generated on create; never user-entered
+  bridgeId   @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Bridge ID';
   // Legacy commerce fields — irrelevant in BMS context
   title      @UI.Hidden;
   stock      @UI.Hidden;
@@ -380,8 +380,8 @@ annotate AdminService.BridgeRestrictions with {
   ID    @UI.Hidden;
   bridge @UI.Hidden;
   createdAt @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
-  // Auto-generated (BR-NNNN); immutable after first save — server pre-fills, user may override
-  restrictionRef        @Core.Immutable  @Common.FieldControl: #Optional  @title: 'Reference (auto-generated)';
+  // Auto-generated (BR-NNNN); never user-entered
+  restrictionRef        @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Reference (auto-generated)';
   // Mandatory classification fields
   restrictionCategory @(
     Common.FieldControl: #Mandatory,

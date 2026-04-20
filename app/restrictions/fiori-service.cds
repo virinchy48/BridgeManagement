@@ -122,7 +122,7 @@ annotate AdminService.Restrictions with @(
     // Tab 1 — Classification
     FieldGroup#RstIdentification: {
       Data: [
-        {Value: restrictionRef},   // auto-generated (RST-NNNN); immutable after first save
+        {Value: restrictionRef},   // server-generated and read-only
         {Value: bridgeRef},
         {Value: restrictionCategory},
         {Value: restrictionType},
@@ -226,7 +226,7 @@ annotate AdminService.Restrictions with {
   modifiedAt     @UI.Hidden;
   // Auto-generated on create (RST-NNNN); immutable after first save.
   // NOT marked Mandatory — the server pre-fills it; user may override before saving.
-  restrictionRef @Core.Immutable  @Common.FieldControl: #Optional  @title: 'Reference No. (auto-generated)';
+  restrictionRef @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Reference No. (auto-generated)';
   // Lifecycle managed exclusively by Deactivate / Reactivate actions
   active         @Common.FieldControl: #ReadOnly  @title: 'Active';
   // name is auto-set by server handler from restrictionRef; not user-facing
