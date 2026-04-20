@@ -309,6 +309,19 @@ annotate AdminService.Restrictions with {
 };
 
 ////////////////////////////////////////////////////////////////////////////
+//  Validation constraints — numeric range rules
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.Restrictions with {
+  speedLimit     @assert.range: [0, 130]  @Common.QuickInfo: 'Valid range: 0 – 130 km/h';
+  grossMassLimit @assert.range: [0, 1000] @Common.QuickInfo: 'Valid range: 0 – 1,000 t';
+  axleMassLimit  @assert.range: [0, 500]  @Common.QuickInfo: 'Valid range: 0 – 500 t';
+  heightLimit    @assert.range: [0, 30]   @Common.QuickInfo: 'Valid range: 0 – 30 m';
+  widthLimit     @assert.range: [0, 100]  @Common.QuickInfo: 'Valid range: 0 – 100 m';
+  lengthLimit    @assert.range: [0, 1000] @Common.QuickInfo: 'Valid range: 0 – 1,000 m';
+};
+
+////////////////////////////////////////////////////////////////////////////
 //  Draft
 ////////////////////////////////////////////////////////////////////////////
 

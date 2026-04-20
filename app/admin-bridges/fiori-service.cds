@@ -290,25 +290,78 @@ annotate AdminService.Bridges with {
 annotate AdminService.Bridges with {
   // Mandatory fields
   bridgeName   @Common.FieldControl: #Mandatory  @title: 'Bridge Name';
-  state        @Common.FieldControl: #Mandatory
-               @(ValueList.entity:'States', Common.ValueListWithFixedValues)
-               @title: 'State';
+  state @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'States', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: state, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'State';
   assetOwner   @Common.FieldControl: #Mandatory  @title: 'Asset Owner';
   latitude     @Common.FieldControl: #Mandatory  @title: 'Latitude (°)'  @Common.QuickInfo: 'Valid range: -90 to 90';
   longitude    @Common.FieldControl: #Mandatory  @title: 'Longitude (°)'  @Common.QuickInfo: 'Valid range: -180 to 180';
-  postingStatus @Common.FieldControl: #Mandatory
-               @(ValueList.entity:'PostingStatuses', Common.ValueListWithFixedValues)
-               @title: 'Posting Status';
+  postingStatus @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'PostingStatuses', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: postingStatus, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Posting Status';
   conditionRating @Common.FieldControl: #Mandatory  @title: 'Condition Rating (1–10)';
 
   // Value lists
-  assetClass    @(ValueList.entity:'AssetClasses',  Common.ValueListWithFixedValues)  @title: 'Asset Class';
-  region        @(ValueList.entity:'Regions',        Common.ValueListWithFixedValues)  @title: 'Region';
-  structureType @(Common.FieldControl: #Mandatory, ValueList.entity:'StructureTypes', Common.ValueListWithFixedValues)  @title: 'Structure Type';
-  designLoad    @(ValueList.entity:'DesignLoads',    Common.ValueListWithFixedValues)  @title: 'Design Load';
-  condition     @(ValueList.entity:'ConditionStates', Common.ValueListWithFixedValues) @title: 'Condition State';
-  scourRisk     @(ValueList.entity:'ScourRiskLevels', Common.ValueListWithFixedValues) @title: 'Scour Risk Level';
-  pbsApprovalClass @(ValueList.entity:'PbsApprovalClasses', Common.ValueListWithFixedValues) @title: 'PBS Approval Class';
+  assetClass @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'AssetClasses', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: assetClass, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Asset Class';
+  region @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'Regions', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: region, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Region';
+  structureType @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'StructureTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: structureType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Structure Type';
+  designLoad @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'DesignLoads', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: designLoad, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Design Load';
+  condition @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'ConditionStates', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: condition, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Condition State';
+  scourRisk @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'ScourRiskLevels', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: scourRisk, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Scour Risk Level';
+  pbsApprovalClass @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'PbsApprovalClasses', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: pbsApprovalClass, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'PBS Approval Class';
 
   // Restriction value help
   restriction @(Common: {
@@ -384,37 +437,55 @@ annotate AdminService.BridgeRestrictions with {
   // Mandatory classification fields
   restrictionCategory @(
     Common.FieldControl: #Mandatory,
-    ValueList.entity:'RestrictionCategories',
-    Common.ValueListWithFixedValues
-  )  @title: 'Category';
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'RestrictionCategories', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: restrictionCategory, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Category';
   restrictionType @(
     Common.FieldControl: #Mandatory,
-    ValueList.entity:'RestrictionTypes',
-    Common.ValueListWithFixedValues
-  )  @title: 'Restriction Type';
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'RestrictionTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: restrictionType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Restriction Type';
   restrictionValue      @Common.FieldControl: #Mandatory  @title: 'Value';
   restrictionUnit @(
     Common.FieldControl: #Mandatory,
-    ValueList.entity:'RestrictionUnits',
-    Common.ValueListWithFixedValues
-  )  @title: 'Unit';
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'RestrictionUnits', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: restrictionUnit, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Unit';
   // Status — auto-defaulted to Active on create; managed by Deactivate / Reactivate actions thereafter
   restrictionStatus @(
-    ValueList.entity:'RestrictionStatuses',
-    Common.ValueListWithFixedValues
-  )  @title: 'Status';
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'RestrictionStatuses', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: restrictionStatus, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Status';
   // Active flag — read-only; controlled by Deactivate / Reactivate actions only
   active                @Common.FieldControl: #ReadOnly  @title: 'Active';
   // temporary boolean auto-derived from category — not shown in form
   temporary             @UI.Hidden;
   appliesToVehicleClass @(
-    ValueList.entity:'VehicleClasses',
-    Common.ValueListWithFixedValues
-  )  @title: 'Applies to Vehicle Class';
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'VehicleClasses', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: appliesToVehicleClass, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Applies to Vehicle Class';
   direction @(
-    ValueList.entity:'RestrictionDirections',
-    Common.ValueListWithFixedValues
-  )  @title: 'Direction';
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'RestrictionDirections', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: direction, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Direction';
   effectiveFrom         @Common.FieldControl: #Mandatory  @title: 'Effective From';
   effectiveTo           @title: 'Effective To';
   grossMassLimit        @title: 'Gross Mass Limit (t)';
@@ -807,7 +878,14 @@ annotate AdminService.BridgeScourAssessments with {
   createdAt @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
   assessmentDate        @Common.FieldControl: #Mandatory  @title: 'Assessment Date';
   assessmentType        @Common.FieldControl: #Mandatory  @title: 'Assessment Type';
-  scourRisk             @Common.FieldControl: #Mandatory  @(title: 'Scour Risk Level', ValueList.entity:'ScourRiskLevels', Common.ValueListWithFixedValues);
+  scourRisk @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'ScourRiskLevels', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: scourRisk, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Scour Risk Level';
   measuredDepth         @title: 'Measured Scour Depth (m)';
   floodImmunityAriYears @title: 'Flood Immunity (ARI years)';
   mitigationStatus      @title: 'Mitigation Status';
@@ -924,6 +1002,68 @@ annotate AdminService.BridgeAttributes with {
   ID     @UI.Hidden;
   bridge @UI.Hidden;
   createdAt @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
+};
+
+////////////////////////////////////////////////////////////////////////////
+//  Validation constraints — numeric range & positive-value rules
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.Bridges with {
+  spanCount              @assert.range: [1, 500]     @Common.QuickInfo: 'Valid range: 1 – 500';
+  numberOfLanes          @assert.range: [1, 20]      @Common.QuickInfo: 'Valid range: 1 – 20';
+  spanLength             @assert.range: [0.1, 5000]  @Common.QuickInfo: 'Valid range: 0.1 – 5,000 m';
+  totalLength            @assert.range: [0.1, 50000] @Common.QuickInfo: 'Valid range: 0.1 – 50,000 m';
+  deckWidth              @assert.range: [0.5, 200]   @Common.QuickInfo: 'Valid range: 0.5 – 200 m';
+  clearanceHeight        @assert.range: [0, 100]     @Common.QuickInfo: 'Valid range: 0 – 100 m';
+  loadRating             @assert.range: [0, 10000]   @Common.QuickInfo: 'Valid range: 0 – 10,000 t';
+  floodImmunityAriYears  @assert.range: [1, 10000]   @Common.QuickInfo: 'Valid range: 1 – 10,000 years';
+  averageDailyTraffic    @assert.range: [0, 9999999] @Common.QuickInfo: 'Valid range: 0 – 9,999,999 vehicles/day';
+  scourDepthLastMeasured @assert.range: [0, 500]     @Common.QuickInfo: 'Valid range: 0 – 500 m';
+};
+
+annotate AdminService.BridgeRestrictions with {
+  speedLimit     @assert.range: [0, 130]  @Common.QuickInfo: 'Valid range: 0 – 130 km/h';
+  grossMassLimit @assert.range: [0, 1000] @Common.QuickInfo: 'Valid range: 0 – 1,000 t';
+  axleMassLimit  @assert.range: [0, 500]  @Common.QuickInfo: 'Valid range: 0 – 500 t';
+  heightLimit    @assert.range: [0, 30]   @Common.QuickInfo: 'Valid range: 0 – 30 m';
+  widthLimit     @assert.range: [0, 100]  @Common.QuickInfo: 'Valid range: 0 – 100 m';
+  lengthLimit    @assert.range: [0, 1000] @Common.QuickInfo: 'Valid range: 0 – 1,000 m';
+};
+
+annotate AdminService.BridgeCapacities with {
+  grossMassLimit        @assert.range: [0, 2000]   @Common.QuickInfo: 'Valid range: 0 – 2,000 t';
+  grossCombined         @assert.range: [0, 3000]   @Common.QuickInfo: 'Valid range: 0 – 3,000 t';
+  steerAxleLimit        @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
+  singleAxleLimit       @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
+  tandemGroupLimit      @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
+  triAxleGroupLimit     @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
+  quadAxleGroupLimit    @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
+  minClearancePosted    @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100 m';
+  designClearanceHeight @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100 m';
+  lane1Clearance        @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100 m';
+  lane2Clearance        @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100 m';
+  carriagewayWidth      @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 m';
+  trafficableWidth      @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 m';
+  laneWidth             @assert.range: [0, 50]     @Common.QuickInfo: 'Valid range: 0 – 50 m';
+  leftShoulderWidth     @assert.range: [0, 50]     @Common.QuickInfo: 'Valid range: 0 – 50 m';
+  rightShoulderWidth    @assert.range: [0, 50]     @Common.QuickInfo: 'Valid range: 0 – 50 m';
+  ratingFactor          @assert.range: [0, 10]     @Common.QuickInfo: 'Valid range: 0 – 10';
+  dynamicLoadAllowance  @assert.range: [0, 100]    @Common.QuickInfo: 'Valid range: 0 – 100%';
+  consumedLife          @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200%';
+  remainingLife         @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200%';
+  speedForAssessment    @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 km/h';
+  windClosureSpeed      @assert.range: [0, 300]    @Common.QuickInfo: 'Valid range: 0 – 300 km/h';
+  heavyVehiclesPerDay   @assert.range: [0, 100000] @Common.QuickInfo: 'Valid range: 0 – 100,000 vehicles/day';
+  designLife            @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 years';
+  floodClosureLevel     @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 m AHD';
+  scourCriticalDepth    @assert.range: [0, 500]    @Common.QuickInfo: 'Valid range: 0 – 500 m';
+  currentScourDepth     @assert.range: [0, 500]    @Common.QuickInfo: 'Valid range: 0 – 500 m';
+  scourSafetyMargin     @assert.range: [0, 500]    @Common.QuickInfo: 'Valid range: 0 – 500 m';
+};
+
+annotate AdminService.BridgeScourAssessments with {
+  measuredDepth         @assert.range: [0, 500]   @Common.QuickInfo: 'Valid range: 0 – 500 m';
+  floodImmunityAriYears @assert.range: [1, 10000] @Common.QuickInfo: 'Valid range: 1 – 10,000 years';
 };
 
 ////////////////////////////////////////////////////////////////////////////

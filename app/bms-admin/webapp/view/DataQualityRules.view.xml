@@ -83,10 +83,12 @@
     <content>
       <VBox class="sapUiSmallMargin">
         <Label text="Rule Name" required="true" class="sapUiTinyMarginTop" />
-        <Input id="dlgName" placeholder="e.g. Bridge Name Required" width="100%" />
+        <Input id="dlgName" placeholder="e.g. Bridge Name Required" width="100%"
+               maxLength="120" valueStateText="Rule Name is required (max 120 characters)" />
 
         <Label text="Category" required="true" class="sapUiTinyMarginTop" />
-        <Input id="dlgCategory" placeholder="e.g. Missing Mandatory Field" width="100%" />
+        <Input id="dlgCategory" placeholder="e.g. Missing Mandatory Field" width="100%"
+               maxLength="60" valueStateText="Category is required (max 60 characters)" />
 
         <Label text="Severity" required="true" class="sapUiTinyMarginTop" />
         <Select id="dlgSeverity" width="100%">
@@ -109,16 +111,20 @@
         </Select>
 
         <Label id="dlgFieldLabel" text="Bridge Field" class="sapUiTinyMarginTop" />
-        <Input id="dlgField" placeholder="e.g. bridgeName, latitude, geoJson" width="100%" />
+        <Input id="dlgField" placeholder="e.g. bridgeName, latitude, geoJson" width="100%"
+               maxLength="60" valueStateText="Bridge Field is required for this rule type (max 60 characters)" />
 
         <Label id="dlgConfigLabel" text="Config (JSON)" class="sapUiTinyMarginTop" />
-        <Input id="dlgConfig" placeholder="e.g. days:730  or  conditions:Poor,Critical" width="100%" />
+        <Input id="dlgConfig" placeholder='e.g. {"days":730}  or  {"conditions":["Poor","Critical"]}' width="100%"
+               maxLength="2000" valueStateText='Config must be valid JSON, e.g. {"days":730}' />
 
         <Label text="Violation Message" required="true" class="sapUiTinyMarginTop" />
-        <TextArea id="dlgMessage" rows="3" width="100%" placeholder="Message shown to the administrator in the dashboard" />
+        <TextArea id="dlgMessage" rows="3" width="100%"
+                  placeholder="Message shown to the administrator in the dashboard"
+                  maxLength="255" valueStateText="Violation Message is required (max 255 characters)" />
 
         <Label text="Sort Order" class="sapUiTinyMarginTop" />
-        <StepInput id="dlgSortOrder" min="0" step="10" width="100%" />
+        <StepInput id="dlgSortOrder" min="0" max="9999" step="10" width="100%" />
       </VBox>
     </content>
     <beginButton>

@@ -89,13 +89,13 @@ sap.ui.define([
     _openDialog: function (rule) {
       const dlg = this.byId("ruleDialog");
       dlg.setTitle(this._editId ? "Edit Rule" : "Add Rule");
-      this.byId("dlgName").setValue(rule.name || "");
-      this.byId("dlgCategory").setValue(rule.category || "");
+      this.byId("dlgName").setValue(rule.name || "").setValueState("None");
+      this.byId("dlgCategory").setValue(rule.category || "").setValueState("None");
       this.byId("dlgSeverity").setSelectedKey(rule.severity || "warning");
       this.byId("dlgRuleType").setSelectedKey(rule.ruleType || "required_field");
-      this.byId("dlgField").setValue(rule.field || "");
-      this.byId("dlgConfig").setValue(rule.config || "");
-      this.byId("dlgMessage").setValue(rule.message || "");
+      this.byId("dlgField").setValue(rule.field || "").setValueState("None");
+      this.byId("dlgConfig").setValue(rule.config || "").setValueState("None");
+      this.byId("dlgMessage").setValue(rule.message || "").setValueState("None");
       this.byId("dlgSortOrder").setValue(rule.sortOrder || 0);
       this._updateFieldVisibility(rule.ruleType || "required_field");
       dlg.open();
@@ -126,19 +126,32 @@ sap.ui.define([
       const message  = this.byId("dlgMessage").getValue().trim();
       const sortOrder = parseInt(this.byId("dlgSortOrder").getValue(), 10) || 0;
 
-      if (!name || !category || !message) {
-        MessageToast.show("Name, Category and Message are required.");
-        return;
-      }
-      if (FIELD_TYPES.includes(ruleType) && !field) {
-        MessageToast.show("Field is required for this rule type.");
-        return;
-      }
+      let hasError = false;
+
+      this.byId("dlgName").setValueState(!name ? "Error" : "None");
+      if (!name) hasError = true;
+
+      this.byId("dlgCategory").setValueState(!category ? "Error" : "None");
+      if (!category) hasError = true;
+
+      this.byId("dlgMessage").setValueState(!message ? "Error" : "None");
+      if (!message) hasError = true;
+
+      const fieldRequired = FIELD_TYPES.includes(ruleType) && !field;
+      this.byId("dlgField").setValueState(fieldRequired ? "Error" : "None");
+      if (fieldRequired) hasError = true;
+
+      let configInvalid = false;
       if (config) {
-        try { JSON.parse(config); } catch (_) {
-          MessageToast.show("Config must be valid JSON (e.g. {\"days\":730}).");
-          return;
-        }
+        try { JSON.parse(config); }
+        catch (_) { configInvalid = true; }
+      }
+      this.byId("dlgConfig").setValueState(configInvalid ? "Error" : "None");
+      if (configInvalid) hasError = true;
+
+      if (hasError) {
+        MessageBox.error("Please correct the highlighted fields before saving.", { title: "Validation Error" });
+        return;
       }
 
       const body = { name, category, severity, ruleType, field: field || null, config: config || null, message, sortOrder };
