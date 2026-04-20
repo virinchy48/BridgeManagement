@@ -14,8 +14,8 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID:id2 } = await SELECT.one.from(Bridges.drafts).columns('max(ID) as ID')
     req.data.ID = Math.max(id1||0, id2||0) + 1
     if (!req.data.bridgeId) {
-      const stateCodes = { NSW:'NSW', VIC:'VIC', QLD:'QLD', WA:'WA', SA:'SA', TAS:'TAS', ACT:'ACT', NT:'NT' }
-      const stateCode = stateCodes[req.data.state] || 'AUS'
+      const stateMap = { NSW:'NSW', VIC:'VIC', QLD:'QLD', WA:'WA', SA:'SA', TAS:'TAS', ACT:'ACT', NT:'NT' }
+      const stateCode = stateMap[req.data.state] || 'AUS'
       req.data.bridgeId = `BRG-${stateCode}-${String(req.data.ID).padStart(3, '0')}`
     }
   })

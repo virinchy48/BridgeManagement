@@ -17,8 +17,12 @@ extend service BridgeManagementService with {
         route.description as routeDescription,
         attributes        : redirected to BridgeAttributes
     } actions {
+        // Legacy action — kept for backward compatibility
         action changeCondition(conditionValue: String, score: Integer)
                returns { ID: UUID; bridgeId: String; name: String; condition: String; conditionScore: Integer };
+        // TfNSW condition rating action — records to ConditionHistory
+        action changeConditionTfnsw(conditionRatingTfnsw: Integer, notes: String, assessmentDate: Date)
+               returns Bridges;
         action closeForTraffic()
                returns { ID: UUID; bridgeId: String; name: String; postingStatus: String };
         action reopenForTraffic()
@@ -30,6 +34,17 @@ extend service BridgeManagementService with {
             gazetteRef: String, notes: String
         ) returns { status: String; message: String; ID: UUID };
     };
+
+    @restrict: [
+        { grant: ['READ'],            to: 'authenticated-user' },
+        { grant: ['CREATE','UPDATE'], to: ['BridgeManager','Admin'] },
+        { grant: ['DELETE'],          to: ['Admin'] }
+    ]
+    entity ConditionHistory as projection on nhvr.ConditionHistory;
+
+    @readonly
+    @restrict: [{ grant: ['READ'], to: 'authenticated-user' }]
+    entity TfNswConditionScale as projection on nhvr.TfNswConditionScale;
 
     @readonly
     @restrict: [{ grant: ['READ'], to: 'authenticated-user' }]

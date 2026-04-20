@@ -1,0 +1,14 @@
+{
+  "name": "bridgemanagement-db",
+  "version": "1.0.0",
+  "description": "BridgeManagement DB deployer",
+  "dependencies": {
+    "@sap/hdi-deploy": "^4"
+  },
+  "scripts": {
+    "start": "node node_modules/@sap/hdi-deploy/deploy.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -1,9 +1,13 @@
 {
+  "xsappname": "bridge-management",
+  "tenant-mode": "dedicated",
+  "description": "Bridge Management System — NSW (future: multi-state)",
   "scopes": [
-    {
-      "name": "$XSAPPNAME.admin",
-      "description": "admin"
-    }
+    { "name": "$XSAPPNAME.admin", "description": "Full system administration" },
+    { "name": "$XSAPPNAME.manage", "description": "Create, edit, delete bridges and restrictions" },
+    { "name": "$XSAPPNAME.operate", "description": "Manage restrictions in assigned state" },
+    { "name": "$XSAPPNAME.inspect", "description": "Record inspection findings and condition ratings" },
+    { "name": "$XSAPPNAME.view", "description": "Read-only access to bridges and restrictions" }
   ],
   "attributes": [],
   "role-templates": [
@@ -14,6 +18,58 @@
         "$XSAPPNAME.admin"
       ],
       "attribute-references": []
+    },
+    {
+      "name": "BMS_ADMIN",
+      "description": "Full system access including administration and configuration",
+      "scope-references": ["$XSAPPNAME.admin", "$XSAPPNAME.manage", "$XSAPPNAME.operate", "$XSAPPNAME.inspect", "$XSAPPNAME.view"]
+    },
+    {
+      "name": "BMS_BRIDGE_MANAGER",
+      "description": "Create, edit and manage bridges and load restrictions",
+      "scope-references": ["$XSAPPNAME.manage", "$XSAPPNAME.inspect", "$XSAPPNAME.view"]
+    },
+    {
+      "name": "BMS_OPERATOR",
+      "description": "Manage load restrictions and record condition ratings for assigned state (NSW)",
+      "scope-references": ["$XSAPPNAME.operate", "$XSAPPNAME.inspect", "$XSAPPNAME.view"]
+    },
+    {
+      "name": "BMS_INSPECTOR",
+      "description": "Record bridge condition ratings and inspection findings",
+      "scope-references": ["$XSAPPNAME.inspect", "$XSAPPNAME.view"]
+    },
+    {
+      "name": "BMS_VIEWER",
+      "description": "Read-only access — view bridges, restrictions, maps and reports",
+      "scope-references": ["$XSAPPNAME.view"]
+    }
+  ],
+  "role-collections": [
+    {
+      "name": "BMS Administrator",
+      "description": "Full BMS system administration",
+      "role-template-references": ["$XSAPPNAME.BMS_ADMIN"]
+    },
+    {
+      "name": "BMS Bridge Manager",
+      "description": "Bridge and restriction management",
+      "role-template-references": ["$XSAPPNAME.BMS_BRIDGE_MANAGER"]
+    },
+    {
+      "name": "BMS Operator",
+      "description": "Operational management of restrictions",
+      "role-template-references": ["$XSAPPNAME.BMS_OPERATOR"]
+    },
+    {
+      "name": "BMS Inspector",
+      "description": "Condition assessment and recording",
+      "role-template-references": ["$XSAPPNAME.BMS_INSPECTOR"]
+    },
+    {
+      "name": "BMS Viewer",
+      "description": "Read-only bridge network visibility",
+      "role-template-references": ["$XSAPPNAME.BMS_VIEWER"]
     }
   ]
 }

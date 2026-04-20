@@ -1,6 +1,6 @@
 code;name;descr
-Excellent;Excellent;Asset is in excellent condition.
-Good;Good;Asset is in good condition.
-Fair;Fair;Asset is in fair condition.
-Poor;Poor;Asset is in poor condition.
-Critical;Critical;Asset requires urgent intervention.
+1;Good;"Minor wear and tear. No significant structural defects. Normal monitoring adequate."
+2;Fair;"Moderate deterioration. Some defects present but not immediately critical. Attention required."
+3;Poor;"Significant defects. Structural integrity attention required. Active management needed."
+4;Very Poor;"Major defects. Urgent repairs required. Possible load restrictions warranted."
+5;Critical;"Imminent failure risk or structural failure possible. Immediate action required."

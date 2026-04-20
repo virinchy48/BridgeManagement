@@ -1,7 +1,51 @@
 const cds = require('@sap/cds')
 const LOG  = cds.log('bms-restrictions')
 
+// ─── Optimistic lock — before UPDATE ─────────────────────────────────────────
+const beforeUpdateRestriction = async (req) => {
+    const { ID, version } = req.data
+    if (version !== undefined) {
+        const current = await SELECT.one.from('nhvr.Restriction')
+            .columns(['version', 'status'])
+            .where({ ID })
+        if (current && current.version !== version) {
+            return req.error(409,
+                'This restriction was modified by another user. Please refresh and try again.',
+                'RESTRICTION_LOCK_CONFLICT'
+            )
+        }
+    }
+    // Increment version on every update
+    req.data.version = (version || 0) + 1
+    req.data.modifiedAt = new Date().toISOString()
+}
+
+// ─── RestrictionChangeLog writer ──────────────────────────────────────────────
+const writeRestrictionChangeLog = async (db, restrictionId, changeType, oldStatus, newStatus, reason, user) => {
+    try {
+        const uuid = cds.utils?.uuid
+            ? cds.utils.uuid()
+            : require('crypto').randomUUID()
+        await db.run(INSERT.into('bridge_management_RestrictionChangeLog').entries({
+            ID: uuid,
+            restriction_ID: restrictionId,
+            changeType,
+            oldStatus: oldStatus || null,
+            newStatus: newStatus || null,
+            reason: reason || '',
+            changedBy: user || 'System',
+            changedAt: new Date().toISOString()
+        }))
+    } catch (e) {
+        // Non-fatal — RestrictionChangeLog may not exist yet
+        LOG.warn('RestrictionChangeLog write skipped:', e.message)
+    }
+}
+
 module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBridgePostingStatus, logRestrictionChange }) {
+
+    // ── Optimistic lock registration ──────────────────────────────────────────
+    srv.before('UPDATE', 'Restrictions', beforeUpdateRestriction)
 
     srv.before('CREATE', 'Restrictions', async req => {
         if (!req.data.status)          req.data.status = 'ACTIVE'
@@ -20,6 +64,9 @@ module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBr
             await updateBridgePostingStatus(data.bridge_ID, db, req)
             await logRestrictionChange(db, data.ID, req.user?.id || 'system',
                 'CREATED', null, data.status, 'Restriction created')
+            // Write to RestrictionChangeLog
+            await writeRestrictionChangeLog(db, data.ID, 'CREATED', null, data.status,
+                'Restriction created', req.user?.id || 'system')
         }
     })
 
@@ -37,6 +84,9 @@ module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBr
         if (restriction.bridge_ID) await updateBridgePostingStatus(restriction.bridge_ID, db, req)
         await logRestrictionChange(db, ID, req.user?.id || 'system',
             'DISABLED', oldStatus, 'DISABLED', reason)
+        // Write to RestrictionChangeLog
+        await writeRestrictionChangeLog(db, ID, 'DISABLED', oldStatus, 'DISABLED',
+            reason, req.user?.id || 'system')
         return { status: 'DISABLED', message: 'Restriction disabled' }
     })
 
@@ -53,6 +103,9 @@ module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBr
         if (restriction.bridge_ID) await updateBridgePostingStatus(restriction.bridge_ID, db, req)
         await logRestrictionChange(db, ID, req.user?.id || 'system',
             'ENABLED', oldStatus, 'ACTIVE', reason)
+        // Write to RestrictionChangeLog
+        await writeRestrictionChangeLog(db, ID, 'ENABLED', oldStatus, 'ACTIVE',
+            reason, req.user?.id || 'system')
         return { status: 'ACTIVE', message: 'Restriction enabled' }
     })
 
@@ -60,6 +113,8 @@ module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBr
         let { ID } = req.params[0]
         let { fromDate, toDate, reason } = req.data
         let db = await cds.connect.to('db')
+        let restriction = await db.run(SELECT.one.from('nhvr.Restriction').where({ ID }))
+        let oldStatus = restriction?.status || null
         await db.run(UPDATE('nhvr.Restriction').set({
             isTemporary: true, temporaryFromDate: fromDate,
             temporaryToDate: toDate, temporaryReason: reason,
@@ -67,6 +122,9 @@ module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBr
         }).where({ ID }))
         await logRestrictionChange(db, ID, req.user?.id || 'system',
             'TEMP_APPLIED', null, 'ACTIVE', reason)
+        // Write to RestrictionChangeLog
+        await writeRestrictionChangeLog(db, ID, 'TEMP_APPLIED', oldStatus, 'ACTIVE',
+            reason, req.user?.id || 'system')
         return { status: 'ACTIVE', message: 'Temporary restriction created', ID }
     })
 }

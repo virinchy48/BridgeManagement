@@ -479,50 +479,76 @@ async function saveMassEditRestrictions(updates, { user } = {}) {
 async function loadDashboardAnalytics() {
   const db = await cds.connect.to('db')
 
-  const [
-    totalBridges,
+  // Fetch all bridges and active restrictions in two queries.
+  // This avoids CDS aggregate-expression compatibility issues (count(1) as cnt,
+  // avg(...) in SELECT.columns) which caused all KPIs to return 0.
+  // Entity: bridge.management.Bridges / bridge.management.Restrictions
+  // Field value reference (from seed data):
+  //   condition      → 'Good' | 'Fair' | 'Poor' | 'Critical'  (title case)
+  //   postingStatus  → 'Unrestricted' | 'Restricted' | 'Under Review'  (title case)
+  //   scourRisk      → 'High' | 'Medium' | 'Low'  (title case)
+  //   Restrictions.active           → boolean true/false
+  //   Restrictions.restrictionStatus → 'Active' (title case)
+  const [bridges, restrictions] = await Promise.all([
+    db.run(SELECT.from('bridge.management.Bridges').columns(
+      'ID', 'condition', 'conditionRating', 'structuralAdequacyRating',
+      'postingStatus', 'scourRisk'
+    )),
+    db.run(SELECT.from('bridge.management.Restrictions').columns(
+      'ID', 'active', 'restrictionStatus'
+    ).where({ active: true }))
+  ])
+
+  const bridgeList      = bridges      || []
+  const restrictionList = restrictions || []
+  const total           = bridgeList.length
+
+  // ── Condition distribution ────────────────────────────────────────────────
+  const dist = { good: 0, fair: 0, poor: 0, critical: 0 }
+  for (const b of bridgeList) {
+    const cond = (b.condition || 'Good').toLowerCase()
+    if      (cond === 'critical') dist.critical++
+    else if (cond === 'poor')     dist.poor++
+    else if (cond === 'fair')     dist.fair++
+    else                          dist.good++     // Good or unknown
+  }
+
+  // ── Sufficiency: avg structuralAdequacyRating (1–10 scale) → 0–100 % ─────
+  const ratedBridges = bridgeList.filter(b => b.structuralAdequacyRating != null && b.structuralAdequacyRating > 0)
+  let sufficiencyPct = 0
+  if (ratedBridges.length > 0) {
+    const sumRating = ratedBridges.reduce((s, b) => s + Number(b.structuralAdequacyRating), 0)
+    sufficiencyPct  = Math.round((sumRating / ratedBridges.length / 10) * 100)
+  }
+
+  // ── Other KPIs ────────────────────────────────────────────────────────────
+  // Closed = postingStatus is Restricted or Under Review (no 'Closed' value in schema)
+  const closedBridges = bridgeList.filter(b =>
+    b.postingStatus === 'Restricted' || b.postingStatus === 'Under Review'
+  ).length
+
+  const scourCritical = bridgeList.filter(b => b.scourRisk === 'High').length
+
+  // Deficient = condition Poor or Critical
+  const deficient = dist.poor + dist.critical
+
+  // Active restrictions = those with active = true (already filtered in query)
+  const activeRestrictions  = restrictionList.length
+  const postedRestrictions  = restrictionList.filter(r => r.restrictionStatus === 'Active').length
+
+  return {
+    totalBridges:    total,
     activeRestrictions,
     closedBridges,
     postedRestrictions,
     scourCritical,
     deficient,
-    avgAdequacy,
-    conditionDist
-  ] = await Promise.all([
-    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt')),
-    db.run(SELECT.one.from('bridge.management.Restrictions').columns('count(1) as cnt').where({ active: true })),
-    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ postingStatus: 'Closed' })),
-    db.run(SELECT.one.from('bridge.management.Restrictions').columns('count(1) as cnt').where({ restrictionStatus: 'Active' })),
-    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ scourRisk: 'High' })),
-    db.run(SELECT.one.from('bridge.management.Bridges').columns('count(1) as cnt').where({ condition: { in: ['Poor', 'Critical'] } })),
-    db.run(SELECT.one.from('bridge.management.Bridges').columns('avg(structuralAdequacyRating) as avg').where('structuralAdequacyRating is not null')),
-    db.run(SELECT.from('bridge.management.Bridges').columns('condition', 'count(1) as cnt').groupBy('condition'))
-  ])
-
-  const total = Number(totalBridges?.cnt || 0)
-
-  const conditionMap = {}
-  for (const row of (conditionDist || [])) {
-    const key = (row.condition || 'Unknown').toLowerCase()
-    conditionMap[key] = Number(row.cnt || 0)
-  }
-
-  const avgRating = avgAdequacy?.avg ? Number(avgAdequacy.avg) : null
-  const sufficiencyPct = avgRating !== null ? Math.round((avgRating / 10) * 100) : 0
-
-  return {
-    totalBridges: total,
-    activeRestrictions: Number(activeRestrictions?.cnt || 0),
-    closedBridges: Number(closedBridges?.cnt || 0),
-    postedRestrictions: Number(postedRestrictions?.cnt || 0),
-    scourCritical: Number(scourCritical?.cnt || 0),
-    deficient: Number(deficient?.cnt || 0),
     sufficiencyPct,
     conditionDistribution: {
-      good: conditionMap['good'] || 0,
-      fair: conditionMap['fair'] || 0,
-      poor: conditionMap['poor'] || 0,
-      critical: conditionMap['critical'] || 0,
+      good:     dist.good,
+      fair:     dist.fair,
+      poor:     dist.poor,
+      critical: dist.critical,
       total
     }
   }
@@ -573,7 +599,8 @@ async function loadMapBridges({ bbox } = {}) {
       const { minLon, minLat, maxLon, maxLat } = bboxParsed
       const bridges = await db.run(
         `SELECT * FROM "BRIDGE_MANAGEMENT_BRIDGES"
-         WHERE ST_Within("GEOLOCATION", NEW ST_Rectangle(${minLon}, ${minLat}, ${maxLon}, ${maxLat})) = 1`
+         WHERE ST_Within("GEOLOCATION", NEW ST_Rectangle(?, ?, ?, ?)) = 1`,
+        [minLon, minLat, maxLon, maxLat]
       )
       return _mapBridgeRows(bridges, db)
     } else {
@@ -591,11 +618,14 @@ async function loadMapBridges({ bbox } = {}) {
 }
 
 async function _mapBridgeRows(bridges, db) {
-  const restrictionIds = [...new Set(bridges.map((bridge) => bridge.restriction_ID).filter(Boolean))]
+  // FIX 5: Eliminated N+1 — fetch all active restrictions for all bridges in ONE query,
+  // then map them in memory. Also resolve vehicleClass from the same result set.
+  const bridgeIds = bridges.map((bridge) => bridge.ID).filter(Boolean)
   let vehicleClassByRestriction = new Map()
+  const restrictionsByBridgeId = new Map()
 
-  if (restrictionIds.length) {
-    const restrictions = await db.run(
+  if (bridgeIds.length) {
+    const allRestrictions = await db.run(
       SELECT.from('bridge.management.Restrictions')
         .columns(
           'ID',
@@ -609,20 +639,21 @@ async function _mapBridgeRows(bridges, db) {
           'remarks',
           'appliesToVehicleClass'
         )
-        .where({ ID: { in: restrictionIds } })
+        .where({ bridge_ID: { in: bridgeIds }, active: true })
     )
 
+    // Build vehicleClass lookup keyed by restriction ID (for bridge.restriction_ID FK)
     vehicleClassByRestriction = new Map(
-      restrictions.map((restriction) => [restriction.ID, restriction.appliesToVehicleClass || null])
+      allRestrictions.map((r) => [r.ID, r.appliesToVehicleClass || null])
     )
 
-    var activeRestrictionsByBridgeId = new Map()
-    restrictions.forEach((restriction) => {
-      if (!restriction.active || !restriction.bridge_ID) return
-      if (!activeRestrictionsByBridgeId.has(restriction.bridge_ID)) {
-        activeRestrictionsByBridgeId.set(restriction.bridge_ID, [])
+    // Map active restrictions by bridge_ID in memory
+    for (const restriction of allRestrictions) {
+      if (!restriction.bridge_ID) continue
+      if (!restrictionsByBridgeId.has(restriction.bridge_ID)) {
+        restrictionsByBridgeId.set(restriction.bridge_ID, [])
       }
-      activeRestrictionsByBridgeId.get(restriction.bridge_ID).push({
+      restrictionsByBridgeId.get(restriction.bridge_ID).push({
         name: restriction.name || restriction.restrictionType || 'Restriction',
         restrictionType: restriction.restrictionType || null,
         restrictionValue: restriction.restrictionValue || null,
@@ -630,12 +661,8 @@ async function _mapBridgeRows(bridges, db) {
         restrictionStatus: restriction.restrictionStatus || null,
         remarks: restriction.remarks || null
       })
-    })
+    }
   }
-
-  const restrictionsByBridgeId = typeof activeRestrictionsByBridgeId === 'undefined'
-    ? new Map()
-    : activeRestrictionsByBridgeId
 
   return bridges
     .filter((bridge) => Number.isFinite(Number(bridge.latitude)) && Number.isFinite(Number(bridge.longitude)))
@@ -831,6 +858,9 @@ async function loadClusters({ bbox, zoom = 6 } = {}) {
   // Grid-based clustering via SQL aggregation
   // Works on both HANA and SQLite
   let query;
+  // cellSize is a server-computed number (not user input) — safe to interpolate
+  // All user-supplied bbox values are bound as parameterised placeholders
+  let queryParams = [];
   if (bboxParsed) {
     const { minLat, maxLat, minLon, maxLon } = bboxParsed;
     if (isHanaDb()) {
@@ -843,11 +873,12 @@ async function loadClusters({ bbox, zoom = 6 } = {}) {
           SUM(CASE WHEN "POSTINGSTATUS" = 'Closed' THEN 1 ELSE 0 END) AS "closedCount",
           SUM(CASE WHEN "POSTINGSTATUS" IN ('Restricted','Under Review') THEN 1 ELSE 0 END) AS "restrictedCount"
         FROM "BRIDGE_MANAGEMENT_BRIDGES"
-        WHERE "LATITUDE" BETWEEN ${minLat} AND ${maxLat}
-          AND "LONGITUDE" BETWEEN ${minLon} AND ${maxLon}
+        WHERE "LATITUDE" BETWEEN ? AND ?
+          AND "LONGITUDE" BETWEEN ? AND ?
           AND "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL
         GROUP BY ROUND("LATITUDE" / ${cellSize}), ROUND("LONGITUDE" / ${cellSize})
       `;
+      queryParams = [minLat, maxLat, minLon, maxLon];
     } else {
       query = `
         SELECT
@@ -858,11 +889,12 @@ async function loadClusters({ bbox, zoom = 6 } = {}) {
           SUM(CASE WHEN postingStatus = 'Closed' THEN 1 ELSE 0 END) AS closedCount,
           SUM(CASE WHEN postingStatus IN ('Restricted','Under Review') THEN 1 ELSE 0 END) AS restrictedCount
         FROM bridge_management_Bridges
-        WHERE latitude BETWEEN ${minLat} AND ${maxLat}
-          AND longitude BETWEEN ${minLon} AND ${maxLon}
+        WHERE latitude BETWEEN ? AND ?
+          AND longitude BETWEEN ? AND ?
           AND latitude IS NOT NULL AND longitude IS NOT NULL
         GROUP BY ROUND(latitude / ${cellSize}), ROUND(longitude / ${cellSize})
       `;
+      queryParams = [minLat, maxLat, minLon, maxLon];
     }
   } else {
     if (isHanaDb()) {
@@ -894,7 +926,7 @@ async function loadClusters({ bbox, zoom = 6 } = {}) {
     }
   }
 
-  const rows = await db.run(query);
+  const rows = await db.run(query, queryParams);
   return {
     type: 'clusters',
     cellSize,
@@ -943,18 +975,19 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
   let bridges;
   if (isHanaDb()) {
     // HANA: ST_Distance for exact spherical distance
+    // All user-supplied coordinate/radius values are bound as parameterised placeholders
     bridges = await db.run(`
       SELECT "ID","bridgeId","bridgeName","state","latitude","longitude",
              "postingStatus","conditionRating","structureType","route","region",
              "clearanceHeight","spanLength","nhvrAssessed","scourRisk",
-             "geoLocation".ST_Distance(NEW ST_Point(${lngN}, ${latN}, 4326), 'meter') / 1000 AS "distanceKm"
+             "geoLocation".ST_Distance(NEW ST_Point(?, ?, 4326), 'meter') / 1000 AS "distanceKm"
       FROM "BRIDGE_MANAGEMENT_BRIDGES"
-      WHERE "LATITUDE" BETWEEN ${minLat} AND ${maxLat}
-        AND "LONGITUDE" BETWEEN ${minLon} AND ${maxLon}
+      WHERE "LATITUDE" BETWEEN ? AND ?
+        AND "LONGITUDE" BETWEEN ? AND ?
         AND "LATITUDE" IS NOT NULL AND "LONGITUDE" IS NOT NULL
-        AND "geoLocation".ST_Distance(NEW ST_Point(${lngN}, ${latN}, 4326), 'meter') / 1000 <= ${radN}
+        AND "geoLocation".ST_Distance(NEW ST_Point(?, ?, 4326), 'meter') / 1000 <= ?
       ORDER BY "distanceKm"
-    `);
+    `, [lngN, latN, minLat, maxLat, minLon, maxLon, lngN, latN, radN]);
   } else {
     // SQLite: haversine post-filter
     const candidateQuery = SELECT.from('bridge.management.Bridges')
@@ -994,6 +1027,32 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
+  // ── Security middleware ────────────────────────────────────────────────────
+
+  // FIX 3: Authentication guard — blocks unauthenticated requests in production.
+  // In dev (no XSUAA bound) req.user is absent; allow through with a warning.
+  const requiresAuthentication = (req, res, next) => {
+    if (process.env.NODE_ENV === 'production' && !req.user && !req.tokenInfo) {
+      return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' })
+    }
+    if (!req.user && !req.tokenInfo) {
+      console.warn('[security] Unauthenticated request in dev mode:', req.method, req.path)
+    }
+    next()
+  }
+
+  // FIX 4: CSRF token guard for state-changing requests on non-OData Express routes.
+  const validateCsrfToken = (req, res, next) => {
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+      const csrfToken = req.headers['x-csrf-token']
+      // In production require an explicit CSRF token header
+      if (process.env.NODE_ENV === 'production' && !csrfToken) {
+        return res.status(403).json({ error: 'CSRF token required', code: 'CSRF_MISSING' })
+      }
+    }
+    next()
+  }
+
   // Track user activity on every API request
   app.use((req, _res, next) => {
     const userId = req.user?.id
@@ -1044,12 +1103,29 @@ cds.on('bootstrap', (app) => {
       if (!contentBase64) {
         return res.status(400).json({ error: { message: 'File content is empty' } })
       }
+
+      // FIX 6: ZIP bomb / oversized file guard — check BEFORE decoding/parsing
+      // Base64 encodes 3 bytes as 4 chars; decoded size ≈ base64Length * 0.75
+      const estimatedBytes = Math.ceil(contentBase64.length * 0.75)
+      const MAX_BYTES = 50 * 1024 * 1024 // 50 MB
+      if (estimatedBytes > MAX_BYTES) {
+        return res.status(400).json({ error: { message: 'File too large. Maximum 50MB allowed.' } })
+      }
+
+      // FIX 6: Extension whitelist — only allow safe spreadsheet formats
+      const path = require('path')
+      const allowedTypes = ['.xlsx', '.csv', '.xls']
+      const ext = path.extname(fileName || '').toLowerCase()
+      if (!allowedTypes.includes(ext)) {
+        return res.status(400).json({ error: { message: 'Invalid file type. Only .xlsx and .csv allowed.' } })
+      }
+
       const buffer = Buffer.from(contentBase64, 'base64')
       const result = await importUpload({
         buffer,
         fileName,
         datasetName: dataset,
-        uploadedBy: req.user?.id || req.headers['x-user-name'] || 'system'
+        uploadedBy: req.user?.id || 'system'
       })
       res.json(result)
     } catch (error) {
@@ -1078,7 +1154,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/mass-upload/api', router)
+  app.use('/mass-upload/api', requiresAuthentication, validateCsrfToken, router)
 
   // Dashboard analytics API
   const dashboardRouter = express.Router()
@@ -1092,13 +1168,17 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/dashboard/api', dashboardRouter)
+  app.use('/dashboard/api', requiresAuthentication, dashboardRouter)
 
   const mapRouter = express.Router()
 
   mapRouter.get('/bridges', async (req, res) => {
     try {
-      const bridges = await loadMapBridges({ bbox: req.query.bbox })
+      const { bbox } = req.query;
+      if (bbox && !parseBbox(bbox)) {
+        return res.status(400).json({ error: { message: 'Invalid bbox parameter. Expected: minLon,minLat,maxLon,maxLat (numeric, minLon<maxLon, minLat<maxLat)' } });
+      }
+      const bridges = await loadMapBridges({ bbox })
       res.json({ bridges })
     } catch (error) {
       res.status(500).json({ error: { message: error.message || 'Failed to load bridge map data' } })
@@ -1107,7 +1187,11 @@ cds.on('bootstrap', (app) => {
 
   mapRouter.get('/restrictions', async (req, res) => {
     try {
-      const restrictions = await loadMapRestrictions({ bbox: req.query.bbox });
+      const { bbox } = req.query;
+      if (bbox && !parseBbox(bbox)) {
+        return res.status(400).json({ error: { message: 'Invalid bbox parameter. Expected: minLon,minLat,maxLon,maxLat (numeric, minLon<maxLon, minLat<maxLat)' } });
+      }
+      const restrictions = await loadMapRestrictions({ bbox });
       res.json({ restrictions });
     } catch (error) {
       res.status(500).json({ error: { message: error.message || 'Failed to load restriction map data' } });
@@ -1242,7 +1326,7 @@ cds.on('bootstrap', (app) => {
     }
   });
 
-  app.use('/map/api', mapRouter)
+  app.use('/map/api', requiresAuthentication, mapRouter)
 
   const massEditRouter = express.Router()
   massEditRouter.use(express.json({ limit: '5mb' }))
@@ -1280,7 +1364,7 @@ cds.on('bootstrap', (app) => {
       if (!Array.isArray(updates) || !updates.length) {
         return res.status(400).json({ error: { message: 'updates must be a non-empty array' } })
       }
-      const user = req.user?.id || req.headers['x-user-name'] || 'system'
+      const user = req.user?.id || 'system'
       const result = await saveMassEditBridges(updates, { user })
       res.json(result)
     } catch (error) {
@@ -1294,7 +1378,7 @@ cds.on('bootstrap', (app) => {
       if (!Array.isArray(updates) || !updates.length) {
         return res.status(400).json({ error: { message: 'updates must be a non-empty array' } })
       }
-      const user = req.user?.id || req.headers['x-user-name'] || 'system'
+      const user = req.user?.id || 'system'
       const result = await saveMassEditRestrictions(updates, { user })
       res.json(result)
     } catch (error) {
@@ -1302,7 +1386,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/mass-edit/api', massEditRouter)
+  app.use('/mass-edit/api', requiresAuthentication, validateCsrfToken, massEditRouter)
   mountAttributesApi(app)
 
   // ── Audit Report API ─────────────────────────────────────────────────────
@@ -1360,7 +1444,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/audit/api', auditRouter)
+  app.use('/audit/api', requiresAuthentication, auditRouter)
 
   // ── User Access API ───────────────────────────────────────────────────────
   const accessRouter = express.Router()
@@ -1399,7 +1483,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/access/api', accessRouter)
+  app.use('/access/api', requiresAuthentication, accessRouter)
 
   // ── Data Quality API ──────────────────────────────────────────────────────
   const qualityRouter = express.Router()
@@ -1610,7 +1694,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/quality/api', qualityRouter)
+  app.use('/quality/api', requiresAuthentication, qualityRouter)
 
   // ── System Config API ─────────────────────────────────────────────────────
   const sysRouter = express.Router()
@@ -1658,7 +1742,7 @@ cds.on('bootstrap', (app) => {
     } catch (e) { res.status(500).json({ error: { message: e.message } }) }
   })
 
-  app.use('/system/api', sysRouter)
+  app.use('/system/api', requiresAuthentication, validateCsrfToken, sysRouter)
 
   // ── Admin Bridges attachment API ─────────────────────────────────────────
   const adminBridgeRouter = express.Router()
@@ -1759,7 +1843,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/admin-bridges/api', adminBridgeRouter)
+  app.use('/admin-bridges/api', requiresAuthentication, validateCsrfToken, adminBridgeRouter)
 
   // ── BNAC Integration Config ─────────────────────────────────────────────
   const bnacRouter = express.Router()
@@ -1904,7 +1988,7 @@ cds.on('bootstrap', (app) => {
     } catch (e) { res.status(500).json({ error: { message: e.message } }) }
   })
 
-  app.use('/bnac/api', bnacRouter)
+  app.use('/bnac/api', requiresAuthentication, validateCsrfToken, bnacRouter)
 })
 
 cds.on('served', async () => {

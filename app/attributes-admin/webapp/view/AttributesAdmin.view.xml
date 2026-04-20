@@ -5,6 +5,7 @@
   xmlns:f="sap.f"
   xmlns:layout="sap.ui.layout"
   xmlns:form="sap.ui.layout.form"
+  xmlns:data="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"
   displayBlock="true">
 
   <f:DynamicPage id="mainPage" headerExpanded="true" toggleHeaderOnTitleClick="false">

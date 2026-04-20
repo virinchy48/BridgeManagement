@@ -2,4 +2,10 @@ code;name;descr
 T44;T44;Traditional heavy vehicle loading standard.
 SM1600;SM1600;Standard moving load model.
 AS5100;AS5100;Design load aligned with AS 5100.
-HLP400;HLP400;Heavy load platform model.
+HLP400;HLP400 Heavy Load Platform;"Heavy Load Platform — 400 tonne load. Used for oversize/overmass transport on approved routes."
+W80;W80 Wheel Load;"NSW wheel load model — 80kN per wheel. Used for local road bridges and pedestrian bridges in NSW."
+A160;A160 Axle Load;"NSW axle load model — 160kN per axle. NSW-specific heavy vehicle load for bridges on gazetted routes."
+CooperE;Cooper E Loading;"Cooper E railway loading model — standard North American/ARTC freight train axle pattern."
+UIC60;UIC 60 Loading;"Union Internationale des Chemins de fer loading — European heavy freight standard used for ARTC bridges."
+AS5100_GP;AS 5100 General Purpose;"AS 5100.2 General Purpose loading model for standard road bridges."
+AS5100_HP;AS 5100 Heavy Precision;"AS 5100.2 Heavy Precision loading model for special purpose bridges."

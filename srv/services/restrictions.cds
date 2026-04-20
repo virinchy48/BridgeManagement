@@ -15,12 +15,16 @@ extend service BridgeManagementService with {
         bridge.bridgeId as bridgeId @readonly,
         bridge.name     as bridgeName @readonly,
         route.routeCode as routeCode @readonly,
-        changeHistory   : redirected to RestrictionChangeLogs
+        changeHistory   : redirected to RestrictionChangeLogs,
+        changeLogs      : redirected to RestrictionChangeLogs,
+        postingSigns    : redirected to PostingSigns
     } actions {
         action disableRestriction(reason: String) returns { status: String; message: String };
         action enableRestriction(reason: String)  returns { status: String; message: String };
         action createTemporaryRestriction(fromDate: Date, toDate: Date, reason: String)
                returns { status: String; message: String; ID: UUID };
+        action renewGazette(newGazetteNumber: String, newExpiryDate: Date, reason: String)
+               returns Restrictions;
     };
 
     @readonly
@@ -35,7 +39,21 @@ extend service BridgeManagementService with {
     @cds.redirection.target: true
     @readonly
     @restrict: [{ grant: ['READ'], to: 'authenticated-user' }]
-    entity RestrictionChangeLogs as projection on nhvr.RestrictionChangeLog;
+    entity RestrictionChangeLogs as projection on nhvr.RestrictionChangeLog {
+        *,
+        restriction : redirected to Restrictions
+    };
+
+    @cds.redirection.target: true
+    @restrict: [
+        { grant: ['READ'],            to: 'authenticated-user' },
+        { grant: ['CREATE','UPDATE'], to: ['BridgeManager','Admin'] },
+        { grant: ['DELETE'],          to: ['Admin'] }
+    ]
+    entity PostingSigns as projection on nhvr.PostingSigns {
+        *,
+        restriction : redirected to Restrictions
+    };
 }
 
 extend projection BridgeManagementService.Bridges {
