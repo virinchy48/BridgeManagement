@@ -2,7 +2,9 @@ node_modules/
 target/
 _out/
 gen/
-app/*/dist/
+.gen/
+test/
+dist/
 
 .cdsrc-private.json
 default-*.json
@@ -16,6 +18,8 @@ mta_archives/
 # Other
 .DS_Store
 .claude/
+.pipeline/
+.vscode/
 
 # @cap-js/cds-typer
 @cds-models
