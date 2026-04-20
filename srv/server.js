@@ -2086,16 +2086,16 @@ cds.on('served', async () => {
   }
 });
 
-// ── Hide /bms-admin/webapp from the CDS welcome-page listing ────────────────
-// bms-admin is accessed via its Fiori tile only.  CDS auto-discovers it
-// because index.html exists on disk.  Patch cds.utils.find once so it is
-// excluded from the web-app link scan in @sap/cds/app/index.js.
+// ── Hide internal apps from the CDS welcome-page listing ─────────────────────
+// bms-admin is tile-only; app/router is the BTP approuter (production only).
+// CDS auto-discovers every *.html under app/ — exclude these two so the
+// welcome page only shows /fiori-apps.html.
 ;(function () {
   const _find = cds.utils.find
   cds.utils.find = function (dir, patterns) {
     const results = _find.call(this, dir, patterns)
     return Array.isArray(results)
-      ? results.filter(f => !f.includes('bms-admin'))
+      ? results.filter(f => !f.includes('bms-admin') && !f.includes('app/router'))
       : results
   }
 })()
