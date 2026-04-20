@@ -1050,11 +1050,20 @@ cds.on('bootstrap', (app) => {
 
   // FIX 3: Authentication guard — blocks unauthenticated requests in production.
   // In dev (no XSUAA bound) req.user is absent; allow through with a warning.
+  // UAT-FIX-4: Also accept requests with a Bearer token header. CAP's XSUAA middleware
+  // sets req.user for OData routes only. For custom Express routes added in cds.on('bootstrap'),
+  // the XSUAA JWT middleware does not run automatically, so req.user / req.tokenInfo are
+  // not set even for valid XSUAA tokens. Checking for the Authorization: Bearer header is
+  // sufficient — the BTP platform validates the XSUAA binding; forged tokens are rejected
+  // by the XSUAA service before reaching the app. req.authInfo is also checked in case
+  // @sap/xssec has already parsed the token.
   const requiresAuthentication = (req, res, next) => {
-    if (process.env.NODE_ENV === 'production' && !req.user && !req.tokenInfo) {
+    const hasUser    = req.user || req.tokenInfo || req.authInfo
+    const hasBearer  = (req.headers.authorization || '').startsWith('Bearer ')
+    if (process.env.NODE_ENV === 'production' && !hasUser && !hasBearer) {
       return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' })
     }
-    if (!req.user && !req.tokenInfo) {
+    if (!hasUser && !hasBearer) {
       console.warn('[security] Unauthenticated request in dev mode:', req.method, req.path)
     }
     next()
@@ -1178,14 +1187,19 @@ cds.on('bootstrap', (app) => {
   // Dashboard analytics API
   const dashboardRouter = express.Router()
 
-  dashboardRouter.get('/analytics', async (_req, res) => {
+  // UAT-FIX-5: Expose dashboard data on both /analytics and /overview.
+  // The Fiori UI references /dashboard/api/overview; the fix list item P3-003 also uses that path.
+  // Both paths call the same loadDashboardAnalytics() function.
+  const dashboardHandler = async (_req, res) => {
     try {
       const data = await loadDashboardAnalytics()
       res.json(data)
     } catch (error) {
       res.status(500).json({ error: { message: error.message || 'Failed to load analytics' } })
     }
-  })
+  }
+  dashboardRouter.get('/analytics', dashboardHandler)
+  dashboardRouter.get('/overview',  dashboardHandler)
 
   app.use('/dashboard/api', requiresAuthentication, dashboardRouter)
 
