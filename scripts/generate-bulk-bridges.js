@@ -391,7 +391,7 @@ for (const b of bridges) {
 }
 const csv = csvLines.join('\n')
 
-const outPath = OUT || path.join(__dirname, '..', 'repo', 'db', 'data', 'mass-upload-bridges-nsw-bulk.csv')
+const outPath = OUT || path.join(__dirname, '..', 'db', 'data', 'mass-upload-bridges-nsw-bulk.csv')
 fs.writeFileSync(outPath, csv, 'utf8')
 
 const hmlCount      = bridges.filter(b => b.hmlApproved).length
