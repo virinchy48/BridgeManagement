@@ -5,9 +5,8 @@ sap.ui.define([
   "sap/m/MessageToast",
   "sap/m/Dialog",
   "sap/m/Button",
-  "sap/m/ScrollContainer",
   "sap/m/FormattedText"
-], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Button, ScrollContainer, FormattedText) {
+], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Button, FormattedText) {
   "use strict";
 
   const CONDITION_CONFIG = [
@@ -20,7 +19,6 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.dashboard.controller.Main", {
 
     onInit: function () {
-      document.body.classList.add("dashboardFullBleed");
 
       const model = new JSONModel({
         busy: true,
@@ -40,7 +38,6 @@ sap.ui.define([
     },
 
     onExit: function () {
-      document.body.classList.remove("dashboardFullBleed");
     },
 
     onRefresh: function () {
@@ -137,29 +134,24 @@ sap.ui.define([
 
     onShowHelp: function () {
       var sHtml = [
-        "<h2 style='margin-top:0'>Bridge Network Dashboard — How to Use</h2>",
-        "<h3>Purpose</h3>",
-        "<p>This dashboard gives a real-time overview of the bridge network — asset counts, condition health, key risk indicators, and active restrictions.</p>",
-        "<h3>Network Summary KPIs</h3>",
+        "<p>Real-time overview of the bridge network — asset counts, condition health, key risk indicators, and active restrictions.</p>",
+        "<h4>Network Summary KPIs</h4>",
         "<ul>",
-        "<li><strong>Total Assets</strong> — Total number of bridges in the register. Click to open the Bridge Register.</li>",
-        "<li><strong>Active Restrictions</strong> — Bridges with a current posting restriction. Shown in orange/red when &gt; 0. Click to open Restrictions.</li>",
-        "<li><strong>Bridges Closed</strong> — Bridges with a Closed posting status.</li>",
+        "<li><strong>Total Assets:</strong> Total bridges in the register. Click to open the Bridge Register.</li>",
+        "<li><strong>Active Restrictions:</strong> Bridges with a current posting restriction. Shown in orange/red when &gt; 0.</li>",
+        "<li><strong>Bridges Closed:</strong> Bridges with a Closed posting status.</li>",
         "</ul>",
-        "<h3>Condition State Distribution</h3>",
-        "<p>Shows the percentage of the network in each condition band (Good / Fair / Poor / Critical) as a progress bar.</p>",
-        "<h3>Key Indicators</h3>",
+        "<h4>Condition State Distribution</h4>",
+        "<p>Percentage of the network in each condition band (Good / Fair / Poor / Critical) shown as a progress bar.</p>",
+        "<h4>Key Indicators</h4>",
         "<ul>",
-        "<li><strong>Sufficiency Rating</strong> — Average structural sufficiency score across all bridges.</li>",
-        "<li><strong>Scour Critical</strong> — Bridges flagged as scour-critical (vulnerable to flooding).</li>",
-        "<li><strong>Structurally Deficient</strong> — Bridges rated structurally deficient requiring attention.</li>",
+        "<li><strong>Sufficiency Rating:</strong> Average structural sufficiency score across all bridges.</li>",
+        "<li><strong>Scour Critical:</strong> Bridges flagged as scour-critical (vulnerable to flooding).</li>",
+        "<li><strong>Structurally Deficient:</strong> Bridges rated structurally deficient requiring attention.</li>",
         "</ul>",
-        "<h3>Active Restrictions Detail</h3>",
-        "<p>Count of restrictions currently posted on the network.</p>",
-        "<h3>Refreshing</h3>",
-        "<p>Click the refresh icon (top right) to reload analytics from the latest data.</p>"
+        "<p>Use the refresh icon to reload analytics from the latest data.</p>"
       ].join("");
-      this._openHelpDialog("Bridge Network Dashboard — Help", sHtml);
+      this._openHelpDialog("How to Use", sHtml);
     },
 
     onTileInfo: function (oEvent) {
@@ -168,12 +160,12 @@ sap.ui.define([
         totalAssets: {
           title: "Total Assets",
           html: "<p><strong>Total Assets</strong> shows the count of all bridge structures registered in BMS.</p>" +
-                "<p>Click the tile to navigate to the full Bridge Register where you can filter, search, and edit individual records.</p>"
+                "<p>Click the tile to open the Bridge Register where you can filter, search, and edit records.</p>"
         },
         activeRestrictions: {
           title: "Active Restrictions",
           html: "<p><strong>Active Restrictions</strong> counts bridges with a current posting restriction (e.g. mass, height, or speed limit).</p>" +
-                "<p>A yellow/red indicator means restrictions are posted. Click the tile to open the Restrictions list.</p>"
+                "<p>Shown in orange/red when greater than 0. Click the tile to open the Restrictions list.</p>"
         },
         bridgesClosed: {
           title: "Bridges Closed",
@@ -187,12 +179,12 @@ sap.ui.define([
         },
         scourCritical: {
           title: "Scour Critical Bridges",
-          html: "<p><strong>Scour Critical</strong> is the count of bridges flagged as scour-critical — meaning they are vulnerable to undermining by flood or water flow.</p>" +
+          html: "<p><strong>Scour Critical</strong> counts bridges flagged as scour-critical — vulnerable to undermining by flood or water flow.</p>" +
                 "<p>Any value above 0 warrants review of the affected bridges after flood events.</p>"
         },
         deficient: {
           title: "Structurally Deficient",
-          html: "<p><strong>Structurally Deficient</strong> counts bridges that have been rated as structurally deficient based on their condition assessment.</p>" +
+          html: "<p><strong>Structurally Deficient</strong> counts bridges rated as structurally deficient based on condition assessment.</p>" +
                 "<p>These bridges may still be open but require prioritised maintenance or load restriction.</p>"
         }
       };
@@ -203,14 +195,12 @@ sap.ui.define([
     _openHelpDialog: function (sTitle, sHtml) {
       var oDialog = new Dialog({
         title: sTitle,
-        contentWidth: "520px",
-        contentHeight: "380px",
-        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
-        })],
+        contentWidth: "400px",
+        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     },
 

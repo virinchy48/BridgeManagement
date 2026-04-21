@@ -8,9 +8,6 @@ sap.ui.define([
     home:             "changeDocuments",
     changeDocuments:  "changeDocuments",
     dataQuality:      "dataQuality",
-    dataQualityRules: "dataQualityRules",
-    massUpload:       "massUpload",
-    referenceData:    "referenceData",
     userAccess:       "userAccess",
     systemConfig:     "systemConfig",
     bnacConfig:       "bnacConfig",
@@ -65,10 +62,6 @@ sap.ui.define([
       const aItems   = oNavList.getItems();
       const target   = aItems.find(item => item.getKey() === sKey);
       if (target) oNavList.setSelectedItem(target);
-    },
-
-    onGoHome: function () {
-      window.location.href = "/fiori-apps.html";
     },
 
     onToggleSideNav: function () {

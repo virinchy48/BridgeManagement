@@ -90,7 +90,8 @@
                 "@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
                     "hierarchyQualifier": "RestrictionsHierarchy",
-                    "type": "TreeTable"
+                    "type": "TreeTable",
+                    "enablePaste": false
                   }
                 }
               }

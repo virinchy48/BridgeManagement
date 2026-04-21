@@ -214,43 +214,37 @@ sap.ui.define([
 
     onShowHelp: function () {
       var sHtml = [
-        "<h2 style='margin-top:0'>Data Quality Dashboard — How to Use</h2>",
-        "<h3>Purpose</h3>",
+        "<h4>Purpose</h4>",
         "<p>The Data Quality Dashboard automatically evaluates every bridge in BMS against a set of data quality rules — checking for missing mandatory fields, ",
-        "stale inspections, missing geo-coordinates, poor/critical condition without an active restriction, and incomplete data. ",
-        "Use it to prioritise data remediation work across your asset register.</p>",
-        "<h3>KPI Tiles</h3>",
+        "stale inspections, missing geo-coordinates, poor/critical condition without an active restriction, and incomplete data.</p>",
+        "<h4>KPI Tiles</h4>",
         "<ul>",
-        "<li><strong>Total Bridges</strong> — count of all bridges in the system.</li>",
-        "<li><strong>Bridges with Issues</strong> — count with at least one data quality violation.</li>",
-        "<li><strong>Critical Issues</strong> — violations rated as critical (e.g. missing coordinates, no inspection ever recorded).</li>",
-        "<li><strong>Avg Completeness</strong> — average completeness score across all bridges (13 key fields scored).</li>",
+        "<li><strong>Total Bridges:</strong> count of all bridges in the system.</li>",
+        "<li><strong>Bridges with Issues:</strong> count with at least one data quality violation.</li>",
+        "<li><strong>Critical Issues:</strong> violations rated as critical (e.g. missing coordinates, no inspection ever recorded).</li>",
+        "<li><strong>Avg Completeness:</strong> average completeness score across all bridges (13 key fields scored).</li>",
         "</ul>",
-        "<h3>Filtering</h3>",
-        "<p>Use the <strong>Filters</strong> panel to narrow results by <em>Severity</em> (Critical / Warning / Info), <em>State</em>, or <em>Bridge Name/ID</em>. ",
-        "Filters apply immediately — no Apply button needed.</p>",
-        "<h3>Reviewing Issues</h3>",
-        "<p>The <strong>Bridges with Data Issues</strong> table shows one row per bridge. Click <strong>View Details</strong> to see every individual rule violation for that bridge, ",
-        "along with the completeness score bar.</p>",
-        "<h3>Severity Levels</h3>",
+        "<h4>Filtering</h4>",
+        "<p>Use the <strong>Filters</strong> panel to narrow results by <em>Severity</em> (Critical / Warning / Info), <em>State</em>, or <em>Bridge Name/ID</em>. Filters apply immediately.</p>",
+        "<h4>Reviewing Issues</h4>",
+        "<p>The <strong>Bridges with Data Issues</strong> table shows one row per bridge. Click <strong>View Details</strong> to see every individual rule violation along with the completeness score bar.</p>",
+        "<h4>Severity Levels</h4>",
         "<ul>",
-        "<li><strong>Critical</strong> — data is missing or incorrect in a way that impairs safety or compliance (e.g. no coordinates, no inspection date).</li>",
-        "<li><strong>Warning</strong> — data is incomplete or potentially outdated (e.g. stale inspection, missing condition rating).</li>",
-        "<li><strong>Info</strong> — optional fields not yet populated (e.g. year built, structure type).</li>",
+        "<li><strong>Critical:</strong> data is missing or incorrect in a way that impairs safety or compliance.</li>",
+        "<li><strong>Warning:</strong> data is incomplete or potentially outdated.</li>",
+        "<li><strong>Info:</strong> optional fields not yet populated.</li>",
         "</ul>",
-        "<h3>Exporting</h3>",
+        "<h4>Exporting</h4>",
         "<p>Click <strong>Export CSV</strong> to download all currently filtered bridge issues for offline review or reporting.</p>"
       ].join("");
       var oDialog = new Dialog({
         title: "Data Quality Dashboard — Help",
-        contentWidth: "580px",
-        contentHeight: "460px",
-        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
-        })],
+        contentWidth: "480px",
+        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     }
   });

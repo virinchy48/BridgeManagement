@@ -17,7 +17,7 @@
           <Button text="Save"    icon="sap-icon://save"    press=".onSave"    type="Emphasized" />
           <Button text="Discard" icon="sap-icon://decline"  press=".onDiscard" type="Transparent" class="sapUiSmallMarginBegin" />
           <Button icon="sap-icon://refresh"  tooltip="Reload from server" press=".onRefresh"   type="Transparent" class="sapUiSmallMarginBegin" />
-          <Button icon="sap-icon://sys-help" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://information" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
         </contentRight>
       </Bar>
     </customHeader>

@@ -224,40 +224,37 @@ sap.ui.define([
 
     onShowHelp: function () {
       var sHtml = [
-        "<h2 style='margin-top:0'>Change Document Report — How to Use</h2>",
-        "<h3>Purpose</h3>",
+        "<h4>Purpose</h4>",
         "<p>The Change Document Report provides a complete audit trail of every field-level change made to Bridge and Restriction records in BMS. ",
         "Use it to investigate who changed what, when, and from which source (Fiori UI, Mass Edit, or Mass Upload).</p>",
-        "<h3>How to Search</h3>",
+        "<h4>How to Search</h4>",
         "<ol>",
         "<li>Use the <strong>Search &amp; Filter</strong> panel to narrow results by <em>Object Type</em>, <em>Change Source</em>, <em>Changed By</em> user, <em>Object Name/ID</em>, and a date range.</li>",
         "<li>Click <strong>Apply Filters</strong> to load matching changes. Results appear in two panels: a grouped object view and a flat field-level table.</li>",
         "<li>Click <strong>Reset</strong> to clear all filters and start over.</li>",
         "</ol>",
-        "<h3>Reading the Results</h3>",
+        "<h4>Reading the Results</h4>",
         "<ul>",
-        "<li><strong>Grouped view</strong> — shows each affected object with the number of field changes in that batch. Expand to see individual fields.</li>",
-        "<li><strong>Field-Level Changes table</strong> — shows every changed field with its old value, new value, timestamp, and source badge.</li>",
+        "<li><strong>Grouped view:</strong> shows each affected object with the number of field changes in that batch. Expand to see individual fields.</li>",
+        "<li><strong>Field-Level Changes table:</strong> shows every changed field with its old value, new value, timestamp, and source badge.</li>",
         "</ul>",
-        "<h3>Exporting</h3>",
+        "<h4>Exporting</h4>",
         "<p>Click <strong>Export CSV</strong> to download the current filtered results as a spreadsheet for offline analysis or compliance reporting.</p>",
-        "<h3>Change Sources</h3>",
+        "<h4>Change Sources</h4>",
         "<ul>",
-        "<li><strong>OData (Fiori UI)</strong> — field edited directly in a Fiori form by a user.</li>",
-        "<li><strong>Mass Edit</strong> — changed via the in-app grid editor.</li>",
-        "<li><strong>Mass Upload</strong> — imported via CSV or Excel bulk upload.</li>",
+        "<li><strong>OData (Fiori UI):</strong> field edited directly in a Fiori form by a user.</li>",
+        "<li><strong>Mass Edit:</strong> changed via the in-app grid editor.</li>",
+        "<li><strong>Mass Upload:</strong> imported via CSV or Excel bulk upload.</li>",
         "</ul>"
       ].join("");
       var oDialog = new Dialog({
         title: "Change Document Report — Help",
-        contentWidth: "580px",
-        contentHeight: "460px",
-        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
-        })],
+        contentWidth: "480px",
+        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     }
   });

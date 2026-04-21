@@ -10,31 +10,34 @@
   <App id="dashboardApp">
     <Page
       id="dashboardPage"
-      title="{i18n>appTitle}"
-      showHeader="true"
+      showHeader="false"
       busy="{view>/busy}"
-      class="dashboardPage">
-
-      <headerContent>
-        <Button
-          icon="sap-icon://refresh"
-          tooltip="{i18n>refreshTooltip}"
-          press=".onRefresh"
-          type="Transparent"
-          class="dashboardRefreshBtn" />
-        <Button
-          icon="sap-icon://sys-help"
-          tooltip="How to use this dashboard"
-          press=".onShowHelp"
-          type="Transparent" />
-      </headerContent>
+      class="dashboardPage sapUiResponsivePadding--content">
 
       <content>
         <ScrollContainer height="100%" width="100%" vertical="true" horizontal="false">
           <VBox class="dashboardShell">
 
-            <!-- Summary subtitle -->
-            <Text text="{i18n>pageSubtitle}" class="dashboardSubtitle sapUiSmallMarginBottom" />
+            <!-- Page heading row matching DynamicPage title style -->
+            <HBox justifyContent="SpaceBetween" alignItems="Center" class="dashboardTitleRow sapUiSmallMarginBottom">
+              <VBox>
+                <Title text="{i18n>appTitle}" level="H1" />
+                <Text text="{i18n>pageSubtitle}" class="dashboardSubtitle" />
+              </VBox>
+              <HBox>
+                <Button
+                  icon="sap-icon://refresh"
+                  tooltip="{i18n>refreshTooltip}"
+                  press=".onRefresh"
+                  type="Transparent"
+                  class="dashboardRefreshBtn" />
+                <Button
+                  icon="sap-icon://information"
+                  tooltip="How to use this dashboard"
+                  press=".onShowHelp"
+                  type="Transparent" />
+              </HBox>
+            </HBox>
 
             <!-- ═══ ROW 1 · Network Summary KPIs ═══ -->
             <Title text="{i18n>sectionSummary}" level="H4" class="dashboardSectionTitle" />
@@ -59,7 +62,7 @@
                     </TileContent>
                   </tileContent>
                 </GenericTile>
-                <Button icon="sap-icon://sys-help" tooltip="About: Total Assets" type="Transparent"
+                <Button icon="sap-icon://information" tooltip="About: Total Assets" type="Transparent"
                   press=".onTileInfo" class="sapUiTinyMarginTop">
                   <customData><core:CustomData key="tileKey" value="totalAssets"/></customData>
                 </Button>
@@ -84,7 +87,7 @@
                     </TileContent>
                   </tileContent>
                 </GenericTile>
-                <Button icon="sap-icon://sys-help" tooltip="About: Active Restrictions" type="Transparent"
+                <Button icon="sap-icon://information" tooltip="About: Active Restrictions" type="Transparent"
                   press=".onTileInfo" class="sapUiTinyMarginTop">
                   <customData><core:CustomData key="tileKey" value="activeRestrictions"/></customData>
                 </Button>
@@ -109,7 +112,7 @@
                     </TileContent>
                   </tileContent>
                 </GenericTile>
-                <Button icon="sap-icon://sys-help" tooltip="About: Bridges Closed" type="Transparent"
+                <Button icon="sap-icon://information" tooltip="About: Bridges Closed" type="Transparent"
                   press=".onTileInfo" class="sapUiTinyMarginTop">
                   <customData><core:CustomData key="tileKey" value="bridgesClosed"/></customData>
                 </Button>
@@ -168,7 +171,7 @@
               <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
                 <HBox justifyContent="SpaceBetween" alignItems="Center">
                   <Text text="{i18n>indicatorSufficiency}" class="dashboardIndicatorLabel" />
-                  <Button icon="sap-icon://sys-help" tooltip="About: Sufficiency Rating" type="Transparent" press=".onTileInfo">
+                  <Button icon="sap-icon://information" tooltip="About: Sufficiency Rating" type="Transparent" press=".onTileInfo">
                     <customData><core:CustomData key="tileKey" value="sufficiency"/></customData>
                   </Button>
                 </HBox>
@@ -182,7 +185,7 @@
               <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
                 <HBox justifyContent="SpaceBetween" alignItems="Center">
                   <Text text="{i18n>indicatorScourCritical}" class="dashboardIndicatorLabel" />
-                  <Button icon="sap-icon://sys-help" tooltip="About: Scour Critical Bridges" type="Transparent" press=".onTileInfo">
+                  <Button icon="sap-icon://information" tooltip="About: Scour Critical Bridges" type="Transparent" press=".onTileInfo">
                     <customData><core:CustomData key="tileKey" value="scourCritical"/></customData>
                   </Button>
                 </HBox>
@@ -195,7 +198,7 @@
               <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
                 <HBox justifyContent="SpaceBetween" alignItems="Center">
                   <Text text="{i18n>indicatorDeficient}" class="dashboardIndicatorLabel" />
-                  <Button icon="sap-icon://sys-help" tooltip="About: Structurally Deficient" type="Transparent" press=".onTileInfo">
+                  <Button icon="sap-icon://information" tooltip="About: Structurally Deficient" type="Transparent" press=".onTileInfo">
                     <customData><core:CustomData key="tileKey" value="deficient"/></customData>
                   </Button>
                 </HBox>

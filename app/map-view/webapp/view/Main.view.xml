@@ -329,7 +329,7 @@
                 <OverflowToolbar>
                   <Title text="GIS Tools" level="H6" class="nhvrPanelToolbarTitle" />
                   <ToolbarSpacer />
-                  <Button icon="sap-icon://sys-help" tooltip="How GIS Tools work" press=".onGisToolsHelp"
+                  <Button icon="sap-icon://information" tooltip="How GIS Tools work" press=".onGisToolsHelp"
                           type="Transparent" class="nhvrInfoBtn" />
                 </OverflowToolbar>
               </headerToolbar>
@@ -520,7 +520,7 @@
               <Button icon="sap-icon://full-screen" tooltip="{i18n>centerMap}" press=".onZoomAll" type="Transparent" />
               <Button icon="sap-icon://resize" tooltip="Zoom to selection" press=".onZoomSelected" enabled="{view>/selectionActive}" type="Transparent" />
               <Button icon="sap-icon://refresh" tooltip="{i18n>refresh}" press=".onRefresh" type="Transparent" />
-              <Button icon="sap-icon://sys-help" tooltip="How map controls work" press=".onMapControlsHelp" type="Transparent" class="nhvrInfoBtn" />
+              <Button icon="sap-icon://information" tooltip="How map controls work" press=".onMapControlsHelp" type="Transparent" class="nhvrInfoBtn" />
             </contentRight>
           </Bar>
         </customHeader>

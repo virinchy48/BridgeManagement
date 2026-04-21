@@ -9,10 +9,9 @@ sap.ui.define([
   "sap/m/Button",
   "sap/m/VBox",
   "sap/m/Label",
-  "sap/m/ScrollContainer",
   "sap/m/FormattedText",
   "sap/ui/core/Item"
-], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Select, Button, VBox, Label, ScrollContainer, FormattedText, Item) {
+], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Select, Button, VBox, Label,  FormattedText, Item) {
   "use strict";
 
   var BASE = "/odata/v4/admin";
@@ -303,107 +302,44 @@ sap.ui.define([
 
     onShowHelp: function () {
       var sHtml = [
-        "<h2 style='margin-top:0'>Attribute Configuration — How to Use</h2>",
-
-        "<h3>Overview</h3>",
-        "<p>Configurable Attributes let BMS administrators define custom data fields for <strong>Bridge</strong> and <strong>Restriction</strong> objects — similar to SAP EAM classification. ",
-        "Attributes are grouped, typed, and optionally restricted to specific object types. Values entered by users are version-tracked automatically.</p>",
-
-        "<h3>Step 1 — Create an Attribute Group</h3>",
+        "<h4>Overview</h4>",
+        "<p>Configurable Attributes let administrators define custom data fields for <strong>Bridge</strong> and <strong>Restriction</strong> objects. Attributes are grouped, typed, and version-tracked automatically.</p>",
+        "<h4>Step 1: Create an Attribute Group</h4>",
         "<ol>",
-        "<li>Select <strong>Bridge</strong> or <strong>Restriction</strong> using the toggle at the top of the left panel.</li>",
-        "<li>Click <strong>+ Add Group</strong>.</li>",
-        "<li>Enter a <em>Group Name</em> (e.g. <em>Hydraulic Assessment</em>), a unique <em>Internal Key</em> (lowercase, underscores only, e.g. <em>hydraulic_assessment</em>), and a <em>Display Order</em> number.</li>",
-        "<li>Click <strong>Confirm</strong>. The group appears in the left panel.</li>",
-        "</ol>",
-
-        "<h3>Step 2 — Add Attributes to the Group</h3>",
-        "<ol>",
-        "<li>Click the group in the left panel to select it.</li>",
-        "<li>Click <strong>+ Add Attribute</strong> in the middle panel toolbar.</li>",
-        "<li>Fill in: <em>Attribute Name</em>, unique <em>Internal Key</em>, <em>Data Type</em> (see table below), optional <em>Unit</em>, <em>Help Text</em>, and <em>Display Order</em>.</li>",
-        "<li>For numeric types set <em>Min / Max Value</em> to enforce range validation.</li>",
+        "<li>Select <strong>Bridge</strong> or <strong>Restriction</strong> using the toggle in the left panel.</li>",
+        "<li>Click <strong>+ Add Group</strong>, enter a <em>Group Name</em>, unique <em>Internal Key</em> (lowercase, underscores), and <em>Display Order</em>.</li>",
         "<li>Click <strong>Confirm</strong>.</li>",
         "</ol>",
-
-        "<h3>Data Types</h3>",
-        "<table style='border-collapse:collapse;width:100%;font-size:0.875rem'>",
-        "<tr style='background:#f5f5f5'><th style='padding:6px 10px;text-align:left;border:1px solid #ddd'>Type</th><th style='padding:6px 10px;text-align:left;border:1px solid #ddd'>Description</th><th style='padding:6px 10px;text-align:left;border:1px solid #ddd'>Example</th></tr>",
-        "<tr><td style='padding:6px 10px;border:1px solid #ddd'>Text</td><td style='padding:6px 10px;border:1px solid #ddd'>Free text string</td><td style='padding:6px 10px;border:1px solid #ddd'>Heritage register number</td></tr>",
-        "<tr><td style='padding:6px 10px;border:1px solid #ddd'>Integer</td><td style='padding:6px 10px;border:1px solid #ddd'>Whole number</td><td style='padding:6px 10px;border:1px solid #ddd'>Span count (1–50)</td></tr>",
-        "<tr><td style='padding:6px 10px;border:1px solid #ddd'>Decimal</td><td style='padding:6px 10px;border:1px solid #ddd'>Decimal number</td><td style='padding:6px 10px;border:1px solid #ddd'>Freeboard (m)</td></tr>",
-        "<tr><td style='padding:6px 10px;border:1px solid #ddd'>Date</td><td style='padding:6px 10px;border:1px solid #ddd'>Calendar date</td><td style='padding:6px 10px;border:1px solid #ddd'>Next inspection date</td></tr>",
-        "<tr><td style='padding:6px 10px;border:1px solid #ddd'>Boolean</td><td style='padding:6px 10px;border:1px solid #ddd'>Yes / No toggle</td><td style='padding:6px 10px;border:1px solid #ddd'>Coastal environment</td></tr>",
-        "<tr><td style='padding:6px 10px;border:1px solid #ddd'>SingleSelect</td><td style='padding:6px 10px;border:1px solid #ddd'>One value from a fixed list</td><td style='padding:6px 10px;border:1px solid #ddd'>AS 5100 Bridge Class</td></tr>",
-        "<tr><td style='padding:6px 10px;border:1px solid #ddd'>MultiSelect</td><td style='padding:6px 10px;border:1px solid #ddd'>Multiple values from a fixed list</td><td style='padding:6px 10px;border:1px solid #ddd'>Applied standards</td></tr>",
-        "</table>",
-
-        "<h3>Step 3 — Add Allowed Values (SingleSelect / MultiSelect only)</h3>",
+        "<h4>Step 2: Add Attributes</h4>",
         "<ol>",
-        "<li>Click the attribute in the middle panel to open its detail in the right panel.</li>",
-        "<li>Scroll to <strong>Allowed Values</strong> and click <strong>+ Add Value</strong>.</li>",
-        "<li>Enter the stored <em>Value</em> and an optional <em>Display Label</em>.</li>",
-        "<li>Repeat for each option. Values are validated at save time — unlisted values are rejected.</li>",
+        "<li>Select the group in the left panel, then click <strong>+ Add Attribute</strong>.</li>",
+        "<li>Fill in: <em>Name</em>, <em>Internal Key</em>, <em>Data Type</em> (Text, Integer, Decimal, Date, Boolean, SingleSelect, MultiSelect), optional <em>Unit</em>, and <em>Display Order</em>.</li>",
+        "<li>For numeric types set <em>Min / Max Value</em> for range validation.</li>",
         "</ol>",
-
-        "<h3>Step 4 — Enable for Object Types</h3>",
-        "<ol>",
-        "<li>In the attribute detail panel, find <strong>Object Type Configuration</strong>.</li>",
-        "<li>Toggle <strong>Enabled</strong> ON for the object types where this attribute should appear.</li>",
-        "<li>Optionally toggle <strong>Required</strong> to enforce the field on save.</li>",
-        "<li>If a row has no config record yet, click <strong>Add</strong> to create one first.</li>",
-        "</ol>",
-
-        "<h3>Editing and Disabling Attributes</h3>",
+        "<h4>Step 3: Add Allowed Values</h4>",
+        "<p>For SingleSelect / MultiSelect types, open the attribute detail panel, scroll to <strong>Allowed Values</strong> and click <strong>+ Add Value</strong>.</p>",
+        "<h4>Step 4: Enable for Object Types</h4>",
+        "<p>In the attribute detail panel, toggle <strong>Enabled</strong> for each object type where the attribute should appear. Optionally toggle <strong>Required</strong> to enforce entry on save.</p>",
+        "<h4>Editing and Disabling</h4>",
         "<ul>",
-        "<li>Click <strong>Edit</strong> in the right panel toolbar to update name, help text, unit, display order, or status.</li>",
-        "<li>Set <em>Status = Inactive</em> to hide an attribute from all forms and reports. <strong>Existing stored values are preserved</strong> and will reappear if re-activated.</li>",
-        "<li>The <em>Internal Key</em> and <em>Data Type</em> cannot be changed once values exist (data integrity protection).</li>",
-        "<li>An attribute cannot be deleted while it has stored values.</li>",
+        "<li>Set <em>Status = Inactive</em> to hide an attribute — existing stored values are preserved.</li>",
+        "<li><em>Internal Key</em> and <em>Data Type</em> cannot be changed once values exist.</li>",
         "</ul>",
-
-        "<h3>Bulk Import / Export</h3>",
-        "<ul>",
-        "<li>Use <strong>Export Template (Bridge)</strong> or <strong>Export Template (Restriction)</strong> to download an Excel template pre-filled with all active attribute column headers.</li>",
-        "<li>Fill in one row per bridge/restriction and upload via <strong>Mass Upload</strong> in the main BMS menu.</li>",
-        "<li>The import sheet validates data types, ranges, and allowed values row-by-row and reports errors per cell.</li>",
-        "</ul>",
-
-        "<h3>Version History</h3>",
-        "<p>Every change to an attribute value is automatically journaled with the old value, new value, changed-by user, timestamp, and change source (<em>manual</em>, <em>import</em>, or <em>api</em>). ",
-        "History is visible in the Bridge / Restriction object pages under the <strong>Custom Attributes</strong> section — click the clock icon next to any field.</p>",
-
-        "<h3>Tips</h3>",
-        "<ul>",
-        "<li>Internal keys must be unique per object type — use lowercase with underscores (e.g. <em>flood_level_100yr_mahd</em>).</li>",
-        "<li>Display Order controls the sequence of groups and attributes in forms and reports — lower numbers appear first.</li>",
-        "<li>Attribute groups are object-type-specific: a group created for Bridge does not appear on Restrictions.</li>",
-        "</ul>"
+        "<h4>Bulk Import / Export</h4>",
+        "<p>Use <strong>Export Template</strong> to download an Excel template pre-filled with active attribute headers, then upload via Mass Upload.</p>"
       ].join("");
 
       var oDialog = new Dialog({
-        title: "Attribute Configuration Help",
-        contentWidth: "640px",
-        contentHeight: "520px",
-        content: [
-          new ScrollContainer({
-            width: "100%",
-            height: "100%",
-            vertical: true,
-            content: [
-              new FormattedText({
-                htmlText: sHtml,
-                width: "100%"
-              }).addStyleClass("sapUiSmallMargin")
-            ]
-          })
-        ],
+        title: "Attribute Configuration — Help",
+        contentWidth: "480px",
+        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
         endButton: new Button({
           text: "Close",
           press: function () { oDialog.close(); }
         }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     },
 

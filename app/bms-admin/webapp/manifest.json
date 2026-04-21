@@ -54,35 +54,29 @@
         "viewPath": "BridgeManagement.bmsadmin.view",
         "controlId": "adminNavContainer",
         "controlAggregation": "pages",
-        "bypassed": { "target": "massUpload" }
+        "bypassed": { "target": "changeDocuments" }
       },
       "routes": [
-        { "pattern": "", "name": "home", "target": "massUpload" },
+        { "pattern": "", "name": "home", "target": "changeDocuments" },
         { "pattern": "change-documents", "name": "changeDocuments", "target": "changeDocuments" },
         { "pattern": "data-quality",       "name": "dataQuality",       "target": "dataQuality" },
-        { "pattern": "data-quality-rules", "name": "dataQualityRules", "target": "dataQualityRules" },
-        { "pattern": "reference-data", "name": "referenceData", "target": "referenceData" },
         { "pattern": "user-access", "name": "userAccess", "target": "userAccess" },
         { "pattern": "system-config", "name": "systemConfig", "target": "systemConfig" },
         { "pattern": "bnac-config", "name": "bnacConfig", "target": "bnacConfig" },
         { "pattern": "attribute-config", "name": "attributeConfig", "target": "attributeConfig" },
         { "pattern": "gis-config",       "name": "gisConfig",       "target": "gisConfig" },
         { "pattern": "demo-mode",        "name": "demoMode",        "target": "demoMode" },
-        { "pattern": "mass-upload",      "name": "massUpload",      "target": "massUpload" },
         { "pattern": "api-docs",         "name": "apiDocs",         "target": "apiDocs" }
       ],
       "targets": {
         "changeDocuments": { "viewName": "ChangeDocuments",  "viewLevel": 1 },
         "dataQuality":      { "viewName": "DataQuality",      "viewLevel": 1 },
-        "dataQualityRules": { "viewName": "DataQualityRules", "viewLevel": 1 },
-        "referenceData":   { "viewName": "ReferenceData",    "viewLevel": 1 },
         "userAccess":      { "viewName": "UserAccess",       "viewLevel": 1 },
         "systemConfig":    { "viewName": "SystemConfig",     "viewLevel": 1 },
         "bnacConfig":      { "viewName": "BnacConfig",       "viewLevel": 1 },
         "attributeConfig": { "viewName": "AttributeConfig",  "viewLevel": 1 },
         "gisConfig":       { "viewName": "GisConfig",        "viewLevel": 1 },
         "demoMode":        { "viewName": "DemoMode",         "viewLevel": 1 },
-        "massUpload":      { "viewName": "MassUpload",       "viewLevel": 1 },
         "apiDocs":         { "viewName": "ApiDocs",          "viewLevel": 1 }
       }
     },

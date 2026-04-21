@@ -122,40 +122,37 @@ sap.ui.define([
 
     onShowHelp: function () {
       var sHtml = [
-        "<h2 style='margin-top:0'>User Access &amp; Activity — How to Use</h2>",
-        "<h3>Purpose</h3>",
+        "<h4>Purpose</h4>",
         "<p>This page shows who has accessed BMS and their recent activity — API calls, last seen timestamp, and total action count. ",
         "It is a monitoring view; <strong>role assignment is managed in SAP BTP Cockpit</strong>, not here.</p>",
-        "<h3>KPI Tiles</h3>",
+        "<h4>KPI Tiles</h4>",
         "<ul>",
-        "<li><strong>Total Users</strong> — all distinct users who have ever accessed BMS.</li>",
-        "<li><strong>Active Today</strong> — users seen in the last 24 hours.</li>",
-        "<li><strong>Active This Week</strong> — users seen in the last 7 days.</li>",
+        "<li><strong>Total Users:</strong> all distinct users who have ever accessed BMS.</li>",
+        "<li><strong>Active Today:</strong> users seen in the last 24 hours.</li>",
+        "<li><strong>Active This Week:</strong> users seen in the last 7 days.</li>",
         "</ul>",
-        "<h3>Activity Table</h3>",
+        "<h4>Activity Table</h4>",
         "<p>The <strong>Recent User Activity</strong> table shows up to 200 users ordered by last seen. Each row shows:</p>",
         "<ul>",
-        "<li><strong>User ID</strong> — the SAP BTP identity (email or principal).</li>",
-        "<li><strong>Last Seen</strong> — timestamp of their most recent API request.</li>",
-        "<li><strong>Last Action Path</strong> — the API endpoint they last accessed.</li>",
-        "<li><strong>Total Actions</strong> — total number of API calls recorded for this user.</li>",
-        "<li><strong>Status</strong> — Active (seen today), Recent (this week), or Inactive.</li>",
+        "<li><strong>User ID:</strong> the SAP BTP identity (email or principal).</li>",
+        "<li><strong>Last Seen:</strong> timestamp of their most recent API request.</li>",
+        "<li><strong>Last Action Path:</strong> the API endpoint they last accessed.</li>",
+        "<li><strong>Total Actions:</strong> total number of API calls recorded for this user.</li>",
+        "<li><strong>Status:</strong> Active (seen today), Recent (this week), or Inactive.</li>",
         "</ul>",
-        "<h3>Searching</h3>",
+        "<h4>Searching</h4>",
         "<p>Use the <strong>Search user</strong> box to filter by User ID in real time. The count updates to show how many users match.</p>",
-        "<h3>Note on Role Management</h3>",
+        "<h4>Note on Role Management</h4>",
         "<p>To grant or revoke BMS access roles, open <strong>SAP BTP Cockpit → Security → Role Collections</strong> and assign the BMS role collections to users or groups.</p>"
       ].join("");
       var oDialog = new Dialog({
         title: "User Access & Activity — Help",
-        contentWidth: "560px",
-        contentHeight: "460px",
-        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
-        })],
+        contentWidth: "480px",
+        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     }
   });

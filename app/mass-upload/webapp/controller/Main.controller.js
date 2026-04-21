@@ -7,9 +7,8 @@ sap.ui.define([
   "sap/ui/core/library",
   "sap/m/Dialog",
   "sap/m/Button",
-  "sap/m/ScrollContainer",
   "sap/m/FormattedText"
-], function (Controller, JSONModel, MessageBox, MessageToast, InvisibleMessage, coreLibrary, Dialog, Button, ScrollContainer, FormattedText) {
+], function (Controller, JSONModel, MessageBox, MessageToast, InvisibleMessage, coreLibrary, Dialog, Button,  FormattedText) {
   "use strict";
 
   const InvisibleMessageMode = coreLibrary.InvisibleMessageMode;
@@ -18,8 +17,6 @@ sap.ui.define([
     _ALL_DATASETS_KEY: "All",
 
     onInit: function () {
-      document.body.classList.add("massUploadFullBleed");
-
       const now = new Date();
       const ninetyDaysAgo = new Date(now);
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
@@ -91,7 +88,6 @@ sap.ui.define([
     },
 
     onExit: function () {
-      document.body.classList.remove("massUploadFullBleed");
     },
 
     onAfterRendering: function () {
@@ -744,34 +740,31 @@ sap.ui.define([
 
     onShowHelp: function () {
       var sHtml = [
-        "<h2 style='margin-top:0'>Mass Upload — How to Use</h2>",
-        "<h3>Purpose</h3>",
+        "<h4>Purpose</h4>",
         "<p>Mass Upload allows bulk import of bridge and restriction records (and reference data) from CSV or Excel files.</p>",
-        "<h3>Upload Tab — Step by Step</h3>",
+        "<h4>Upload Tab: Step by Step</h4>",
         "<ol>",
-        "<li><strong>Select Dataset</strong> — Choose what type of data to import (e.g. Bridges, Restrictions, Reference Data).</li>",
-        "<li><strong>Download Template</strong> — Use the template link to get the correct column headers for your chosen dataset.</li>",
-        "<li><strong>Browse File</strong> — Select your prepared CSV or Excel file.</li>",
-        "<li><strong>Preview</strong> — Review the parsed data. Rows with validation errors are highlighted. You must fix errors before uploading.</li>",
-        "<li><strong>Start Upload</strong> — Submits valid rows. The result step shows inserted vs updated counts.</li>",
+        "<li><strong>Select Dataset:</strong> choose what type of data to import (e.g. Bridges, Restrictions).</li>",
+        "<li><strong>Download Template:</strong> use the template link to get the correct column headers for your chosen dataset.</li>",
+        "<li><strong>Browse File:</strong> select your prepared CSV or Excel file.</li>",
+        "<li><strong>Preview:</strong> review the parsed data. Rows with validation errors are highlighted — fix errors before uploading.</li>",
+        "<li><strong>Start Upload:</strong> submits valid rows. The result step shows inserted vs updated counts.</li>",
         "</ol>",
-        "<h3>History Tab</h3>",
+        "<h4>History Tab</h4>",
         "<p>Shows a log of all previous uploads — file name, dataset, row counts, and status. Use the filter to narrow by dataset type.</p>",
-        "<h3>Admin Report Tab</h3>",
+        "<h4>Admin Report Tab</h4>",
         "<p>Run a date-range report across all upload activity. Useful for auditing who uploaded what and when.</p>",
-        "<h3>File Format</h3>",
+        "<h4>File Format</h4>",
         "<p>CSV files should use comma delimiters. Excel files should use the first sheet. Headers must match the template exactly (case-insensitive).</p>"
       ].join("");
       var oDialog = new Dialog({
         title: "Mass Upload — Help",
-        contentWidth: "560px",
-        contentHeight: "460px",
-        content: [new ScrollContainer({ width: "100%", height: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
-        })],
+        contentWidth: "480px",
+        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     }
   });

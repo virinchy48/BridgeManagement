@@ -19,7 +19,7 @@
 
         <!-- Save / Discard toolbar -->
         <Toolbar id="gisConfigToolbar">
-          <Button icon="sap-icon://sys-help" tooltip="How to use GIS Configuration" press=".onShowHelp" type="Transparent"/>
+          <Button icon="sap-icon://information" tooltip="How to use GIS Configuration" press=".onShowHelp" type="Transparent"/>
           <ToolbarSpacer/>
           <Button
             id="btnDiscard"

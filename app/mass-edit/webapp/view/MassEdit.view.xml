@@ -41,7 +41,7 @@
             icon="sap-icon://undo"
             enabled="{= ${view>/dirtyCount} > 0 }"
             press="onDiscard"/>
-          <Button icon="sap-icon://sys-help" tooltip="How to use Mass Edit" type="Transparent" press="onShowHelp"/>
+          <Button icon="sap-icon://information" tooltip="How to use Mass Edit" type="Transparent" press="onShowHelp"/>
         </f:actions>
       </f:DynamicPageTitle>
     </f:title>

@@ -5,11 +5,19 @@ using { AdminService } from '../../srv/admin-service';
 //	Restrictions Tree View
 //
 
-// Tell Fiori about the structure of the hierarchy
+// Tell Fiori about the structure of the hierarchy (read-only — no node movement)
 annotate AdminService.Restrictions with @Aggregation.RecursiveHierarchy #RestrictionsHierarchy : {
-  ParentNavigationProperty : parent, // navigates to a node's parent
-  NodeProperty             : ID, // identifies a node, usually the key
+  NodeProperty              : ID,
+  ParentNavigationProperty  : parent
 };
+
+// Prevent Cut/Paste node movement by marking parent as non-updatable
+annotate AdminService.Restrictions with @(
+  Capabilities.UpdateRestrictions: {
+    Updatable: true,
+    NonUpdatableNavigationProperties: [parent]
+  }
+);
 
 // Fiori expects the following to be defined explicitly, even though they're always the same
 extend AdminService.Restrictions with @(

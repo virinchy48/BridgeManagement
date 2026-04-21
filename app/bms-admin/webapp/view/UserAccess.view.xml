@@ -14,7 +14,7 @@
         </contentLeft>
         <contentRight>
           <Button text="Refresh" icon="sap-icon://refresh" press=".onRefresh" type="Emphasized" />
-          <Button icon="sap-icon://sys-help" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://information" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
         </contentRight>
       </Bar>
     </customHeader>
@@ -31,7 +31,7 @@
             <GenericTile id="tileTotalUsers" header="Total Users" subheader="All time" press=".onTilePress">
               <tileContent><TileContent><content><NumericContent id="numTotalUsers" value="0" valueColor="Neutral" icon="sap-icon://employee" /></content></TileContent></tileContent>
             </GenericTile>
-            <Button icon="sap-icon://sys-help" tooltip="About: Total Users" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+            <Button icon="sap-icon://information" tooltip="About: Total Users" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
               <customData><core:CustomData key="tileKey" value="totalUsers"/></customData>
             </Button>
           </VBox>
@@ -39,7 +39,7 @@
             <GenericTile id="tileActiveToday" header="Active Today" subheader="Last 24 hours" press=".onTilePress">
               <tileContent><TileContent><content><NumericContent id="numActiveToday" value="0" valueColor="Good" icon="sap-icon://activity-2" /></content></TileContent></tileContent>
             </GenericTile>
-            <Button icon="sap-icon://sys-help" tooltip="About: Active Today" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+            <Button icon="sap-icon://information" tooltip="About: Active Today" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
               <customData><core:CustomData key="tileKey" value="activeToday"/></customData>
             </Button>
           </VBox>
@@ -47,7 +47,7 @@
             <GenericTile id="tileActiveWeek" header="Active This Week" subheader="Last 7 days" press=".onTilePress">
               <tileContent><TileContent><content><NumericContent id="numActiveWeek" value="0" valueColor="Critical" icon="sap-icon://calendar" /></content></TileContent></tileContent>
             </GenericTile>
-            <Button icon="sap-icon://sys-help" tooltip="About: Active This Week" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+            <Button icon="sap-icon://information" tooltip="About: Active This Week" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
               <customData><core:CustomData key="tileKey" value="activeWeek"/></customData>
             </Button>
           </VBox>

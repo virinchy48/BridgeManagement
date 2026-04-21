@@ -4,15 +4,22 @@
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
   xmlns:unified="sap.ui.unified"
+  xmlns:f="sap.f"
   displayBlock="true"
   height="100%">
-  <App>
-    <Page id="uploadPage" title="{i18n>appTitle}" showHeader="true" class="massUploadPage" busy="{view>/busy}">
-      <headerContent>
-        <Button icon="sap-icon://sys-help" tooltip="How to use Mass Upload" press=".onShowHelp" type="Transparent" />
-      </headerContent>
-      <content>
-        <VBox class="sapUiMediumMargin">
+  <f:DynamicPage id="uploadPage" class="massUploadPage" toggleHeaderOnTitleClick="false" busy="{view>/busy}">
+    <f:title>
+      <f:DynamicPageTitle>
+        <f:heading>
+          <Title text="{i18n>appTitle}" level="H1" />
+        </f:heading>
+        <f:actions>
+          <Button icon="sap-icon://information" tooltip="How to use Mass Upload" press=".onShowHelp" type="Transparent" />
+        </f:actions>
+      </f:DynamicPageTitle>
+    </f:title>
+    <f:content>
+      <VBox class="sapUiMediumMarginBegin sapUiMediumMarginEnd sapUiMediumMarginBottom">
           <Text text="{i18n>pageIntro}" wrapping="true" class="sapUiSmallMarginBottom" />
 
           <IconTabBar id="mainTabBar" select=".onTabSelect" expanded="true">
@@ -314,7 +321,6 @@
             </items>
           </IconTabBar>
         </VBox>
-      </content>
-    </Page>
-  </App>
+      </f:content>
+  </f:DynamicPage>
 </mvc:View>

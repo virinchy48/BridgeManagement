@@ -18,7 +18,7 @@
         <contentRight>
           <Button icon="sap-icon://download" text="Export CSV" press=".onExportCsv"  type="Transparent" />
           <Button icon="sap-icon://refresh"  text="Refresh"     press=".onRefresh"    type="Transparent" />
-          <Button icon="sap-icon://sys-help" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://information" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
         </contentRight>
       </Bar>
     </customHeader>
@@ -31,7 +31,7 @@
             <GenericTile id="kpiTotalBridges" header="Total Bridges" press=".onKpiPress">
               <tileContent><TileContent><content><NumericContent id="kpiTotalBridgesVal" value="0" icon="sap-icon://it-system" withMargin="false" /></content></TileContent></tileContent>
             </GenericTile>
-            <Button icon="sap-icon://sys-help" tooltip="About: Total Bridges" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+            <Button icon="sap-icon://information" tooltip="About: Total Bridges" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
               <customData><core:CustomData key="tileKey" value="totalBridges"/></customData>
             </Button>
           </VBox>
@@ -39,7 +39,7 @@
             <GenericTile id="kpiIssuesFound" header="Bridges with Issues" press=".onKpiPress">
               <tileContent><TileContent><content><NumericContent id="kpiIssuesFoundVal" value="0" icon="sap-icon://alert" withMargin="false" /></content></TileContent></tileContent>
             </GenericTile>
-            <Button icon="sap-icon://sys-help" tooltip="About: Bridges with Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+            <Button icon="sap-icon://information" tooltip="About: Bridges with Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
               <customData><core:CustomData key="tileKey" value="issuesFound"/></customData>
             </Button>
           </VBox>
@@ -47,7 +47,7 @@
             <GenericTile id="kpiCritical" header="Critical Issues" press=".onKpiPress">
               <tileContent><TileContent><content><NumericContent id="kpiCriticalVal" value="0" icon="sap-icon://message-error" valueColor="Critical" withMargin="false" /></content></TileContent></tileContent>
             </GenericTile>
-            <Button icon="sap-icon://sys-help" tooltip="About: Critical Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+            <Button icon="sap-icon://information" tooltip="About: Critical Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
               <customData><core:CustomData key="tileKey" value="critical"/></customData>
             </Button>
           </VBox>
@@ -55,7 +55,7 @@
             <GenericTile id="kpiCompleteness" header="Avg Completeness" press=".onKpiPress">
               <tileContent><TileContent><content><NumericContent id="kpiCompletenessVal" value="0" scale="%" icon="sap-icon://quality-issue" withMargin="false" /></content></TileContent></tileContent>
             </GenericTile>
-            <Button icon="sap-icon://sys-help" tooltip="About: Average Completeness" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+            <Button icon="sap-icon://information" tooltip="About: Average Completeness" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
               <customData><core:CustomData key="tileKey" value="completeness"/></customData>
             </Button>
           </VBox>
