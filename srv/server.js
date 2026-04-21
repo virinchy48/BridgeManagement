@@ -1318,7 +1318,7 @@ cds.on('bootstrap', (app) => {
         cfg = {
           id: 'default', defaultBasemap: 'osm', hereApiKey: '',
           showStateBoundaries: false, showLgaBoundaries: false,
-          enableScaleBar: true, enableNorthArrow: true, enableGps: true,
+          enableScaleBar: true, enableGps: true,
           enableMinimap: true, enableHeatmap: false, enableTimeSlider: false,
           enableStatsPanel: true, enableProximity: true, enableMgaCoords: true,
           enableStreetView: true, enableConditionAlerts: true, enableCustomWms: false,
@@ -1590,9 +1590,11 @@ cds.on('bootstrap', (app) => {
     return rules
       .filter(rule => execRule(rule, bridge, ruleEvaluation))
       .map(rule => ({
+        ruleId:   rule.id,
         category: rule.category,
         severity: rule.severity,
-        message:  rule.message
+        message:  rule.message,
+        weight:   rule.weight || 10
       }))
   }
 
@@ -1606,6 +1608,13 @@ cds.on('bootstrap', (app) => {
       return true
     })
     return fields.length > 0 ? Math.round((populated.length / fields.length) * 100) : 100
+  }
+
+  function calcWeightedScore(issues, rules) {
+    const totalWeight = rules.reduce((sum, r) => sum + (r.weight || 10), 0)
+    if (totalWeight === 0) return 100
+    const violatedWeight = issues.reduce((sum, i) => sum + (i.weight || 10), 0)
+    return Math.max(0, Math.round((1 - violatedWeight / totalWeight) * 100))
   }
 
   function maxSeverity(issues) {
@@ -1629,10 +1638,12 @@ cds.on('bootstrap', (app) => {
       let criticalCount = 0
       let warningCount = 0
       let totalCompleteness = 0
+      let totalWeightedScore = 0
 
       for (const bridge of bridges) {
         const issues = evaluateBridgeIssues(bridge, activeRestrictionBridgeIds, rules)
         totalCompleteness += calcCompletenessScore(bridge, completenessFields)
+        totalWeightedScore += calcWeightedScore(issues, rules)
         if (issues.length > 0) issueCount++
         for (const issue of issues) {
           if (issue.severity === 'critical') criticalCount++
@@ -1643,6 +1654,7 @@ cds.on('bootstrap', (app) => {
 
       const total = bridges.length
       const completenessPercent = total > 0 ? Math.round(totalCompleteness / total) : 0
+      const avgWeightedScore = total > 0 ? Math.round(totalWeightedScore / total) : 100
       const byCategory = Object.entries(categoryCountMap)
         .map(([category, count]) => ({ category, count }))
         .sort((lowerIssueCategory, higherIssueCategory) => higherIssueCategory.count - lowerIssueCategory.count)
@@ -1653,7 +1665,8 @@ cds.on('bootstrap', (app) => {
         completenessPercent,
         criticalCount,
         warningCount,
-        byCategory
+        byCategory,
+        avgWeightedScore
       })
     } catch (error) {
       res.status(500).json({ error: { message: error.message || 'Failed to load quality summary' } })
@@ -1681,7 +1694,8 @@ cds.on('bootstrap', (app) => {
           issues,
           issueCount: issues.length,
           maxSeverity: maxSeverity(issues),
-          completenessScore: calcCompletenessScore(bridge, completenessFields)
+          completenessScore: calcCompletenessScore(bridge, completenessFields),
+          weightedScore: calcWeightedScore(issues, rules)
         }
       }).filter(bridge => bridge.issueCount > 0)
 
@@ -1717,7 +1731,80 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/quality/api', requiresAuthentication, qualityRouter)
+  qualityRouter.use(express.json())
+
+  qualityRouter.get('/rules', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const rows = await db.run(
+        SELECT.from('bridge.management.DataQualityRules').orderBy('sortOrder', 'name')
+      )
+      res.json({ rules: rows || [] })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message } })
+    }
+  })
+
+  qualityRouter.post('/rules', async (req, res) => {
+    try {
+      const { name, category, severity, ruleType, field, config, message, enabled, sortOrder, weight } = req.body || {}
+      if (!name || !category || !severity || !ruleType || !message) {
+        return res.status(400).json({ error: { message: 'name, category, severity, ruleType, and message are required' } })
+      }
+      const id = cds.utils.uuid()
+      const db = await cds.connect.to('db')
+      await db.run(
+        INSERT.into('bridge.management.DataQualityRules').entries({
+          id, name, category, severity, ruleType,
+          field: field || null,
+          config: config || null,
+          message,
+          enabled: enabled !== false,
+          sortOrder: sortOrder || 0,
+          weight: weight || 10
+        })
+      )
+      res.status(201).json({ id })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message } })
+    }
+  })
+
+  qualityRouter.put('/rules/:id', async (req, res) => {
+    try {
+      const { id } = req.params
+      const { name, category, severity, ruleType, field, config, message, enabled, sortOrder, weight } = req.body || {}
+      if (!name || !category || !severity || !ruleType || !message) {
+        return res.status(400).json({ error: { message: 'name, category, severity, ruleType, and message are required' } })
+      }
+      const db = await cds.connect.to('db')
+      const existing = await db.run(SELECT.one.from('bridge.management.DataQualityRules').where({ id }))
+      if (!existing) return res.status(404).json({ error: { message: 'Rule not found' } })
+      await db.run(
+        UPDATE('bridge.management.DataQualityRules')
+          .set({ name, category, severity, ruleType, field: field || null, config: config || null, message, enabled: enabled !== false, sortOrder: sortOrder || 0, weight: weight || 10 })
+          .where({ id })
+      )
+      res.json({ success: true })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message } })
+    }
+  })
+
+  qualityRouter.delete('/rules/:id', async (req, res) => {
+    try {
+      const { id } = req.params
+      const db = await cds.connect.to('db')
+      const existing = await db.run(SELECT.one.from('bridge.management.DataQualityRules').where({ id }))
+      if (!existing) return res.status(404).json({ error: { message: 'Rule not found' } })
+      await db.run(DELETE.from('bridge.management.DataQualityRules').where({ id }))
+      res.json({ success: true })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message } })
+    }
+  })
+
+  app.use('/quality/api', requiresAuthentication, validateCsrfToken, qualityRouter)
 
   // ── System Config API ─────────────────────────────────────────────────────
   const sysRouter = express.Router()

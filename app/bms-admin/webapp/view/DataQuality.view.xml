@@ -13,111 +13,174 @@
     <customHeader>
       <Bar>
         <contentLeft>
-          <Title text="Data Quality Dashboard" level="H3" />
+          <Title text="Data Quality" level="H3" />
         </contentLeft>
         <contentRight>
-          <Button icon="sap-icon://download" text="Export CSV" press=".onExportCsv"  type="Transparent" />
-          <Button icon="sap-icon://refresh"  text="Refresh"     press=".onRefresh"    type="Transparent" />
-          <Button icon="sap-icon://information" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
+          <Button id="btnExport" icon="sap-icon://download" text="Export CSV" press=".onExportCsv" type="Transparent" />
+          <Button icon="sap-icon://refresh" text="Refresh" press=".onRefresh" type="Transparent" />
+          <Button icon="sap-icon://information" tooltip="Help" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
         </contentRight>
       </Bar>
     </customHeader>
 
     <content>
-      <VBox class="sapUiSmallMargin">
+      <IconTabBar id="mainTabBar" select=".onTabSelect" expandable="false" class="sapUiNoContentPadding" stretchContentHeight="false">
+        <items>
 
-        <HBox id="kpiStrip" wrap="Wrap" class="sapUiSmallMarginBottom">
-          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
-            <GenericTile id="kpiTotalBridges" header="Total Bridges" press=".onKpiPress">
-              <tileContent><TileContent><content><NumericContent id="kpiTotalBridgesVal" value="0" icon="sap-icon://it-system" withMargin="false" /></content></TileContent></tileContent>
-            </GenericTile>
-            <Button icon="sap-icon://information" tooltip="About: Total Bridges" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
-              <customData><core:CustomData key="tileKey" value="totalBridges"/></customData>
-            </Button>
-          </VBox>
-          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
-            <GenericTile id="kpiIssuesFound" header="Bridges with Issues" press=".onKpiPress">
-              <tileContent><TileContent><content><NumericContent id="kpiIssuesFoundVal" value="0" icon="sap-icon://alert" withMargin="false" /></content></TileContent></tileContent>
-            </GenericTile>
-            <Button icon="sap-icon://information" tooltip="About: Bridges with Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
-              <customData><core:CustomData key="tileKey" value="issuesFound"/></customData>
-            </Button>
-          </VBox>
-          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
-            <GenericTile id="kpiCritical" header="Critical Issues" press=".onKpiPress">
-              <tileContent><TileContent><content><NumericContent id="kpiCriticalVal" value="0" icon="sap-icon://message-error" valueColor="Critical" withMargin="false" /></content></TileContent></tileContent>
-            </GenericTile>
-            <Button icon="sap-icon://information" tooltip="About: Critical Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
-              <customData><core:CustomData key="tileKey" value="critical"/></customData>
-            </Button>
-          </VBox>
-          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
-            <GenericTile id="kpiCompleteness" header="Avg Completeness" press=".onKpiPress">
-              <tileContent><TileContent><content><NumericContent id="kpiCompletenessVal" value="0" scale="%" icon="sap-icon://quality-issue" withMargin="false" /></content></TileContent></tileContent>
-            </GenericTile>
-            <Button icon="sap-icon://information" tooltip="About: Average Completeness" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
-              <customData><core:CustomData key="tileKey" value="completeness"/></customData>
-            </Button>
-          </VBox>
-        </HBox>
+          <IconTabFilter key="dashboard" icon="sap-icon://quality-issue" text="Dashboard">
+            <content>
+              <VBox class="sapUiSmallMargin">
 
-        <Panel headerText="Filters" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
-          <content>
-            <f:SimpleForm layout="ColumnLayout" columnsM="2" columnsL="3" columnsXL="4" editable="true">
-              <f:content>
-                <Label text="Severity" />
-                <Select id="filterSeverity" change=".onFilterChange" width="100%">
-                  <items>
-                    <core:Item key="" text="All Severities" />
-                    <core:Item key="critical" text="Critical" />
-                    <core:Item key="warning" text="Warning" />
-                    <core:Item key="info" text="Info" />
-                  </items>
-                </Select>
-                <Label text="State" />
-                <Input id="filterState" placeholder="e.g. NSW, VIC" liveChange=".onFilterChange" width="100%" />
-                <Label text="Bridge Name / ID" />
-                <Input id="filterName" placeholder="Search bridge name or ID" liveChange=".onFilterChange" width="100%" />
-              </f:content>
-            </f:SimpleForm>
-            <HBox justifyContent="End" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
-              <Button text="Reset Filters" press=".onResetFilters" type="Transparent" />
-            </HBox>
-          </content>
-        </Panel>
+                <HBox id="kpiStrip" wrap="Wrap" class="sapUiSmallMarginBottom">
+                  <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+                    <GenericTile id="kpiTotalBridges" header="Total Bridges" press=".onKpiPress">
+                      <tileContent><TileContent><content><NumericContent id="kpiTotalBridgesVal" value="0" icon="sap-icon://it-system" withMargin="false" /></content></TileContent></tileContent>
+                    </GenericTile>
+                    <Button icon="sap-icon://information" tooltip="About: Total Bridges" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+                      <customData><core:CustomData key="tileKey" value="totalBridges"/></customData>
+                    </Button>
+                  </VBox>
+                  <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+                    <GenericTile id="kpiIssuesFound" header="Bridges with Issues" press=".onKpiPress">
+                      <tileContent><TileContent><content><NumericContent id="kpiIssuesFoundVal" value="0" icon="sap-icon://alert" withMargin="false" /></content></TileContent></tileContent>
+                    </GenericTile>
+                    <Button icon="sap-icon://information" tooltip="About: Bridges with Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+                      <customData><core:CustomData key="tileKey" value="issuesFound"/></customData>
+                    </Button>
+                  </VBox>
+                  <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+                    <GenericTile id="kpiCritical" header="Critical Issues" press=".onKpiPress">
+                      <tileContent><TileContent><content><NumericContent id="kpiCriticalVal" value="0" icon="sap-icon://message-error" valueColor="Critical" withMargin="false" /></content></TileContent></tileContent>
+                    </GenericTile>
+                    <Button icon="sap-icon://information" tooltip="About: Critical Issues" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+                      <customData><core:CustomData key="tileKey" value="critical"/></customData>
+                    </Button>
+                  </VBox>
+                  <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+                    <GenericTile id="kpiCompleteness" header="Avg Completeness" press=".onKpiPress">
+                      <tileContent><TileContent><content><NumericContent id="kpiCompletenessVal" value="0" scale="%" icon="sap-icon://quality-issue" withMargin="false" /></content></TileContent></tileContent>
+                    </GenericTile>
+                    <Button icon="sap-icon://information" tooltip="About: Average Completeness" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+                      <customData><core:CustomData key="tileKey" value="completeness"/></customData>
+                    </Button>
+                  </VBox>
+                  <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+                    <GenericTile id="kpiWeightedScore" header="Avg Quality Score" press=".onKpiPress">
+                      <tileContent><TileContent><content><NumericContent id="kpiWeightedScoreVal" value="0" scale="%" icon="sap-icon://trend-up" withMargin="false" /></content></TileContent></tileContent>
+                    </GenericTile>
+                    <Button icon="sap-icon://information" tooltip="About: Avg Quality Score" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
+                      <customData><core:CustomData key="tileKey" value="weightedScore"/></customData>
+                    </Button>
+                  </VBox>
+                </HBox>
 
-        <Panel expandable="false">
-          <headerToolbar>
-            <Toolbar>
-              <Title text="Bridges with Data Issues" level="H3" />
-              <ToolbarSpacer />
-              <Text id="issueTableCount" text="" />
-            </Toolbar>
-          </headerToolbar>
-          <content>
-            <t:Table id="issueTable" visibleRowCount="15" selectionMode="None"
-                     enableBusyIndicator="true" noData="No bridges with data issues found.">
-              <t:columns>
-                <t:Column width="140px"><Label text="Bridge ID" /><t:template><Text text="{quality>bridgeId}" wrapping="false" /></t:template></t:Column>
-                <t:Column minWidth="200px"><Label text="Bridge Name" /><t:template><Text text="{quality>bridgeName}" /></t:template></t:Column>
-                <t:Column width="80px"><Label text="State" /><t:template><Text text="{quality>state}" wrapping="false" /></t:template></t:Column>
-                <t:Column width="100px"><Label text="Issues" /><t:template><ObjectNumber number="{quality>issueCount}" state="{quality>maxSeverityState}" emphasized="true" /></t:template></t:Column>
-                <t:Column width="130px"><Label text="Max Severity" /><t:template><ObjectStatus text="{quality>maxSeverityLabel}" state="{quality>maxSeverityState}" icon="{quality>maxSeverityIcon}" /></t:template></t:Column>
-                <t:Column width="180px">
-                  <Label text="Completeness" />
-                  <t:template>
-                    <VBox>
-                      <ProgressIndicator percentValue="{quality>completenessScore}" displayValue="{quality>completenessScore}%" state="{quality>completenessState}" showValue="true" />
-                    </VBox>
-                  </t:template>
-                </t:Column>
-                <t:Column width="120px"><Label text="Actions" /><t:template><Button text="View Details" press=".onViewDetails" type="Transparent" icon="sap-icon://detail-view" /></t:template></t:Column>
-              </t:columns>
-            </t:Table>
-          </content>
-        </Panel>
+                <Panel headerText="Filters" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
+                  <content>
+                    <f:SimpleForm layout="ColumnLayout" columnsM="2" columnsL="3" columnsXL="4" editable="true">
+                      <f:content>
+                        <Label text="Severity" />
+                        <Select id="filterSeverity" change=".onFilterChange" width="100%">
+                          <items>
+                            <core:Item key="" text="All Severities" />
+                            <core:Item key="critical" text="Critical" />
+                            <core:Item key="warning" text="Warning" />
+                            <core:Item key="info" text="Info" />
+                          </items>
+                        </Select>
+                        <Label text="State" />
+                        <Input id="filterState" placeholder="e.g. NSW, VIC" liveChange=".onFilterChange" width="100%" />
+                        <Label text="Bridge Name / ID" />
+                        <Input id="filterName" placeholder="Search bridge name or ID" liveChange=".onFilterChange" width="100%" />
+                      </f:content>
+                    </f:SimpleForm>
+                    <HBox justifyContent="End" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
+                      <Button text="Reset Filters" press=".onResetFilters" type="Transparent" />
+                    </HBox>
+                  </content>
+                </Panel>
 
-      </VBox>
+                <Panel expandable="false">
+                  <headerToolbar>
+                    <Toolbar>
+                      <Title text="Bridges with Data Issues" level="H3" />
+                      <ToolbarSpacer />
+                      <Text id="issueTableCount" text="" />
+                    </Toolbar>
+                  </headerToolbar>
+                  <content>
+                    <t:Table id="issueTable" visibleRowCount="15" selectionMode="None"
+                             enableBusyIndicator="true" noData="No bridges with data issues found.">
+                      <t:columns>
+                        <t:Column width="140px"><Label text="Bridge ID" /><t:template><Text text="{quality>bridgeId}" wrapping="false" /></t:template></t:Column>
+                        <t:Column minWidth="200px"><Label text="Bridge Name" /><t:template><Text text="{quality>bridgeName}" /></t:template></t:Column>
+                        <t:Column width="80px"><Label text="State" /><t:template><Text text="{quality>state}" wrapping="false" /></t:template></t:Column>
+                        <t:Column width="100px"><Label text="Issues" /><t:template><ObjectNumber number="{quality>issueCount}" state="{quality>maxSeverityState}" emphasized="true" /></t:template></t:Column>
+                        <t:Column width="130px"><Label text="Max Severity" /><t:template><ObjectStatus text="{quality>maxSeverityLabel}" state="{quality>maxSeverityState}" icon="{quality>maxSeverityIcon}" /></t:template></t:Column>
+                        <t:Column width="180px">
+                          <Label text="Completeness" />
+                          <t:template>
+                            <VBox>
+                              <ProgressIndicator percentValue="{quality>completenessScore}" displayValue="{quality>completenessScore}%" state="{quality>completenessState}" showValue="true" />
+                            </VBox>
+                          </t:template>
+                        </t:Column>
+                        <t:Column width="120px"><Label text="Actions" /><t:template><Button text="View Details" press=".onViewDetails" type="Transparent" icon="sap-icon://detail-view" /></t:template></t:Column>
+                      </t:columns>
+                    </t:Table>
+                  </content>
+                </Panel>
+
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="rules" icon="sap-icon://settings" text="Rules Engine">
+            <content>
+              <VBox class="sapUiSmallMargin">
+
+                <Panel expandable="false">
+                  <headerToolbar>
+                    <Toolbar>
+                      <Title text="Data Quality Rules" level="H3" />
+                      <ToolbarSpacer />
+                      <Text id="rulesCount" text="" />
+                      <Button text="Add Rule" icon="sap-icon://add" press=".onAddRule" type="Emphasized" class="sapUiSmallMarginBegin" />
+                    </Toolbar>
+                  </headerToolbar>
+                  <content>
+                    <t:Table id="rulesTable" visibleRowCount="15" selectionMode="None" enableBusyIndicator="true" noData="No rules configured.">
+                      <t:columns>
+                        <t:Column width="80px"><Label text="Enabled" /><t:template><CheckBox selected="{rules>enabled}" select=".onRuleToggle" /></t:template></t:Column>
+                        <t:Column width="70px"><Label text="Order" /><t:template><Text text="{rules>sortOrder}" wrapping="false" /></t:template></t:Column>
+                        <t:Column minWidth="180px"><Label text="Rule Name" /><t:template><Text text="{rules>name}" /></t:template></t:Column>
+                        <t:Column width="160px"><Label text="Category" /><t:template><Text text="{rules>category}" wrapping="false" /></t:template></t:Column>
+                        <t:Column width="110px"><Label text="Severity" /><t:template><ObjectStatus text="{rules>severity}" state="{= ${rules>severity} === 'critical' ? 'Error' : ${rules>severity} === 'warning' ? 'Warning' : 'Information'}" /></t:template></t:Column>
+                        <t:Column width="180px"><Label text="Rule Type" /><t:template><Text text="{rules>ruleType}" wrapping="false" /></t:template></t:Column>
+                        <t:Column width="120px"><Label text="Field" /><t:template><Text text="{rules>field}" wrapping="false" /></t:template></t:Column>
+                        <t:Column width="90px"><Label text="Weight" /><t:template><ObjectNumber number="{rules>weight}" emphasized="false" /></t:template></t:Column>
+                        <t:Column width="110px"><Label text="Actions" /><t:template>
+                          <HBox>
+                            <Button icon="sap-icon://edit" press=".onEditRule" tooltip="Edit rule" type="Transparent" />
+                            <Button icon="sap-icon://delete" press=".onDeleteRule" tooltip="Delete rule" type="Transparent" />
+                          </HBox>
+                        </t:template></t:Column>
+                      </t:columns>
+                    </t:Table>
+                  </content>
+                </Panel>
+
+                <Panel id="weightDistPanel" headerText="Weight Distribution" expandable="true" expanded="true" class="sapUiSmallMarginTop">
+                  <content>
+                    <VBox id="weightDistContent" class="sapUiSmallMargin" />
+                  </content>
+                </Panel>
+
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+        </items>
+      </IconTabBar>
     </content>
   </Page>
 

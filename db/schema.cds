@@ -453,6 +453,7 @@ entity DataQualityRules {
       message   : String(255) not null;  // violation message shown in dashboard
       enabled   : Boolean default true;
       sortOrder : Integer default 0;
+      weight    : Integer default 10;    // contribution to weighted quality score (1-100)
 }
 
 // Configurable additional reference layers shown in the map Reference Layers panel
