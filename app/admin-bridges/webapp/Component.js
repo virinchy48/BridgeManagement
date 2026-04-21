@@ -30,21 +30,7 @@ sap.ui.define([
     }
 
     function startCustomAttributes() {
-        var obs = new MutationObserver(function () {
-            var el = document.getElementById("ca-bridge-root");
-            if (el && !el._caReady) {
-                el._caReady = true;
-                if (!document.getElementById("_ca_script")) {
-                    var s = document.createElement("script");
-                    s.id = "_ca_script";
-                    s.src = CUSTOM_ATTRS_SCRIPT + "?" + Date.now();
-                    document.head.appendChild(s);
-                } else {
-                    setTimeout(function () { window._caInit && window._caInit(); }, 100);
-                }
-            }
-        });
-        obs.observe(document.body, { childList: true, subtree: true });
+        loadScript("_ca_script", CUSTOM_ATTRS_SCRIPT);
     }
 
     function startNumericInputGuard() {

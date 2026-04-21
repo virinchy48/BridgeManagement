@@ -84,7 +84,7 @@
     return values;
   }
 
-  var _state = { groups: [], values: {}, editMode: false };
+  var _state = { groups: [], values: {}, editMode: false, loaded: false, loadedForId: null };
 
   function render() {
     var root = document.getElementById('ca-bridge-root');
@@ -102,25 +102,28 @@
     content += renderGroups(_state.groups, _state.values, _state.editMode);
     content += '</div>';
     root.innerHTML = content;
+    root._caPopulated = true;
   }
 
-  function load() {
-    var id = getBridgeId();
-    if (!id) return;
+  function load(id) {
     var root = document.getElementById('ca-bridge-root');
     if (!root) return;
     root.innerHTML = '<div style="padding:1rem;color:#8696a9">Loading...</div>';
+    root._caPopulated = true;
 
     Promise.all([
-      fetch(API_BASE + '/config?objectType=' + OBJECT_TYPE).then(function (configResponse) { return configResponse.json(); }),
-      fetch(API_BASE + '/values/' + OBJECT_TYPE + '/' + id).then(function (valuesResponse) { return valuesResponse.json(); })
+      fetch(API_BASE + '/config?objectType=' + OBJECT_TYPE).then(function (r) { return r.json(); }),
+      fetch(API_BASE + '/values/' + OBJECT_TYPE + '/' + id).then(function (r) { return r.json(); })
     ]).then(function (results) {
       _state.groups = results[0].groups || [];
       _state.values = results[1].values || {};
       _state.editMode = false;
+      _state.loaded = true;
+      _state.loadedForId = id;
       render();
     }).catch(function () {
-      if (root) root.innerHTML = '<div style="padding:1rem;color:#bb0000">Failed to load custom attributes.</div>';
+      var r = document.getElementById('ca-bridge-root');
+      if (r) r.innerHTML = '<div style="padding:1rem;color:#bb0000">Failed to load custom attributes.</div>';
     });
   }
 
@@ -135,52 +138,68 @@
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ values: values })
-    }).then(function (saveResponse) { return saveResponse.json(); }).then(function (result) {
-      if (result.errors) {
-        alert('Validation errors:\n' + result.errors.join('\n'));
-        return;
-      }
+    }).then(function (r) { return r.json(); }).then(function (result) {
+      if (result.errors) { alert('Validation errors:\n' + result.errors.join('\n')); return; }
       _state.values = Object.assign({}, _state.values, values);
       _state.editMode = false;
       render();
       try { sap.m.MessageToast.show('Custom attributes saved.'); } catch (_) {}
-    }).catch(function () {
-      alert('Failed to save custom attributes.');
-    });
+    }).catch(function () { alert('Failed to save custom attributes.'); });
   };
 
   window._caHistory = function (key, label) {
     var id = getBridgeId();
     if (!id) return;
     fetch(API_BASE + '/history/' + OBJECT_TYPE + '/' + id + '/' + key)
-      .then(function (historyResponse) { return historyResponse.json(); })
+      .then(function (r) { return r.json(); })
       .then(function (data) {
         var rows = data.history || [];
         if (!rows.length) { alert('No history found for ' + label); return; }
         var msg = label + ': Change History\n\n';
-        rows.forEach(function (historyEntry) {
-          var previousCustomFieldValue = historyEntry.oldValueText ?? historyEntry.oldValueInteger ?? historyEntry.oldValueDecimal ?? historyEntry.oldValueDate ?? (historyEntry.oldValueBoolean != null ? (historyEntry.oldValueBoolean ? 'Yes' : 'No') : '') ?? '-';
-          var newCustomFieldValue = historyEntry.newValueText ?? historyEntry.newValueInteger ?? historyEntry.newValueDecimal ?? historyEntry.newValueDate ?? (historyEntry.newValueBoolean != null ? (historyEntry.newValueBoolean ? 'Yes' : 'No') : '') ?? '-';
-          msg += (historyEntry.changedAt || '').slice(0,16).replace('T',' ') + '  ' + (historyEntry.changedBy || '') + '\n';
-          msg += '  ' + previousCustomFieldValue + '  →  ' + newCustomFieldValue + '  [' + (historyEntry.changeSource || '') + ']\n\n';
+        rows.forEach(function (e) {
+          var ov = e.oldValueText != null ? e.oldValueText : e.oldValueInteger != null ? e.oldValueInteger : e.oldValueDecimal != null ? e.oldValueDecimal : e.oldValueDate != null ? e.oldValueDate : e.oldValueBoolean != null ? (e.oldValueBoolean ? 'Yes' : 'No') : '-';
+          var nv = e.newValueText != null ? e.newValueText : e.newValueInteger != null ? e.newValueInteger : e.newValueDecimal != null ? e.newValueDecimal : e.newValueDate != null ? e.newValueDate : e.newValueBoolean != null ? (e.newValueBoolean ? 'Yes' : 'No') : '-';
+          msg += (e.changedAt || '').slice(0,16).replace('T',' ') + '  ' + (e.changedBy || '') + '\n  ' + ov + '  →  ' + nv + '  [' + (e.changeSource || '') + ']\n\n';
         });
         alert(msg);
       });
   };
 
-  function _tryLoad(attempts) {
-    attempts = attempts || 0;
-    if (getBridgeId()) { load(); return; }
-    if (attempts < 10) setTimeout(function () { _tryLoad(attempts + 1); }, 400);
-  }
+  // Watch for ca-bridge-root appearing or being cleared by UI5 re-renders
+  var _obs = new MutationObserver(function () {
+    var root = document.getElementById('ca-bridge-root');
+    if (!root) return;
+    if (root._caPopulated) return; // we populated it — ignore
+    var id = getBridgeId();
+    if (!id) return;
+    if (_state.loaded && _state.loadedForId === id) {
+      render(); // re-render cached data immediately
+    } else {
+      load(id);
+    }
+  });
+  _obs.observe(document.body, { childList: true, subtree: true });
 
-  window._caInit = _tryLoad;
-
+  // Also trigger on hash navigation to a different bridge
   window.addEventListener('hashchange', function () {
-    if (window.location.hash.indexOf('/Bridges(') !== -1) {
-      setTimeout(_tryLoad, 300);
+    var id = getBridgeId();
+    if (!id) return;
+    if (id !== _state.loadedForId) {
+      _state.loaded = false;
+      _state.loadedForId = null;
+    }
+    var root = document.getElementById('ca-bridge-root');
+    if (root) {
+      root._caPopulated = false;
+      load(id);
     }
   });
 
-  setTimeout(_tryLoad, 400);
+  // Initial trigger
+  (function _boot(n) {
+    var id = getBridgeId();
+    var root = document.getElementById('ca-bridge-root');
+    if (id && root) { load(id); return; }
+    if (n < 20) setTimeout(function () { _boot(n + 1); }, 300);
+  }(0));
 }());
