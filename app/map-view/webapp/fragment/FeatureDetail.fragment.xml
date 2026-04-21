@@ -1,0 +1,130 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core">
+
+  <Dialog id="featureDetailDialog"
+          title="{= ${view>/selectedFeature/type} === 'restriction' ? 'Restriction Detail' : 'Bridge Detail' }"
+          contentWidth="380px"
+          resizable="true"
+          draggable="true"
+          verticalScrolling="true">
+
+    <content>
+      <!-- Bridge detail -->
+      <VBox visible="{= ${view>/selectedFeature/type} === 'bridge' }" class="nhvrFeatureDetail">
+        <ObjectHeader
+          title="{view>/selectedFeature/data/bridgeName}"
+          number="{view>/selectedFeature/data/bridgeId}"
+          numberUnit="{view>/selectedFeature/data/state}"
+          class="nhvrFeatureHeader">
+          <statuses>
+            <ObjectStatus text="{view>/selectedFeature/data/postingStatusLabel}"
+                          state="{view>/selectedFeature/data/postingStatusState}" />
+            <ObjectStatus text="{view>/selectedFeature/data/conditionBandLabel}"
+                          state="{view>/selectedFeature/data/conditionState}" />
+          </statuses>
+        </ObjectHeader>
+        <VBox class="nhvrFeatureSection">
+          <Label text="Coordinates" class="nhvrFeatureSectionTitle" />
+          <Text text="{view>/selectedFeature/data/coordinateText}" />
+        </VBox>
+        <VBox class="nhvrFeatureSection">
+          <Label text="Physical" class="nhvrFeatureSectionTitle" />
+          <HBox class="nhvrFeatureMetrics">
+            <VBox class="nhvrFeatureMetric">
+              <Label text="Condition" />
+              <ObjectStatus text="{view>/selectedFeature/data/metricRating}" state="{view>/selectedFeature/data/conditionState}" />
+            </VBox>
+            <VBox class="nhvrFeatureMetric">
+              <Label text="Clearance" />
+              <Text text="{view>/selectedFeature/data/metricClearance}" />
+            </VBox>
+            <VBox class="nhvrFeatureMetric">
+              <Label text="Year Built" />
+              <Text text="{view>/selectedFeature/data/metricYear}" />
+            </VBox>
+          </HBox>
+          <HBox class="nhvrFeatureMetrics">
+            <VBox class="nhvrFeatureMetric">
+              <Label text="Structure Type" />
+              <Text text="{view>/selectedFeature/data/structureType}" />
+            </VBox>
+            <VBox class="nhvrFeatureMetric">
+              <Label text="Span Length" />
+              <Text text="{view>/selectedFeature/data/spanLengthText}" />
+            </VBox>
+          </HBox>
+        </VBox>
+        <VBox class="nhvrFeatureSection" visible="{= ${view>/selectedFeature/data/restrictions/length} > 0 }">
+          <Label text="Active Restrictions" class="nhvrFeatureSectionTitle" />
+          <List items="{view>/selectedFeature/data/restrictions}" showSeparators="None">
+            <items>
+              <CustomListItem>
+                <HBox alignItems="Center" class="nhvrRestrictionRow">
+                  <ObjectStatus text="{view>name}" state="Error" inverted="false" />
+                  <Text text="{view>restrictionValue} {view>restrictionUnit}" class="sapUiSmallMarginBegin" />
+                </HBox>
+              </CustomListItem>
+            </items>
+          </List>
+        </VBox>
+      </VBox>
+
+      <!-- Restriction detail -->
+      <VBox visible="{= ${view>/selectedFeature/type} === 'restriction' }" class="nhvrFeatureDetail">
+        <ObjectHeader
+          title="{view>/selectedFeature/data/restrictionType}"
+          number="{view>/selectedFeature/data/restrictionRef}"
+          class="nhvrFeatureHeader">
+          <statuses>
+            <ObjectStatus text="{view>/selectedFeature/data/restrictionStatus}" state="Warning" />
+          </statuses>
+        </ObjectHeader>
+        <VBox class="nhvrFeatureSection">
+          <Label text="Bridge" class="nhvrFeatureSectionTitle" />
+          <Text text="{view>/selectedFeature/data/bridgeName}" />
+          <Text text="{view>/selectedFeature/data/bridgeId}" class="nhvrSubText" />
+        </VBox>
+        <VBox class="nhvrFeatureSection">
+          <Label text="Restriction Limits" class="nhvrFeatureSectionTitle" />
+          <HBox class="nhvrFeatureMetrics" visible="{= !!${view>/selectedFeature/data/grossMassLimit} }">
+            <VBox class="nhvrFeatureMetric">
+              <Label text="Gross Mass" />
+              <Text text="{view>/selectedFeature/data/grossMassLimit} t" />
+            </VBox>
+          </HBox>
+          <HBox class="nhvrFeatureMetrics" visible="{= !!${view>/selectedFeature/data/heightLimit} }">
+            <VBox class="nhvrFeatureMetric">
+              <Label text="Height Limit" />
+              <Text text="{view>/selectedFeature/data/heightLimit} m" />
+            </VBox>
+          </HBox>
+          <HBox class="nhvrFeatureMetrics" visible="{= !!${view>/selectedFeature/data/speedLimit} }">
+            <VBox class="nhvrFeatureMetric">
+              <Label text="Speed Limit" />
+              <Text text="{view>/selectedFeature/data/speedLimit} km/h" />
+            </VBox>
+          </HBox>
+        </VBox>
+        <VBox class="nhvrFeatureSection">
+          <CheckBox text="Permit Required" selected="{view>/selectedFeature/data/permitRequired}" enabled="false" />
+          <CheckBox text="Escort Required" selected="{view>/selectedFeature/data/escortRequired}" enabled="false" />
+        </VBox>
+      </VBox>
+    </content>
+
+    <buttons>
+      <Button text="View Bridge on Map" icon="sap-icon://map-2"
+              type="Emphasized" press=".onViewBridgeFromRestriction"
+              visible="{= ${view>/selectedFeature/type} === 'restriction' }" />
+      <Button text="Zoom to Bridge" icon="sap-icon://zoom-in"
+              type="Emphasized" press=".onZoomToSelected"
+              visible="{= ${view>/selectedFeature/type} === 'bridge' }" />
+      <Button text="Open in Bridge Register" icon="sap-icon://open-command-field"
+              press=".onOpenInBridgeRegister" />
+      <Button text="Close" press=".onCloseFeaturePanel" />
+    </buttons>
+
+  </Dialog>
+
+</core:FragmentDefinition>

@@ -234,7 +234,7 @@ sap.ui.define([
       }), "view");
 
       this._leafletReady = this._ensureLeaflet();
-      this._loadGisConfig();
+      this._gisConfigReady = this._loadGisConfig();
       this._loadDynamicRefLayers();
       this._loadData();
     },
@@ -244,7 +244,7 @@ sap.ui.define([
     },
 
     onAfterRendering: function () {
-      this._leafletReady
+      Promise.all([this._leafletReady, this._gisConfigReady])
         .then(function () {
           this._scheduleMapInit();
         }.bind(this))
@@ -273,15 +273,8 @@ sap.ui.define([
     onTogglePanel: function () {
       const model = this._vm();
       const open = !model.getProperty("/panelOpen");
-      const featureOpen = model.getProperty("/featurePanelOpen");
       model.setProperty("/panelOpen", open);
-      let layout;
-      if (featureOpen) {
-        layout = open ? "ThreeColumnsMidExpanded" : "TwoColumnsEndExpanded";
-      } else {
-        layout = open ? "TwoColumnsMidExpanded" : "MidColumnFullScreen";
-      }
-      model.setProperty("/fclLayout", layout);
+      model.setProperty("/fclLayout", open ? "TwoColumnsMidExpanded" : "MidColumnFullScreen");
       model.setProperty("/panelToggleTooltip", open ? "Close Filters & Layers panel" : "Open Filters & Layers panel");
       setTimeout(this._invalidateMap.bind(this), 120);
     },
@@ -798,8 +791,6 @@ sap.ui.define([
     _selectFeature: function (type, data) {
       const model = this._vm();
       model.setProperty("/selectedFeature", { type: type, data: data });
-      model.setProperty("/featurePanelOpen", true);
-      model.setProperty("/fclLayout", "ThreeColumnsMidExpanded");
       if (type === "bridge") {
         model.setProperty("/selectedBridge", data);
         model.setProperty("/selectedRestrictions", data.restrictions || []);
@@ -815,6 +806,19 @@ sap.ui.define([
         }
         this._renderMarkers(false);
       }
+      this._openFeatureDialog();
+    },
+
+    _openFeatureDialog: function () {
+      if (!this._featureDialog) {
+        this._featureDialog = sap.ui.xmlfragment(
+          this.getView().getId(),
+          "BridgeManagement.mapview.fragment.FeatureDetail",
+          this
+        );
+        this.getView().addDependent(this._featureDialog);
+      }
+      this._featureDialog.open();
     },
 
     onOpenInBridgeRegister: function () {
@@ -848,15 +852,15 @@ sap.ui.define([
     },
 
     onCloseFeaturePanel: function () {
+      if (this._featureDialog) {
+        this._featureDialog.close();
+      }
       const model = this._vm();
-      model.setProperty("/featurePanelOpen", false);
       model.setProperty("/selectedFeature", null);
       model.setProperty("/selectedBridge", null);
       model.setProperty("/selectedRestrictions", []);
       model.setProperty("/detailOpen", false);
       model.setProperty("/showList", false);
-      const panelOpen = model.getProperty("/panelOpen");
-      model.setProperty("/fclLayout", panelOpen ? "TwoColumnsMidExpanded" : "MidColumnFullScreen");
       setTimeout(this._invalidateMap.bind(this), 120);
     },
 
@@ -1619,21 +1623,24 @@ sap.ui.define([
         .then(function (cfg) {
           this._gisConfig = cfg;
           this._vm().setProperty("/gisConfig", cfg);
+          // SQLite returns 0/1 integers for booleans — use loose falsy check
+          var on = function (val) { return val !== false && val !== 0 && val != null; };
+          var off = function (val, dflt) { return val == null ? (dflt === true) : (val !== false && val !== 0); };
           this._vm().setProperty("/features", {
-            scaleBar: cfg.enableScaleBar !== false,
-            gps: cfg.enableGps !== false,
-            minimap: cfg.enableMinimap !== false,
-            heatmap: cfg.enableHeatmap === true,
-            timeSlider: cfg.enableTimeSlider === true,
-            statsPanel: cfg.enableStatsPanel !== false,
-            proximity: cfg.enableProximity !== false,
-            mgaCoords: cfg.enableMgaCoords !== false,
-            streetView: cfg.enableStreetView !== false,
-            conditionAlerts: cfg.enableConditionAlerts !== false,
-            customWms: cfg.enableCustomWms === true,
-            serverClustering: cfg.enableServerClustering === true,
-            showStateBoundaries: cfg.showStateBoundaries === true,
-            showLgaBoundaries: cfg.showLgaBoundaries === true
+            scaleBar:         off(cfg.enableScaleBar, true),
+            gps:              off(cfg.enableGps, true),
+            minimap:          off(cfg.enableMinimap, true),
+            heatmap:          on(cfg.enableHeatmap),
+            timeSlider:       on(cfg.enableTimeSlider),
+            statsPanel:       off(cfg.enableStatsPanel, true),
+            proximity:        off(cfg.enableProximity, true),
+            mgaCoords:        off(cfg.enableMgaCoords, true),
+            streetView:       off(cfg.enableStreetView, true),
+            conditionAlerts:  off(cfg.enableConditionAlerts, true),
+            customWms:        on(cfg.enableCustomWms),
+            serverClustering: on(cfg.enableServerClustering),
+            showStateBoundaries: on(cfg.showStateBoundaries),
+            showLgaBoundaries:   on(cfg.showLgaBoundaries)
           });
           if (cfg.defaultBasemap && cfg.defaultBasemap !== "street") {
             this._vm().setProperty("/basemap", cfg.defaultBasemap);
@@ -1801,7 +1808,7 @@ sap.ui.define([
 
       // Apply custom WMS layers
       var cfg = this._gisConfig;
-      if (cfg && cfg.enableCustomWms && Array.isArray(cfg.customWmsLayers) && cfg.customWmsLayers.length) {
+      if (cfg && cfg.enableCustomWms !== 0 && cfg.enableCustomWms !== false && Array.isArray(cfg.customWmsLayers) && cfg.customWmsLayers.length) {
         cfg.customWmsLayers.forEach(function (wmsLayer) {
           if (!wmsLayer.url || !wmsLayer.layers) return;
           var instance = window.L.tileLayer.wms(wmsLayer.url, {
