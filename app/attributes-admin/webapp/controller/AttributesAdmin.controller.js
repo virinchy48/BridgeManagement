@@ -345,7 +345,7 @@ sap.ui.define([
           ctrl = new Input({ id: dialogField.id, value: dialogField.value || "", type: dialogField.type === "number" ? "Number" : "Text" });
         }
         inputMap[dialogField.id] = ctrl;
-        content.addItem(new VBox({ items: [lbl, ctrl], class: "sapUiTinyMarginBottom" }));
+        content.addItem(new VBox({ items: [lbl, ctrl] }).addStyleClass("sapUiTinyMarginBottom"));
       });
 
       var dlg = new Dialog({

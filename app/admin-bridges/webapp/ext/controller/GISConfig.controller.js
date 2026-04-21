@@ -186,7 +186,7 @@ sap.ui.define([
         title: bEdit ? "Edit Reference Layer" : "Add Reference Layer",
         contentWidth: "520px",
         content: [
-          new VBox({ class: "sapUiSmallMargin", items: [
+          new VBox({ items: [
             makeLabelInput("Layer Name *", "/name", "e.g. BOM Rainfall Radar"),
             oSelect("Category", "/category", LAYER_CATEGORIES),
             oSelect("Layer Type", "/layerType", LAYER_TYPES),
@@ -202,7 +202,7 @@ sap.ui.define([
               new Label({ text: "Enable by default", width: "12rem" }),
               new sap.m.Switch({ state: "{dlg>/enabledByDefault}" })
             ]})
-          ]})
+          ]}).addStyleClass("sapUiSmallMargin")
         ],
         beginButton: new Button({
           text: bEdit ? "Save" : "Add",
