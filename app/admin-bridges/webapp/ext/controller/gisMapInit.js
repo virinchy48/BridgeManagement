@@ -13,7 +13,7 @@
     var _map = null;
 
     function getBridgeKeyPredicate() {
-        // Bridge.ID is an Integer — hash looks like: /Bridges(ID=42,IsActiveEntity=false)
+        // Bridge.ID is an Integer: hash looks like: /Bridges(ID=42,IsActiveEntity=false)
         var bridgeKeyMatch = (window.location.hash || "").match(/Bridges\(ID=(\d+),IsActiveEntity=(true|false)\)/);
         if (!bridgeKeyMatch) return null;
         return "ID=" + bridgeKeyMatch[1] + ",IsActiveEntity=" + bridgeKeyMatch[2];

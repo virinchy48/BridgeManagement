@@ -42,12 +42,12 @@ sap.ui.define([
           if (!btn) return;
           if (critical > 0) {
             btn.setVisible(true);
-            btn.setTooltip(critical + " bridge" + (critical !== 1 ? "s" : "") + " with critical data quality issues — click to view");
+            btn.setTooltip(critical + " bridge" + (critical !== 1 ? "s" : "") + " with critical data quality issues: click to view");
           } else {
             btn.setVisible(false);
           }
         })
-        .catch(() => { /* silent — do not disrupt shell */ });
+        .catch(() => { /* silent: do not disrupt shell */ });
     },
 
     onQualityAlertPress: function () {

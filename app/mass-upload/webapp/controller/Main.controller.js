@@ -327,7 +327,7 @@ sap.ui.define([
         if (warnings.length) {
           model.setProperty("/uploadWarnings", warnings);
           model.setProperty("/uploadWarningsTitle",
-            `${warnings.length} issue(s) found during upload — affected rows were skipped or fields were cleared. ` +
+            `${warnings.length} issue(s) found during upload: affected rows were skipped or fields were cleared. ` +
             "Review the details below and correct your data before re-uploading those rows."
           );
         } else {
@@ -601,7 +601,7 @@ sap.ui.define([
         : "Download Template CSV");
       model.setProperty("/selectedMandatoryHint", this._getDatasetMandatoryHint(selectedDataset, isAll));
       model.setProperty("/uploadFormatText", isAll
-        ? "CSV and Excel (.xlsx) formats are supported. Use the Excel workbook template for All — it validates every dataset sheet together. For a single dataset, CSV or Excel both work."
+        ? "CSV and Excel (.xlsx) formats are supported. Use the Excel workbook template for All: it validates every dataset sheet together. For a single dataset, CSV or Excel both work."
         : "CSV (.csv) and Excel (.xlsx) formats are supported. For CSV, ensure the column headers match the downloaded template exactly.");
       model.setProperty("/uploadScopeText", isAll ? "Validation scope: all supported sheets" : `Validation scope: ${datasetLabel || "selected dataset"} only`);
       model.setProperty("/canUpload", !!this._file);
@@ -747,20 +747,20 @@ sap.ui.define([
         "<li><strong>Select Dataset:</strong> choose what type of data to import (e.g. Bridges, Restrictions).</li>",
         "<li><strong>Download Template:</strong> use the template link to get the correct column headers for your chosen dataset.</li>",
         "<li><strong>Browse File:</strong> select your prepared CSV or Excel file.</li>",
-        "<li><strong>Preview:</strong> review the parsed data. Rows with validation errors are highlighted — fix errors before uploading.</li>",
+        "<li><strong>Preview:</strong> review the parsed data. Rows with validation errors are highlighted: fix errors before uploading.</li>",
         "<li><strong>Start Upload:</strong> submits valid rows. The result step shows inserted vs updated counts.</li>",
         "</ol>",
         "<h4>History Tab</h4>",
-        "<p>Shows a log of all previous uploads — file name, dataset, row counts, and status. Use the filter to narrow by dataset type.</p>",
+        "<p>Shows a log of all previous uploads: file name, dataset, row counts, and status. Use the filter to narrow by dataset type.</p>",
         "<h4>Admin Report Tab</h4>",
         "<p>Run a date-range report across all upload activity. Useful for auditing who uploaded what and when.</p>",
         "<h4>File Format</h4>",
         "<p>CSV files should use comma delimiters. Excel files should use the first sheet. Headers must match the template exactly (case-insensitive).</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "Mass Upload — Help",
+        title: "Mass Upload: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

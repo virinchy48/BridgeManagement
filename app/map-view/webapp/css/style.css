@@ -618,15 +618,6 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
   padding: 0.1rem 0.35rem;
 }
 
-.mapLayerDialogContent {
-  padding: 0.35rem 0.1rem;
-  gap: 0.65rem;
-}
-
-.mapLayerDialogRow {
-  padding: 0.35rem 0;
-}
-
 @media (max-width: 1350px) {
   .mapResultPane {
     width: 24rem;

@@ -155,7 +155,7 @@ sap.ui.define([
     /* ─── Toolbar actions ───────────────────────────────────────────────── */
 
     onRefresh: function () {
-      // Lookups are static — don't reset _lookupsLoaded (avoids re-binding 100+ ComboBox items)
+      // Lookups are static: don't reset _lookupsLoaded (avoids re-binding 100+ ComboBox items)
       this._loadEntityData();
     },
 
@@ -202,7 +202,7 @@ sap.ui.define([
       const newKey = oEvent.getParameter("item").getKey();
       const vm     = this._vm();
       // Guard: with OneWay binding the model still holds the OLD key here, so this
-      // check is safety only — it prevents double-firing in edge cases.
+      // check is safety only: it prevents double-firing in edge cases.
       if (vm.getProperty("/entityKey") === newKey) { return; }
 
       // Bump generation so any in-flight load for the previous entity aborts
@@ -232,7 +232,7 @@ sap.ui.define([
 
     onFilterChange: function () {
       if (this._loading) { return; }
-      // 150 ms debounce — prevents binding.filter() on every keystroke
+      // 150 ms debounce: prevents binding.filter() on every keystroke
       clearTimeout(this._filterTimer);
       this._filterTimer = setTimeout(this._applyFilters.bind(this), 150);
     },
@@ -363,7 +363,7 @@ sap.ui.define([
         return new Text({ text: "{view>" + field.key + "}", wrapping: false });
       }
 
-      // Select — ComboBox instead of Select:
+      // Select: ComboBox instead of Select:
       //   ComboBox renders as <input>, so on virtual-table row recycling it
       //   only patches input.value (no DOM replacement → zero flicker).
       //   sap.m.Select re-renders its entire <button> HTML on every context
@@ -377,7 +377,7 @@ sap.ui.define([
             template:         new Item({ key: "{view>key}", text: "{view>text}" }),
             templateShareable: false
           },
-          // selectionChange fires only when user picks a valid item — not on
+          // selectionChange fires only when user picks a valid item: not on
           // programmatic updates (OneWay binding), so no suppress flag needed.
           selectionChange: this._onValueChange.bind(this, field)
         });
@@ -474,7 +474,7 @@ sap.ui.define([
       const filters = vm.getProperty("/filters");
       const search  = (filters.search || "").trim().toLowerCase();
 
-      // Cache key — skip binding.filter() when nothing changed
+      // Cache key: skip binding.filter() when nothing changed
       const key = [config.key, search, filters.state || "", filters.status || "", String(!!filters.onlyDirty)].join("|");
       const skipFilter = (key === this._lastFilterKey);
       this._lastFilterKey = key;
@@ -529,7 +529,7 @@ sap.ui.define([
     _applyLookups: function (lookups) {
       const vm = this._vm();
       Object.keys(lookups || {}).forEach(function (lookupName) {
-        vm.setProperty("/options/" + lookupName, [{ key: "", text: "—" }].concat(lookups[lookupName] || []));
+        vm.setProperty("/options/" + lookupName, [{ key: "", text: "-" }].concat(lookups[lookupName] || []));
       });
     },
 
@@ -632,9 +632,9 @@ sap.ui.define([
         "<p>Click <strong>Save Changes</strong> to persist all edits. Use <strong>Discard</strong> to revert all unsaved edits.</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "Mass Edit — Help",
+        title: "Mass Edit: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

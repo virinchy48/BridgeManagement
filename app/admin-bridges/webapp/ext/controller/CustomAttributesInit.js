@@ -37,7 +37,7 @@
         if (editMode) {
           html += renderInput(attr, val);
         } else {
-          html += '<div style="font-size:14px;color:#32363a;min-height:20px;padding:4px 0">' + (displayVal ? esc(displayVal) : '<span style="color:#ccc">—</span>') + '</div>';
+          html += '<div style="font-size:14px;color:#32363a;min-height:20px;padding:4px 0">' + (displayVal ? esc(displayVal) : '<span style="color:#ccc">-</span>') + '</div>';
         }
         if (attr.helpText) {
           html += '<div style="font-size:11px;color:#aaa">' + esc(attr.helpText) + '</div>';
@@ -55,10 +55,10 @@
     var id = 'ca-input-' + attr.internalKey;
     var base = 'style="width:100%;padding:6px 8px;border:1px solid #c0c0c0;border-radius:4px;font-size:13px;box-sizing:border-box"';
     if (attr.dataType === 'Boolean') {
-      return '<select id="' + id + '" ' + base + '><option value="">—</option><option value="true"' + (customFieldValue === true || customFieldValue === 'true' ? ' selected' : '') + '>Yes</option><option value="false"' + (customFieldValue === false || customFieldValue === 'false' ? ' selected' : '') + '>No</option></select>';
+      return '<select id="' + id + '" ' + base + '><option value="">-</option><option value="true"' + (customFieldValue === true || customFieldValue === 'true' ? ' selected' : '') + '>Yes</option><option value="false"' + (customFieldValue === false || customFieldValue === 'false' ? ' selected' : '') + '>No</option></select>';
     }
     if (attr.dataType === 'SingleSelect') {
-      var opts = '<option value="">—</option>';
+      var opts = '<option value="">-</option>';
       (attr.allowedValues || []).forEach(function (av) {
         opts += '<option value="' + esc(av.value) + '"' + (String(customFieldValue) === av.value ? ' selected' : '') + '>' + esc(av.label || av.value) + '</option>';
       });
@@ -157,10 +157,10 @@
       .then(function (data) {
         var rows = data.history || [];
         if (!rows.length) { alert('No history found for ' + label); return; }
-        var msg = label + ' — Change History\n\n';
+        var msg = label + ': Change History\n\n';
         rows.forEach(function (historyEntry) {
-          var previousCustomFieldValue = historyEntry.oldValueText ?? historyEntry.oldValueInteger ?? historyEntry.oldValueDecimal ?? historyEntry.oldValueDate ?? (historyEntry.oldValueBoolean != null ? (historyEntry.oldValueBoolean ? 'Yes' : 'No') : '') ?? '—';
-          var newCustomFieldValue = historyEntry.newValueText ?? historyEntry.newValueInteger ?? historyEntry.newValueDecimal ?? historyEntry.newValueDate ?? (historyEntry.newValueBoolean != null ? (historyEntry.newValueBoolean ? 'Yes' : 'No') : '') ?? '—';
+          var previousCustomFieldValue = historyEntry.oldValueText ?? historyEntry.oldValueInteger ?? historyEntry.oldValueDecimal ?? historyEntry.oldValueDate ?? (historyEntry.oldValueBoolean != null ? (historyEntry.oldValueBoolean ? 'Yes' : 'No') : '') ?? '-';
+          var newCustomFieldValue = historyEntry.newValueText ?? historyEntry.newValueInteger ?? historyEntry.newValueDecimal ?? historyEntry.newValueDate ?? (historyEntry.newValueBoolean != null ? (historyEntry.newValueBoolean ? 'Yes' : 'No') : '') ?? '-';
           msg += (historyEntry.changedAt || '').slice(0,16).replace('T',' ') + '  ' + (historyEntry.changedBy || '') + '\n';
           msg += '  ' + previousCustomFieldValue + '  →  ' + newCustomFieldValue + '  [' + (historyEntry.changeSource || '') + ']\n\n';
         });

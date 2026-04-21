@@ -34,7 +34,7 @@
             <!-- Demo Mode Banner -->
             <MessageStrip
               id="demoBanner"
-              text="🎯  DEMO MODE — Showing 30 real NSW bridges from the Transport for NSW public dataset. Data is for demonstration only."
+              text="🎯  DEMO MODE: Showing 30 real NSW bridges from the Transport for NSW public dataset. Data is for demonstration only."
               type="Warning"
               showIcon="true"
               showCloseButton="false"
@@ -499,16 +499,16 @@
                 <menu>
                   <Menu>
                     <items>
-                      <MenuItem text="Bridges — GeoJSON" press=".onExport">
+                      <MenuItem text="Bridges: GeoJSON" press=".onExport">
                         <customData><core:CustomData key="export" value="bridges-geojson" /></customData>
                       </MenuItem>
-                      <MenuItem text="Bridges — CSV" press=".onExport">
+                      <MenuItem text="Bridges: CSV" press=".onExport">
                         <customData><core:CustomData key="export" value="bridges-csv" /></customData>
                       </MenuItem>
-                      <MenuItem text="Restrictions — GeoJSON" press=".onExport">
+                      <MenuItem text="Restrictions: GeoJSON" press=".onExport">
                         <customData><core:CustomData key="export" value="restrictions-geojson" /></customData>
                       </MenuItem>
-                      <MenuItem text="Restrictions — CSV" press=".onExport">
+                      <MenuItem text="Restrictions: CSV" press=".onExport">
                         <customData><core:CustomData key="export" value="restrictions-csv" /></customData>
                       </MenuItem>
                     </items>

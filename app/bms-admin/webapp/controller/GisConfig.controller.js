@@ -69,7 +69,7 @@ sap.ui.define([
           model.setData(cfg);
         }.bind(this))
         .catch(function () {
-          // Entity may not exist yet — defaults are used; save will create it
+          // Entity may not exist yet: defaults are used; save will create it
         });
     },
 
@@ -232,6 +232,7 @@ sap.ui.define([
         afterClose: function () { oDialog.destroy(); }
       });
       oDialog.setModel(oModel, "dlg");
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     },
 
@@ -263,7 +264,7 @@ sap.ui.define([
     onShowHelp: function () {
       var sHtml = [
         "<h4>Purpose</h4>",
-        "<p>GIS Configuration controls the default behaviour of the interactive Bridge Map for all BMS users — ",
+        "<p>GIS Configuration controls the default behaviour of the interactive Bridge Map for all BMS users: ",
         "which basemap is shown on load, which reference layer overlays are available, and which advanced map tools are enabled.</p>",
         "<h4>Basemap Settings</h4>",
         "<ul>",
@@ -281,7 +282,7 @@ sap.ui.define([
         "</ul>",
         "<h4>Advanced Map Features</h4>",
         "<ul>",
-        "<li><strong>Scale Bar, GPS, Mini-map, Heatmap, Time Slider, Stats Panel, Proximity Search, MGA Coordinates, Street View, Condition Alerts, Custom WMS, Server Clustering</strong> — each toggle enables or disables that widget system-wide.</li>",
+        "<li><strong>Scale Bar, GPS, Mini-map, Heatmap, Time Slider, Stats Panel, Proximity Search, MGA Coordinates, Street View, Condition Alerts, Custom WMS, Server Clustering</strong>: each toggle enables or disables that widget system-wide.</li>",
         "</ul>",
         "<h4>Thresholds &amp; Defaults</h4>",
         "<ul>",
@@ -293,9 +294,9 @@ sap.ui.define([
         "<p>Click <strong>Save</strong> to persist all settings immediately. Click <strong>Discard</strong> to revert unsaved changes.</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "GIS Configuration — Help",
+        title: "GIS Configuration: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

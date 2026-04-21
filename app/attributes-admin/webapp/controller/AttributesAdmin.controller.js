@@ -88,7 +88,7 @@ sap.ui.define([
           template: self.byId("allowedValuesTable").getBindingInfo("items").template
         });
 
-        // Config table — show existing + placeholder for missing object types
+        // Config table: show existing + placeholder for missing object types
         var existingByType = {};
         objectTypeConfigs.forEach(function (objectTypeConfig) { existingByType[objectTypeConfig.objectType] = objectTypeConfig; });
         var configRows = OBJECT_TYPES.map(function (objectType) {
@@ -392,9 +392,9 @@ sap.ui.define([
         "<p>Use <strong>Export Template</strong> to download an Excel template pre-populated with all active custom attribute columns for use with Mass Upload.</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "Attribute Configuration — Help",
+        title: "Attribute Configuration: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

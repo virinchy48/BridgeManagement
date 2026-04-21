@@ -68,7 +68,7 @@ sap.ui.define([
           model.setData(cfg);
         }.bind(this))
         .catch(function () {
-          // Entity may not exist yet — use defaults, save will upsert
+          // Entity may not exist yet: use defaults, save will upsert
         });
     },
 
@@ -224,6 +224,7 @@ sap.ui.define([
         afterClose: function () { oDialog.destroy(); }
       });
       oDialog.setModel(oModel, "dlg");
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     },
 
@@ -299,9 +300,9 @@ sap.ui.define([
         "<p>Click <strong>Save</strong> to apply changes immediately. Changes take effect for all users on their next map load.</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "GIS Configuration — Help",
+        title: "GIS Configuration: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

@@ -111,7 +111,7 @@ sap.ui.define([
       // Dominant condition label for header
       const dominant = conditionRows.reduce(function (best, row) {
         return row.count > best.count ? row : best;
-      }, conditionRows[0] || { label: "—", pct: 0 });
+      }, conditionRows[0] || { label: "-", pct: 0 });
       const summaryLabel = total > 0
         ? dominant.pct + "% " + dominant.label.toLowerCase()
         : "No condition data";
@@ -134,7 +134,7 @@ sap.ui.define([
 
     onShowHelp: function () {
       var sHtml = [
-        "<p>Real-time overview of the bridge network — asset counts, condition health, key risk indicators, and active restrictions.</p>",
+        "<p>Real-time overview of the bridge network: asset counts, condition health, key risk indicators, and active restrictions.</p>",
         "<h4>Network Summary KPIs</h4>",
         "<ul>",
         "<li><strong>Total Assets:</strong> Total bridges in the register. Click to open the Bridge Register.</li>",
@@ -179,7 +179,7 @@ sap.ui.define([
         },
         scourCritical: {
           title: "Scour Critical Bridges",
-          html: "<p><strong>Scour Critical</strong> counts bridges flagged as scour-critical — vulnerable to undermining by flood or water flow.</p>" +
+          html: "<p><strong>Scour Critical</strong> counts bridges flagged as scour-critical: vulnerable to undermining by flood or water flow.</p>" +
                 "<p>Any value above 0 warrants review of the affected bridges after flood events.</p>"
         },
         deficient: {
@@ -196,7 +196,7 @@ sap.ui.define([
       var oDialog = new Dialog({
         title: sTitle,
         contentWidth: "400px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

@@ -15,7 +15,7 @@
       <VBox class="sapUiMediumMargin">
 
         <MessageStrip
-          text="All endpoints require authentication (JWT / XSUAA). In development mode basic auth is applied. All write endpoints validate a CSRF token — fetch it first with GET /csrf-token."
+          text="All endpoints require authentication (JWT / XSUAA). In development mode basic auth is applied. All write endpoints validate a CSRF token: fetch it first with GET /csrf-token."
           type="Information" showCloseButton="false" class="sapUiSmallMarginBottom" />
 
         <Panel expandable="true" expanded="true" headerText="Data Quality  /quality/api" class="sapUiSmallMarginBottom">

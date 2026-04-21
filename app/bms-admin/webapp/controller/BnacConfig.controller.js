@@ -158,7 +158,7 @@ sap.ui.define([
     onShowHelp: function () {
       var sHtml = [
         "<h4>Purpose</h4>",
-        "<p>This page manages the connection between BMS and BNAC (Bridge Network Asset Condition) systems — configure environment URLs and upload the mapping between BMS Bridge IDs and BNAC Object IDs.</p>",
+        "<p>This page manages the connection between BMS and BNAC (Bridge Network Asset Condition) systems: configure environment URLs and upload the mapping between BMS Bridge IDs and BNAC Object IDs.</p>",
         "<h4>Step 1: Configure Environments</h4>",
         "<ol>",
         "<li>Click <strong>Add Environment</strong> to add a BNAC environment (e.g. DEV, UAT, PROD).</li>",
@@ -177,9 +177,9 @@ sap.ui.define([
         "<p>Once a mapping is uploaded, the Bridge detail page shows an <strong>Open in BNAC</strong> button. The link is built as: <em>baseUrl + bnacObjectId</em>.</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "BNAC Integration — Help",
+        title: "BNAC Integration: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

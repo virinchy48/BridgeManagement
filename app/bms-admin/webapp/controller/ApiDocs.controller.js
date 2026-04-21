@@ -13,7 +13,7 @@ sap.ui.define([
     onInit: function () {
       this.getView().setModel(new JSONModel({
         qualityEndpoints: [
-          ep("GET",  "/quality/api/summary",   "Quality scorecard — totalBridges, criticalCount, warningCount, completenessPercent, byCategory[]"),
+          ep("GET",  "/quality/api/summary",   "Quality scorecard: totalBridges, criticalCount, warningCount, completenessPercent, byCategory[]"),
           ep("GET",  "/quality/api/issues",     "Bridges with issues. Query: ?severity=critical|warning|info &state=NSW &name=partialName")
         ],
         uploadEndpoints: [
@@ -21,7 +21,7 @@ sap.ui.define([
           ep("GET",  "/mass-upload/api/template.xlsx",  "Download Excel template for the bridges dataset"),
           ep("GET",  "/mass-upload/api/template.csv",   "Download CSV template. Query: ?dataset=:name"),
           ep("POST", "/mass-upload/api/validate",       "Validate file without persisting. Body: { fileName, contentBase64, dataset }"),
-          ep("POST", "/mass-upload/api/upload",         "Upsert rows — bridges matched by bridgeId. Body: { fileName, contentBase64, dataset }. Returns { total, inserted, updated, skipped, errors[] }")
+          ep("POST", "/mass-upload/api/upload",         "Upsert rows: bridges matched by bridgeId. Body: { fileName, contentBase64, dataset }. Returns { total, inserted, updated, skipped, errors[] }")
         ],
         mapEndpoints: [
           ep("GET",  "/map/api/bridges",     "Bridges in bounding box with restriction summary. Query: ?bbox=minLon,minLat,maxLon,maxLat"),
@@ -40,11 +40,11 @@ sap.ui.define([
         ],
         auditEndpoints: [
           ep("GET",  "/audit/api/changes",  "Field-level change log. Query: ?objectType=Bridge|Restriction|BridgeRestriction|BridgeCapacity|ScourAssessment &objectId=:uuid &user=:email &source=OData|MassEdit|MassUpload &from=:date &to=:date &batchId=:uuid"),
-          ep("GET",  "/audit/api/summary",  "Audit summary — totalChanges, byObjectType[], bySource[], topUsers[]")
+          ep("GET",  "/audit/api/summary",  "Audit summary: totalChanges, byObjectType[], bySource[], topUsers[]")
         ],
         accessEndpoints: [
           ep("GET",  "/access/api/activity", "Last 200 users by most-recent action (userId, lastSeenAt, lastPath, totalActions)"),
-          ep("GET",  "/access/api/summary",  "Engagement KPIs — totalUsers, activeToday, activeThisWeek")
+          ep("GET",  "/access/api/summary",  "Engagement KPIs: totalUsers, activeToday, activeThisWeek")
         ],
         attachmentEndpoints: [
           ep("GET",    "/admin-bridges/api/bridges/:bridgeId/attachments",                         "List all attachments for a bridge"),
@@ -57,7 +57,7 @@ sap.ui.define([
           ep("GET",   "/health",                 "BTP health probe (no auth). Returns { status: 'UP', ts, version, env }. Used by load balancers and CF health checks."),
           ep("GET",   "/system/api/config",      "All SystemConfig key/value pairs"),
           ep("PATCH", "/system/api/config/:key", "Update a config value. Body: { value: '...' }"),
-          ep("GET",   "/system/api/banner",      "Maintenance banner status — { active: bool, message: string }")
+          ep("GET",   "/system/api/banner",      "Maintenance banner status: { active: bool, message: string }")
         ],
         attributeEndpoints: [
           ep("GET",  "/attributes/api/config",                        "Attribute groups and definitions for an object type. Query: ?objectType=bridge|restriction"),

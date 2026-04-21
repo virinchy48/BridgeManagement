@@ -220,7 +220,7 @@ sap.ui.define([
         heatmapActive: false,
         conditionAlertsActive: false,
         minimapActive: false,
-        stats: { total: 0, avgCondition: "—", poor: 0, restricted: 0, closed: 0 },
+        stats: { total: 0, avgCondition: "-", poor: 0, restricted: 0, closed: 0 },
         mgaCoords: { zone: 0, easting: 0, northing: 0, text: "" },
         proximity: {
           active: false, loading: false, lat: "", lng: "", radius: 10,
@@ -424,7 +424,7 @@ sap.ui.define([
             this._layerRow("showLegend", this._text("showLegend")),
             this._layerRow("showHillshade", this._text("showHillshade"))
           ]
-        }).addStyleClass("mapLayerDialogContent");
+        });
 
         this._layerDialog = new Dialog({
           title: this._text("layerManager"),
@@ -577,7 +577,7 @@ sap.ui.define([
             change: this._onLayerSwitchChange.bind(this, path)
           })
         ]
-      }).addStyleClass("mapLayerDialogRow");
+      });
     },
 
     _onLayerSwitchChange: function (path, oEvent) {
@@ -652,7 +652,7 @@ sap.ui.define([
 
       return {
         ID: bridge.ID,
-        bridgeId: bridge.bridgeId || "—",
+        bridgeId: bridge.bridgeId || "-",
         bridgeName: bridge.bridgeName || bridge.bridgeId || "Bridge",
         state: bridge.state || null,
         latitude: Number(bridge.latitude),
@@ -667,12 +667,12 @@ sap.ui.define([
         region: bridge.region || null,
         clearanceHeight: clearanceHeight,
         spanLength: spanLength,
-        spanLengthText: spanLength == null ? "—" : spanLength.toFixed(1) + " m",
+        spanLengthText: spanLength == null ? "-" : spanLength.toFixed(1) + " m",
         lastInspectionDate: bridge.lastInspectionDate || null,
         nhvrAssessed: Boolean(bridge.nhvrAssessed),
         nhvrAssessedLabel: Boolean(bridge.nhvrAssessed) ? this._text("statusAssessed") : this._text("statusNotAssessed"),
         scourRisk: bridge.scourRisk || null,
-        scourRiskLabel: this._text("statusScour") + ": " + (bridge.scourRisk || "—"),
+        scourRiskLabel: this._text("statusScour") + ": " + (bridge.scourRisk || "-"),
         vehicleClass: bridge.vehicleClass || null,
         freightRoute: Boolean(bridge.freightRoute),
         freightRouteLabel: Boolean(bridge.freightRoute) ? this._text("statusFreight") : "No Freight Route",
@@ -684,19 +684,19 @@ sap.ui.define([
         conditionState: this._conditionState(conditionRating),
         conditionColor: this._conditionColor(conditionRating),
         coordinateText: Number(bridge.latitude).toFixed(5) + ", " + Number(bridge.longitude).toFixed(5),
-        metricRating: conditionRating == null ? "—" : String(conditionRating),
-        metricClearance: clearanceHeight == null ? "—" : clearanceHeight.toFixed(1) + " m",
-        metricYear: yearBuilt == null ? "—" : String(yearBuilt)
+        metricRating: conditionRating == null ? "-" : String(conditionRating),
+        metricClearance: clearanceHeight == null ? "-" : clearanceHeight.toFixed(1) + " m",
+        metricYear: yearBuilt == null ? "-" : String(yearBuilt)
       };
     },
 
     _normalizeRestriction: function (restriction) {
       return {
         ID: restriction.ID,
-        restrictionRef: restriction.restrictionRef || "—",
-        bridgeRef: restriction.bridgeRef || "—",
+        restrictionRef: restriction.restrictionRef || "-",
+        bridgeRef: restriction.bridgeRef || "-",
         bridge_ID: restriction.bridge_ID,
-        bridgeId: restriction.bridgeId || "—",
+        bridgeId: restriction.bridgeId || "-",
         bridgeName: restriction.bridgeName || "Bridge",
         state: restriction.state || null,
         latitude: Number(restriction.latitude),
@@ -1364,7 +1364,7 @@ sap.ui.define([
         "<div class='leafletPopup'>",
         "<strong>", bridge.bridgeName, "</strong><br>",
         bridge.bridgeId, "<br>",
-        (bridge.state || "—"), " • ", (bridge.postingStatusLabel || "—"), "<br>",
+        (bridge.state || "-"), " • ", (bridge.postingStatusLabel || "-"), "<br>",
         "Condition: ", (bridge.conditionRating == null ? "n/a" : bridge.conditionRating), "<br>",
         "Structure: ", (bridge.structureType || "n/a"), "<br>",
         "Year Built: ", (bridge.yearBuilt || "n/a"),
@@ -1691,7 +1691,7 @@ sap.ui.define([
             });
           });
         })
-        .catch(function () { /* optional — non-fatal */ });
+        .catch(function () { /* optional: non-fatal */ });
     },
 
     onToggleDynamicRefLayer: function (oEvent) {
@@ -1775,7 +1775,7 @@ sap.ui.define([
         this._addGpsControl(map);
       }
 
-      // Minimap — may not be loaded yet; retry briefly
+      // Minimap: may not be loaded yet; retry briefly
       if (this._feat("minimap")) {
         var self = this;
         var tries = 0;
@@ -1912,7 +1912,7 @@ sap.ui.define([
           [
             {
               icon: "sap-icon://layer-standard", color: "#0a6ed1",
-              title: "Reference Layers — Additional Layers",
+              title: "Reference Layers: Additional Layers",
               purpose: "Overlay curated spatial datasets (weather, flood zones, geology, infrastructure, etc.) sourced from government and open-data providers on top of the bridge map.",
               howToUse: "Expand the Reference Layers panel in the left sidebar. Only layers that your BMS Administrator has activated in GIS Configuration → Reference Layer Library are listed here. Toggle any layer switch on to add the overlay to the map; toggle off to remove it. Layers marked 'Default On' by the administrator are switched on automatically when you open the map."
             },
@@ -1943,7 +1943,7 @@ sap.ui.define([
             {
               icon: "sap-icon://locate-me", color: "#7c3aed",
               title: "Proximity Analysis",
-              purpose: "Find every bridge within a defined radius of any geographic point — ideal for corridor planning, flood impact assessments, and site investigations.",
+              purpose: "Find every bridge within a defined radius of any geographic point: ideal for corridor planning, flood impact assessments, and site investigations.",
               howToUse: "Open the Proximity Analysis panel in the left sidebar → enter a decimal Latitude and Longitude (or click a point on the map) → set a Search Radius in kilometres → click Find Bridges. Matching bridges are highlighted and listed. Click Clear to reset."
             },
             {
@@ -1979,7 +1979,7 @@ sap.ui.define([
             {
               icon: "sap-icon://map-2", color: "#0a6ed1",
               title: "Spatial Select",
-              purpose: "Select a custom subset of bridges by drawing a boundary directly on the map — useful for corridor or catchment analysis.",
+              purpose: "Select a custom subset of bridges by drawing a boundary directly on the map: useful for corridor or catchment analysis.",
               howToUse: "Click Spatial Select in the toolbar → click and drag on the map to draw a freehand selection polygon → release to close the shape. All bridges inside the polygon are selected and shown in the results list. Click Spatial Select again or press Escape to cancel."
             },
             {
@@ -2004,7 +2004,7 @@ sap.ui.define([
               icon: "sap-icon://download", color: "#0a6ed1",
               title: "Export",
               purpose: "Download the bridges currently shown on the map for use in GIS tools, reports, or spreadsheets.",
-              howToUse: "Click Export → select a format: GeoJSON (includes coordinates and all attributes — compatible with QGIS, ArcGIS, and MapInfo) or CSV (flat table, spreadsheet-compatible). Only bridges matching your active search and filter settings are exported."
+              howToUse: "Click Export → select a format: GeoJSON (includes coordinates and all attributes: compatible with QGIS, ArcGIS, and MapInfo) or CSV (flat table, spreadsheet-compatible). Only bridges matching your active search and filter settings are exported."
             },
             {
               icon: "sap-icon://list", color: "#0a6ed1",
@@ -2015,7 +2015,7 @@ sap.ui.define([
             {
               icon: "sap-icon://locate-me", color: "#7c3aed",
               title: "GPS / Locate Me",
-              purpose: "Centre the map on your current physical location — useful for field inspections.",
+              purpose: "Centre the map on your current physical location: useful for field inspections.",
               howToUse: "Click the GPS button in the map controls (bottom-right). Your browser will request location permission the first time. Once granted, the map flies to your current position and places a blue location marker. The marker updates as you move."
             }
           ],
@@ -2103,13 +2103,13 @@ sap.ui.define([
     _updateStats: function () {
       var bridges = this._vm().getProperty("/bridges") || [];
       if (!bridges.length) {
-        this._vm().setProperty("/stats", { total: 0, avgCondition: "—", poor: 0, restricted: 0, closed: 0 });
+        this._vm().setProperty("/stats", { total: 0, avgCondition: "-", poor: 0, restricted: 0, closed: 0 });
         return;
       }
       var rated = bridges.filter(function (bridge) { return bridge.conditionRating != null; });
       var avgCondition = rated.length
         ? (rated.reduce(function (ratingTotal, bridge) { return ratingTotal + bridge.conditionRating; }, 0) / rated.length).toFixed(1)
-        : "—";
+        : "-";
       var threshold = (this._gisConfig && this._gisConfig.conditionAlertThreshold) || 3;
       this._vm().setProperty("/stats", {
         total: bridges.length,

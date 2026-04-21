@@ -107,11 +107,12 @@ sap.ui.define([
         title: oEntry.title,
         contentWidth: "460px",
         content: [new ScrollContainer({ width: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: oEntry.html, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+          content: [new FormattedText({ htmlText: oEntry.html })]
         })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     },
 
@@ -123,7 +124,7 @@ sap.ui.define([
     onShowHelp: function () {
       var sHtml = [
         "<h4>Purpose</h4>",
-        "<p>This page shows who has accessed BMS and their recent activity — API calls, last seen timestamp, and total action count. ",
+        "<p>This page shows who has accessed BMS and their recent activity: API calls, last seen timestamp, and total action count. ",
         "It is a monitoring view; <strong>role assignment is managed in SAP BTP Cockpit</strong>, not here.</p>",
         "<h4>KPI Tiles</h4>",
         "<ul>",
@@ -146,9 +147,9 @@ sap.ui.define([
         "<p>To grant or revoke BMS access roles, open <strong>SAP BTP Cockpit → Security → Role Collections</strong> and assign the BMS role collections to users or groups.</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "User Access & Activity — Help",
+        title: "User Access & Activity: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

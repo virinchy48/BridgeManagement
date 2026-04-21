@@ -133,26 +133,26 @@ sap.ui.define([
     onShowHelp: function () {
       var sHtml = [
         "<h4>Purpose</h4>",
-        "<p>System Configuration lets BMS administrators tune application-level settings without a code deployment — ",
+        "<p>System Configuration lets BMS administrators tune application-level settings without a code deployment: ",
         "controlling maintenance mode, performance limits, refresh intervals, and feature flags.</p>",
         "<h4>Editing a Setting</h4>",
         "<ol>",
         "<li>Find the setting in the table. Settings are grouped by category (e.g. <em>Application</em>, <em>Performance</em>, <em>Notifications</em>).</li>",
         "<li>Click the <strong>edit icon</strong> on the row or click directly on the value to edit it inline.</li>",
-        "<li>Once you have made all your changes, click <strong>Save Changes</strong> in the header. Changes take effect immediately — no restart required.</li>",
+        "<li>Once you have made all your changes, click <strong>Save Changes</strong> in the header. Changes take effect immediately: no restart required.</li>",
         "</ol>",
         "<h4>Maintenance Mode</h4>",
         "<p>Setting <strong>appMaintenanceMode</strong> to <em>true</em> displays a banner across all BMS pages. ",
         "Set <strong>appMaintenanceMessage</strong> to the text users should see during maintenance windows.</p>",
         "<h4>Read-Only Settings</h4>",
-        "<p>Some settings are marked as <strong>Read-Only</strong> — these are system constants that can only be changed via a deployment. They are shown for reference only.</p>",
+        "<p>Some settings are marked as <strong>Read-Only</strong>: these are system constants that can only be changed via a deployment. They are shown for reference only.</p>",
         "<h4>Resetting to Defaults</h4>",
         "<p>Click <strong>Reset to Defaults</strong> to restore all editable settings to their factory values. You will be asked to confirm before changes are applied.</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "System Configuration — Help",
+        title: "System Configuration: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

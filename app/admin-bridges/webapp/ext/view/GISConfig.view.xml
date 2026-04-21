@@ -127,7 +127,7 @@
             </OverflowToolbar>
           </headerToolbar>
           <VBox class="sapUiSmallMargin">
-            <Text text="Enable layers to make them available in the Map View Reference Layers panel. Preset layers (🔒) cannot be deleted — only activated or deactivated. Layers enabled by default will be switched on when users first open the map." class="sapUiSmallMarginBottom" wrapping="true" />
+            <Text text="Enable layers to make them available in the Map View Reference Layers panel. Preset layers (🔒) cannot be deleted: only activated or deactivated. Layers enabled by default will be switched on when users first open the map." class="sapUiSmallMarginBottom" wrapping="true" />
             <Table id="tblRefLayers" items="{refLayers>/layers}" noDataText="No reference layers configured." growing="true" growingThreshold="20">
               <columns>
                 <Column width="3rem" hAlign="Center"><Text text="On"/></Column>
@@ -152,7 +152,7 @@
                     <Switch state="{refLayers>enabledByDefault}" change=".onToggleRefLayerDefault" />
                     <HBox>
                       <Button icon="sap-icon://edit" type="Transparent" tooltip="Edit layer" press=".onEditRefLayer" visible="{= !${refLayers>isPreset} }" />
-                      <Button icon="sap-icon://locked" type="Transparent" tooltip="System preset — cannot be deleted" visible="{refLayers>isPreset}" enabled="false" />
+                      <Button icon="sap-icon://locked" type="Transparent" tooltip="System preset: cannot be deleted" visible="{refLayers>isPreset}" enabled="false" />
                       <Button icon="sap-icon://delete" type="Transparent" tooltip="Delete layer" press=".onDeleteRefLayer" visible="{= !${refLayers>isPreset} }" />
                     </HBox>
                   </cells>

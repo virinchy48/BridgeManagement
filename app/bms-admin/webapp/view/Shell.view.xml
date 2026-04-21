@@ -12,9 +12,9 @@
         <Button icon="sap-icon://menu2" type="Transparent" press=".onToggleSideNav" tooltip="Toggle navigation" />
         <Title text="BMS Administration" titleStyle="H4" class="sapUiSmallMarginBegin" />
         <ToolbarSpacer />
-        <!-- Critical quality alert badge — shown when critical DQ issues exist -->
+        <!-- Critical quality alert badge: shown when critical DQ issues exist -->
         <Button id="qualityAlertBtn" icon="sap-icon://alert" type="Reject"
-                tooltip="Critical data quality issues detected — click to view"
+                tooltip="Critical data quality issues detected: click to view"
                 press=".onQualityAlertPress" visible="false" class="sapUiSmallMarginEnd" />
       </tnt:ToolHeader>
     </tnt:header>

@@ -322,7 +322,7 @@ sap.ui.define([
         "<p>In the attribute detail panel, toggle <strong>Enabled</strong> for each object type where the attribute should appear. Optionally toggle <strong>Required</strong> to enforce entry on save.</p>",
         "<h4>Editing and Disabling</h4>",
         "<ul>",
-        "<li>Set <em>Status = Inactive</em> to hide an attribute — existing stored values are preserved.</li>",
+        "<li>Set <em>Status = Inactive</em> to hide an attribute: existing stored values are preserved.</li>",
         "<li><em>Internal Key</em> and <em>Data Type</em> cannot be changed once values exist.</li>",
         "</ul>",
         "<h4>Bulk Import / Export</h4>",
@@ -330,9 +330,9 @@ sap.ui.define([
       ].join("");
 
       var oDialog = new Dialog({
-        title: "Attribute Configuration — Help",
+        title: "Attribute Configuration: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({
           text: "Close",
           press: function () { oDialog.close(); }

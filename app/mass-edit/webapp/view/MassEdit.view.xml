@@ -11,14 +11,14 @@
     fitContent="true"  → DynamicPage hands height ownership to its content (the Table).
     The Table uses visibleRowCountMode="Auto" to fill whatever vertical space remains.
     MessageStrip is placed in t:infoToolbar (inside the table's own DOM) so its
-    show/hide never triggers a DynamicPage reflow — that was the root cause of the
+    show/hide never triggers a DynamicPage reflow: that was the root cause of the
     "table disappears after first edit" bug.
   -->
   <!--
     fitContent omitted (defaults to false) so DynamicPage fills the viewport.
     The table uses visibleRowCountMode="Auto" and is the DIRECT child of f:content
     (no VBox wrapper), so it fills the remaining height automatically.
-    The dirty-count banner lives inside t:extension — inside the table's own DOM —
+    The dirty-count banner lives inside t:extension: inside the table's own DOM —
     so toggling its visibility never causes a DynamicPage layout recalculation.
   -->
   <f:DynamicPage id="massEditPage" class="massEditPage" toggleHeaderOnTitleClick="false">
@@ -132,7 +132,7 @@
 
     <f:content>
       <!--
-        Table is the DIRECT child of f:content — no VBox wrapper.
+        Table is the DIRECT child of f:content: no VBox wrapper.
         visibleRowCountMode="Auto" fills the remaining viewport height.
         Dirty message lives in infoToolbar (part of table's own layout),
         so toggling its visibility never affects the outer DynamicPage geometry.

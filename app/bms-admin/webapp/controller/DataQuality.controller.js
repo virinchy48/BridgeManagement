@@ -36,7 +36,7 @@ sap.ui.define([
       case "critical": return "Critical";
       case "warning":  return "Warning";
       case "info":     return "Info";
-      default:         return "—";
+      default:         return "-";
     }
   }
   function severityIcon(sev) {
@@ -139,16 +139,16 @@ sap.ui.define([
       });
 
       const content = new VBox({ class: "sapUiSmallMargin" });
-      content.addItem(new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop", items: [new Label({ text: "Bridge ID",   width: "140px" }), new Text({ text: bridge.bridgeId  || "—" })] }));
-      content.addItem(new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop", items: [new Label({ text: "Bridge Name", width: "140px" }), new Text({ text: bridge.bridgeName || "—" })] }));
-      content.addItem(new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop", items: [new Label({ text: "State",        width: "140px" }), new Text({ text: bridge.state     || "—" })] }));
+      content.addItem(new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop", items: [new Label({ text: "Bridge ID",   width: "140px" }), new Text({ text: bridge.bridgeId  || "-" })] }));
+      content.addItem(new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop", items: [new Label({ text: "Bridge Name", width: "140px" }), new Text({ text: bridge.bridgeName || "-" })] }));
+      content.addItem(new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop", items: [new Label({ text: "State",        width: "140px" }), new Text({ text: bridge.state     || "-" })] }));
       content.addItem(new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop", items: [new Label({ text: "Completeness", width: "140px" }), new ProgressIndicator({ percentValue: bridge.completenessScore, displayValue: bridge.completenessScore + "%", state: completenessState(bridge.completenessScore), showValue: true, width: "220px" })] }));
       content.addItem(new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop sapUiSmallMarginBottom", items: [new Label({ text: "Max Severity", width: "140px" }), new ObjectStatus({ text: severityLabel(bridge.maxSeverity), state: severityState(bridge.maxSeverity), icon: severityIcon(bridge.maxSeverity) })] }));
       content.addItem(new Title({ text: "Issues (" + bridge.issueCount + ")", level: "H4", class: "sapUiSmallMarginTop sapUiSmallMarginBottom" }));
       content.addItem(issueList);
 
       const dialog = new Dialog({
-        title: "Issue Details — " + (bridge.bridgeName || bridge.bridgeId || "Bridge"),
+        title: "Issue Details: " + (bridge.bridgeName || bridge.bridgeId || "Bridge"),
         contentWidth: "580px", resizable: true, draggable: true,
         content: [content],
         beginButton: new Button({ text: "Close", type: "Emphasized", press: () => dialog.close() }),
@@ -190,7 +190,7 @@ sap.ui.define([
         },
         critical: {
           title: "Critical Issues",
-          html: "<p><strong>Critical Issues</strong> counts violations rated as Critical — meaning data is missing or incorrect in a way that impairs safety or compliance.</p>" +
+          html: "<p><strong>Critical Issues</strong> counts violations rated as Critical: meaning data is missing or incorrect in a way that impairs safety or compliance.</p>" +
                 "<p>Examples: missing GPS coordinates, no inspection record ever entered, critical condition with no restriction posted.</p>"
         },
         completeness: {
@@ -204,18 +204,19 @@ sap.ui.define([
         title: oEntry.title,
         contentWidth: "480px",
         content: [new ScrollContainer({ width: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: oEntry.html, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+          content: [new FormattedText({ htmlText: oEntry.html })]
         })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     },
 
     onShowHelp: function () {
       var sHtml = [
         "<h4>Purpose</h4>",
-        "<p>The Data Quality Dashboard automatically evaluates every bridge in BMS against a set of data quality rules — checking for missing mandatory fields, ",
+        "<p>The Data Quality Dashboard automatically evaluates every bridge in BMS against a set of data quality rules: checking for missing mandatory fields, ",
         "stale inspections, missing geo-coordinates, poor/critical condition without an active restriction, and incomplete data.</p>",
         "<h4>KPI Tiles</h4>",
         "<ul>",
@@ -238,9 +239,9 @@ sap.ui.define([
         "<p>Click <strong>Export CSV</strong> to download all currently filtered bridge issues for offline review or reporting.</p>"
       ].join("");
       var oDialog = new Dialog({
-        title: "Data Quality Dashboard — Help",
+        title: "Data Quality Dashboard: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });

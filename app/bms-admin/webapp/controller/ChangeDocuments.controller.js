@@ -149,8 +149,8 @@ sap.ui.define([
           for (const fieldChange of batch.fields) {
             const row = new HBox({ alignItems: "Start", class: "sapUiTinyMarginTop sapUiTinyMarginBottom" });
             const fieldLabel = new Label({ text: fieldChange.fieldName, width: "180px", class: "sapUiSmallMarginEnd" });
-            const previousValue = new Text({ text: fieldChange.oldValue || "—", wrapping: false });
-            const newValue = new Text({ text: fieldChange.newValue || "—", wrapping: false });
+            const previousValue = new Text({ text: fieldChange.oldValue || "-", wrapping: false });
+            const newValue = new Text({ text: fieldChange.newValue || "-", wrapping: false });
             previousValue.addStyleClass("bmsAuditOld");
             newValue.addStyleClass("bmsAuditNew");
             row.addItem(fieldLabel);
@@ -214,11 +214,12 @@ sap.ui.define([
         title: "Total Changes",
         contentWidth: "460px",
         content: [new ScrollContainer({ width: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml, width: "100%" }).addStyleClass("sapUiSmallMargin")]
+          content: [new FormattedText({ htmlText: sHtml })]
         })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
+      oDialog.addStyleClass("sapUiContentPadding");
       oDialog.open();
     },
 
@@ -248,9 +249,9 @@ sap.ui.define([
         "</ul>"
       ].join("");
       var oDialog = new Dialog({
-        title: "Change Document Report — Help",
+        title: "Change Document Report: Help",
         contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml, width: "100%" })],
+        content: [new FormattedText({ htmlText: sHtml })],
         endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
         afterClose: function () { oDialog.destroy(); }
       });
