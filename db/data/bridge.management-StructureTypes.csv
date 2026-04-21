@@ -1,6 +1,0 @@
-code;name;descr
-Arch Bridge;Arch Bridge;Bridge supported by arches.
-Cable-stayed;Cable-stayed;Bridge with deck supported by cables connected to towers.
-Cantilever;Cantilever;Bridge built using cantilevers.
-Box Girder;Box Girder;Bridge using box girder structural sections.
-Beam Bridge;Beam Bridge;Bridge using simple beams as the main structural element.

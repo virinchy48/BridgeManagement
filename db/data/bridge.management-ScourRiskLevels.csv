@@ -1,6 +1,0 @@
-code;name;descr
-VeryLow;Very Low;"Minimal scour potential. Stable channel conditions. Rock or competent material at foundation. No specific scour action required."
-Low;Low;"Some scour potential but foundation well above estimated scour depth. Minor channel mobility. Include scour check in routine inspections."
-Medium;Medium;"Moderate scour risk. Foundation close to estimated scour depth. Active channel erosion. Dedicated scour survey required every 3 years."
-High;High;"High scour risk. Foundation at or near estimated critical scour depth. Significant channel mobility. Annual scour depth measurement and countermeasures required."
-VeryHigh;Very High;"Critical scour risk. Foundation may be exposed or at failure scour depth. Active undermining possible. Quarterly monitoring and emergency countermeasures required."

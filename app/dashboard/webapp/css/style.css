@@ -1,6 +1,6 @@
 /* ── Page shell ── */
 .dashboardPage {
-  background: #f3f6fb;
+  background: var(--sapBackgroundColor);
 }
 
 .dashboardShell {
@@ -10,18 +10,18 @@
 }
 
 .dashboardTitleRow {
-  border-bottom: 1px solid #dfe7f2;
+  border-bottom: 1px solid var(--sapList_BorderColor);
   padding-bottom: 0.75rem;
 }
 
 .dashboardSubtitle {
-  color: #556070;
+  color: var(--sapContent_LabelColor);
   font-size: 0.9rem;
 }
 
 /* ── Section titles ── */
 .dashboardSectionTitle {
-  color: #1f3353;
+  color: var(--sapTextColor);
   font-size: 1rem;
   margin-bottom: 0.65rem;
   margin-top: 0.25rem;
@@ -51,8 +51,8 @@
 
 /* ── Condition Distribution Card ── */
 .dashboardCard {
-  background: #fff;
-  border: 1px solid #dfe7f2;
+  background: var(--sapList_Background);
+  border: 1px solid var(--sapList_BorderColor);
   border-radius: 0.85rem;
   padding: 1.1rem 1.25rem 1rem;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
@@ -61,17 +61,17 @@
 .dashboardCardHeader {
   margin-bottom: 0.85rem;
   padding-bottom: 0.65rem;
-  border-bottom: 1px solid #edf2f9;
+  border-bottom: 1px solid var(--sapList_BorderColor);
 }
 
 .dashboardConditionSummary {
   font-weight: 600;
-  color: #1f3353;
+  color: var(--sapTextColor);
   font-size: 1rem;
 }
 
 .dashboardConditionHeaderIcon {
-  color: #107E3E;
+  color: var(--sapPositiveColor);
 }
 
 .dashboardConditionList .sapMLIB {
@@ -93,7 +93,7 @@
 }
 
 .dashboardConditionLabel {
-  color: #2d3748;
+  color: var(--sapTextColor);
   font-size: 0.875rem;
   flex-shrink: 0;
 }
@@ -109,7 +109,7 @@
 }
 
 .dashboardConditionCount {
-  color: #556070;
+  color: var(--sapContent_LabelColor);
   font-size: 0.85rem;
   min-width: 5.5rem;
   text-align: right;
@@ -118,8 +118,8 @@
 
 /* ── Key Indicator Cards ── */
 .dashboardIndicatorCard {
-  background: #fff;
-  border: 1px solid #dfe7f2;
+  background: var(--sapList_Background);
+  border: 1px solid var(--sapList_BorderColor);
   border-radius: 0.85rem;
   padding: 1rem 1.25rem;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
@@ -128,7 +128,7 @@
 }
 
 .dashboardIndicatorLabel {
-  color: #556070;
+  color: var(--sapContent_LabelColor);
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -136,38 +136,38 @@
 }
 
 .dashboardIndicatorValue {
-  color: #1f3353;
+  color: var(--sapTextColor);
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.1;
 }
 
 .dashboardIndicatorValueCritical {
-  color: #BB0000;
+  color: var(--sapErrorColor);
   font-size: 2rem;
   font-weight: 700;
   line-height: 1.1;
 }
 
 .dashboardIndicatorUnit {
-  color: #556070;
+  color: var(--sapContent_LabelColor);
   font-size: 1rem;
   margin-left: 0.2rem;
 }
 
 /* ── Body text / muted ── */
 .dashboardBodyText {
-  color: #334155;
+  color: var(--sapTextColor);
 }
 
 .dashboardMuted {
-  color: #7a8899;
+  color: var(--sapContent_LabelColor);
   font-size: 0.8rem;
 }
 
 /* ── Refresh button ── */
 .dashboardRefreshBtn .sapMBtnInner {
-  color: #3f6df6;
+  color: var(--sapHighlightColor);
 }
 
 .dashboardRefreshTimestamp {

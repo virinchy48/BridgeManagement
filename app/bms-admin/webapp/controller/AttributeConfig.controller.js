@@ -14,15 +14,16 @@ sap.ui.define([
 ], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Select, Button, VBox, Label,  FormattedText, Item) {
   "use strict";
 
-  var BASE = "/odata/v4/admin";
-  var ATTR_API = "/attributes/api";
-  var DATA_TYPES = ["Text","Integer","Decimal","Date","Boolean","SingleSelect","MultiSelect"];
-  var OBJECT_TYPES = ["bridge","restriction"];
-  var STATUS_OPTS = ["Active","Inactive"];
-
   return Controller.extend("BridgeManagement.bmsadmin.controller.AttributeConfig", {
 
     onInit: function () {
+      var oComp = this.getOwnerComponent();
+      this._adminBase   = oComp.getManifestEntry("/sap.app/dataSources/AdminService/uri").replace(/\/$/, "");
+      this._attrBase    = oComp.getManifestEntry("/sap.app/dataSources/AttributesService/uri").replace(/\/$/, "");
+      var oAppCfg       = oComp.getModel("appConfig");
+      this._dataTypes   = oAppCfg.getProperty("/attributeDataTypes");
+      this._objectTypes = oAppCfg.getProperty("/attributeObjectTypes");
+      this._statusOpts  = oAppCfg.getProperty("/attributeStatuses");
       this._objectType = "bridge";
       this._selectedGroup = null;
       this._selectedAttr = null;
@@ -31,7 +32,7 @@ sap.ui.define([
 
     _loadGroups: function () {
       var self = this;
-      fetch(BASE + "/AttributeGroups?$filter=objectType eq '" + self._objectType + "'&$orderby=displayOrder")
+      fetch(self._adminBase + "/AttributeGroups?$filter=objectType eq '" + self._objectType + "'&$orderby=displayOrder")
         .then(function (groupResponse) { return groupResponse.json(); })
         .then(function (groupData) {
           if (groupData.error) throw new Error(groupData.error.message);
@@ -45,7 +46,7 @@ sap.ui.define([
 
     _loadAttributes: function (groupId) {
       var self = this;
-      fetch(BASE + "/AttributeDefinitions?$filter=group_ID eq '" + groupId + "'&$orderby=displayOrder")
+      fetch(self._adminBase + "/AttributeDefinitions?$filter=group_ID eq '" + groupId + "'&$orderby=displayOrder")
         .then(function (attributeResponse) { return attributeResponse.json(); })
         .then(function (attributeData) {
           if (attributeData.error) throw new Error(attributeData.error.message);
@@ -59,9 +60,9 @@ sap.ui.define([
     _loadAttrDetail: function (attrId) {
       var self = this;
       Promise.all([
-        fetch(BASE + "/AttributeDefinitions('" + attrId + "')").then(function (attributeResponse) { return attributeResponse.json(); }),
-        fetch(BASE + "/AttributeAllowedValues?$filter=attribute_ID eq '" + attrId + "'&$orderby=displayOrder").then(function (allowedValuesResponse) { return allowedValuesResponse.json(); }),
-        fetch(BASE + "/AttributeObjectTypeConfig?$filter=attribute_ID eq '" + attrId + "'").then(function (objectTypeConfigResponse) { return objectTypeConfigResponse.json(); })
+        fetch(self._adminBase + "/AttributeDefinitions('" + attrId + "')").then(function (attributeResponse) { return attributeResponse.json(); }),
+        fetch(self._adminBase + "/AttributeAllowedValues?$filter=attribute_ID eq '" + attrId + "'&$orderby=displayOrder").then(function (allowedValuesResponse) { return allowedValuesResponse.json(); }),
+        fetch(self._adminBase + "/AttributeObjectTypeConfig?$filter=attribute_ID eq '" + attrId + "'").then(function (objectTypeConfigResponse) { return objectTypeConfigResponse.json(); })
       ]).then(function (results) {
         var attr = results[0];
         var allowedValues = results[1].value || [];
@@ -80,7 +81,7 @@ sap.ui.define([
 
         var existingByType = {};
         objectTypeConfigs.forEach(function (objectTypeConfig) { existingByType[objectTypeConfig.objectType] = objectTypeConfig; });
-        var configRows = OBJECT_TYPES.map(function (objectType) {
+        var configRows = self._objectTypes.map(function (objectType) {
           return existingByType[objectType] || { objectType: objectType, enabled: false, required: false, displayOrder: null, ID: null, attribute_ID: attrId };
         });
         self.byId("configTable").setModel(new JSONModel(configRows));
@@ -114,7 +115,7 @@ sap.ui.define([
         { label: "Internal Key", id: "dlg-key", required: true },
         { label: "Display Order", id: "dlg-order", type: "number" }
       ], function (vals) {
-        fetch(BASE + "/AttributeGroups", {
+        fetch(self._adminBase + "/AttributeGroups", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: vals["dlg-name"], internalKey: vals["dlg-key"], objectType: self._objectType, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: "Active" })
@@ -131,9 +132,9 @@ sap.ui.define([
       self._showFormDialog("Edit Group: " + selectedGroup.name, [
         { label: "Group Name", id: "dlg-name", value: selectedGroup.name, required: true },
         { label: "Display Order", id: "dlg-order", value: String(selectedGroup.displayOrder || 0), type: "number" },
-        { label: "Status", id: "dlg-status", type: "select", options: STATUS_OPTS, value: selectedGroup.status }
+        { label: "Status", id: "dlg-status", type: "select", options: self._statusOpts, value: selectedGroup.status }
       ], function (vals) {
-        fetch(BASE + "/AttributeGroups('" + selectedGroup.ID + "')", {
+        fetch(self._adminBase + "/AttributeGroups('" + selectedGroup.ID + "')", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: vals["dlg-name"], displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: vals["dlg-status"] })
@@ -149,7 +150,7 @@ sap.ui.define([
       MessageBox.confirm("Delete group \"" + self._selectedGroup.name + "\"? This will also delete its attribute definitions.", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(BASE + "/AttributeGroups('" + self._selectedGroup.ID + "')", { method: "DELETE" })
+          fetch(self._adminBase + "/AttributeGroups('" + self._selectedGroup.ID + "')", { method: "DELETE" })
             .then(function (deleteGroupResponse) { if (!deleteGroupResponse.ok && deleteGroupResponse.status !== 204) throw new Error(deleteGroupResponse.statusText); })
             .then(function () { self._loadGroups(); MessageToast.show("Group deleted."); })
             .catch(function (error) { MessageBox.error("Failed to delete group: " + error.message); });
@@ -163,14 +164,14 @@ sap.ui.define([
       self._showFormDialog("Add Attribute", [
         { label: "Attribute Name", id: "dlg-name", required: true },
         { label: "Internal Key", id: "dlg-key", required: true },
-        { label: "Data Type", id: "dlg-type", type: "select", options: DATA_TYPES, required: true },
+        { label: "Data Type", id: "dlg-type", type: "select", options: self._dataTypes, required: true },
         { label: "Unit", id: "dlg-unit" },
         { label: "Help Text", id: "dlg-help" },
         { label: "Display Order", id: "dlg-order", type: "number" },
         { label: "Min Value (numeric types)", id: "dlg-min", type: "number" },
         { label: "Max Value (numeric types)", id: "dlg-max", type: "number" }
       ], function (vals) {
-        fetch(BASE + "/AttributeDefinitions", {
+        fetch(self._adminBase + "/AttributeDefinitions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -201,9 +202,9 @@ sap.ui.define([
         { label: "Unit", id: "dlg-unit", value: selectedAttribute.unit || "" },
         { label: "Help Text", id: "dlg-help", value: selectedAttribute.helpText || "" },
         { label: "Display Order", id: "dlg-order", value: String(selectedAttribute.displayOrder || 0), type: "number" },
-        { label: "Status", id: "dlg-status", type: "select", options: STATUS_OPTS, value: selectedAttribute.status }
+        { label: "Status", id: "dlg-status", type: "select", options: self._statusOpts, value: selectedAttribute.status }
       ], function (vals) {
-        fetch(BASE + "/AttributeDefinitions('" + selectedAttribute.ID + "')", {
+        fetch(self._adminBase + "/AttributeDefinitions('" + selectedAttribute.ID + "')", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name: vals["dlg-name"], unit: vals["dlg-unit"] || null, helpText: vals["dlg-help"] || null, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: vals["dlg-status"] })
@@ -219,7 +220,7 @@ sap.ui.define([
       MessageBox.confirm("Delete attribute \"" + self._selectedAttr.name + "\"?", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(BASE + "/AttributeDefinitions('" + self._selectedAttr.ID + "')", { method: "DELETE" })
+          fetch(self._adminBase + "/AttributeDefinitions('" + self._selectedAttr.ID + "')", { method: "DELETE" })
             .then(function (deleteAttributeResponse) {
               if (!deleteAttributeResponse.ok && deleteAttributeResponse.status !== 204) {
                 return deleteAttributeResponse.json().then(function (errorBody) { throw new Error(errorBody.error?.message || deleteAttributeResponse.statusText); });
@@ -239,7 +240,7 @@ sap.ui.define([
         { label: "Display Label", id: "dlg-label" },
         { label: "Display Order", id: "dlg-order", type: "number" }
       ], function (vals) {
-        fetch(BASE + "/AttributeAllowedValues", {
+        fetch(self._adminBase + "/AttributeAllowedValues", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ attribute_ID: self._selectedAttr.ID, value: vals["dlg-val"], label: vals["dlg-label"] || null, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: "Active" })
@@ -256,7 +257,7 @@ sap.ui.define([
       MessageBox.confirm("Delete allowed value \"" + allowedValue.value + "\"?", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(BASE + "/AttributeAllowedValues('" + allowedValue.ID + "')", { method: "DELETE" })
+          fetch(self._adminBase + "/AttributeAllowedValues('" + allowedValue.ID + "')", { method: "DELETE" })
             .then(function (deleteAllowedValueResponse) {
               if (!deleteAllowedValueResponse.ok && deleteAllowedValueResponse.status !== 204) {
                 return deleteAllowedValueResponse.json().then(function (errorBody) { throw new Error(errorBody.error?.message || deleteAllowedValueResponse.statusText); });
@@ -274,7 +275,7 @@ sap.ui.define([
       var rows = model.getData();
       rows.forEach(function (row) {
         if (!row.ID) return;
-        fetch(BASE + "/AttributeObjectTypeConfig('" + row.ID + "')", {
+        fetch(self._adminBase + "/AttributeObjectTypeConfig('" + row.ID + "')", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ enabled: row.enabled, required: row.required, displayOrder: row.displayOrder || null })
@@ -286,7 +287,7 @@ sap.ui.define([
       var ctx = oEvent.getSource().getBindingContext();
       var row = ctx.getObject();
       var self = this;
-      fetch(BASE + "/AttributeObjectTypeConfig", {
+      fetch(self._adminBase + "/AttributeObjectTypeConfig", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ attribute_ID: row.attribute_ID, objectType: row.objectType, enabled: true, required: false })
@@ -297,7 +298,7 @@ sap.ui.define([
 
     onExportTemplate: function (oEvent) {
       var ot = oEvent.getSource().data("objectType");
-      window.open(ATTR_API + "/template?objectType=" + ot + "&format=xlsx", "_blank");
+      window.open(this._attrBase + "/template?objectType=" + ot + "&format=xlsx", "_blank");
     },
 
     onShowHelp: function () {

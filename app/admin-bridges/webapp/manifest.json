@@ -16,7 +16,8 @@
         "settings": {
           "odataVersion": "4.0"
         }
-      }
+      },
+      "AdminBridgesService": { "uri": "/admin-bridges/api/", "type": "HTTP" }
     },
     "crossNavigation": {
       "inbounds": {
@@ -47,6 +48,15 @@
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "uri": "i18n/i18n.properties"
+      },
+      "appConfig": {
+        "type": "sap.ui.model.json.JSONModel",
+        "settings": {
+          "data": {
+            "layerCategories": ["Weather","Flood","Traffic","Geology","Infrastructure","Environment","Emergency","Administrative","Custom"],
+            "layerTypes": ["WMS","XYZ","ArcGISRest","GeoJSON"]
+          }
+        }
       },
       "": {
         "dataSource": "AdminService",

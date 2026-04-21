@@ -1,6 +1,0 @@
-code;name;descr
-Both Directions;Both Directions;Restriction applies in both directions.
-Northbound;Northbound;Restriction applies northbound only.
-Southbound;Southbound;Restriction applies southbound only.
-Eastbound;Eastbound;Restriction applies eastbound only.
-Westbound;Westbound;Restriction applies westbound only.

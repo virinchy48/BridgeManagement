@@ -1,7 +1,0 @@
-ID,group_ID,objectType,name,internalKey,dataType,unit,helpText,displayOrder,minValue,maxValue,regexPattern,status,createdAt,createdBy,modifiedAt,modifiedBy
-20000000-0000-0000-0000-000000000001,10000000-0000-0000-0000-000000000001,bridge,AS5100 Bridge Class,as5100_bridge_class,SingleSelect,,,10,,,,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
-20000000-0000-0000-0000-000000000002,10000000-0000-0000-0000-000000000001,bridge,PBS Approval Level,pbs_approval_level,SingleSelect,,,20,,,,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
-20000000-0000-0000-0000-000000000003,10000000-0000-0000-0000-000000000002,bridge,Load Capacity,load_capacity,Decimal,tonnes,Maximum load capacity in tonnes,10,0,500,,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
-20000000-0000-0000-0000-000000000004,10000000-0000-0000-0000-000000000002,bridge,Year Built,year_built,Date,,,20,,,,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
-20000000-0000-0000-0000-000000000005,10000000-0000-0000-0000-000000000002,bridge,Span Count,span_count,Integer,spans,Number of spans,30,1,100,,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
-20000000-0000-0000-0000-000000000006,10000000-0000-0000-0000-000000000003,restriction,Restriction Severity,restriction_severity,SingleSelect,,,10,,,,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system

@@ -82,6 +82,7 @@ sap.ui.define([
         }
       });
       this.getView().setModel(model, "view");
+      this._massUploadBase = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/MassUploadService/uri").replace(/\/$/, "");
       this._invisibleMessage = InvisibleMessage.getInstance();
       this._file = null;
       this._loadDatasets();
@@ -229,7 +230,7 @@ sap.ui.define([
 
       try {
         const contentBase64 = await this._readFileAsBase64(this._file);
-        const response = await fetch("/mass-upload/api/validate", {
+        const response = await fetch(this._massUploadBase + "/validate", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -287,7 +288,7 @@ sap.ui.define([
 
       try {
         const contentBase64 = await this._readFileAsBase64(this._file);
-        const response = await fetch("/mass-upload/api/upload", {
+        const response = await fetch(this._massUploadBase + "/upload", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -352,7 +353,7 @@ sap.ui.define([
       model.setProperty("/busy", true);
 
       try {
-        const response = await fetch("/mass-upload/api/datasets");
+        const response = await fetch(this._massUploadBase + "/datasets");
         const payload = await response.json();
         model.setProperty("/datasets", [{
           name: this._ALL_DATASETS_KEY,

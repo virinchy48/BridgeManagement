@@ -16,6 +16,7 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.bmsadmin.controller.BnacConfig", {
 
     onInit: function () {
+      this._bnacBase  = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/BnacService/uri").replace(/\/$/, "");
       this._envModel  = new JSONModel({ environments: [] });
       this._histModel = new JSONModel({ history: [] });
       this.getView().setModel(this._envModel,  "envModel");
@@ -31,7 +32,7 @@ sap.ui.define([
     },
 
     _loadEnvs: function () {
-      fetch("/bnac/api/environments", { credentials: "same-origin" })
+      fetch(this._bnacBase + "/environments", { credentials: "same-origin" })
         .then(r => r.json())
         .then(d => this._envModel.setData({ environments: d.environments || [] }))
         .catch(e => MessageBox.error("Failed to load environments: " + e.message));
@@ -49,7 +50,7 @@ sap.ui.define([
       MessageBox.confirm("Delete environment \"" + env + "\"?", {
         onClose: action => {
           if (action !== MessageBox.Action.OK) return;
-          fetch("/bnac/api/environments/" + encodeURIComponent(env), { method: "DELETE", credentials: "same-origin" })
+          fetch(this._bnacBase + "/environments/" + encodeURIComponent(env), { method: "DELETE", credentials: "same-origin" })
             .then(() => { MessageToast.show("Deleted."); this._loadEnvs(); })
             .catch(e => MessageBox.error(e.message));
         }
@@ -81,8 +82,8 @@ sap.ui.define([
             if (!env || !url) { MessageToast.show("Environment and Base URL are required."); return; }
             const body = { environment: env, baseUrl: url, description: dlgDescr.getValue().trim(), active: dlgActive.getSelected() };
             const req  = isEdit
-              ? fetch("/bnac/api/environments/" + encodeURIComponent(env), { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) })
-              : fetch("/bnac/api/environments",                             { method: "POST",  headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) });
+              ? fetch(this._bnacBase + "/environments/" + encodeURIComponent(env), { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) })
+              : fetch(this._bnacBase + "/environments",                             { method: "POST",  headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) });
             req.then(r => r.json()).then(d => {
               if (d.error) { MessageBox.error(d.error.message); return; }
               MessageToast.show("Saved.");
@@ -118,7 +119,7 @@ sap.ui.define([
       reader.onload = e => {
         const base64 = btoa(e.target.result);
         this.getView().setBusy(true);
-        fetch("/bnac/api/upload", {
+        fetch(this._bnacBase + "/upload", {
           method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin",
           body: JSON.stringify({ fileName: file.name, contentBase64: base64, environment: env })
         })
@@ -142,7 +143,7 @@ sap.ui.define([
     },
 
     _loadHistory: function () {
-      fetch("/bnac/api/history", { credentials: "same-origin" })
+      fetch(this._bnacBase + "/history", { credentials: "same-origin" })
         .then(r => r.json())
         .then(d => {
           const rows = (d.history || []).map(h => ({

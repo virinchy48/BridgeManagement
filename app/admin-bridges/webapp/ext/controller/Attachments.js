@@ -5,6 +5,13 @@ sap.ui.define([
 ], function (JSONModel, MessageBox, MessageToast) {
   "use strict";
 
+  function getAdminBridgesBase(control) {
+    var oComp = sap.ui.core.Component.getOwnerComponentFor(control);
+    if (!oComp) { return "/admin-bridges/api"; }
+    var uri = oComp.getManifestEntry("/sap.app/dataSources/AdminBridgesService/uri") || "/admin-bridges/api/";
+    return uri.replace(/\/$/, "");
+  }
+
   function getHost(control) {
     var current = control;
     while (current && !(current.isA && current.isA("sap.m.VBox"))) {
@@ -131,7 +138,8 @@ sap.ui.define([
     model.setProperty("/bridgeId", bridgeId);
     model.setProperty("/busy", true);
     try {
-      var response = await fetch("/admin-bridges/api/bridges/" + encodeURIComponent(bridgeId) + "/attachments");
+      var sBase = getAdminBridgesBase(host);
+      var response = await fetch(sBase + "/bridges/" + encodeURIComponent(bridgeId) + "/attachments");
       var payload = await readJsonResponse(response);
       if (!response.ok) {
         throw new Error(payload.error && payload.error.message || "Failed to load attachments");
@@ -189,7 +197,8 @@ sap.ui.define([
           throw new Error("This file is too large for browser upload. Use a file smaller than 75 MB.");
         }
         var contentBase64 = await readFileAsBase64(file);
-        var response = await fetch("/admin-bridges/api/bridges/" + encodeURIComponent(bridgeId) + "/attachments", {
+        var sBase = getAdminBridgesBase(host);
+        var response = await fetch(sBase + "/bridges/" + encodeURIComponent(bridgeId) + "/attachments", {
           method: "POST",
           headers: {
             "Content-Type": "application/json"

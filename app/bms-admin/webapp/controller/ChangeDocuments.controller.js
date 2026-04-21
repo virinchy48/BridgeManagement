@@ -166,6 +166,7 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.bmsadmin.controller.ChangeDocuments", {
 
     onInit: function () {
+      this._auditBase = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/AuditService/uri").replace(/\/$/, "");
       this._model = new JSONModel({ changes: [], loading: false });
       this.getView().setModel(this._model, "audit");
     },
@@ -210,7 +211,7 @@ sap.ui.define([
       if (filters.from)       params.set("from",        filters.from);
       if (filters.to)         params.set("to",          filters.to);
 
-      fetch("/audit/api/changes?" + params.toString(), { credentials: "same-origin" })
+      fetch(this._auditBase + "/changes?" + params.toString(), { credentials: "same-origin" })
         .then(r => r.json())
         .then(data => {
           view.setBusy(false);

@@ -9,6 +9,9 @@
     "applicationVersion": {
       "version": "1.0.0"
     },
+    "dataSources": {
+      "DashboardService": { "uri": "/dashboard/api/", "type": "HTTP" }
+    },
     "crossNavigation": {
       "inbounds": {
         "Dashboard-display": {

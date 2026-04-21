@@ -1,5 +1,10 @@
 const cds = require('@sap/cds')
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
+const {
+  getBridgeIdFromCapacityRequest,
+  getCapacityIdFromRequest,
+  rejectSecondCapacity
+} = require('./capacity-cardinality')
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
@@ -373,6 +378,35 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID:id2 } = await SELECT.one.from(Bridges.drafts).columns('max(ID) as ID')
     req.data.ID = Math.max(id1||0, id2||0) + 1
     if (!req.data.bridgeId) req.data.bridgeId = bridgeIdFor(req.data.ID, req.data.state)
+  })
+
+  const ensureSingleCapacityPerBridge = async req => {
+    const bridgeId = getBridgeIdFromCapacityRequest(req)
+    if (bridgeId == null) return
+
+    const currentCapacityId = getCapacityIdFromRequest(req)
+    const duplicateIn = async entity => {
+      if (!entity) return false
+      const existing = await SELECT.one.from(entity).columns('ID').where({ bridge_ID: bridgeId })
+      return !!existing && (!currentCapacityId || existing.ID !== currentCapacityId)
+    }
+
+    if (await duplicateIn(BridgeCapacities) || await duplicateIn(BridgeCapacities.drafts)) {
+      rejectSecondCapacity(req)
+    }
+  }
+
+  this.before('NEW', BridgeCapacities.drafts, ensureSingleCapacityPerBridge)
+  this.before('CREATE', BridgeCapacities, ensureSingleCapacityPerBridge)
+
+  this.after('READ', Bridges, async results => {
+    if (!results) return
+    const list = Array.isArray(results) ? results : [results]
+    const ids = list.map(b => b.ID).filter(Boolean)
+    if (!ids.length) return
+    const caps = await SELECT.from(BridgeCapacities).columns('bridge_ID').where({ bridge_ID: { in: ids } })
+    const withCap = new Set(caps.map(c => c.bridge_ID))
+    for (const b of list) b.hasCapacity = withCap.has(b.ID)
   })
 
   // UAT-FIX-1 (AdminService): Derive condition + highPriorityAsset from conditionRating on SAVE.

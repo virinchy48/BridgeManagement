@@ -1,4 +1,0 @@
-ID,objectType,name,internalKey,displayOrder,status,createdAt,createdBy,modifiedAt,modifiedBy
-10000000-0000-0000-0000-000000000001,bridge,Bridge Classification,bridge_classification,10,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
-10000000-0000-0000-0000-000000000002,bridge,Structural Properties,structural_properties,20,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
-10000000-0000-0000-0000-000000000003,restriction,Restriction Details,restriction_details,10,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system

@@ -10,7 +10,7 @@
 /* ─── DynamicPage background & layout ───────────────────────────────────── */
 .massEditPage .sapFDynamicPageContent,
 .massEditPage .sapFDynamicPageContentFitContainer {
-  background: #f7f9fc;
+  background: var(--sapBackgroundColor);
 }
 
 .massEditPage .sapFDynamicPageContentWrapper {
@@ -41,7 +41,7 @@
    We add a subtle background tint so changed rows are immediately obvious. */
 .massEditTable .sapUiTableRowHighlightWarning ~ td,
 .massEditTable tr.sapUiTableRowHighlightWarning > td {
-  background-color: #fff9ed !important;
+  background-color: var(--sapWarningBackground) !important;
 }
 
 /* ─── Info toolbar (dirty banner) ────────────────────────────────────────── */
@@ -49,24 +49,24 @@
 .massEditInfoBar {
   gap: 0.5rem;
   padding: 0.375rem 1rem;
-  background: #fef3e2;
-  border-bottom: 1px solid #e9730c;
+  background: var(--sapWarningBackground);
+  border-bottom: 1px solid var(--sapWarningBorderColor);
 }
 
 /* ─── Fixed first column separator ──────────────────────────────────────── */
 .massEditTable .sapUiTableFixedCols .sapUiTableCell {
-  border-right: 2px solid #d1e3f8 !important;
+  border-right: 2px solid var(--sapList_BorderColor) !important;
 }
 
 /* ─── Bulk apply panel ───────────────────────────────────────────────────── */
 .massEditBulkPanel {
-  border-left: 3px solid #0a6ed1;
+  border-left: 3px solid var(--sapHighlightColor);
   padding-left: 0.75rem;
 }
 
 .massEditRefreshTimestamp {
   font-size: 0.7rem;
-  color: #7a8899;
+  color: var(--sapContent_LabelColor);
   margin-top: -0.2rem;
   text-align: center;
   width: 100%;

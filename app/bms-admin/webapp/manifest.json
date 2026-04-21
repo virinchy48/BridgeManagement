@@ -7,6 +7,15 @@
     "description": "Bridge Management System Administration",
     "i18n": "i18n/i18n.properties",
     "applicationVersion": { "version": "1.0.0" },
+    "dataSources": {
+      "AdminService":      { "uri": "/odata/v4/admin/",    "type": "OData", "settings": { "odataVersion": "4.0" } },
+      "AuditService":      { "uri": "/audit/api/",         "type": "HTTP" },
+      "SystemService":     { "uri": "/system/api/",        "type": "HTTP" },
+      "QualityService":    { "uri": "/quality/api/",       "type": "HTTP" },
+      "AccessService":     { "uri": "/access/api/",        "type": "HTTP" },
+      "BnacService":       { "uri": "/bnac/api/",          "type": "HTTP" },
+      "AttributesService": { "uri": "/attributes/api/",   "type": "HTTP" }
+    },
     "crossNavigation": {
       "inbounds": {
         "BmsAdmin-manage": {
@@ -40,6 +49,18 @@
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "uri": "i18n/i18n.properties"
+      },
+      "appConfig": {
+        "type": "sap.ui.model.json.JSONModel",
+        "settings": {
+          "data": {
+            "layerCategories": ["Weather","Flood","Traffic","Geology","Infrastructure","Environment","Emergency","Administrative","Custom"],
+            "layerTypes": ["WMS","XYZ","ArcGISRest","GeoJSON"],
+            "attributeDataTypes": ["Text","Integer","Decimal","Date","Boolean","SingleSelect","MultiSelect"],
+            "attributeObjectTypes": ["bridge","restriction"],
+            "attributeStatuses": ["Active","Inactive"]
+          }
+        }
       }
     },
     "rootView": {

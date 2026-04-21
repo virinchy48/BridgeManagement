@@ -6,15 +6,14 @@ sap.ui.define([
 ], function (Controller, JSONModel, MessageBox, MessageToast) {
   "use strict";
 
-  var ADMIN_BASE = "/odata/v4/admin";
-  var SYSTEM_CFG_URL = ADMIN_BASE + "/SystemConfig('demoModeActive')";
-  var BRIDGES_URL    = ADMIN_BASE + "/Bridges?$count=true&$top=0";
-  var LOAD_ACTION    = ADMIN_BASE + "/loadDemoData";
-  var CLEAR_ACTION   = ADMIN_BASE + "/clearDemoData";
-
   return Controller.extend("BridgeManagement.bmsadmin.controller.DemoMode", {
 
     onInit: function () {
+      var sAdminBase      = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/AdminService/uri").replace(/\/$/, "");
+      this._systemCfgUrl = sAdminBase + "/SystemConfig('demoModeActive')";
+      this._bridgesUrl   = sAdminBase + "/Bridges?$count=true&$top=0";
+      this._loadAction   = sAdminBase + "/loadDemoData";
+      this._clearAction  = sAdminBase + "/clearDemoData";
       this.getView().setModel(new JSONModel({
         demoActive:   false,
         bridgeCount:  "Loading…",
@@ -37,7 +36,7 @@ sap.ui.define([
       var demoModel = this.getView().getModel("demo");
 
       // Fetch demoModeActive config key
-      fetch(SYSTEM_CFG_URL, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      fetch(self._systemCfgUrl, { headers: { Accept: "application/json" }, credentials: "same-origin" })
         .then(function (demoModeResponse) { return demoModeResponse.ok ? demoModeResponse.json() : Promise.reject(demoModeResponse.statusText); })
         .then(function (demoModeConfig) {
           var active = demoModeConfig.value === "true";
@@ -60,7 +59,7 @@ sap.ui.define([
         });
 
       // Fetch bridge count
-      fetch(BRIDGES_URL, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+      fetch(self._bridgesUrl, { headers: { Accept: "application/json" }, credentials: "same-origin" })
         .then(function (bridgeCountResponse) { return bridgeCountResponse.ok ? bridgeCountResponse.json() : Promise.reject(bridgeCountResponse.statusText); })
         .then(function (bridgeCountData) {
           demoModel.setProperty("/bridgeCount", String(bridgeCountData["@odata.count"] || 0) + " bridges");
@@ -80,7 +79,7 @@ sap.ui.define([
           emphasizedAction: MessageBox.Action.OK,
           onClose: function (action) {
             if (action !== MessageBox.Action.OK) return;
-            self._callAction(LOAD_ACTION, "Loading demo data…", "Demo data loaded successfully!", true);
+            self._callAction(self._loadAction, "Loading demo data…", "Demo data loaded successfully!", true);
           }
         }
       );
@@ -95,7 +94,7 @@ sap.ui.define([
           actions: [MessageBox.Action.OK, MessageBox.Action.CANCEL],
           onClose: function (action) {
             if (action !== MessageBox.Action.OK) return;
-            self._callAction(CLEAR_ACTION, "Clearing demo data…", "Demo data cleared successfully.", false);
+            self._callAction(self._clearAction, "Clearing demo data…", "Demo data cleared successfully.", false);
           }
         }
       );

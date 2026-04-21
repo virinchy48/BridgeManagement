@@ -4,8 +4,8 @@
 }
 
 /* Change Documents */
-.bmsAuditOld { color: #c0392b; }
-.bmsAuditNew { color: #27ae60; }
+.bmsAuditOld { color: var(--sapErrorColor); }
+.bmsAuditNew { color: var(--sapPositiveColor); }
 
 /* System Config */
 .bmsConfigKey   { font-size: 0.75rem; color: var(--sapContent_LabelColor); }

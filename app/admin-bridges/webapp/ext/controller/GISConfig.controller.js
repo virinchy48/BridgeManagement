@@ -12,15 +12,12 @@ sap.ui.define([
 ], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Button, VBox, Label,  FormattedText) {
   "use strict";
 
-  var GIS_CONFIG_URL = "/odata/v4/admin/GISConfig('default')";
-  var REF_LAYER_URL  = "/odata/v4/admin/ReferenceLayerConfig";
-
-  var LAYER_CATEGORIES = ["Weather","Flood","Traffic","Geology","Infrastructure","Environment","Emergency","Administrative","Custom"];
-  var LAYER_TYPES      = ["WMS","XYZ","ArcGISRest","GeoJSON"];
-
   return Controller.extend("BridgeManagement.adminbridges.ext.controller.GISConfig", {
 
     onInit: function () {
+      this._adminBase    = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/AdminService/uri").replace(/\/$/, "");
+      this._gisConfigUrl = this._adminBase + "/GISConfig('default')";
+      this._refLayerUrl  = this._adminBase + "/ReferenceLayerConfig";
       this.getView().setModel(new JSONModel(this._defaults()), "config");
       this.getView().setModel(new JSONModel({ layers: [] }), "refLayers");
       this._loadConfig();
@@ -56,8 +53,9 @@ sap.ui.define([
     },
 
     _loadConfig: function () {
-      var model = this.getView().getModel("config");
-      fetch(GIS_CONFIG_URL, { headers: { "Accept": "application/json" } })
+      var self  = this;
+      var model = self.getView().getModel("config");
+      fetch(self._gisConfigUrl, { headers: { "Accept": "application/json" } })
         .then(function (res) { return res.ok ? res.json() : Promise.reject(res.statusText); })
         .then(function (data) {
           var cfg = Object.assign(this._defaults(), data);
@@ -82,8 +80,9 @@ sap.ui.define([
     },
 
     onSave: function () {
+      var self  = this;
       var model = this.getView().getModel("config");
-      var data = JSON.parse(JSON.stringify(model.getData()));
+      var data  = JSON.parse(JSON.stringify(model.getData()));
 
       // Serialise custom WMS layers back to JSON string
       data.customWmsLayers = JSON.stringify(data.customWmsLayers || []);
@@ -92,18 +91,15 @@ sap.ui.define([
       delete data["@context"];
       delete data["@metadataEtag"];
 
-      var method = "PATCH";
-      var url = GIS_CONFIG_URL;
-
-      fetch(url, {
-        method: method,
+      fetch(self._gisConfigUrl, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json", "Accept": "application/json" },
         body: JSON.stringify(data)
       })
         .then(function (res) {
           if (res.status === 404 || res.status === 201) {
             // Try POST/PUT to create
-            return fetch("/odata/v4/admin/GISConfig", {
+            return fetch(self._adminBase + "/GISConfig", {
               method: "POST",
               headers: { "Content-Type": "application/json", "Accept": "application/json" },
               body: JSON.stringify(data)
@@ -130,7 +126,7 @@ sap.ui.define([
 
     _loadRefLayers: function () {
       var model = this.getView().getModel("refLayers");
-      fetch(REF_LAYER_URL + "?$orderby=category,sortOrder,name", { headers: { "Accept": "application/json" } })
+      fetch(this._refLayerUrl + "?$orderby=category,sortOrder,name", { headers: { "Accept": "application/json" } })
         .then(function (res) { return res.ok ? res.json() : Promise.reject(res.statusText); })
         .then(function (data) { model.setProperty("/layers", data.value || []); })
         .catch(function () { /* non-fatal */ });
@@ -140,7 +136,7 @@ sap.ui.define([
       var src = oEvent.getSource();
       var ctx = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
       var row  = ctx.getObject();
-      fetch(REF_LAYER_URL + "('" + row.ID + "')", {
+      fetch(this._refLayerUrl + "('" + row.ID + "')", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ active: oEvent.getParameter("state") })
@@ -151,7 +147,7 @@ sap.ui.define([
       var src = oEvent.getSource();
       var ctx = src.getBindingContext("refLayers") || src.getParent().getBindingContext("refLayers");
       var row = ctx.getObject();
-      fetch(REF_LAYER_URL + "('" + row.ID + "')", {
+      fetch(this._refLayerUrl + "('" + row.ID + "')", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabledByDefault: oEvent.getParameter("state") })
@@ -160,6 +156,9 @@ sap.ui.define([
 
     _openRefLayerDialog: function (oData) {
       var self  = this;
+      var oAppCfg       = self.getOwnerComponent().getModel("appConfig");
+      var LAYER_CATEGORIES = oAppCfg.getProperty("/layerCategories");
+      var LAYER_TYPES      = oAppCfg.getProperty("/layerTypes");
       var bEdit = !!oData.ID;
       var oModel = new JSONModel(Object.assign({
         ID: null, name: "", category: "Custom", layerType: "WMS",
@@ -211,7 +210,7 @@ sap.ui.define([
             var referenceLayer = oModel.getData();
             if (!referenceLayer.name || !referenceLayer.url) { MessageToast.show("Name and URL are required."); return; }
             var method = bEdit ? "PATCH" : "POST";
-            var url    = bEdit ? REF_LAYER_URL + "('" + referenceLayer.ID + "')" : REF_LAYER_URL;
+            var url    = bEdit ? self._refLayerUrl + "('" + referenceLayer.ID + "')" : self._refLayerUrl;
             var body   = Object.assign({}, referenceLayer);
             delete body["@context"]; delete body["@metadataEtag"];
             fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
@@ -246,7 +245,7 @@ sap.ui.define([
       MessageBox.confirm("Delete layer \"" + row.name + "\"?", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(REF_LAYER_URL + "('" + row.ID + "')", { method: "DELETE" })
+          fetch(self._refLayerUrl + "('" + row.ID + "')", { method: "DELETE" })
             .then(function () { self._loadRefLayers(); })
             .catch(function () { MessageToast.show("Failed to delete layer."); });
         }

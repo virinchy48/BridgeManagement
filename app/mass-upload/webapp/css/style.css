@@ -7,12 +7,12 @@
 
 
 .massUploadPage {
-  background: #f3f6fb;
+  background: var(--sapBackgroundColor);
 }
 
 .massUploadSection {
-  background: #fff;
-  border: 1px solid #dfe7f2;
+  background: var(--sapList_Background);
+  border: 1px solid var(--sapList_BorderColor);
   border-radius: 0.85rem;
   padding: 1.35rem 1.25rem 1rem;
   box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
@@ -24,11 +24,11 @@
 }
 
 .massUploadStepIcon {
-  color: #3f6df6;
+  color: var(--sapHighlightColor);
 }
 
 .massUploadSectionTitle {
-  color: #1f3353;
+  color: var(--sapTextColor);
   font-size: 1.1rem;
   margin-bottom: 0;
 }
@@ -37,8 +37,8 @@
   min-height: 9.5rem;
   padding: 1.5rem 1rem;
   border-radius: 0.85rem;
-  border: 1px dashed #a9b8ce;
-  background: linear-gradient(180deg, #fbfcfe 0%, #f7f9fc 100%);
+  border: 1px dashed var(--sapList_BorderColor);
+  background: var(--sapBackgroundColor);
   align-items: center;
   justify-content: center;
   cursor: pointer;
@@ -47,48 +47,47 @@
 }
 
 .massUploadDropzone:focus {
-  outline: 2px solid #3f6df6;
+  outline: 2px solid var(--sapHighlightColor);
   outline-offset: 2px;
 }
 
 .massUploadDropzone.is-dragover {
-  border-color: #3f6df6;
-  background: #edf4ff;
-  box-shadow: inset 0 0 0 1px rgba(63, 109, 246, 0.15);
+  border-color: var(--sapHighlightColor);
+  background: var(--sapInformationBackground);
 }
 
 .massUploadDropzone.has-file {
-  border-color: #6b8ef7;
-  background: #f5f8ff;
+  border-color: var(--sapHighlightColor);
+  background: var(--sapInformationBackground);
 }
 
 .massUploadDropIcon {
-  color: #8e9bb0;
+  color: var(--sapContent_LabelColor);
   margin-bottom: 0.6rem;
 }
 
 .massUploadDropTitle {
-  color: #2d3748;
+  color: var(--sapTextColor);
   font-size: 1.55rem;
   margin-bottom: 0.15rem;
 }
 
 .massUploadDropSubtitle {
-  color: #607085;
+  color: var(--sapContent_LabelColor);
 }
 
 .massUploadInfoStrip {
-  border: 1px solid #78b8ff;
-  background: #e9f5ff;
+  border: 1px solid var(--sapInformationBorderColor);
+  background: var(--sapInformationBackground);
   border-radius: 0.55rem;
 }
 
 .massUploadBodyText {
-  color: #334155;
+  color: var(--sapTextColor);
 }
 
 .massUploadMutedText {
-  color: #5b6778;
+  color: var(--sapContent_LabelColor);
   margin-top: 0.65rem;
   max-width: 56rem;
 }
@@ -100,30 +99,30 @@
 }
 
 .massUploadBrowseUploader .sapMBtnInner {
-  background: #4a72f3;
-  border-color: #4a72f3;
+  background: var(--sapHighlightColor);
+  border-color: var(--sapHighlightColor);
 }
 
 .massUploadBrowseUploader .sapMBtnIcon,
 .massUploadBrowseUploader .sapMBtnContent {
-  color: #fff;
+  color: var(--sapList_Background);
 }
 
 .massUploadFileName {
-  color: #4b5563;
+  color: var(--sapTextColor);
 }
 
 .massUploadSummaryList .sapMLIB {
-  border-bottom: 1px solid #e7edf5;
+  border-bottom: 1px solid var(--sapList_BorderColor);
 }
 
 .massUploadWarningList .sapMLIB {
-  border-bottom: 1px solid #fde8c0;
-  background: #fffbf2;
+  border-bottom: 1px solid var(--sapWarningBorderColor);
+  background: var(--sapWarningBackground);
 }
 
 .massUploadWarningList .sapMSLITitle {
-  color: #92400e;
+  color: var(--sapWarningColor);
   font-size: 0.85rem;
 }
 

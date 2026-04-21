@@ -20,6 +20,7 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.bmsadmin.controller.Shell", {
 
     onInit: function () {
+      this._qualityBase = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/QualityService/uri").replace(/\/$/, "");
       const oRouter = this.getOwnerComponent().getRouter();
       oRouter.attachRouteMatched(this._onRouteMatched, this);
       // Poll data quality for critical issues every 5 minutes
@@ -33,7 +34,7 @@ sap.ui.define([
 
     // ── Quality alert badge ─────────────────────────────────────────────────
     _pollQualityAlert: function () {
-      fetch("/quality/api/summary")
+      fetch(this._qualityBase + "/summary")
         .then(r => r.ok ? r.json() : null)
         .then(data => {
           if (!data) return;

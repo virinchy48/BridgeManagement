@@ -1,8 +1,0 @@
-code;name;descr
-General Access;General Access;"Standard vehicle dimensions — access on all roads without permit. Max length 12.5m, width 2.5m, height 4.3m, GVM 42.5t."
-Level 1;PBS Level 1;"Short road trains and B-doubles — access on approved Level 1 networks. Max length 19.0m, GVM 42.5t."
-Level 2;PBS Level 2;"B-doubles and medium road trains — access on Level 2 approved networks. Max length 26.0m, GVM 42.5t."
-Level 3;PBS Level 3;"Large road trains — specific approved routes and networks. Max length 36.5m, height 4.6m, GVM 57.5t."
-Level 4;PBS Level 4;"Extra-long combinations — restricted to approved high-productivity networks. Max length 53.5m, GVM 85.5t."
-Level 5;PBS Level 5;"High mass limit combinations — strictly controlled networks and routes. Max length 53.5m, width 3.0m, GVM 100.0t."
-Not Assessed;Not Assessed;PBS approval class has not been assessed.

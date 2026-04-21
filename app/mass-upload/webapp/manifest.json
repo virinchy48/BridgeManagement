@@ -9,6 +9,9 @@
     "applicationVersion": {
       "version": "1.0.0"
     },
+    "dataSources": {
+      "MassUploadService": { "uri": "/mass-upload/api/", "type": "HTTP" }
+    },
     "crossNavigation": {
       "inbounds": {
         "MassUpload-manage": {

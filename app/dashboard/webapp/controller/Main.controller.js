@@ -19,6 +19,7 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.dashboard.controller.Main", {
 
     onInit: function () {
+      this._dashboardBase = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/DashboardService/uri").replace(/\/$/, "");
 
       const model = new JSONModel({
         busy: true,
@@ -70,7 +71,7 @@ sap.ui.define([
       model.setProperty("/busy", true);
 
       try {
-        const response = await fetch("/dashboard/api/analytics");
+        const response = await fetch(this._dashboardBase + "/analytics");
         if (!response.ok) {
           const ct = response.headers.get("content-type") || "";
           const msg = ct.includes("application/json")

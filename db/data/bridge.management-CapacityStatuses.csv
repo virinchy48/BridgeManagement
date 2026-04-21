@@ -1,5 +1,0 @@
-code;name;descr
-Current;Current;Capacity assessment is current and approved.
-Under Review;Under Review;Capacity assessment is being reviewed or updated.
-Superseded;Superseded;A newer capacity assessment has replaced this one.
-Expired;Expired;Capacity assessment has passed its review due date.

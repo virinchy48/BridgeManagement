@@ -35,10 +35,22 @@ annotate AdminService.Bridges with @(
 //  Object Page — Bridges
 ////////////////////////////////////////////////////////////////////////////
 
+annotate AdminService.Bridges with {
+  hasCapacity @UI.Hidden;
+};
+
 annotate AdminService.Bridges with @(
   Capabilities.InsertRestrictions.Insertable  : true,
   Capabilities.UpdateRestrictions.Updatable   : true,
   Capabilities.DeleteRestrictions.Deletable   : false,
+  Capabilities.NavigationRestrictions: {
+    RestrictedProperties: [{
+      NavigationProperty: capacities,
+      InsertRestrictions: {
+        Insertable: { $edmJson: { $Not: { $Path: 'hasCapacity' } } }
+      }
+    }]
+  },
   UI: {
     CreateHidden: false,
     UpdateHidden: false,

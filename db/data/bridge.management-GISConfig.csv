@@ -1,2 +1,0 @@
-id,defaultBasemap,hereApiKey,showStateBoundaries,showLgaBoundaries,enableScaleBar,enableGps,enableMinimap,enableHeatmap,enableTimeSlider,enableStatsPanel,enableProximity,enableMgaCoords,enableStreetView,enableConditionAlerts,enableCustomWms,enableServerClustering,conditionAlertThreshold,proximityDefaultRadiusKm,heatmapRadius,heatmapBlur,viewportLoadingZoom,customWmsLayers
-default,osm,,false,false,true,true,true,false,false,true,true,true,true,true,false,false,3,10,20,15,8,[]

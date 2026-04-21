@@ -1,5 +1,0 @@
-code;name;descr
-t;tonnes (t);Mass limit in tonnes.
-m;metres (m);Dimensional limit in metres.
-km/h;km/h;Speed limit in kilometres per hour.
-approval;approval;Restriction value is approval based.

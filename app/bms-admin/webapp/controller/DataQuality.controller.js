@@ -65,6 +65,7 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.bmsadmin.controller.DataQuality", {
 
     onInit: function () {
+      this._qualityBase  = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/QualityService/uri").replace(/\/$/, "");
       this._allBridges   = [];
       this._qualityModel = new JSONModel({ bridges: [] });
       this.getView().setModel(this._qualityModel, "quality");
@@ -73,7 +74,7 @@ sap.ui.define([
     },
 
     _loadSummary: function () {
-      fetch("/quality/api/summary", { credentials: "same-origin" })
+      fetch(this._qualityBase + "/summary", { credentials: "same-origin" })
         .then(r => r.json())
         .then(data => {
           this.byId("kpiTotalBridgesVal").setValue(data.totalBridges       || 0);
@@ -87,7 +88,7 @@ sap.ui.define([
     _loadIssues: function () {
       const view = this.getView();
       view.setBusy(true);
-      fetch("/quality/api/issues", { credentials: "same-origin" })
+      fetch(this._qualityBase + "/issues", { credentials: "same-origin" })
         .then(r => r.json())
         .then(data => {
           view.setBusy(false);

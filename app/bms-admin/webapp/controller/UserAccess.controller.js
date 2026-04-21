@@ -12,6 +12,7 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.bmsadmin.controller.UserAccess", {
 
     onInit: function () {
+      this._accessBase = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/AccessService/uri").replace(/\/$/, "");
       this._model = new JSONModel({ users: [], filtered: [] });
       this.getView().setModel(this._model);
       this._loadSummary();
@@ -19,7 +20,7 @@ sap.ui.define([
     },
 
     _loadSummary: function () {
-      fetch("/access/api/summary")
+      fetch(this._accessBase + "/summary")
         .then(r => r.json())
         .then(data => {
           this.byId("numTotalUsers").setValue(String(data.totalUsers       || 0));
@@ -30,7 +31,7 @@ sap.ui.define([
     },
 
     _loadActivity: function () {
-      fetch("/access/api/activity")
+      fetch(this._accessBase + "/activity")
         .then(r => r.json())
         .then(data => {
           const users = (data.users || []).map(u => this._enrichUser(u));

@@ -1,6 +1,0 @@
-code,label,description,requiredAction,alertColor,s4PriorityCode
-1,Good,"Minor wear and tear. No significant structural defects. Normal monitoring adequate.","Continue routine monitoring. Schedule next inspection per standard cycle.",#16A34A,4
-2,Fair,"Moderate deterioration. Some defects present but not immediately critical. Attention required.","Inspect within 2 years. Consider minor maintenance. Review restrictions.",#22C55E,3
-3,Poor,"Significant defects. Structural integrity attention required. Active management needed.","Inspect within 12 months. Plan maintenance. Review and update restrictions immediately.",#F59E0B,2
-4,Very Poor,"Major defects. Urgent repairs required. Possible load restrictions warranted.","Immediate inspection required. Plan urgent maintenance. Apply load restrictions.",#EA580C,1
-5,Critical,"Imminent failure risk or structural failure possible. Immediate action required.","CLOSE BRIDGE TO TRAFFIC. Emergency inspection. Emergency maintenance. Notify TfNSW immediately.",#DC2626,0

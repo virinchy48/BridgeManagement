@@ -162,6 +162,8 @@ node scripts/rebuild-bridge-csvs.js
 - `mta.yaml` defines the MTA modules for BTP deployment — `cds build` must be run before `mbt build`
 - The app router (`app/router`) handles authentication redirect and HTML5 repo serving — do not add business logic there
 - HANA schema migrations: add new entities/columns to `db/schema/` then run `cds deploy --to hana` — never alter HANA tables directly
+- **`DEFAULT_STATE` and `MULTI_STATE_ENABLED` are NOT in `mta.yaml`** — they must be set as explicit BTP environment variables during deployment (via MTA extension file or `cf set-env`). Without them the app defaults to no-state-filter behaviour; set `DEFAULT_STATE=NSW` and `MULTI_STATE_ENABLED=false` for NSW standalone deployments.
+- **Empty lookup tables on first deploy** — all `db/data/*.csv` seed files have been removed. After deploying to a fresh environment, an admin must populate all lookup tables (States, StructureTypes, ConditionStates, AssetClasses, etc.) via the Mass Upload tile before bridges or restrictions can be created. Document this step in the deployment runbook.
 
 ### Schema / DB deploy
 - **Always verify `cds deploy` succeeds before committing seed CSV changes.** Run `npx cds deploy --to sqlite:db.sqlite` (with Node 20) and check for no errors. A failed deploy leaves an empty `db.sqlite` and the entire app breaks on startup.

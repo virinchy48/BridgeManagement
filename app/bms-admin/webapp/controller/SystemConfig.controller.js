@@ -13,6 +13,7 @@ sap.ui.define([
   return Controller.extend("BridgeManagement.bmsadmin.controller.SystemConfig", {
 
     onInit: function () {
+      this._systemBase      = this.getOwnerComponent().getManifestEntry("/sap.app/dataSources/SystemService/uri").replace(/\/$/, "");
       this._dirty           = new Map();
       this._currentCategory = null;
       // Initialise a default JSONModel so getModel() is never null
@@ -21,7 +22,7 @@ sap.ui.define([
     },
 
     _loadConfigs: function () {
-      fetch("/system/api/config")
+      fetch(this._systemBase + "/config")
         .then(res => res.json())
         .then(data => {
           const configs = data.configs || [];
@@ -84,7 +85,7 @@ sap.ui.define([
       const promises = [];
       this._dirty.forEach((value, key) => {
         promises.push(
-          fetch("/system/api/config/" + encodeURIComponent(key), {
+          fetch(this._systemBase + "/config/" + encodeURIComponent(key), {
             method: "PATCH", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ value })
           }).then(res => {
@@ -114,7 +115,7 @@ sap.ui.define([
           const toReset  = filtered.filter(c => !c.isReadOnly && c.value !== c.defaultValue);
           if (!toReset.length) { MessageToast.show("All settings are already at their default values."); return; }
           Promise.all(toReset.map(c =>
-            fetch("/system/api/config/" + encodeURIComponent(c.configKey), {
+            fetch(this._systemBase + "/config/" + encodeURIComponent(c.configKey), {
               method: "PATCH", headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ value: c.defaultValue })
             }).then(res => { if (!res.ok) return res.json().then(e => { throw new Error(e.error?.message || "Failed to reset"); }); return res.json(); })
