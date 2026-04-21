@@ -188,6 +188,10 @@ node scripts/rebuild-bridge-csvs.js
 - **BMS Admin home route targets `changeDocuments`.** There is no home/overview tile grid. The default landing screen for `#BmsAdmin-manage` is Change Documents. If a dedicated home screen is added, update the `home` route target in `manifest.json`.
 - **Hardcoded `/mass-upload/api` BASE URL** in `MassUpload.controller.js` works in local dev but will break in BTP where origins differ. Same issue with `/map/api/bridges` in the map controller. Both should be driven by `manifest.json` data sources.
 - **Static `<core:Item key="bridges">` in MassUpload.view.xml** is always removed by `_loadDatasets()`. Remove it from the XML — it only causes confusion if the fallback key casing ever diverges.
+- **Shell version badge: use `this.byId()` not `sap.ui.getCore().byId(fullId)`.** In the FLP context the element ID is prefixed (e.g. `application-BmsAdmin-manage-component---bmsAdminShell--appVersionEnv`). `this.byId("appVersionEnv")` resolves correctly via the controller's view scope. Using `sap.ui.getCore().byId(this.getView().getId() + "--appVersionEnv")` fails because `getView().getId()` does not include the full FLP prefix at `onInit` time. Call `_setVersionBadge` via `setTimeout(..., 0)` in `onInit` to ensure the view is rendered first.
+- **`IconTabFilter` content is lazily rendered.** Controls inside a non-selected `IconTabFilter` are not in the DOM until that tab is first activated. Do not expect to `byId()` controls in an inactive tab during `onInit` — always check after tab selection.
+- **`IconTabFilter.setCount(n)` shows a badge number on the tab.** Pass a non-empty string to show the count; pass `""` to hide it. Wire this in `_renderS1` / `_renderS2` so tabs always reflect current result counts.
+- **Change Documents action type is derived client-side.** A batch is `Create` when all its field rows have null/empty `oldValue`; otherwise `Change`. This is computed in `_renderS1` after grouping raw rows by `batchKey` — no server-side field is needed.
 
 ---
 
