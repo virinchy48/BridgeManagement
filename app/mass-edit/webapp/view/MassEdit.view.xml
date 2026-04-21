@@ -92,6 +92,11 @@
               text="{view>/bulkButtonText}"
               icon="sap-icon://multi-edit"
               press="onToggleBulkApply"/>
+            <Button
+              icon="sap-icon://action-settings"
+              tooltip="Select Columns"
+              type="Transparent"
+              press="onColumnSelect"/>
           </HBox>
 
           <Panel expandable="false" visible="{view>/bulkVisible}"
@@ -145,7 +150,7 @@
         rowSelectionChange="onTableSelectionChange"
         visibleRowCountMode="Fixed"
         visibleRowCount="18"
-        rowHeight="40"
+        rowHeight="52"
         fixedColumnCount="1"
         alternateRowColors="true"
         enableColumnReordering="true"

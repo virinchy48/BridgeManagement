@@ -14,12 +14,14 @@ sap.ui.define([
   "sap/ui/core/Item",
   "sap/m/Dialog",
   "sap/m/Button",
+  "sap/m/List",
+  "sap/m/StandardListItem",
   "sap/m/FormattedText"
 ], function (
   Controller, JSONModel, Filter, FilterOperator,
   MessageBox, MessageToast,
   Column, Text, Input, ComboBox, DatePicker, CheckBox, Item,
-  Dialog, Button,  FormattedText
+  Dialog, Button, List, StandardListItem, FormattedText
 ) {
   "use strict";
 
@@ -344,7 +346,7 @@ sap.ui.define([
       config.fields.forEach(function (field) {
         table.addColumn(new Column({
           width:          field.width,
-          label:          new Text({ text: this._t(field.labelKey) }),
+          label:          new Text({ text: this._t(field.labelKey), wrapping: true }),
           template:       this._createCell(field),
           sortProperty:   field.key,
           filterProperty: field.key,
@@ -352,6 +354,7 @@ sap.ui.define([
         }));
       }.bind(this));
 
+      this._applyColumnVisibility();
       // Force a synchronous DOM update so the DynamicPage measures the new
       // column count immediately, avoiding a transient zero-height layout.
       sap.ui.getCore().applyChanges();
@@ -360,7 +363,7 @@ sap.ui.define([
     _createCell: function (field) {
       // Read-only columns
       if (!field.editable) {
-        return new Text({ text: "{view>" + field.key + "}", wrapping: false });
+        return new Text({ text: "{view>" + field.key + "}", wrapping: true });
       }
 
       // Select: ComboBox instead of Select:
@@ -611,6 +614,58 @@ sap.ui.define([
     /* ─── Micro helpers ──────────────────────────────────────────────────── */
 
     _clone:  function (rows)      { return JSON.parse(JSON.stringify(rows || [])); },
+
+    /* ─── Column selection ───────────────────────────────────────────────── */
+
+    onColumnSelect: function () {
+      const config    = this._config();
+      const entityKey = this._vm().getProperty("/entityKey") || "BRIDGE";
+      const stored    = (this._colVisibility || {})[entityKey] || {};
+
+      const oList = new List({ mode: "MultiSelect", includeItemInSelection: true });
+      config.fields.forEach(function (field) {
+        const oItem = new StandardListItem({ title: this._t(field.labelKey) });
+        oItem.data("fieldKey", field.key);
+        if (stored[field.key] !== false) oItem.setSelected(true);
+        oList.addItem(oItem);
+      }.bind(this));
+
+      const oDialog = new Dialog({
+        title: "Select Columns",
+        contentWidth: "320px",
+        content: [oList],
+        beginButton: new Button({
+          text: "OK",
+          type: "Emphasized",
+          press: function () {
+            const selectedKeys = new Set(oList.getSelectedItems().map(function (item) { return item.data("fieldKey"); }));
+            this._colVisibility = this._colVisibility || {};
+            this._colVisibility[entityKey] = {};
+            config.fields.forEach(function (field) {
+              this._colVisibility[entityKey][field.key] = selectedKeys.has(field.key);
+            }.bind(this));
+            this._applyColumnVisibility();
+            oDialog.close();
+          }.bind(this)
+        }),
+        endButton: new Button({ text: "Cancel", press: function () { oDialog.close(); } }),
+        afterClose: function () { oDialog.destroy(); }
+      });
+      oDialog.addStyleClass("sapUiContentPadding");
+      this.getView().addDependent(oDialog);
+      oDialog.open();
+    },
+
+    _applyColumnVisibility: function () {
+      const config    = this._config();
+      const entityKey = this._vm().getProperty("/entityKey") || "BRIDGE";
+      const stored    = (this._colVisibility || {})[entityKey] || {};
+      this.byId("massEditTable").getColumns().forEach(function (col, i) {
+        const field = config.fields[i];
+        if (field) col.setVisible(stored[field.key] !== false);
+      });
+    },
+
     onShowHelp: function () {
       var sHtml = [
         "<h4>Purpose</h4>",
