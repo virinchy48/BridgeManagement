@@ -225,7 +225,13 @@ async function assertBridgeExists(db, bridgeId) {
     error.status = 400
     throw error
   }
-  const bridge = await db.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ ID }))
+  let bridge = await db.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ ID }))
+  if (!bridge) {
+    // Also accept draft entities that haven't been activated yet
+    try {
+      bridge = await db.run(SELECT.one.from('bridge.management.Bridges.drafts').columns('ID').where({ ID }))
+    } catch (_) { /* drafts table may not exist */ }
+  }
   if (!bridge) {
     const error = new Error('Bridge not found')
     error.status = 404

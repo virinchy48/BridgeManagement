@@ -275,10 +275,24 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
 
 .nhvrListPanel {
   flex: 0 0 18.5rem;
-  min-height: 12rem;
+  min-height: 6rem;
   border-top: 1px solid #cfd7e2;
   background: #fff;
   overflow: hidden;
+}
+
+.nhvrResizeHandle {
+  height: 5px;
+  background: #e5e9ef;
+  cursor: ns-resize;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  user-select: none;
+}
+
+.nhvrResizeHandle:hover,
+.nhvrResizeHandle.dragging {
+  background: #0a6ed1;
 }
 
 .nhvrVariantBar {

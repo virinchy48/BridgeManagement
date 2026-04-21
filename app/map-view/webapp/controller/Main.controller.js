@@ -293,6 +293,9 @@ sap.ui.define([
       const model = this._vm();
       model.setProperty("/showList", showList);
       model.setProperty("/layoutMode", showList ? "split" : "map");
+      if (showList) {
+        setTimeout(this._initListResizer.bind(this), 60);
+      }
       setTimeout(this._invalidateMap.bind(this), 120);
     },
 
@@ -1528,6 +1531,35 @@ sap.ui.define([
       if (this._leafletMap) {
         this._leafletMap.invalidateSize();
       }
+    },
+
+    _initListResizer: function () {
+      const listPanel = document.querySelector(".nhvrListPanel");
+      if (!listPanel || listPanel._resizerWired) return;
+      const handle = document.createElement("div");
+      handle.className = "nhvrResizeHandle";
+      listPanel.insertBefore(handle, listPanel.firstChild);
+      listPanel._resizerWired = true;
+      let startY, startH;
+      handle.addEventListener("mousedown", (e) => {
+        startY = e.clientY;
+        startH = listPanel.getBoundingClientRect().height;
+        handle.classList.add("dragging");
+        const onMove = (ev) => {
+          const delta = startY - ev.clientY;
+          const newH = Math.max(100, Math.min(window.innerHeight * 0.75, startH + delta));
+          listPanel.style.flexBasis = newH + "px";
+        };
+        const onUp = () => {
+          handle.classList.remove("dragging");
+          document.removeEventListener("mousemove", onMove);
+          document.removeEventListener("mouseup", onUp);
+          setTimeout(this._invalidateMap.bind(this), 80);
+        };
+        document.addEventListener("mousemove", onMove);
+        document.addEventListener("mouseup", onUp);
+        e.preventDefault();
+      });
     },
 
     _conditionBandLabel: function (rating) {

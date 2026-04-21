@@ -120,7 +120,7 @@ sap.ui.define([
       if (to)   params.set("to", to);
 
       fetch("/audit/api/changes?" + params.toString(), { credentials: "same-origin" })
-        .then(function (r) { return r.json(); })
+        .then(function (r) { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
         .then(function (data) {
           view.setBusy(false);
           var rows = data.changes || [];

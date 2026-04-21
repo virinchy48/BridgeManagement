@@ -25,7 +25,7 @@ const writeRestrictionChangeLog = async (db, restrictionId, changeType, oldStatu
         const uuid = cds.utils?.uuid
             ? cds.utils.uuid()
             : require('crypto').randomUUID()
-        await db.run(INSERT.into('bridge_management_RestrictionChangeLog').entries({
+        await db.run(INSERT.into('nhvr.RestrictionChangeLog').entries({
             ID: uuid,
             restriction_ID: restrictionId,
             changeType,
