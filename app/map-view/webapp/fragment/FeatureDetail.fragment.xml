@@ -4,7 +4,7 @@
 
   <Dialog id="featureDetailDialog"
           title="{= ${view>/selectedFeature/type} === 'restriction' ? 'Restriction Detail' : 'Bridge Detail' }"
-          contentWidth="380px"
+          contentWidth="420px"
           resizable="true"
           draggable="true"
           verticalScrolling="true">
@@ -113,16 +113,18 @@
       </VBox>
     </content>
 
-    <buttons>
+    <beginButton>
       <Button text="View Bridge on Map" icon="sap-icon://map-2"
               type="Emphasized" press=".onViewBridgeFromRestriction"
               visible="{= ${view>/selectedFeature/type} === 'restriction' }" />
+    </beginButton>
+    <buttons>
       <Button text="Zoom to Bridge" icon="sap-icon://zoom-in"
               type="Emphasized" press=".onZoomToSelected"
               visible="{= ${view>/selectedFeature/type} === 'bridge' }" />
-      <Button text="Open in Bridge Register" icon="sap-icon://open-command-field"
+      <Button text="Open in Register" icon="sap-icon://open-command-field"
               press=".onOpenInBridgeRegister" />
-      <Button text="Close" press=".onCloseFeaturePanel" />
+      <Button text="Close" icon="sap-icon://decline" type="Default" press=".onCloseFeaturePanel" />
     </buttons>
 
   </Dialog>
