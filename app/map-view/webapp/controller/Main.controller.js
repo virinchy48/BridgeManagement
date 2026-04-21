@@ -87,26 +87,22 @@ sap.ui.define([
   const REFERENCE_LAYERS = {
     stateBoundaries: {
       label: "State & Territory Boundaries",
-      type: "wms",
-      url: "https://geo.abs.gov.au/arcgis/services/ASGS2021/STE_2021_AUST/MapServer/WMSServer",
+      type: "xyz",
+      url: "https://geo.abs.gov.au/arcgis/rest/services/ASGS2021/STE_2021_AUST/MapServer/tile/{z}/{y}/{x}",
       options: {
-        layers: "STE_2021_AUST",
-        format: "image/png",
-        transparent: true,
         opacity: 0.75,
-        attribution: "State Boundaries &copy; ABS ASGS 2021"
+        attribution: "State Boundaries &copy; ABS ASGS 2021",
+        maxZoom: 19
       }
     },
     lgaBoundaries: {
       label: "LGA Boundaries",
-      type: "wms",
-      url: "https://geo.abs.gov.au/arcgis/services/ASGS2021/LGA_2021_AUST/MapServer/WMSServer",
+      type: "xyz",
+      url: "https://geo.abs.gov.au/arcgis/rest/services/ASGS2021/LGA_2021_AUST/MapServer/tile/{z}/{y}/{x}",
       options: {
-        layers: "LGA_2021_AUST",
-        format: "image/png",
-        transparent: true,
         opacity: 0.55,
-        attribution: "LGA Boundaries &copy; ABS ASGS 2021"
+        attribution: "LGA Boundaries &copy; ABS ASGS 2021",
+        maxZoom: 19
       }
     }
   };
@@ -377,7 +373,9 @@ sap.ui.define([
 
       if (visible) {
         if (!this._refLayerInstances[layerKey]) {
-          this._refLayerInstances[layerKey] = window.L.tileLayer.wms(config.url, config.options);
+          this._refLayerInstances[layerKey] = config.type === "xyz"
+            ? window.L.tileLayer(config.url, config.options)
+            : window.L.tileLayer.wms(config.url, config.options);
         }
         this._refLayerInstances[layerKey].addTo(this._leafletMap);
       } else if (this._refLayerInstances[layerKey]) {
@@ -795,14 +793,10 @@ sap.ui.define([
         model.setProperty("/selectedBridge", data);
         model.setProperty("/selectedRestrictions", data.restrictions || []);
         model.setProperty("/detailOpen", true);
-        if (!model.getProperty("/showList")) {
-          model.setProperty("/showList", true);
-          setTimeout(this._invalidateMap.bind(this), 120);
-        }
         const marker = this._markerIndex.get(data.ID);
         if (marker && this._leafletMap) {
-          this._leafletMap.setView([data.latitude, data.longitude], Math.max(this._leafletMap.getZoom(), 10));
-          marker.openPopup();
+          this._leafletMap.flyTo([data.latitude, data.longitude], Math.max(this._leafletMap.getZoom(), 14), { animate: true, duration: 0.6 });
+          setTimeout(() => marker.openPopup(), 650);
         }
         this._renderMarkers(false);
       }
@@ -1863,10 +1857,10 @@ sap.ui.define([
 
     _buildHelpPopover: function (sTitle, sPlacement, sWidth, aItems, sPropName) {
       var self = this;
-      var oBody = new VBox({ class: "nhvrHelpPopoverBody" });
+      var oBody = new VBox().addStyleClass("nhvrHelpPopoverBody");
 
       aItems.forEach(function (helpTopic) {
-        var oDetailRows = new VBox({ class: "nhvrHelpItemDetails" });
+        var oDetailRows = new VBox().addStyleClass("nhvrHelpItemDetails");
 
         [
           { label: "Purpose:",    text: helpTopic.purpose },
@@ -1874,30 +1868,27 @@ sap.ui.define([
         ].forEach(function (row) {
           oDetailRows.addItem(
             new HBox({
-              class: "nhvrHelpDetailRow",
               alignItems: "Start",
               items: [
-                new Label({ text: row.label, class: "nhvrHelpDetailLabel" }),
-                new Text({ text: row.text,   class: "nhvrHelpDetailText" })
+                new Label({ text: row.label }).addStyleClass("nhvrHelpDetailLabel"),
+                new Text({ text: row.text }).addStyleClass("nhvrHelpDetailText")
               ]
-            })
+            }).addStyleClass("nhvrHelpDetailRow")
           );
         });
 
         oBody.addItem(new VBox({
-          class: "nhvrHelpItem",
           items: [
             new HBox({
               alignItems: "Center",
-              class: "nhvrHelpItemHeader",
               items: [
-                new Icon({ src: t.icon, size: "1rem", color: t.color || "#0a6ed1", class: "nhvrHelpItemIcon" }),
-                new Title({ text: t.title, level: "H6", class: "nhvrHelpItemTitle" })
+                new Icon({ src: t.icon, size: "1rem", color: t.color || "#0a6ed1" }).addStyleClass("nhvrHelpItemIcon"),
+                new Title({ text: t.title, level: "H6" }).addStyleClass("nhvrHelpItemTitle")
               ]
-            }),
+            }).addStyleClass("nhvrHelpItemHeader"),
             oDetailRows
           ]
-        }));
+        }).addStyleClass("nhvrHelpItem"));
       });
 
       var oPopover = new Popover({

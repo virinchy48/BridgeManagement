@@ -1149,6 +1149,9 @@ cds.on('bootstrap', (app) => {
       if (!contentBase64) {
         return res.status(400).json({ error: { message: 'File content is empty' } })
       }
+      if (Math.ceil(contentBase64.length * 0.75) > 50 * 1024 * 1024) {
+        return res.status(400).json({ error: { message: 'File too large. Maximum 50MB allowed.' } })
+      }
       const buffer = Buffer.from(contentBase64, 'base64')
       const result = await validateUpload({
         buffer,
@@ -1278,7 +1281,7 @@ cds.on('bootstrap', (app) => {
         type: 'FeatureCollection',
         features: bridges.map(b => ({
           type: 'Feature',
-          geometry: b.geoJson ? JSON.parse(b.geoJson) : { type: 'Point', coordinates: [b.longitude, b.latitude] },
+          geometry: (() => { try { return b.geoJson ? JSON.parse(b.geoJson) : null } catch (_) { return null } })() || { type: 'Point', coordinates: [b.longitude, b.latitude] },
           properties: { ...b, geoJson: undefined, latitude: undefined, longitude: undefined }
         }))
       };
@@ -1302,8 +1305,10 @@ cds.on('bootstrap', (app) => {
   mapRouter.get('/proximity', async (req, res) => {
     try {
       const { lat, lng, radius } = req.query;
-      const bridges = await loadProximityBridges({ lat, lng, radiusKm: radius || 10 });
-      res.json({ bridges, searchCenter: { lat: Number(lat), lng: Number(lng) }, radiusKm: Number(radius || 10) });
+      const radiusKm = Math.max(0.1, Math.min(500, Number(radius || 10)));
+      if (!Number.isFinite(radiusKm)) return res.status(400).json({ error: { message: 'Invalid radius' } });
+      const bridges = await loadProximityBridges({ lat, lng, radiusKm });
+      res.json({ bridges, searchCenter: { lat: Number(lat), lng: Number(lng) }, radiusKm });
     } catch (error) {
       res.status(error.message.includes('required') ? 400 : 500)
          .json({ error: { message: error.message || 'Proximity search failed' } });
@@ -1426,8 +1431,15 @@ cds.on('bootstrap', (app) => {
       for (const filter of filters) {
         query = query.where(filter)
       }
-      if (from) query = query.where('changedAt >=', new Date(from).toISOString())
-      if (to)   query = query.where('changedAt <=', new Date(to + 'T23:59:59Z').toISOString())
+      const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
+      if (from) {
+        if (!ISO_DATE.test(from) || isNaN(Date.parse(from))) return res.status(400).json({ error: { message: 'Invalid from date — use YYYY-MM-DD' } })
+        query = query.where('changedAt >=', new Date(from).toISOString())
+      }
+      if (to) {
+        if (!ISO_DATE.test(to) || isNaN(Date.parse(to))) return res.status(400).json({ error: { message: 'Invalid to date — use YYYY-MM-DD' } })
+        query = query.where('changedAt <=', new Date(to + 'T23:59:59Z').toISOString())
+      }
 
       const rows = await db.run(query)
       res.json({ changes: rows || [] })
