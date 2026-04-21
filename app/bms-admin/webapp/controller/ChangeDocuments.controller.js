@@ -95,7 +95,7 @@ sap.ui.define([
       this._s2Model = new JSONModel({ items: [] });
       this.getView().setModel(this._s1Model, "s1");
       this.getView().setModel(this._s2Model, "s2");
-      this._rawRows      = [];
+      this._rawRows        = [];
       this._activeBatchKey = null;
     },
 
@@ -108,7 +108,7 @@ sap.ui.define([
       this.byId("s2ContextStrip").setVisible(false);
 
       var params = new URLSearchParams();
-      var ot = this.byId("s1ObjectType").getSelectedKey();
+      var ot  = this.byId("s1ObjectType").getSelectedKey();
       var src = this.byId("s1Source").getSelectedKey();
       var usr = (this.byId("s1User").getValue() || "").trim();
       var from = this.byId("s1DateFrom").getValue();
@@ -135,6 +135,7 @@ sap.ui.define([
           this._renderS1(rows);
           this._s2Model.setProperty("/items", []);
           this.byId("s2Count").setText("");
+          this.byId("tabAttributes").setCount("");
         }.bind(this))
         .catch(function (err) {
           view.setBusy(false);
@@ -143,32 +144,48 @@ sap.ui.define([
     },
 
     _renderS1: function (rows) {
+      var actionTypeFilter = this.byId("s1ActionType").getSelectedKey();
+
       var batchMap = new Map();
       rows.forEach(function (r) {
         var key = r.batchId || [r.objectType, r.objectId, r.changedAt, r.changedBy].join("|");
         if (!batchMap.has(key)) {
           batchMap.set(key, {
-            batchKey:       key,
-            batchId:        r.batchId,
-            changedAt:      r.changedAt,
+            batchKey:         key,
+            batchId:          r.batchId,
+            changedAt:        r.changedAt,
             changedAtDisplay: fmtDate(r.changedAt),
-            changedBy:      r.changedBy,
-            objectType:     r.objectType,
-            objectTypeState: objectTypeState(r.objectType),
-            objectName:     r.objectName,
-            objectId:       r.objectId,
-            fieldCount:     0,
-            changeSource:   r.changeSource,
-            sourceState:    sourceState(r.changeSource)
+            changedBy:        r.changedBy,
+            objectType:       r.objectType,
+            objectTypeState:  objectTypeState(r.objectType),
+            objectName:       r.objectName,
+            objectId:         r.objectId,
+            fieldCount:       0,
+            changeSource:     r.changeSource,
+            sourceState:      sourceState(r.changeSource),
+            hasOldValues:     false
           });
         }
-        batchMap.get(key).fieldCount++;
+        var batch = batchMap.get(key);
+        batch.fieldCount++;
+        if (r.oldValue != null && r.oldValue !== "") batch.hasOldValues = true;
+      });
+
+      batchMap.forEach(function (batch) {
+        batch.actionType      = batch.hasOldValues ? "Change" : "Create";
+        batch.actionTypeState = batch.hasOldValues ? "Warning" : "Success";
       });
 
       var records = Array.from(batchMap.values()).sort(function (a, b) {
         return (b.changedAt || "").localeCompare(a.changedAt || "");
       });
+
+      if (actionTypeFilter) {
+        records = records.filter(function (r) { return r.actionType === actionTypeFilter; });
+      }
+
       this._s1Model.setProperty("/items", records);
+      this.byId("tabRecords").setCount(records.length ? String(records.length) : "");
 
       var uniqueUsers = new Set(rows.map(function (r) { return r.changedBy; })).size;
       var lastChange  = records.length ? records[0].changedAtDisplay : "";
@@ -185,23 +202,26 @@ sap.ui.define([
 
     onClearS1: function () {
       this.byId("s1ObjectType").setSelectedKey("");
+      this.byId("s1ActionType").setSelectedKey("");
       this.byId("s1Source").setSelectedKey("");
       this.byId("s1User").setValue("");
       this.byId("s1ObjectId").setValue("");
       this.byId("s1DateFrom").setValue("");
       this.byId("s1DateTo").setValue("");
       this._s1Model.setProperty("/items", []);
-      this._rawRows = [];
+      this._rawRows        = [];
       this._activeBatchKey = null;
       this.byId("s1Count").setText("");
+      this.byId("tabRecords").setCount("");
       this.byId("kpiStrip").setVisible(false);
       this.byId("s2ContextStrip").setVisible(false);
       this._s2Model.setProperty("/items", []);
       this.byId("s2Count").setText("");
+      this.byId("tabAttributes").setCount("");
       this.byId("emptyState").setVisible(true);
     },
 
-    // ── Section 1 → Section 2 drill-down ─────────────────────────────────
+    // ── Section 1 → Attribute Changes drill-down ──────────────────────────
 
     onRecordPress: function (oEvent) {
       var item = oEvent.getParameter("listItem") || oEvent.getSource();
@@ -222,6 +242,7 @@ sap.ui.define([
       this.byId("s2CtxName").setText(record.objectName || record.objectId);
       this.byId("s2CtxDate").setText("· " + record.changedAtDisplay + "  by  " + record.changedBy);
       this.byId("s2ContextStrip").setVisible(true);
+      this.byId("mainTabs").setSelectedKey("attributes");
     },
 
     onClearS1Selection: function () {
@@ -230,7 +251,7 @@ sap.ui.define([
       this._renderS2(this._rawRows);
     },
 
-    // ── Section 2: Attribute Changes ─────────────────────────────────────
+    // ── Attribute Changes ─────────────────────────────────────────────────
 
     onSearchAttributes: function () {
       if (this._activeBatchKey) {
@@ -267,22 +288,23 @@ sap.ui.define([
     _renderS2: function (rows) {
       var enriched = rows.map(function (r) {
         return {
-          changedAt:       r.changedAt,
+          changedAt:        r.changedAt,
           changedAtDisplay: fmtDate(r.changedAt),
-          changedBy:       r.changedBy,
-          objectType:      r.objectType,
-          objectName:      r.objectName,
-          fieldName:       r.fieldName,
-          fieldLabel:      FIELD_LABELS[r.fieldName] || r.fieldName,
-          oldValue:        r.oldValue || "",
-          newValue:        r.newValue || "",
-          changeSource:    r.changeSource,
-          sourceState:     sourceState(r.changeSource),
-          batchId:         r.batchId
+          changedBy:        r.changedBy,
+          objectType:       r.objectType,
+          objectName:       r.objectName,
+          fieldName:        r.fieldName,
+          fieldLabel:       FIELD_LABELS[r.fieldName] || r.fieldName,
+          oldValue:         r.oldValue || "",
+          newValue:         r.newValue || "",
+          changeSource:     r.changeSource,
+          sourceState:      sourceState(r.changeSource),
+          batchId:          r.batchId
         };
       });
       this._s2Model.setProperty("/items", enriched);
       this.byId("s2Count").setText(enriched.length + " attribute change(s)");
+      this.byId("tabAttributes").setCount(enriched.length ? String(enriched.length) : "");
     },
 
     onClearS2: function () {
@@ -318,8 +340,8 @@ sap.ui.define([
       if (!items.length) {
         items = this._s1Model.getProperty("/items") || [];
         if (!items.length) { MessageToast.show("No data to export."); return; }
-        var FIELDS  = ["changedAtDisplay","changedBy","objectType","objectName","objectId","fieldCount","changeSource"];
-        var HEADERS = ["Changed At","Changed By","Object Type","Record Name","Record ID","Fields Changed","Source"];
+        var FIELDS  = ["changedAtDisplay","changedBy","actionType","objectType","objectName","objectId","fieldCount","changeSource"];
+        var HEADERS = ["Changed At","Changed By","Action","Object Type","Record Name","Record ID","Fields Changed","Source"];
         this._downloadCsv(items, FIELDS, HEADERS, "BMS_RecordChanges");
         return;
       }
@@ -351,20 +373,25 @@ sap.ui.define([
       var html = [
         "<h4>Overview</h4>",
         "<p>The Change Document Report provides a complete audit trail of every field-level change in BMS.</p>",
-        "<h4>Section 1 — Record Changes</h4>",
-        "<p>Shows which records were modified. Each row is one <em>change event</em> (a single save operation). ",
-        "The <strong>Fields Changed</strong> count shows how many attributes were modified in that event. ",
-        "Click any row to load its attribute details in Section 2.</p>",
-        "<h4>Section 2 — Attribute Changes</h4>",
+        "<h4>Record Changes tab</h4>",
+        "<p>Shows which records were modified or created. Each row is one <em>change event</em> (a single save operation). ",
+        "Use the <strong>Action Type</strong> filter to show only <em>Create</em> events or only <em>Change / Update</em> events. ",
+        "The <strong>Fields</strong> count shows how many attributes were affected. ",
+        "Click any row to jump to the Attribute Changes tab pre-filtered for that event.</p>",
+        "<h4>Attribute Changes tab</h4>",
         "<p>Shows field-level before and after values. The <strong>Before</strong> column (red) shows the old value; ",
         "<strong>After</strong> (green) shows what it was changed to. ",
-        "Use the Section 2 filters to narrow by field name, value content, user, or date — either for the selected record or across all loaded data.</p>",
+        "Use the filters to narrow by field name, value content, user, or date — either for the selected record or across all loaded data. ",
+        "Click <strong>Show All</strong> in the context strip to clear the drill-down and see all attribute rows.</p>",
+        "<h4>Action Types</h4>",
+        "<ul><li><strong>Create:</strong> all field values in the event had no previous value (new record)</li>",
+        "<li><strong>Change:</strong> at least one field had an existing value before the change</li></ul>",
         "<h4>Change Sources</h4>",
         "<ul><li><strong>OData:</strong> edited in a Fiori form</li>",
         "<li><strong>Mass Edit:</strong> changed via the in-app grid editor</li>",
         "<li><strong>Mass Upload:</strong> imported via CSV or Excel</li></ul>",
         "<h4>Export</h4>",
-        "<p>Click <strong>Export</strong> to download Section 2 attribute changes as CSV (or Section 1 record summary if Section 2 is empty).</p>"
+        "<p>Click <strong>Export</strong> to download Attribute Changes as CSV (or the Record Changes summary if the attribute tab is empty).</p>"
       ].join("");
       this._openInfoDialog("Change Document Report — Help", html);
     },
