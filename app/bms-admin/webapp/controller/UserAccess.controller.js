@@ -1,12 +1,8 @@
 sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
-  "sap/m/MessageToast",
-  "sap/m/Dialog",
-  "sap/m/Button",
-  "sap/m/ScrollContainer",
-  "sap/m/FormattedText"
-], function (Controller, JSONModel, MessageToast, Dialog, Button, ScrollContainer, FormattedText) {
+  "sap/m/MessageToast"
+], function (Controller, JSONModel, MessageToast) {
   "use strict";
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.UserAccess", {
@@ -103,17 +99,7 @@ sap.ui.define([
         }
       };
       var oEntry = oInfo[sKey] || { title: "Info", html: "<p>No additional information available.</p>" };
-      var oDialog = new Dialog({
-        title: oEntry.title,
-        contentWidth: "460px",
-        content: [new ScrollContainer({ width: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: oEntry.html })]
-        })],
-        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+      this._openInfoDialog(oEntry.title, oEntry.html);
     },
 
     _updateUserCount: function (count) {
@@ -146,15 +132,17 @@ sap.ui.define([
         "<h4>Note on Role Management</h4>",
         "<p>To grant or revoke BMS access roles, open <strong>SAP BTP Cockpit → Security → Role Collections</strong> and assign the BMS role collections to users or groups.</p>"
       ].join("");
-      var oDialog = new Dialog({
-        title: "User Access & Activity: Help",
-        contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml })],
-        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+      this._openInfoDialog("User Access & Activity: Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
   });
 });

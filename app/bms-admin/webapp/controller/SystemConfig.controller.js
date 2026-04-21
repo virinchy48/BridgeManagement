@@ -3,11 +3,8 @@ sap.ui.define([
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
   "sap/m/MessageBox",
-  "sap/m/IconTabFilter",
-  "sap/m/Dialog",
-  "sap/m/Button",
-  "sap/m/FormattedText"
-], function (Controller, JSONModel, MessageToast, MessageBox, IconTabFilter, Dialog, Button,  FormattedText) {
+  "sap/m/IconTabFilter"
+], function (Controller, JSONModel, MessageToast, MessageBox, IconTabFilter) {
   "use strict";
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.SystemConfig", {
@@ -149,15 +146,17 @@ sap.ui.define([
         "<h4>Resetting to Defaults</h4>",
         "<p>Click <strong>Reset to Defaults</strong> to restore all editable settings to their factory values. You will be asked to confirm before changes are applied.</p>"
       ].join("");
-      var oDialog = new Dialog({
-        title: "System Configuration: Help",
-        contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml })],
-        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+      this._openInfoDialog("System Configuration: Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
   });
 });

@@ -425,17 +425,7 @@ sap.ui.define([
         }
       };
       var oEntry = oInfo[sKey] || { title: "Info", html: "<p>No additional information available.</p>" };
-      var oDialog = new Dialog({
-        title: oEntry.title,
-        contentWidth: "480px",
-        content: [new ScrollContainer({ width: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: oEntry.html })]
-        })],
-        endButton: new Btn({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+      this._openInfoDialog(oEntry.title, oEntry.html);
     },
 
     onShowHelp: function () {
@@ -466,15 +456,17 @@ sap.ui.define([
         "<h4>Exporting</h4>",
         "<p>Click <strong>Export CSV</strong> to download all currently filtered bridge issues for offline review or reporting.</p>"
       ].join("");
-      var oDialog = new Dialog({
-        title: "Data Quality Dashboard: Help",
-        contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml })],
-        endButton: new Btn({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+      this._openInfoDialog("Data Quality Dashboard: Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
   });
 });

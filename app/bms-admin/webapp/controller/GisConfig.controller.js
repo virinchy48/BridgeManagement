@@ -2,15 +2,8 @@ sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageBox",
-  "sap/m/MessageToast",
-  "sap/m/Dialog",
-  "sap/m/Button",
-  "sap/m/Input",
-  "sap/m/VBox",
-  "sap/m/HBox",
-  "sap/m/Label",
-  "sap/m/FormattedText"
-], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Button, Input, VBox, HBox, Label,  FormattedText) {
+  "sap/m/MessageToast"
+], function (Controller, JSONModel, MessageBox, MessageToast) {
   "use strict";
 
   var GIS_CONFIG_URL = "/odata/v4/admin/GISConfig('default')";
@@ -168,72 +161,37 @@ sap.ui.define([
     },
 
     _openRefLayerDialog: function (oData) {
-      var self  = this;
-      var bEdit = !!oData.ID;
+      this._refLayerIsEdit = !!oData.ID;
+      this._refLayerData   = oData;
       var oModel = new JSONModel(Object.assign({
         ID: null, name: "", category: "Custom", layerType: "WMS",
         url: "", subLayers: "", attribution: "", opacity: 0.70,
         description: "", enabledByDefault: false, active: true,
         wmsFormat: "image/png", transparent: true, minZoom: 0, maxZoom: 19
       }, oData));
+      this.getView().setModel(oModel, "dlgLayer");
+      var dlg = this.byId("refLayerDialog");
+      dlg.setTitle(this._refLayerIsEdit ? "Edit Reference Layer" : "Add Reference Layer");
+      this.byId("refLayerDialogSaveBtn").setText(this._refLayerIsEdit ? "Save" : "Add");
+      dlg.open();
+    },
 
-      var makeLabelInput = function (label, path, placeholder) {
-        return new VBox({ items: [
-          new Label({ text: label, required: path === "/url" || path === "/name" }),
-          new Input({ value: "{dlg>" + path.slice(1) + "}", placeholder: placeholder || "" })
-        ]}).addStyleClass("sapUiSmallMarginBottom");
-      };
+    onRefLayerDialogSave: function () {
+      var data = this.getView().getModel("dlgLayer").getData();
+      if (!data.name || !data.url) { MessageToast.show("Name and URL are required."); return; }
+      var method = this._refLayerIsEdit ? "PATCH" : "POST";
+      var url    = this._refLayerIsEdit ? REF_LAYER_URL + "('" + data.ID + "')" : REF_LAYER_URL;
+      var body   = Object.assign({}, data);
+      delete body["@context"]; delete body["@metadataEtag"];
+      var self = this;
+      fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+        .then(function (res) { return res.ok ? res : Promise.reject(res.statusText); })
+        .then(function () { self._loadRefLayers(); self.byId("refLayerDialog").close(); })
+        .catch(function (error) { MessageBox.error("Failed to save layer: " + error); });
+    },
 
-      var makeSelect = function (label, path, items) {
-        var oSel = new sap.m.Select({ selectedKey: "{dlg>" + path.slice(1) + "}" });
-        items.forEach(function (selectOption) { oSel.addItem(new sap.ui.core.Item({ key: selectOption, text: selectOption })); });
-        return new VBox({ items: [new Label({ text: label }), oSel] }).addStyleClass("sapUiSmallMarginBottom");
-      };
-
-      var oDialog = new Dialog({
-        title: bEdit ? "Edit Reference Layer" : "Add Reference Layer",
-        contentWidth: "520px",
-        content: [
-          new VBox({ class: "sapUiSmallMargin", items: [
-            makeLabelInput("Layer Name *", "/name", "e.g. BOM Rainfall Radar"),
-            makeSelect("Category", "/category", LAYER_CATEGORIES),
-            makeSelect("Layer Type", "/layerType", LAYER_TYPES),
-            makeLabelInput("Service URL *", "/url", "https://services.ga.gov.au/..."),
-            makeLabelInput("Sub-layers / Layer IDs", "/subLayers", "WMS: comma-separated layer names"),
-            makeLabelInput("Attribution", "/attribution", "© Data Provider"),
-            makeLabelInput("Description", "/description", "Brief description for map users"),
-            new VBox({ items: [
-              new Label({ text: "Opacity (0 – 1)" }),
-              new sap.m.Slider({ value: "{dlg>/opacity}", min: 0, max: 1, step: 0.05, width: "100%" })
-            ]}).addStyleClass("sapUiSmallMarginBottom"),
-            new HBox({ items: [
-              new Label({ text: "Enable by default", width: "12rem" }),
-              new sap.m.Switch({ state: "{dlg>/enabledByDefault}" })
-            ]})
-          ]})
-        ],
-        beginButton: new Button({
-          text: bEdit ? "Save" : "Add",
-          type: "Emphasized",
-          press: function () {
-            var referenceLayer = oModel.getData();
-            if (!referenceLayer.name || !referenceLayer.url) { MessageToast.show("Name and URL are required."); return; }
-            var method = bEdit ? "PATCH" : "POST";
-            var url    = bEdit ? REF_LAYER_URL + "('" + referenceLayer.ID + "')" : REF_LAYER_URL;
-            var body   = Object.assign({}, referenceLayer);
-            delete body["@context"]; delete body["@metadataEtag"];
-            fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-              .then(function (res) { return res.ok ? res : Promise.reject(res.statusText); })
-              .then(function () { self._loadRefLayers(); oDialog.close(); })
-              .catch(function (error) { MessageBox.error("Failed to save layer: " + error); });
-          }
-        }),
-        endButton: new Button({ text: "Cancel", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.setModel(oModel, "dlg");
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+    onRefLayerDialogClose: function () {
+      this.byId("refLayerDialog").close();
     },
 
     onAddRefLayer: function () {
@@ -293,15 +251,17 @@ sap.ui.define([
         "<h4>Saving Changes</h4>",
         "<p>Click <strong>Save</strong> to persist all settings immediately. Click <strong>Discard</strong> to revert unsaved changes.</p>"
       ].join("");
-      var oDialog = new Dialog({
-        title: "GIS Configuration: Help",
-        contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml })],
-        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+      this._openInfoDialog("GIS Configuration: Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
   });
 });

@@ -3,6 +3,7 @@
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
+  xmlns:f="sap.ui.layout.form"
   displayBlock="true">
 
   <Page id="bnacConfigPage" showHeader="true" class="sapUiContentPadding">
@@ -99,5 +100,35 @@
       </VBox>
     </content>
   </Page>
+
+  <mvc:dependents>
+    <Dialog id="envDialog" contentWidth="440px">
+      <content>
+        <f:SimpleForm layout="ColumnLayout" columnsM="1" editable="true" class="sapUiSmallMargin">
+          <f:content>
+            <Label text="Environment Key" required="true"/>
+            <Input id="dlgEnvKey" value="{dlgEnv>/environment}" placeholder="e.g. STAGING"/>
+            <Label text="Base URL" required="true"/>
+            <Input id="dlgEnvUrl" value="{dlgEnv>/baseUrl}" placeholder="https://bnac-xxx.austroads.com.au/assets/"/>
+            <Label text="Description"/>
+            <Input id="dlgEnvDescr" value="{dlgEnv>/description}" placeholder="Optional description"/>
+            <Label text="Active"/>
+            <CheckBox id="dlgEnvActive" selected="{dlgEnv>/active}"/>
+          </f:content>
+        </f:SimpleForm>
+      </content>
+      <beginButton><Button text="Save" type="Emphasized" press=".onEnvDialogSave"/></beginButton>
+      <endButton><Button text="Cancel" press=".onEnvDialogClose"/></endButton>
+    </Dialog>
+
+    <Dialog id="infoDialog" contentWidth="480px">
+      <content>
+        <ScrollContainer width="100%" vertical="true" height="60vh">
+          <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
+        </ScrollContainer>
+      </content>
+      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
+    </Dialog>
+  </mvc:dependents>
 
 </mvc:View>

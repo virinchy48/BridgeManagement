@@ -2,15 +2,8 @@ sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
-  "sap/m/MessageBox",
-  "sap/m/Dialog",
-  "sap/m/Button",
-  "sap/m/Input",
-  "sap/m/CheckBox",
-  "sap/m/Label",
-  "sap/ui/layout/form/SimpleForm",
-  "sap/m/FormattedText"
-], function (Controller, JSONModel, MessageToast, MessageBox, Dialog, Button, Input, CheckBox, Label, SimpleForm,  FormattedText) {
+  "sap/m/MessageBox"
+], function (Controller, JSONModel, MessageToast, MessageBox) {
   "use strict";
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.BnacConfig", {
@@ -57,45 +50,39 @@ sap.ui.define([
     },
 
     _openEnvDialog: function (existing) {
-      const isEdit = !!existing;
-      if (this._envDialog) this._envDialog.destroy();
+      this._envDialogIsEdit = !!existing;
+      this._envDialogEnvKey = existing ? existing.environment : null;
+      this.getView().setModel(new JSONModel({
+        environment: existing ? existing.environment : "",
+        baseUrl:     existing ? (existing.baseUrl     || "") : "",
+        description: existing ? (existing.description || "") : "",
+        active:      existing ? existing.active !== false : true
+      }), "dlgEnv");
+      var dlg = this.byId("envDialog");
+      dlg.setTitle(this._envDialogIsEdit ? "Edit Environment" : "Add Environment");
+      this.byId("dlgEnvKey").setEditable(!this._envDialogIsEdit);
+      dlg.open();
+    },
 
-      const dlgEnv    = new Input({ value: existing?.environment || "", editable: !isEdit, placeholder: "e.g. STAGING" });
-      const dlgUrl    = new Input({ value: existing?.baseUrl     || "", placeholder: "https://bnac-xxx.austroads.com.au/assets/" });
-      const dlgDescr  = new Input({ value: existing?.description || "", placeholder: "Optional description" });
-      const dlgActive = new CheckBox({ selected: existing?.active !== false });
+    onEnvDialogSave: function () {
+      var data = this.getView().getModel("dlgEnv").getData();
+      var env  = (data.environment || "").trim().toUpperCase();
+      var url  = (data.baseUrl || "").trim();
+      if (!env || !url) { MessageToast.show("Environment and Base URL are required."); return; }
+      var body = { environment: env, baseUrl: url, description: (data.description || "").trim(), active: data.active };
+      var req  = this._envDialogIsEdit
+        ? fetch("/bnac/api/environments/" + encodeURIComponent(this._envDialogEnvKey), { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) })
+        : fetch("/bnac/api/environments",                                               { method: "POST",  headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) });
+      req.then(r => r.json()).then(d => {
+        if (d.error) { MessageBox.error(d.error.message); return; }
+        MessageToast.show("Saved.");
+        this.byId("envDialog").close();
+        this._loadEnvs();
+      }).catch(e => MessageBox.error(e.message));
+    },
 
-      this._envDialog = new Dialog({
-        title: isEdit ? "Edit Environment" : "Add Environment",
-        content: [new SimpleForm({ layout: "ColumnLayout", columnsM: 1, editable: true, content: [
-          new Label({ text: "Environment Key", required: true }), dlgEnv,
-          new Label({ text: "Base URL",         required: true }), dlgUrl,
-          new Label({ text: "Description" }),                       dlgDescr,
-          new Label({ text: "Active" }),                            dlgActive
-        ]})],
-        beginButton: new Button({
-          text: "Save", type: "Emphasized",
-          press: () => {
-            const env = dlgEnv.getValue().trim().toUpperCase();
-            const url = dlgUrl.getValue().trim();
-            if (!env || !url) { MessageToast.show("Environment and Base URL are required."); return; }
-            const body = { environment: env, baseUrl: url, description: dlgDescr.getValue().trim(), active: dlgActive.getSelected() };
-            const req  = isEdit
-              ? fetch("/bnac/api/environments/" + encodeURIComponent(env), { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) })
-              : fetch("/bnac/api/environments",                             { method: "POST",  headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) });
-            req.then(r => r.json()).then(d => {
-              if (d.error) { MessageBox.error(d.error.message); return; }
-              MessageToast.show("Saved.");
-              this._envDialog.close();
-              this._loadEnvs();
-            }).catch(e => MessageBox.error(e.message));
-          }
-        }),
-        endButton:   new Button({ text: "Cancel", press: () => this._envDialog.close() }),
-        afterClose:  () => this._envDialog.destroy()
-      });
-      this.getView().addDependent(this._envDialog);
-      this._envDialog.open();
+    onEnvDialogClose: function () {
+      this.byId("envDialog").close();
     },
 
     onBrowse: function () {
@@ -176,15 +163,17 @@ sap.ui.define([
         "<h4>How Deep-Links Work</h4>",
         "<p>Once a mapping is uploaded, the Bridge detail page shows an <strong>Open in BNAC</strong> button. The link is built as: <em>baseUrl + bnacObjectId</em>.</p>"
       ].join("");
-      var oDialog = new Dialog({
-        title: "BNAC Integration: Help",
-        contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml })],
-        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+      this._openInfoDialog("BNAC Integration: Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
   });
 });

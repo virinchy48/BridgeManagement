@@ -192,4 +192,82 @@
 
   </Page>
 
+  <mvc:dependents>
+    <Dialog id="refLayerDialog" contentWidth="520px" class="sapUiContentPadding">
+      <content>
+        <ScrollContainer width="100%" vertical="true" height="70vh">
+          <VBox class="sapUiSmallMargin">
+            <VBox class="sapUiSmallMarginBottom">
+              <Label text="Layer Name" required="true"/>
+              <Input value="{dlgLayer>/name}" placeholder="e.g. BOM Rainfall Radar" width="100%"/>
+            </VBox>
+            <VBox class="sapUiSmallMarginBottom">
+              <Label text="Category"/>
+              <Select selectedKey="{dlgLayer>/category}" width="100%">
+                <items>
+                  <core:Item key="Weather"        text="Weather"/>
+                  <core:Item key="Flood"          text="Flood"/>
+                  <core:Item key="Traffic"        text="Traffic"/>
+                  <core:Item key="Geology"        text="Geology"/>
+                  <core:Item key="Infrastructure" text="Infrastructure"/>
+                  <core:Item key="Environment"    text="Environment"/>
+                  <core:Item key="Emergency"      text="Emergency"/>
+                  <core:Item key="Administrative" text="Administrative"/>
+                  <core:Item key="Custom"         text="Custom"/>
+                </items>
+              </Select>
+            </VBox>
+            <VBox class="sapUiSmallMarginBottom">
+              <Label text="Layer Type"/>
+              <Select selectedKey="{dlgLayer>/layerType}" width="100%">
+                <items>
+                  <core:Item key="WMS"        text="WMS"/>
+                  <core:Item key="XYZ"        text="XYZ"/>
+                  <core:Item key="ArcGISRest" text="ArcGISRest"/>
+                  <core:Item key="GeoJSON"    text="GeoJSON"/>
+                </items>
+              </Select>
+            </VBox>
+            <VBox class="sapUiSmallMarginBottom">
+              <Label text="Service URL" required="true"/>
+              <Input value="{dlgLayer>/url}" placeholder="https://services.ga.gov.au/..." width="100%"/>
+            </VBox>
+            <VBox class="sapUiSmallMarginBottom">
+              <Label text="Sub-layers / Layer IDs"/>
+              <Input value="{dlgLayer>/subLayers}" placeholder="WMS: comma-separated layer names" width="100%"/>
+            </VBox>
+            <VBox class="sapUiSmallMarginBottom">
+              <Label text="Attribution"/>
+              <Input value="{dlgLayer>/attribution}" placeholder="© Data Provider" width="100%"/>
+            </VBox>
+            <VBox class="sapUiSmallMarginBottom">
+              <Label text="Description"/>
+              <Input value="{dlgLayer>/description}" placeholder="Brief description for map users" width="100%"/>
+            </VBox>
+            <VBox class="sapUiSmallMarginBottom">
+              <Label text="Opacity (0 – 1)"/>
+              <Slider value="{dlgLayer>/opacity}" min="0" max="1" step="0.05" width="100%"
+                      enableTickmarks="false" showAdvancedTooltip="true"/>
+            </VBox>
+            <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+              <Label text="Enable by default" width="12rem"/>
+              <Switch state="{dlgLayer>/enabledByDefault}"/>
+            </HBox>
+          </VBox>
+        </ScrollContainer>
+      </content>
+      <beginButton><Button id="refLayerDialogSaveBtn" text="Add" type="Emphasized" press=".onRefLayerDialogSave"/></beginButton>
+      <endButton><Button text="Cancel" press=".onRefLayerDialogClose"/></endButton>
+    </Dialog>
+
+    <Dialog id="infoDialog" contentWidth="480px">
+      <content>
+        <ScrollContainer width="100%" vertical="true" height="60vh">
+          <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
+        </ScrollContainer>
+      </content>
+      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
+    </Dialog>
+  </mvc:dependents>
+
 </mvc:View>

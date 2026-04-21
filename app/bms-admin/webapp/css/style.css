@@ -4,8 +4,14 @@
 }
 
 /* Change Documents */
-.bmsAuditOld { color: #c0392b; }
-.bmsAuditNew { color: #27ae60; }
+.bmsAuditOld  { color: #bb0000; }
+.bmsAuditNew  { color: #107e3e; }
+.bmsAuditCell { display: block; padding: 0.1rem 0.25rem; border-radius: 3px; min-height: 1.25rem; }
+.bmsAuditOld.bmsAuditCell { background: #fff2f0; }
+.bmsAuditNew.bmsAuditCell { background: #f2faf5; }
+.bmsFieldLabel { font-weight: 600; }
+.bmsKpiTile   { border: 1px solid var(--sapTile_BorderColor, #e5e5e5); border-radius: 6px; padding: 0.5rem 1rem; background: var(--sapTile_Background, #fff); min-width: 160px; }
+.bmsContextStrip { background: #eaf4fb; border-left: 3px solid #0064d9; border-radius: 0 4px 4px 0; }
 
 /* System Config */
 .bmsConfigKey   { font-size: 0.75rem; color: var(--sapContent_LabelColor); }

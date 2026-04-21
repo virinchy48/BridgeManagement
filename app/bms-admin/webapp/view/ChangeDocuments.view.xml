@@ -3,141 +3,233 @@
   xmlns:mvc="sap.ui.core.mvc"
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
-  xmlns:l="sap.ui.layout"
   xmlns:f="sap.ui.layout.form"
-  xmlns:t="sap.ui.table"
   displayBlock="true">
 
-  <Page id="changeDocPage" showHeader="true">
+  <Page showHeader="false">
 
     <customHeader>
       <Bar>
         <contentLeft>
-          <Title text="Change Document Report" level="H3" />
+          <Title text="Change Document Report" level="H2"/>
         </contentLeft>
         <contentRight>
-          <Button icon="sap-icon://download" text="Export CSV" press=".onExportCsv" type="Transparent" />
-          <Button icon="sap-icon://refresh"  text="Refresh"     press=".onRefresh"   type="Transparent" />
-          <Button icon="sap-icon://information" tooltip="How to use this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin" />
+          <Button icon="sap-icon://download"    text="Export"   press=".onExportCsv" type="Transparent"/>
+          <Button icon="sap-icon://refresh"     text="Refresh"  press=".onRefresh"   type="Transparent"/>
+          <Button icon="sap-icon://hint"        tooltip="Help"  press=".onShowHelp"  type="Transparent"/>
         </contentRight>
       </Bar>
     </customHeader>
 
     <content>
-      <VBox class="sapUiSmallMargin">
+      <VBox class="sapUiResponsiveMargin">
 
-        <Panel headerText="Search &amp; Filter" expandable="true" expanded="true" class="sapUiSmallMarginBottom">
-          <content>
-            <f:SimpleForm layout="ColumnLayout" columnsM="2" columnsL="3" columnsXL="4" editable="true">
-              <f:content>
-                <Label text="Object Type" />
-                <Select id="filterObjectType" change=".onFilterChange" width="100%">
-                  <items>
-                    <core:Item key="" text="All Types" />
-                    <core:Item key="Bridge" text="Bridge" />
-                    <core:Item key="Restriction" text="Restriction" />
-                    <core:Item key="BridgeRestriction" text="Bridge Restriction" />
-                    <core:Item key="BridgeCapacity" text="Bridge Capacity" />
-                    <core:Item key="ScourAssessment" text="Scour Assessment" />
-                    <core:Item key="GISConfig" text="GIS Config" />
-                    <core:Item key="Lookup" text="Lookup / Code List" />
-                  </items>
-                </Select>
-
-                <Label text="Change Source" />
-                <Select id="filterSource" change=".onFilterChange" width="100%">
-                  <items>
-                    <core:Item key="" text="All Sources" />
-                    <core:Item key="OData" text="OData (Fiori UI)" />
-                    <core:Item key="MassEdit" text="Mass Edit" />
-                    <core:Item key="MassUpload" text="Mass Upload" />
-                  </items>
-                </Select>
-
-                <Label text="Changed By (User)" />
-                <Input id="filterUser" placeholder="Enter user name or ID" liveChange=".onFilterChange" width="100%" />
-
-                <Label text="Object Name / ID" />
-                <Input id="filterObjectId" placeholder="Bridge name, restriction ref…" liveChange=".onFilterChange" width="100%" />
-
-                <Label text="From Date" />
-                <DatePicker id="filterDateFrom" change=".onFilterChange" valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" width="100%" />
-
-                <Label text="To Date" />
-                <DatePicker id="filterDateTo" change=".onFilterChange" valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" width="100%" />
-              </f:content>
-            </f:SimpleForm>
-            <HBox justifyContent="End" class="sapUiSmallMarginTop sapUiSmallMarginBottom">
-              <Button text="Apply Filters" press=".onApplyFilters" type="Emphasized" />
-              <Button text="Reset" press=".onResetFilters" type="Transparent" class="sapUiSmallMarginBegin" />
-            </HBox>
-          </content>
-        </Panel>
-
-        <HBox id="kpiBox" wrap="Wrap" class="sapUiSmallMarginBottom" visible="false">
-          <VBox class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
-            <GenericTile id="kpiTotal" header="Total Changes">
-              <tileContent>
-                <TileContent>
-                  <content>
-                    <NumericContent id="kpiTotalVal" value="0" scale="" withMargin="false" />
-                  </content>
-                </TileContent>
-              </tileContent>
-            </GenericTile>
-            <Button icon="sap-icon://information" tooltip="About: Total Changes" type="Transparent" press=".onTileInfo" class="sapUiTinyMarginTop">
-              <customData><core:CustomData key="tileKey" value="totalChanges"/></customData>
-            </Button>
-          </VBox>
+        <!-- KPI Strip -->
+        <HBox id="kpiStrip" wrap="Wrap" class="sapUiSmallMarginBottom" visible="false">
+          <ObjectNumber id="kpiRecords"    number="0" unit="Records Changed"   class="bmsKpiTile sapUiSmallMarginEnd sapUiSmallMarginBottom"/>
+          <ObjectNumber id="kpiFields"     number="0" unit="Field Changes"     class="bmsKpiTile sapUiSmallMarginEnd sapUiSmallMarginBottom"/>
+          <ObjectNumber id="kpiUsers"      number="0" unit="Users Active"      class="bmsKpiTile sapUiSmallMarginEnd sapUiSmallMarginBottom"/>
+          <ObjectNumber id="kpiLastChange" number=""  unit="Most Recent"       class="bmsKpiTile sapUiSmallMarginBottom"/>
         </HBox>
 
-        <Panel id="resultsPanel" expandable="false" visible="false">
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 1 — Record Changes                                     -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <Panel class="sapUiSmallMarginBottom">
           <headerToolbar>
             <Toolbar>
-              <Title id="resultsTitle" text="Changes" level="H3" />
-              <ToolbarSpacer />
-              <Text id="recordCount" text="" />
+              <Title text="① Record Changes" level="H3"/>
+              <ToolbarSpacer/>
+              <Text id="s1Count" text="" class="sapMuted sapUiSmallMarginEnd"/>
             </Toolbar>
           </headerToolbar>
           <content>
-            <List id="objectGroupList" mode="None" noDataText="No changes found for the selected filters."
-                  growing="true" growingThreshold="50" growingScrollToLoad="true" />
+
+            <f:SimpleForm layout="ColumnLayout" columnsM="2" columnsL="3" columnsXL="4" editable="true" class="sapUiSmallMarginTop">
+              <f:content>
+                <Label text="Object Type"/>
+                <Select id="s1ObjectType" width="100%">
+                  <items>
+                    <core:Item key="" text="All Types"/>
+                    <core:Item key="Bridge"            text="Bridge"/>
+                    <core:Item key="Restriction"       text="Restriction"/>
+                    <core:Item key="BridgeRestriction" text="Bridge Restriction"/>
+                    <core:Item key="BridgeCapacity"    text="Bridge Capacity"/>
+                    <core:Item key="ScourAssessment"   text="Scour Assessment"/>
+                    <core:Item key="GISConfig"         text="GIS Config"/>
+                    <core:Item key="Lookup"            text="Lookup / Code List"/>
+                  </items>
+                </Select>
+
+                <Label text="Change Source"/>
+                <Select id="s1Source" width="100%">
+                  <items>
+                    <core:Item key="" text="All Sources"/>
+                    <core:Item key="OData"      text="OData (Fiori UI)"/>
+                    <core:Item key="MassEdit"   text="Mass Edit"/>
+                    <core:Item key="MassUpload" text="Mass Upload"/>
+                  </items>
+                </Select>
+
+                <Label text="Changed By"/>
+                <Input id="s1User"     placeholder="User name or ID"             width="100%"/>
+
+                <Label text="Record Name / ID"/>
+                <Input id="s1ObjectId" placeholder="Bridge name, restriction ref…" width="100%"/>
+
+                <Label text="From Date"/>
+                <DatePicker id="s1DateFrom" valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" width="100%"/>
+
+                <Label text="To Date"/>
+                <DatePicker id="s1DateTo"   valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" width="100%"/>
+              </f:content>
+            </f:SimpleForm>
+
+            <HBox justifyContent="End" class="sapUiSmallMarginBottom">
+              <Button text="Search Records" press=".onSearchRecords" type="Emphasized"/>
+              <Button text="Clear"          press=".onClearS1"       type="Transparent" class="sapUiSmallMarginBegin"/>
+            </HBox>
+
+            <Table id="s1Table"
+              items="{path: 's1>/items', templateShareable: false}"
+              mode="None"
+              noDataText="Apply filters above and click Search Records."
+              growing="true" growingThreshold="25" class="sapUiSmallMarginBottom">
+              <columns>
+                <Column width="150px"><Text text="Changed At"/></Column>
+                <Column width="130px"><Text text="Changed By"/></Column>
+                <Column width="120px"><Text text="Type"/></Column>
+                <Column minScreenWidth="Tablet" demandPopin="true"><Text text="Record Name"/></Column>
+                <Column width="100px" hAlign="Center"><Text text="Fields Changed"/></Column>
+                <Column width="120px"><Text text="Source"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem type="Active" press=".onRecordPress">
+                  <cells>
+                    <Text text="{s1>changedAtDisplay}" wrapping="false"/>
+                    <Text text="{s1>changedBy}"        wrapping="false"/>
+                    <ObjectStatus text="{s1>objectType}" state="{s1>objectTypeState}"/>
+                    <Text text="{s1>objectName}"       wrapping="false"/>
+                    <ObjectNumber number="{s1>fieldCount}" unit="" emphasized="false"/>
+                    <ObjectStatus text="{s1>changeSource}" state="{s1>sourceState}"/>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+
           </content>
         </Panel>
 
-        <Panel id="flatTablePanel" visible="false" headerText="All Field Changes" expandable="true" expanded="true">
+        <!-- Link strip between sections -->
+        <MessageStrip id="s1Hint"
+          text="Click a row in Section 1 to load its attribute changes below. Section 2 also supports independent search."
+          type="Information" showCloseButton="false" showIcon="true"
+          class="sapUiSmallMarginBottom"/>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SECTION 2 — Attribute Changes                                  -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <Panel>
           <headerToolbar>
             <Toolbar>
-              <Title text="Field-Level Changes" level="H3" />
-              <ToolbarSpacer />
-              <Text id="flatCount" text="" />
+              <Title text="② Attribute Changes — field-level before &amp; after" level="H3"/>
+              <ToolbarSpacer/>
+              <Text id="s2Count" text="" class="sapMuted sapUiSmallMarginEnd"/>
             </Toolbar>
           </headerToolbar>
           <content>
-            <t:Table id="changeTable" visibleRowCount="20" selectionMode="None"
-                     enableBusyIndicator="true" noData="No changes match the current filters.">
-              <t:columns>
-                <t:Column width="160px"><Label text="Changed At" /><t:template><Text text="{changedAtDisplay}" wrapping="false" /></t:template></t:Column>
-                <t:Column width="120px"><Label text="Changed By" /><t:template><Text text="{changedBy}" wrapping="false" /></t:template></t:Column>
-                <t:Column width="100px"><Label text="Object Type" /><t:template><ObjectStatus text="{objectType}" state="{objectTypeState}" /></t:template></t:Column>
-                <t:Column width="180px"><Label text="Object Name" /><t:template><Text text="{objectName}" wrapping="false" /></t:template></t:Column>
-                <t:Column width="160px"><Label text="Field" /><t:template><Text text="{fieldName}" wrapping="false" /></t:template></t:Column>
-                <t:Column width="200px"><Label text="Old Value" /><t:template><Text text="{oldValue}" wrapping="false" /></t:template></t:Column>
-                <t:Column width="200px"><Label text="New Value" /><t:template><Text text="{newValue}" wrapping="false" /></t:template></t:Column>
-                <t:Column width="100px"><Label text="Source" /><t:template><ObjectStatus text="{changeSource}" state="{sourceState}" /></t:template></t:Column>
-              </t:columns>
-            </t:Table>
+
+            <!-- Context strip: visible when a Section 1 row is selected -->
+            <HBox id="s2ContextStrip" visible="false" alignItems="Center"
+              class="bmsContextStrip sapUiSmallMarginTop sapUiSmallMarginBottom sapUiSmallPaddingBeginEnd">
+              <core:Icon src="sap-icon://filter" color="#0064d9" class="sapUiSmallMarginEnd"/>
+              <Label text="Filtered for:" design="Bold" class="sapUiSmallMarginEnd"/>
+              <ObjectStatus id="s2CtxType" class="sapUiSmallMarginEnd"/>
+              <Text        id="s2CtxName" class="sapUiSmallMarginEnd"/>
+              <Text        id="s2CtxDate" class="sapMuted"/>
+              <ToolbarSpacer/>
+              <Button text="Show All" press=".onClearS1Selection" type="Transparent" icon="sap-icon://decline"/>
+            </HBox>
+
+            <f:SimpleForm layout="ColumnLayout" columnsM="2" columnsL="3" columnsXL="4" editable="true" class="sapUiSmallMarginTop">
+              <f:content>
+                <Label text="Field Name Contains"/>
+                <Input id="s2FieldName" placeholder="e.g. condition, status…" width="100%"/>
+
+                <Label text="Old Value Contains"/>
+                <Input id="s2OldValue"  placeholder="Search old value…"       width="100%"/>
+
+                <Label text="New Value Contains"/>
+                <Input id="s2NewValue"  placeholder="Search new value…"       width="100%"/>
+
+                <Label text="Changed By"/>
+                <Input id="s2User"      placeholder="User name or ID"         width="100%"/>
+
+                <Label text="From Date"/>
+                <DatePicker id="s2DateFrom" valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" width="100%"/>
+
+                <Label text="To Date"/>
+                <DatePicker id="s2DateTo"   valueFormat="yyyy-MM-dd" displayFormat="dd MMM yyyy" width="100%"/>
+              </f:content>
+            </f:SimpleForm>
+
+            <HBox justifyContent="End" class="sapUiSmallMarginBottom">
+              <Button text="Search Attributes" press=".onSearchAttributes" type="Emphasized"/>
+              <Button text="Clear"             press=".onClearS2"          type="Transparent" class="sapUiSmallMarginBegin"/>
+            </HBox>
+
+            <!-- Attribute diff table -->
+            <Table id="s2Table"
+              items="{path: 's2>/items', templateShareable: false}"
+              noDataText="Select a record in Section 1 or use the filters above."
+              growing="true" growingThreshold="50">
+              <columns>
+                <Column width="150px" minScreenWidth="Tablet" demandPopin="true"><Text text="Changed At"/></Column>
+                <Column width="120px" minScreenWidth="Tablet" demandPopin="true"><Text text="Changed By"/></Column>
+                <Column width="210px"><Text text="Field"/></Column>
+                <Column><Text text="Before"/></Column>
+                <Column width="36px"><Text text=""/></Column>
+                <Column><Text text="After"/></Column>
+                <Column width="120px" minScreenWidth="Tablet" demandPopin="true"><Text text="Source"/></Column>
+              </columns>
+              <items>
+                <ColumnListItem>
+                  <cells>
+                    <Text text="{s2>changedAtDisplay}" wrapping="false"/>
+                    <Text text="{s2>changedBy}"        wrapping="false"/>
+                    <Text text="{s2>fieldLabel}"       wrapping="false" class="bmsFieldLabel"/>
+                    <Text text="{s2>oldValue}"         wrapping="true"  class="bmsAuditOld bmsAuditCell"/>
+                    <core:Icon src="sap-icon://arrow-right" color="#8696a9" size="0.875rem"/>
+                    <Text text="{s2>newValue}"         wrapping="true"  class="bmsAuditNew bmsAuditCell"/>
+                    <ObjectStatus text="{s2>changeSource}" state="{s2>sourceState}"/>
+                  </cells>
+                </ColumnListItem>
+              </items>
+            </Table>
+
           </content>
         </Panel>
 
-        <VBox id="emptyState" alignItems="Center" justifyContent="Center" class="sapUiLargeMargin">
-          <core:Icon src="sap-icon://history" size="5rem" color="Default" />
-          <Title text="Apply filters to view change documents" level="H4" class="sapUiSmallMarginTop" />
-          <Text text="Select object type, date range, or user and click Apply Filters." />
+        <!-- Empty state -->
+        <VBox id="emptyState" alignItems="Center" class="sapUiLargeMargin">
+          <core:Icon src="sap-icon://history" size="4rem" color="Default"/>
+          <Title text="Search for changes using the filters above" level="H4" class="sapUiSmallMarginTop"/>
+          <Text text="Section 1 shows which records changed. Click a row to see field-level before/after values in Section 2."/>
         </VBox>
 
       </VBox>
     </content>
   </Page>
+
+  <mvc:dependents>
+    <Dialog id="infoDialog" contentWidth="480px">
+      <content>
+        <ScrollContainer width="100%" vertical="true" height="60vh">
+          <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
+        </ScrollContainer>
+      </content>
+      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
+    </Dialog>
+  </mvc:dependents>
 
 </mvc:View>

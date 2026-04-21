@@ -9,9 +9,8 @@ sap.ui.define([
   "sap/m/Button",
   "sap/m/VBox",
   "sap/m/Label",
-  "sap/m/FormattedText",
   "sap/ui/core/Item"
-], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Select, Button, VBox, Label,  FormattedText, Item) {
+], function (Controller, JSONModel, MessageBox, MessageToast, Dialog, Input, Select, Button, VBox, Label, Item) {
   "use strict";
 
   var BASE = "/odata/v4/admin";
@@ -369,19 +368,17 @@ sap.ui.define([
         "<h4>Bulk Import / Export</h4>",
         "<p>Use <strong>Export Template</strong> to download an Excel template pre-filled with active attribute headers, then upload via Mass Upload.</p>"
       ].join("");
+      this._openInfoDialog("Attribute Configuration: Help", sHtml);
+    },
 
-      var oDialog = new Dialog({
-        title: "Attribute Configuration: Help",
-        contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml })],
-        endButton: new Button({
-          text: "Close",
-          press: function () { oDialog.close(); }
-        }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     },
 
     _showFormDialog: function (title, fields, onConfirm) {

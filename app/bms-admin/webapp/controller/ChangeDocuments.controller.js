@@ -2,405 +2,382 @@ sap.ui.define([
   "sap/ui/core/mvc/Controller",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
-  "sap/m/MessageBox",
-  "sap/m/Panel",
-  "sap/m/VBox",
-  "sap/m/HBox",
-  "sap/m/Title",
-  "sap/m/Text",
-  "sap/m/ObjectStatus",
-  "sap/m/Label",
-  "sap/m/CustomListItem",
-  "sap/m/Dialog",
-  "sap/m/Button",
-  "sap/m/ScrollContainer",
-  "sap/m/FormattedText"
-], function (Controller, JSONModel, MessageToast, MessageBox,
-             Panel, VBox, HBox, Title, Text, ObjectStatus, Label, CustomListItem,
-             Dialog, Button, ScrollContainer, FormattedText) {
+  "sap/m/MessageBox"
+], function (Controller, JSONModel, MessageToast, MessageBox) {
   "use strict";
 
   var FIELD_LABELS = {
-    // Bridge — identity & location
-    bridgeId:                 "Bridge ID",
-    bridgeName:               "Bridge Name",
-    state:                    "State",
-    region:                   "Region",
-    lga:                      "LGA",
-    route:                    "Route",
-    routeNumber:              "Route Number",
-    location:                 "Location",
-    latitude:                 "Latitude",
-    longitude:                "Longitude",
-    // Bridge — ownership
-    assetClass:               "Asset Class",
-    assetOwner:               "Asset Owner",
-    managingAuthority:        "Managing Authority",
-    // Bridge — structure
-    structureType:            "Structure Type",
-    material:                 "Material",
-    yearBuilt:                "Year Built",
-    designLoad:               "Design Load",
-    designStandard:           "Design Standard",
-    spanCount:                "Span Count",
-    spanLength:               "Span Length (m)",
-    totalLength:              "Total Length (m)",
-    deckWidth:                "Deck Width (m)",
-    clearanceHeight:          "Clearance Height (m)",
-    numberOfLanes:            "Number of Lanes",
-    // Bridge — condition
-    condition:                "Condition",
-    conditionRating:          "Condition Rating",
-    conditionStandard:        "Condition Standard",
-    conditionSummary:         "Condition Summary",
-    conditionAssessor:        "Assessed By",
-    conditionReportRef:       "Report Reference",
-    conditionNotes:           "Condition Notes",
-    structuralAdequacy:       "Structural Adequacy",
-    structuralAdequacyRating: "Structural Adequacy Rating",
-    // Bridge — risk & inspection
-    postingStatus:            "Posting Status",
-    status:                   "Status",
-    scourRisk:                "Scour Risk",
-    lastInspectionDate:       "Last Inspection Date",
-    seismicZone:              "Seismic Zone",
-    scourDepthLastMeasured:   "Scour Depth Last Measured (m)",
-    floodImmunityAriYears:    "Flood Immunity ARI (years)",
-    floodImpacted:            "Flood Impacted",
-    highPriorityAsset:        "High Priority Asset",
-    asBuiltDrawingReference:  "As-Built Drawing Reference",
-    remarks:                  "Remarks",
-    // Bridge — NHVR & approvals
-    nhvrAssessed:             "NHVR Assessed",
-    nhvrAssessmentDate:       "NHVR Assessment Date",
-    nhvrReferenceUrl:         "NHVR Reference URL",
-    loadRating:               "Load Rating (t)",
-    pbsApprovalClass:         "PBS Approval Class",
-    importanceLevel:          "Importance Level",
-    averageDailyTraffic:      "Average Daily Traffic (ADT)",
-    heavyVehiclePercent:      "Heavy Vehicle Percentage (%)",
-    gazetteReference:         "Gazette Reference",
-    freightRoute:             "Freight Route",
-    overMassRoute:            "Over Mass Route",
-    hmlApproved:              "HML Approved",
-    bDoubleApproved:          "B-Double Approved",
-    // Bridge — provenance
-    dataSource:               "Data Source",
-    sourceReferenceUrl:       "Source Reference URL",
-    openDataReference:        "Open Data Reference",
-    sourceRecordId:           "Source Record ID",
-    isActive:                 "Active",
-    // Restriction / BridgeRestriction
-    restrictionRef:           "Reference",
-    bridgeRef:                "Bridge Reference",
-    bridge_ID:                "Bridge",
-    restrictionCategory:      "Category",
-    restrictionType:          "Restriction Type",
-    restrictionValue:         "Value",
-    restrictionUnit:          "Unit",
-    restrictionStatus:        "Status",
-    active:                   "Active",
-    temporary:                "Temporary",
-    appliesToVehicleClass:    "Applies to Vehicle Class",
-    direction:                "Direction",
-    effectiveFrom:            "Effective From",
-    effectiveTo:              "Effective To",
-    grossMassLimit:           "Gross Mass Limit (t)",
-    axleMassLimit:            "Axle Mass Limit (t)",
-    heightLimit:              "Height Limit (m)",
-    widthLimit:               "Width Limit (m)",
-    lengthLimit:              "Length Limit (m)",
-    speedLimit:               "Speed Limit (km/h)",
-    permitRequired:           "Permit Required",
-    escortRequired:           "Escort Required",
-    approvedBy:               "Approved By",
-    approvalReference:        "Approval Reference",
-    legalReference:           "Gazette / Legal Reference",
-    issuingAuthority:         "Issuing Authority",
-    enforcementAuthority:     "Enforcement Authority",
-    temporaryFrom:            "Temporary From",
-    temporaryTo:              "Temporary To",
-    temporaryReason:          "Temporary Reason",
-    name:                     "Name",
-    descr:                    "Description",
-    // Capacity
-    capacityType:             "Capacity Type",
-    capacityStatus:           "Capacity Status",
-    ratingMethod:             "Rating Method",
-    ratingFactor:             "Rating Factor",
-    minClearancePosted:       "Min. Clearance Posted",
-    grossCombined:            "Gross Combined (t)",
-    steerAxleLimit:           "Steer Axle Limit (t)",
-    singleAxleLimit:          "Single Axle Limit (t)",
-    tandemGroupLimit:         "Tandem Group Limit (t)",
-    triAxleGroupLimit:        "Tri-Axle Group Limit (t)",
-    lane1Clearance:           "Lane 1 Clearance (m)",
-    lane2Clearance:           "Lane 2 Clearance (m)",
-    carriagewayWidth:         "Carriageway Width (m)",
-    trafficableWidth:         "Trafficable Width (m)",
-    laneWidth:                "Lane Width (m)",
-    consumedLife:             "Consumed Life (%)",
-    designLife:               "Design Life (years)",
-    pbsClass:                 "PBS Class",
-    // Scour assessment
-    assessmentDate:           "Assessment Date",
-    assessmentType:           "Assessment Type",
-    assessor:                 "Assessor",
-    scourCriticalDepth:       "Scour Critical Depth (m)",
-    currentScourDepth:        "Current Scour Depth (m)",
-    floodClosureLevel:        "Flood Closure Level (m)",
-    measuredDepth:            "Measured Scour Depth (m)",
-    notes:                    "Notes",
-    // System
-    ID:                       "Record ID",
-    createdAt:                "Created At",
-    createdBy:                "Created By",
-    modifiedAt:               "Modified At",
-    modifiedBy:               "Modified By"
+    bridgeId: "Bridge ID", bridgeName: "Bridge Name", state: "State", region: "Region",
+    lga: "LGA", route: "Route", routeNumber: "Route Number", location: "Location",
+    latitude: "Latitude", longitude: "Longitude",
+    assetClass: "Asset Class", assetOwner: "Asset Owner", managingAuthority: "Managing Authority",
+    structureType: "Structure Type", material: "Material", yearBuilt: "Year Built",
+    designLoad: "Design Load", designStandard: "Design Standard", spanCount: "Span Count",
+    spanLength: "Span Length (m)", totalLength: "Total Length (m)", deckWidth: "Deck Width (m)",
+    clearanceHeight: "Clearance Height (m)", numberOfLanes: "Number of Lanes",
+    condition: "Condition", conditionRating: "Condition Rating", conditionStandard: "Condition Standard",
+    conditionSummary: "Condition Summary", conditionAssessor: "Assessed By",
+    conditionReportRef: "Report Reference", conditionNotes: "Condition Notes",
+    structuralAdequacy: "Structural Adequacy", structuralAdequacyRating: "Structural Adequacy Rating",
+    postingStatus: "Posting Status", status: "Status", scourRisk: "Scour Risk",
+    lastInspectionDate: "Last Inspection Date", seismicZone: "Seismic Zone",
+    scourDepthLastMeasured: "Scour Depth Last Measured (m)",
+    floodImmunityAriYears: "Flood Immunity ARI (years)", floodImpacted: "Flood Impacted",
+    highPriorityAsset: "High Priority Asset", asBuiltDrawingReference: "As-Built Drawing Reference",
+    remarks: "Remarks",
+    nhvrAssessed: "NHVR Assessed", nhvrAssessmentDate: "NHVR Assessment Date",
+    nhvrReferenceUrl: "NHVR Reference URL", loadRating: "Load Rating (t)",
+    pbsApprovalClass: "PBS Approval Class", importanceLevel: "Importance Level",
+    averageDailyTraffic: "Average Daily Traffic (ADT)",
+    heavyVehiclePercent: "Heavy Vehicle Percentage (%)", gazetteReference: "Gazette Reference",
+    freightRoute: "Freight Route", overMassRoute: "Over Mass Route",
+    hmlApproved: "HML Approved", bDoubleApproved: "B-Double Approved",
+    dataSource: "Data Source", sourceReferenceUrl: "Source Reference URL",
+    openDataReference: "Open Data Reference", sourceRecordId: "Source Record ID", isActive: "Active",
+    restrictionRef: "Reference", bridgeRef: "Bridge Reference", bridge_ID: "Bridge",
+    restrictionCategory: "Category", restrictionType: "Restriction Type",
+    restrictionValue: "Value", restrictionUnit: "Unit", restrictionStatus: "Status",
+    active: "Active", temporary: "Temporary", appliesToVehicleClass: "Applies to Vehicle Class",
+    direction: "Direction", effectiveFrom: "Effective From", effectiveTo: "Effective To",
+    grossMassLimit: "Gross Mass Limit (t)", axleMassLimit: "Axle Mass Limit (t)",
+    heightLimit: "Height Limit (m)", widthLimit: "Width Limit (m)", lengthLimit: "Length Limit (m)",
+    speedLimit: "Speed Limit (km/h)", permitRequired: "Permit Required", escortRequired: "Escort Required",
+    approvedBy: "Approved By", approvalReference: "Approval Reference",
+    legalReference: "Gazette / Legal Reference", issuingAuthority: "Issuing Authority",
+    enforcementAuthority: "Enforcement Authority",
+    temporaryFrom: "Temporary From", temporaryTo: "Temporary To", temporaryReason: "Temporary Reason",
+    name: "Name", descr: "Description",
+    capacityType: "Capacity Type", capacityStatus: "Capacity Status", ratingMethod: "Rating Method",
+    ratingFactor: "Rating Factor", minClearancePosted: "Min. Clearance Posted",
+    grossCombined: "Gross Combined (t)", steerAxleLimit: "Steer Axle Limit (t)",
+    singleAxleLimit: "Single Axle Limit (t)", tandemGroupLimit: "Tandem Group Limit (t)",
+    triAxleGroupLimit: "Tri-Axle Group Limit (t)", lane1Clearance: "Lane 1 Clearance (m)",
+    lane2Clearance: "Lane 2 Clearance (m)", carriagewayWidth: "Carriageway Width (m)",
+    trafficableWidth: "Trafficable Width (m)", laneWidth: "Lane Width (m)",
+    consumedLife: "Consumed Life (%)", designLife: "Design Life (years)", pbsClass: "PBS Class",
+    assessmentDate: "Assessment Date", assessmentType: "Assessment Type", assessor: "Assessor",
+    scourCriticalDepth: "Scour Critical Depth (m)", currentScourDepth: "Current Scour Depth (m)",
+    floodClosureLevel: "Flood Closure Level (m)", measuredDepth: "Measured Scour Depth (m)",
+    notes: "Notes",
+    ID: "Record ID", createdAt: "Created At", createdBy: "Created By",
+    modifiedAt: "Modified At", modifiedBy: "Modified By"
   };
 
-  function fieldLabel(rawName) {
-    return FIELD_LABELS[rawName] || rawName;
+  function fmtDate(iso) {
+    if (!iso) return "";
+    return new Date(iso).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" });
+  }
+
+  function objectTypeState(type) {
+    switch ((type || "").toLowerCase()) {
+      case "bridge":            return "Success";
+      case "restriction":       return "Warning";
+      case "bridgerestriction": return "Warning";
+      case "bridgecapacity":    return "Information";
+      case "scourassessment":   return "Information";
+      default:                  return "None";
+    }
+  }
+
+  function sourceState(source) {
+    switch ((source || "").toLowerCase()) {
+      case "odata":      return "Success";
+      case "massedit":   return "Warning";
+      case "massupload": return "Error";
+      default:           return "None";
+    }
   }
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.ChangeDocuments", {
 
     onInit: function () {
-      this._model = new JSONModel({ changes: [], loading: false });
-      this.getView().setModel(this._model, "audit");
+      this._s1Model = new JSONModel({ items: [] });
+      this._s2Model = new JSONModel({ items: [] });
+      this.getView().setModel(this._s1Model, "s1");
+      this.getView().setModel(this._s2Model, "s2");
+      this._rawRows      = [];
+      this._activeBatchKey = null;
     },
 
-    _getFilterValues: function () {
-      return {
-        objectType: this.byId("filterObjectType").getSelectedKey(),
-        source:     this.byId("filterSource").getSelectedKey(),
-        user:       (this.byId("filterUser").getValue() || "").trim(),
-        objectId:   (this.byId("filterObjectId").getValue() || "").trim(),
-        from:       this.byId("filterDateFrom").getValue(),
-        to:         this.byId("filterDateTo").getValue()
-      };
-    },
+    // ── Section 1: Record Changes ─────────────────────────────────────────
 
-    onFilterChange: function () { /* live-change: do nothing until Apply */ },
-    onApplyFilters: function () { this._loadChanges(); },
-    onRefresh:      function () { this._loadChanges(); },
-
-    onResetFilters: function () {
-      this.byId("filterObjectType").setSelectedKey("");
-      this.byId("filterSource").setSelectedKey("");
-      this.byId("filterUser").setValue("");
-      this.byId("filterObjectId").setValue("");
-      this.byId("filterDateFrom").setValue("");
-      this.byId("filterDateTo").setValue("");
-      this.byId("emptyState").setVisible(true);
-      this.byId("flatTablePanel").setVisible(false);
-      this.byId("resultsPanel").setVisible(false);
-      this.byId("kpiBox").setVisible(false);
-    },
-
-    _loadChanges: function () {
-      const view = this.getView();
+    onSearchRecords: function () {
+      var view = this.getView();
       view.setBusy(true);
+      this._activeBatchKey = null;
+      this.byId("s2ContextStrip").setVisible(false);
 
-      const filters = this._getFilterValues();
-      const params  = new URLSearchParams();
-      if (filters.objectType) params.set("objectType", filters.objectType);
-      if (filters.source)     params.set("source",     filters.source);
-      if (filters.user)       params.set("user",        filters.user);
-      if (filters.from)       params.set("from",        filters.from);
-      if (filters.to)         params.set("to",          filters.to);
+      var params = new URLSearchParams();
+      var ot = this.byId("s1ObjectType").getSelectedKey();
+      var src = this.byId("s1Source").getSelectedKey();
+      var usr = (this.byId("s1User").getValue() || "").trim();
+      var from = this.byId("s1DateFrom").getValue();
+      var to   = this.byId("s1DateTo").getValue();
+      if (ot)   params.set("objectType", ot);
+      if (src)  params.set("source", src);
+      if (usr)  params.set("user", usr);
+      if (from) params.set("from", from);
+      if (to)   params.set("to", to);
 
       fetch("/audit/api/changes?" + params.toString(), { credentials: "same-origin" })
-        .then(r => r.json())
-        .then(data => {
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
           view.setBusy(false);
-          let rows = data.changes || [];
-          if (filters.objectId) {
-            const needle = filters.objectId.toLowerCase();
-            rows = rows.filter(r =>
-              (r.objectName || "").toLowerCase().includes(needle) ||
-              (r.objectId   || "").toLowerCase().includes(needle)
-            );
+          var rows = data.changes || [];
+          var needle = (this.byId("s1ObjectId").getValue() || "").trim().toLowerCase();
+          if (needle) {
+            rows = rows.filter(function (r) {
+              return (r.objectName || "").toLowerCase().includes(needle) ||
+                     (r.objectId   || "").toLowerCase().includes(needle);
+            });
           }
-          this._renderResults(rows);
-        })
-        .catch(err => {
+          this._rawRows = rows;
+          this._renderS1(rows);
+          this._s2Model.setProperty("/items", []);
+          this.byId("s2Count").setText("");
+        }.bind(this))
+        .catch(function (err) {
           view.setBusy(false);
-          MessageBox.error("Failed to load change documents: " + err.message);
+          MessageBox.error("Failed to load changes: " + err.message);
         });
     },
 
-    _renderResults: function (rows) {
-      const isEmpty = !rows || !rows.length;
-      this.byId("emptyState").setVisible(isEmpty);
-      this.byId("flatTablePanel").setVisible(!isEmpty);
-      this.byId("resultsPanel").setVisible(!isEmpty);
-      this.byId("kpiBox").setVisible(!isEmpty);
-      if (isEmpty) return;
-
-      const enriched = rows.map(r => ({
-        ...r,
-        changedAtDisplay: r.changedAt
-          ? new Date(r.changedAt).toLocaleString("en-AU", { dateStyle: "medium", timeStyle: "short" })
-          : "",
-        objectTypeState: this._objectTypeState(r.objectType),
-        sourceState:     this._sourceState(r.changeSource)
-      }));
-
-      const table = this.byId("changeTable");
-      table.setModel(new JSONModel({ items: enriched }));
-      table.bindRows("/items");
-
-      this.byId("flatCount").setText(enriched.length + " row(s)");
-      this.byId("kpiTotalVal").setValue(enriched.length);
-      this._renderGroupedPanel(enriched);
-    },
-
-    _renderGroupedPanel: function (rows) {
-      const groups = new Map();
-      for (const changeRow of rows) {
-        const key = changeRow.objectType + "|" + changeRow.objectId;
-        if (!groups.has(key)) {
-          groups.set(key, { objectType: changeRow.objectType, objectId: changeRow.objectId, objectName: changeRow.objectName, batches: new Map() });
-        }
-        const objectChangeGroup = groups.get(key);
-        const auditBatchKey = changeRow.batchId || changeRow.changedAt || Math.random();
-        if (!objectChangeGroup.batches.has(auditBatchKey)) {
-          objectChangeGroup.batches.set(auditBatchKey, { changedAt: changeRow.changedAt, changedAtDisplay: changeRow.changedAtDisplay, changedBy: changeRow.changedBy, source: changeRow.changeSource, fields: [] });
-        }
-        objectChangeGroup.batches.get(auditBatchKey).fields.push(changeRow);
-      }
-
-      const list = this.byId("objectGroupList");
-      list.removeAllItems();
-
-      for (const [, group] of groups) {
-        const item    = new CustomListItem();
-        const outerBox = new VBox({ class: "sapUiSmallMargin" });
-
-        const headerBox = new HBox({ alignItems: "Center" });
-        headerBox.addItem(new ObjectStatus({ text: group.objectType, state: this._objectTypeState(group.objectType), class: "sapUiSmallMarginEnd" }));
-        headerBox.addItem(new Title({ text: group.objectName || group.objectId, level: "H4" }));
-        outerBox.addItem(headerBox);
-
-        for (const [, batch] of group.batches) {
-          const batchPanel = new Panel({
-            headerText: batch.changedAtDisplay + "  ·  " + batch.changedBy + "  ·  " + batch.source,
-            expandable: true, expanded: false, class: "sapUiTinyMarginTop"
+    _renderS1: function (rows) {
+      var batchMap = new Map();
+      rows.forEach(function (r) {
+        var key = r.batchId || [r.objectType, r.objectId, r.changedAt, r.changedBy].join("|");
+        if (!batchMap.has(key)) {
+          batchMap.set(key, {
+            batchKey:       key,
+            batchId:        r.batchId,
+            changedAt:      r.changedAt,
+            changedAtDisplay: fmtDate(r.changedAt),
+            changedBy:      r.changedBy,
+            objectType:     r.objectType,
+            objectTypeState: objectTypeState(r.objectType),
+            objectName:     r.objectName,
+            objectId:       r.objectId,
+            fieldCount:     0,
+            changeSource:   r.changeSource,
+            sourceState:    sourceState(r.changeSource)
           });
-          const fieldList = new sap.m.List({ mode: "None" });
-          for (const fieldChange of batch.fields) {
-            const row = new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop sapUiTinyMarginBottom" });
-            const oFieldLabel = new Label({ text: fieldLabel(fieldChange.fieldName), width: "200px", wrapping: false });
-            oFieldLabel.addStyleClass("sapUiSmallMarginEnd");
-            const previousValue = new Text({ text: fieldChange.oldValue || "-", wrapping: true, width: "160px" });
-            const newValue      = new Text({ text: fieldChange.newValue || "-", wrapping: true });
-            previousValue.addStyleClass("bmsAuditOld");
-            newValue.addStyleClass("bmsAuditNew");
-            row.addItem(oFieldLabel);
-            row.addItem(previousValue);
-            row.addItem(new sap.ui.core.Icon({ src: "sap-icon://arrow-right", color: "#8696a9", size: "0.75rem", class: "sapUiSmallMarginBeginEnd" }));
-            row.addItem(newValue);
-            fieldList.addItem(new sap.m.CustomListItem({ content: [row] }));
-          }
-          batchPanel.addContent(fieldList);
-          outerBox.addItem(batchPanel);
         }
-        item.addContent(outerBox);
-        list.addItem(item);
-      }
+        batchMap.get(key).fieldCount++;
+      });
 
-      this.byId("resultsTitle").setText("Objects with Changes (" + groups.size + ")");
-      this.byId("recordCount").setText(rows.length + " field change(s)");
+      var records = Array.from(batchMap.values()).sort(function (a, b) {
+        return (b.changedAt || "").localeCompare(a.changedAt || "");
+      });
+      this._s1Model.setProperty("/items", records);
+
+      var uniqueUsers = new Set(rows.map(function (r) { return r.changedBy; })).size;
+      var lastChange  = records.length ? records[0].changedAtDisplay : "";
+
+      this.byId("s1Count").setText(records.length + " change event(s)  ·  " + rows.length + " field change(s)");
+      this.byId("emptyState").setVisible(!records.length);
+
+      this.byId("kpiStrip").setVisible(records.length > 0);
+      this.byId("kpiRecords").setNumber(String(records.length));
+      this.byId("kpiFields").setNumber(String(rows.length));
+      this.byId("kpiUsers").setNumber(String(uniqueUsers));
+      this.byId("kpiLastChange").setNumber(lastChange);
     },
+
+    onClearS1: function () {
+      this.byId("s1ObjectType").setSelectedKey("");
+      this.byId("s1Source").setSelectedKey("");
+      this.byId("s1User").setValue("");
+      this.byId("s1ObjectId").setValue("");
+      this.byId("s1DateFrom").setValue("");
+      this.byId("s1DateTo").setValue("");
+      this._s1Model.setProperty("/items", []);
+      this._rawRows = [];
+      this._activeBatchKey = null;
+      this.byId("s1Count").setText("");
+      this.byId("kpiStrip").setVisible(false);
+      this.byId("s2ContextStrip").setVisible(false);
+      this._s2Model.setProperty("/items", []);
+      this.byId("s2Count").setText("");
+      this.byId("emptyState").setVisible(true);
+    },
+
+    // ── Section 1 → Section 2 drill-down ─────────────────────────────────
+
+    onRecordPress: function (oEvent) {
+      var item = oEvent.getParameter("listItem") || oEvent.getSource();
+      var ctx  = item.getBindingContext("s1");
+      if (!ctx) return;
+      var record = ctx.getObject();
+      this._activeBatchKey = record.batchKey;
+
+      var fieldRows = this._rawRows.filter(function (r) {
+        var key = r.batchId || [r.objectType, r.objectId, r.changedAt, r.changedBy].join("|");
+        return key === record.batchKey;
+      });
+
+      this._renderS2(fieldRows);
+
+      this.byId("s2CtxType").setText(record.objectType);
+      this.byId("s2CtxType").setState(record.objectTypeState);
+      this.byId("s2CtxName").setText(record.objectName || record.objectId);
+      this.byId("s2CtxDate").setText("· " + record.changedAtDisplay + "  by  " + record.changedBy);
+      this.byId("s2ContextStrip").setVisible(true);
+    },
+
+    onClearS1Selection: function () {
+      this._activeBatchKey = null;
+      this.byId("s2ContextStrip").setVisible(false);
+      this._renderS2(this._rawRows);
+    },
+
+    // ── Section 2: Attribute Changes ─────────────────────────────────────
+
+    onSearchAttributes: function () {
+      if (this._activeBatchKey) {
+        var fieldRows = this._rawRows.filter(function (r) {
+          var key = r.batchId || [r.objectType, r.objectId, r.changedAt, r.changedBy].join("|");
+          return key === this._activeBatchKey;
+        }.bind(this));
+        this._renderS2(this._applyS2Filters(fieldRows));
+      } else {
+        this._renderS2(this._applyS2Filters(this._rawRows));
+      }
+    },
+
+    _applyS2Filters: function (rows) {
+      var fieldName = (this.byId("s2FieldName").getValue() || "").trim().toLowerCase();
+      var oldVal    = (this.byId("s2OldValue").getValue()  || "").trim().toLowerCase();
+      var newVal    = (this.byId("s2NewValue").getValue()  || "").trim().toLowerCase();
+      var usr       = (this.byId("s2User").getValue()      || "").trim().toLowerCase();
+      var from      = this.byId("s2DateFrom").getValue();
+      var to        = this.byId("s2DateTo").getValue();
+
+      return rows.filter(function (r) {
+        if (fieldName && !(r.fieldName || "").toLowerCase().includes(fieldName) &&
+                         !(FIELD_LABELS[r.fieldName] || "").toLowerCase().includes(fieldName)) return false;
+        if (oldVal && !(r.oldValue || "").toLowerCase().includes(oldVal)) return false;
+        if (newVal && !(r.newValue || "").toLowerCase().includes(newVal)) return false;
+        if (usr    && !(r.changedBy || "").toLowerCase().includes(usr))   return false;
+        if (from   && r.changedAt && r.changedAt.slice(0, 10) < from)     return false;
+        if (to     && r.changedAt && r.changedAt.slice(0, 10) > to)       return false;
+        return true;
+      });
+    },
+
+    _renderS2: function (rows) {
+      var enriched = rows.map(function (r) {
+        return {
+          changedAt:       r.changedAt,
+          changedAtDisplay: fmtDate(r.changedAt),
+          changedBy:       r.changedBy,
+          objectType:      r.objectType,
+          objectName:      r.objectName,
+          fieldName:       r.fieldName,
+          fieldLabel:      FIELD_LABELS[r.fieldName] || r.fieldName,
+          oldValue:        r.oldValue || "",
+          newValue:        r.newValue || "",
+          changeSource:    r.changeSource,
+          sourceState:     sourceState(r.changeSource),
+          batchId:         r.batchId
+        };
+      });
+      this._s2Model.setProperty("/items", enriched);
+      this.byId("s2Count").setText(enriched.length + " attribute change(s)");
+    },
+
+    onClearS2: function () {
+      this.byId("s2FieldName").setValue("");
+      this.byId("s2OldValue").setValue("");
+      this.byId("s2NewValue").setValue("");
+      this.byId("s2User").setValue("");
+      this.byId("s2DateFrom").setValue("");
+      this.byId("s2DateTo").setValue("");
+      if (this._activeBatchKey) {
+        var fieldRows = this._rawRows.filter(function (r) {
+          var key = r.batchId || [r.objectType, r.objectId, r.changedAt, r.changedBy].join("|");
+          return key === this._activeBatchKey;
+        }.bind(this));
+        this._renderS2(fieldRows);
+      } else {
+        this._renderS2(this._rawRows);
+      }
+    },
+
+    // ── Refresh ───────────────────────────────────────────────────────────
+
+    onRefresh: function () {
+      if (this._rawRows.length) {
+        this.onSearchRecords();
+      }
+    },
+
+    // ── Export ────────────────────────────────────────────────────────────
 
     onExportCsv: function () {
-      const model = this.byId("changeTable").getModel();
-      if (!model) { MessageToast.show("No data to export."); return; }
-      const items = model.getProperty("/items") || [];
-      if (!items.length) { MessageToast.show("No data to export."); return; }
+      var items = this._s2Model.getProperty("/items") || [];
+      if (!items.length) {
+        items = this._s1Model.getProperty("/items") || [];
+        if (!items.length) { MessageToast.show("No data to export."); return; }
+        var FIELDS  = ["changedAtDisplay","changedBy","objectType","objectName","objectId","fieldCount","changeSource"];
+        var HEADERS = ["Changed At","Changed By","Object Type","Record Name","Record ID","Fields Changed","Source"];
+        this._downloadCsv(items, FIELDS, HEADERS, "BMS_RecordChanges");
+        return;
+      }
+      var FIELDS  = ["changedAtDisplay","changedBy","objectType","objectName","fieldLabel","oldValue","newValue","changeSource","batchId"];
+      var HEADERS = ["Changed At","Changed By","Object Type","Record Name","Field","Old Value","New Value","Source","Batch ID"];
+      this._downloadCsv(items, FIELDS, HEADERS, "BMS_AttributeChanges");
+    },
 
-      const FIELDS  = ["changedAtDisplay","changedBy","objectType","objectName","objectId","fieldName","oldValue","newValue","changeSource","batchId"];
-      const HEADERS = ["Changed At","Changed By","Object Type","Object Name","Object ID","Field","Old Value","New Value","Source","Batch ID"];
-      const escapeCsvCell  = auditCell => { const cellText = (auditCell == null ? "" : String(auditCell)); return cellText.includes(",") || cellText.includes('"') || cellText.includes("\n") ? '"' + cellText.replace(/"/g, '""') + '"' : cellText; };
-      const csv     = [HEADERS.join(","), ...items.map(changeRow => FIELDS.map(auditField => escapeCsvCell(changeRow[auditField])).join(","))].join("\n");
-      const downloadLink       = Object.assign(document.createElement("a"), { href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })), download: "BMS_ChangeDocument_" + new Date().toISOString().slice(0,10) + ".csv" });
-      downloadLink.click();
-      URL.revokeObjectURL(downloadLink.href);
+    _downloadCsv: function (items, fields, headers, filename) {
+      function esc(v) {
+        var s = v == null ? "" : String(v);
+        return s.includes(",") || s.includes('"') || s.includes("\n") ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }
+      var csv = [headers.join(",")].concat(items.map(function (row) {
+        return fields.map(function (f) { return esc(row[f]); }).join(",");
+      })).join("\n");
+      var a = Object.assign(document.createElement("a"), {
+        href: URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" })),
+        download: filename + "_" + new Date().toISOString().slice(0, 10) + ".csv"
+      });
+      a.click();
+      URL.revokeObjectURL(a.href);
       MessageToast.show("Export downloaded.");
     },
 
-    _objectTypeState: function (type) {
-      switch ((type || "").toLowerCase()) {
-        case "bridge":             return "Success";
-        case "restriction":        return "Warning";
-        case "bridgerestriction":  return "Warning";
-        case "bridgecapacity":     return "Information";
-        case "scourassessment":    return "Information";
-        case "gisconfig":          return "None";
-        default:                   return "None";
-      }
-    },
-
-    _sourceState: function (source) {
-      switch ((source || "").toLowerCase()) {
-        case "odata":      return "Success";
-        case "massedit":   return "Warning";
-        case "massupload": return "Error";
-        default:           return "None";
-      }
-    },
-
-    onTileInfo: function (oEvent) {
-      var sHtml = "<p><strong>Total Changes</strong> is the count of individual field-level change records matching your current filter criteria.</p>" +
-                  "<p>Each row in the Field-Level Changes table represents one field change. Multiple field changes for the same object in the same session are grouped together in the grouped view above.</p>";
-      var oDialog = new Dialog({
-        title: "Total Changes",
-        contentWidth: "460px",
-        content: [new ScrollContainer({ width: "100%", vertical: true,
-          content: [new FormattedText({ htmlText: sHtml })]
-        })],
-        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
-    },
+    // ── Help ──────────────────────────────────────────────────────────────
 
     onShowHelp: function () {
-      var sHtml = [
-        "<h4>Purpose</h4>",
-        "<p>The Change Document Report provides a complete audit trail of every field-level change made to Bridge and Restriction records in BMS. ",
-        "Use it to investigate who changed what, when, and from which source (Fiori UI, Mass Edit, or Mass Upload).</p>",
-        "<h4>How to Search</h4>",
-        "<ol>",
-        "<li>Use the <strong>Search &amp; Filter</strong> panel to narrow results by <em>Object Type</em>, <em>Change Source</em>, <em>Changed By</em> user, <em>Object Name/ID</em>, and a date range.</li>",
-        "<li>Click <strong>Apply Filters</strong> to load matching changes. Results appear in two panels: a grouped object view and a flat field-level table.</li>",
-        "<li>Click <strong>Reset</strong> to clear all filters and start over.</li>",
-        "</ol>",
-        "<h4>Reading the Results</h4>",
-        "<ul>",
-        "<li><strong>Grouped view:</strong> shows each affected object with the number of field changes in that batch. Expand to see individual fields.</li>",
-        "<li><strong>Field-Level Changes table:</strong> shows every changed field with its old value, new value, timestamp, and source badge.</li>",
-        "</ul>",
-        "<h4>Exporting</h4>",
-        "<p>Click <strong>Export CSV</strong> to download the current filtered results as a spreadsheet for offline analysis or compliance reporting.</p>",
+      var html = [
+        "<h4>Overview</h4>",
+        "<p>The Change Document Report provides a complete audit trail of every field-level change in BMS.</p>",
+        "<h4>Section 1 — Record Changes</h4>",
+        "<p>Shows which records were modified. Each row is one <em>change event</em> (a single save operation). ",
+        "The <strong>Fields Changed</strong> count shows how many attributes were modified in that event. ",
+        "Click any row to load its attribute details in Section 2.</p>",
+        "<h4>Section 2 — Attribute Changes</h4>",
+        "<p>Shows field-level before and after values. The <strong>Before</strong> column (red) shows the old value; ",
+        "<strong>After</strong> (green) shows what it was changed to. ",
+        "Use the Section 2 filters to narrow by field name, value content, user, or date — either for the selected record or across all loaded data.</p>",
         "<h4>Change Sources</h4>",
-        "<ul>",
-        "<li><strong>OData (Fiori UI):</strong> field edited directly in a Fiori form by a user.</li>",
-        "<li><strong>Mass Edit:</strong> changed via the in-app grid editor.</li>",
-        "<li><strong>Mass Upload:</strong> imported via CSV or Excel bulk upload.</li>",
-        "</ul>"
+        "<ul><li><strong>OData:</strong> edited in a Fiori form</li>",
+        "<li><strong>Mass Edit:</strong> changed via the in-app grid editor</li>",
+        "<li><strong>Mass Upload:</strong> imported via CSV or Excel</li></ul>",
+        "<h4>Export</h4>",
+        "<p>Click <strong>Export</strong> to download Section 2 attribute changes as CSV (or Section 1 record summary if Section 2 is empty).</p>"
       ].join("");
-      var oDialog = new Dialog({
-        title: "Change Document Report: Help",
-        contentWidth: "480px",
-        content: [new FormattedText({ htmlText: sHtml })],
-        endButton: new Button({ text: "Close", press: function () { oDialog.close(); } }),
-        afterClose: function () { oDialog.destroy(); }
-      });
-      oDialog.addStyleClass("sapUiContentPadding");
-      oDialog.open();
+      this._openInfoDialog("Change Document Report — Help", html);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
+
   });
 });

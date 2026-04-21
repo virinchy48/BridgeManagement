@@ -143,4 +143,16 @@
       </layout:VerticalLayout>
     </f:content>
   </f:DynamicPage>
+
+  <mvc:dependents>
+    <Dialog id="infoDialog" contentWidth="480px">
+      <content>
+        <ScrollContainer width="100%" vertical="true" height="60vh">
+          <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
+        </ScrollContainer>
+      </content>
+      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
+    </Dialog>
+  </mvc:dependents>
+
 </mvc:View>
