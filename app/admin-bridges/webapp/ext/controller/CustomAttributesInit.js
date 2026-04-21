@@ -168,13 +168,19 @@
       });
   };
 
-  window._caInit = load;
+  function _tryLoad(attempts) {
+    attempts = attempts || 0;
+    if (getBridgeId()) { load(); return; }
+    if (attempts < 10) setTimeout(function () { _tryLoad(attempts + 1); }, 400);
+  }
+
+  window._caInit = _tryLoad;
 
   window.addEventListener('hashchange', function () {
     if (window.location.hash.indexOf('/Bridges(') !== -1) {
-      setTimeout(load, 700);
+      setTimeout(_tryLoad, 300);
     }
   });
 
-  setTimeout(load, 800);
+  setTimeout(_tryLoad, 400);
 }());
