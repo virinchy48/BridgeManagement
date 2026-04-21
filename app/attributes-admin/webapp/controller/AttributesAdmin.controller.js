@@ -356,14 +356,16 @@ sap.ui.define([
           type: "Emphasized",
           press: function () {
             var vals = {};
+            var valid = true;
             fields.forEach(function (dialogField) {
               var ctrl = inputMap[dialogField.id];
               vals[dialogField.id] = ctrl.getSelectedKey ? ctrl.getSelectedKey() : ctrl.getValue();
               if (dialogField.required && !vals[dialogField.id]) {
                 MessageToast.show(dialogField.label + " is required");
-                return;
+                valid = false;
               }
             });
+            if (!valid) return;
             dlg.close();
             onConfirm(vals);
           }

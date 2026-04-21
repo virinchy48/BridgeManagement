@@ -1,0 +1,86 @@
+<mvc:View
+  controllerName="BridgeManagement.bmsadmin.controller.AttributeReport"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.f"
+  xmlns:layout="sap.ui.layout"
+  displayBlock="true">
+
+  <f:DynamicPage id="reportPage" headerExpanded="true" toggleHeaderOnTitleClick="false">
+    <f:title>
+      <f:DynamicPageTitle>
+        <f:heading><Title text="Attribute Values Report" level="H2"/></f:heading>
+        <f:actions>
+          <Select id="reportObjectType" selectedKey="bridge" change=".onObjectTypeChange">
+            <items>
+              <core:Item key="bridge" text="Bridges" xmlns:core="sap.ui.core"/>
+              <core:Item key="restriction" text="Restrictions" xmlns:core="sap.ui.core"/>
+            </items>
+          </Select>
+          <Button text="Export to Excel" icon="sap-icon://download" press=".onExport" class="sapUiSmallMarginBegin"/>
+          <Button icon="sap-icon://refresh" press=".onRefresh" tooltip="Refresh" class="sapUiSmallMarginBegin"/>
+        </f:actions>
+      </f:DynamicPageTitle>
+    </f:title>
+
+    <f:content>
+      <layout:VerticalLayout width="100%">
+        <!-- Summary tiles -->
+        <HBox id="summaryBar" class="sapUiSmallMarginBottom" wrap="Wrap">
+          <GenericTile id="tileTotalObjects" header="Total Bridges" subheader="in system" class="sapUiSmallMarginEnd sapUiSmallMarginBottom" tileContent="">
+            <tileContent>
+              <TileContent>
+                <content><NumericContent id="numTotalObjects" value="0" icon="sap-icon://bridge" withMargin="false"/></content>
+              </TileContent>
+            </tileContent>
+          </GenericTile>
+          <GenericTile id="tileWithAttrs" header="With Attributes" subheader="have custom values" class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+            <tileContent>
+              <TileContent>
+                <content><NumericContent id="numWithAttrs" value="0" icon="sap-icon://tags" withMargin="false" valueColor="Good"/></content>
+              </TileContent>
+            </tileContent>
+          </GenericTile>
+          <GenericTile id="tileAttrCount" header="Attribute Definitions" subheader="active fields" class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
+            <tileContent>
+              <TileContent>
+                <content><NumericContent id="numAttrCount" value="0" icon="sap-icon://form" withMargin="false"/></content>
+              </TileContent>
+            </tileContent>
+          </GenericTile>
+        </HBox>
+
+        <!-- Search bar -->
+        <Toolbar class="sapUiSmallMarginBottom">
+          <SearchField id="reportSearch" placeholder="Search by bridge name or ID..." liveChange=".onSearch" width="320px"/>
+          <Label text="Group:" class="sapUiSmallMarginBegin sapUiSmallMarginEnd"/>
+          <Select id="groupFilter" change=".onGroupFilter">
+            <items>
+              <core:Item key="" text="All Groups" xmlns:core="sap.ui.core"/>
+            </items>
+          </Select>
+          <ToolbarSpacer/>
+          <Text id="reportRecordCount" text=""/>
+        </Toolbar>
+
+        <!-- Scrollable attribute values table -->
+        <Table id="reportTable" items="{/rows}" noDataText="No data. Select an object type and click Refresh." growing="true" growingThreshold="50" sticky="ColumnHeaders">
+          <columns>
+            <Column id="colRef" width="140px"><Text text="Bridge ID"/></Column>
+            <Column id="colName" width="240px"><Text text="Name"/></Column>
+            <Column id="colState" width="80px"><Text text="State"/></Column>
+          </columns>
+          <items>
+            <ColumnListItem>
+              <cells>
+                <Text text="{ref}"/>
+                <Text text="{name}"/>
+                <Text text="{state}"/>
+              </cells>
+            </ColumnListItem>
+          </items>
+        </Table>
+      </layout:VerticalLayout>
+    </f:content>
+  </f:DynamicPage>
+</mvc:View>

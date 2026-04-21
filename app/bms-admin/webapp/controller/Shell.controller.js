@@ -13,6 +13,7 @@ sap.ui.define([
     bnacConfig:       "bnacConfig",
     gisConfig:        "gisConfig",
     attributeConfig:  "attributeConfig",
+    attributeReport:  "attributeReport",
     apiDocs:          "apiDocs",
     demoMode:         "demoMode"
   };

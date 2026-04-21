@@ -1,0 +1,26 @@
+ID,objectType,objectId,attributeKey,valueText,valueInteger,valueDecimal,valueDate,valueBoolean,createdAt,createdBy,modifiedAt,modifiedBy
+c0000001-0000-0000-0000-000000000001,bridge,1,seismic_zone,Z2,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000001-0000-0000-0000-000000000002,bridge,1,flood_risk_level,Low,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000001-0000-0000-0000-000000000003,bridge,1,heritage_listed,,,,,true,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000001-0000-0000-0000-000000000004,bridge,1,last_structural_review,,,,2023-06-15,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000001-0000-0000-0000-000000000005,bridge,1,engineer_notes,Australia oldest surviving stone arch bridge (1836). Heritage significance - restricted load class applies.,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000002-0000-0000-0000-000000000001,bridge,2,seismic_zone,Z2,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000002-0000-0000-0000-000000000002,bridge,2,flood_risk_level,Low,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000002-0000-0000-0000-000000000003,bridge,2,heritage_listed,,,,,true,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000002-0000-0000-0000-000000000004,bridge,2,last_structural_review,,,,2024-02-10,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000002-0000-0000-0000-000000000005,bridge,2,engineer_notes,Convict-built sandstone arch. Listed on NSW Heritage Register. Annual inspection required.,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000003-0000-0000-0000-000000000001,bridge,3,seismic_zone,Z1,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000003-0000-0000-0000-000000000002,bridge,3,flood_risk_level,Low,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000003-0000-0000-0000-000000000003,bridge,3,heritage_listed,,,,,true,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000003-0000-0000-0000-000000000004,bridge,3,last_structural_review,,,,2022-11-20,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000003-0000-0000-0000-000000000005,bridge,3,engineer_notes,Timber suspension bridge converted to pedestrian use. Inspect deck planking and wire ropes biannually.,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000004-0000-0000-0000-000000000001,bridge,4,seismic_zone,Z2,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000004-0000-0000-0000-000000000002,bridge,4,flood_risk_level,Medium,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000004-0000-0000-0000-000000000003,bridge,4,heritage_listed,,,,,true,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000004-0000-0000-0000-000000000004,bridge,4,last_structural_review,,,,2024-07-05,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000004-0000-0000-0000-000000000005,bridge,4,engineer_notes,Swingbridge in Sydney Darling Harbour precinct. Heritage listed. Monitor swing mechanism and pontoon footings.,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000005-0000-0000-0000-000000000001,bridge,5,seismic_zone,Z2,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000005-0000-0000-0000-000000000002,bridge,5,flood_risk_level,Low,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000005-0000-0000-0000-000000000003,bridge,5,heritage_listed,,,,,true,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000005-0000-0000-0000-000000000004,bridge,5,last_structural_review,,,,2023-09-12,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+c0000005-0000-0000-0000-000000000005,bridge,5,engineer_notes,Sydney Harbour Bridge - national icon. Continuous maintenance program. Monitor hanger rods and arch rib fatigue annually.,,,,,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system

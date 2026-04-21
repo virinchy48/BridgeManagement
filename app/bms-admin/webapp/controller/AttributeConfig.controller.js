@@ -300,6 +300,47 @@ sap.ui.define([
       window.open(ATTR_API + "/template?objectType=" + ot + "&format=xlsx", "_blank");
     },
 
+    onExportValues: function (oEvent) {
+      var ot = oEvent.getSource().data("objectType");
+      window.open(ATTR_API + "/export?objectType=" + ot + "&format=xlsx", "_blank");
+    },
+
+    onImportValues: function () {
+      var self = this;
+      var fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = ".xlsx,.csv";
+      fileInput.onchange = function () {
+        var file = fileInput.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (readEvent) {
+          var base64 = readEvent.target.result.split(",")[1];
+          self._showFormDialog("Import Attribute Values", [
+            { label: "Object Type", id: "dlg-otype", type: "select", options: ["bridge", "restriction"], required: true },
+            { label: "Mode", id: "dlg-mode", type: "select", options: ["skip", "all"], required: true }
+          ], function (vals) {
+            fetch(ATTR_API + "/import?objectType=" + vals["dlg-otype"] + "&mode=" + vals["dlg-mode"], {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ fileName: file.name, contentBase64: base64 })
+            })
+            .then(function (importResponse) { return importResponse.json(); })
+            .then(function (result) {
+              if (result.error) { sap.m.MessageBox.error(result.error.message); return; }
+              var s = result.summary || {};
+              var msg = "Import complete:\n  Created: " + (s.created || 0) + "\n  Updated: " + (s.updated || 0) + "\n  Skipped: " + (s.skipped || 0) + "\n  Errors: " + (s.errors || 0);
+              if (result.aborted) msg += "\n\nAborted due to errors.";
+              sap.m.MessageBox.information(msg);
+            })
+            .catch(function (importError) { sap.m.MessageBox.error("Import failed: " + importError.message); });
+          });
+        };
+        reader.readAsDataURL(file);
+      };
+      fileInput.click();
+    },
+
     onShowHelp: function () {
       var sHtml = [
         "<h4>Overview</h4>",
@@ -369,14 +410,16 @@ sap.ui.define([
           type: "Emphasized",
           press: function () {
             var vals = {};
+            var valid = true;
             fields.forEach(function (dialogField) {
               var ctrl = inputMap[dialogField.id];
               vals[dialogField.id] = ctrl.getSelectedKey ? ctrl.getSelectedKey() : ctrl.getValue();
               if (dialogField.required && !vals[dialogField.id]) {
                 MessageToast.show(dialogField.label + " is required");
-                return;
+                valid = false;
               }
             });
+            if (!valid) return;
             dlg.close();
             onConfirm(vals);
           }

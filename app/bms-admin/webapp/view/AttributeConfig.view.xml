@@ -6,6 +6,7 @@
   xmlns:layout="sap.ui.layout"
   xmlns:form="sap.ui.layout.form"
   xmlns:data="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"
+  xmlns:core="sap.ui.core"
   displayBlock="true">
 
   <f:DynamicPage id="mainPage" headerExpanded="true" toggleHeaderOnTitleClick="false">
@@ -21,7 +22,8 @@
     </f:title>
 
     <f:content>
-      <layout:HorizontalLayout allowWrapping="false" class="sapUiSizeCompact" width="100%">
+      <layout:VerticalLayout width="100%">
+      <layout:HorizontalLayout allowWrapping="false" class="sapUiSizeCompact">
 
         <!-- LEFT: Object Type selector + Group list -->
         <Panel width="320px" headerText="Attribute Groups" class="sapUiSmallMarginEnd">
@@ -123,6 +125,22 @@
         </Panel>
 
       </layout:HorizontalLayout>
+
+      <!-- MASS MAINTAIN: Bulk import / export of attribute values -->
+      <Panel headerText="Mass Maintain Attribute Values" class="sapUiMediumMarginTop" width="100%">
+        <Toolbar>
+          <Title text="Bulk Import / Export" level="H5"/>
+          <ToolbarSpacer/>
+          <Button text="Export Values (Bridge)" icon="sap-icon://download" press=".onExportValues" data:objectType="bridge" class="sapUiSmallMarginEnd"/>
+          <Button text="Export Values (Restriction)" icon="sap-icon://download" press=".onExportValues" data:objectType="restriction" class="sapUiSmallMarginEnd"/>
+          <Button text="Import Values" icon="sap-icon://upload" press=".onImportValues" type="Emphasized"/>
+        </Toolbar>
+        <HBox alignItems="Center" class="sapUiSmallMargin">
+          <core:Icon src="sap-icon://information" class="sapUiSmallMarginEnd" color="#0a6ed1"/>
+          <Text text="Export downloads a spreadsheet with all bridges/restrictions and their custom attribute values. Import uploads a filled-in template back to update values in bulk."/>
+        </HBox>
+      </Panel>
+      </layout:VerticalLayout>
     </f:content>
   </f:DynamicPage>
 </mvc:View>
