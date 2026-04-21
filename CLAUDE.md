@@ -213,6 +213,25 @@ node scripts/rebuild-bridge-csvs.js
 
 ---
 
+## Custom code vs Fiori Elements annotations
+
+Only `app/admin-bridges` uses standard Fiori Elements + CAP annotations (`@odata.draft.enabled`). All 11 BMS-Admin screens are fully custom XML views + controllers — no `@UI.*` annotations exist in any `.cds` service file. This is intentional: KPI dashboards, audit trails, mass upload wizards, GIS config, and the map view all require UX patterns that Fiori Elements templates cannot express. Do not attempt to migrate these to FE annotations without a full UX re-design effort.
+
+### Server-side security patterns (custom Express routers)
+- **Always validate ISO date strings** before passing to `new Date().toISOString()` — use `/^\d{4}-\d{2}-\d{2}$/` regex + `isNaN(Date.parse(str))`. Raw `new Date(userInput).toISOString()` throws and returns a 500 if the string is invalid.
+- **Always cap numeric query params** (radius, zoom, limit, offset) with `Math.max/min` before use — never pass uncapped user values to DB queries or haversine calculations.
+- **`express.json()` must be the first middleware on a router** — place it before any route definition or POST/PUT bodies are `undefined` in handlers.
+- **Never use `JSON.parse(userSuppliedField)` without try/catch** — use `try { return JSON.parse(v) } catch(_) { return null }` pattern. Bridge `geoJson` field in DB can be malformed.
+- **Server-side field allowlist on any endpoint using `bridge[field]`** — dynamic property lookup must validate against `ALLOWED_RULE_FIELDS` (or equivalent) to prevent prototype pollution.
+
+### launch.json Node version
+- `.claude/launch.json` must use `bash -c "source ~/.nvm/nvm.sh && nvm use 20 && npm start"` as the runtimeExecutable/args — `@sap/cds` v9 requires Node 20+ and the preview server inherits the shell's Node version which may be 16.
+
+### SAP FE console errors in local shell emulator
+- `"There should be a sap.fe.core.AppComponent as owner of the control"` errors appear when navigating between apps in the local Fiori launchpad shell emulator. These are SAP FE framework limitations in the emulated shell — **not bugs in our code**. Ignore in local dev; they do not appear in BTP with the real shell.
+
+---
+
 ## Contributing to this file
 
 If you discover a new convention, fix a recurring mistake, or learn something about the
