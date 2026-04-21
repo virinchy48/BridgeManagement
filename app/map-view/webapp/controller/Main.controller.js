@@ -936,8 +936,12 @@ sap.ui.define([
       if (bridgeId) {
         const allBridges = this._vm().getProperty("/allBridges") || [];
         const bridge = allBridges.find(function (b) { return String(b.ID) === String(bridgeId) || b.bridgeId === bridgeId; });
-        if (bridge) {
-          setTimeout(function () { this._selectFeature("bridge", bridge); }.bind(this), 500);
+        if (bridge && bridge.latitude && bridge.longitude) {
+          // Snap map to state-level view instantly so flyTo animates a short local zoom rather than a continent-wide jump
+          if (this._leafletMap) {
+            this._leafletMap.setView([bridge.latitude, bridge.longitude], 11, { animate: false });
+          }
+          setTimeout(function () { this._selectFeature("bridge", bridge); }.bind(this), 80);
         }
       }
     },
@@ -988,8 +992,8 @@ sap.ui.define([
         if (selectedScour.length && !selectedScour.includes(bridge.scourRisk)) return false;
         if (selectedVehicleClasses.length && !selectedVehicleClasses.includes(bridge.vehicleClass)) return false;
         if (selectedRouteFlags.length && !selectedRouteFlags.every(function (flag) { return bridge[flag]; })) return false;
-        if (!this._matchesRange(bridge.conditionRating, filters.minCondition, filters.maxCondition, limits.minCondition, limits.maxCondition)) return false;
-        if (!this._matchesRange(bridge.yearBuilt, filters.minYear, filters.maxYear, limits.minYear, limits.maxYear)) return false;
+        if (!this._matchesRange(bridge.conditionRating, filters.minCondition, filters.maxCondition)) return false;
+        if (!this._matchesRange(bridge.yearBuilt, filters.minYear, filters.maxYear)) return false;
         return true;
       }.bind(this));
 
@@ -1025,10 +1029,8 @@ sap.ui.define([
       this._renderMarkers(false);
     },
 
-    _matchesRange: function (value, min, max, defaultMin, defaultMax) {
-      if (value == null) {
-        return min === defaultMin && max === defaultMax;
-      }
+    _matchesRange: function (value, min, max) {
+      if (value == null) return true;
       return value >= min && value <= max;
     },
 
