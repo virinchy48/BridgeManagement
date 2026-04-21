@@ -168,12 +168,13 @@
       });
   };
 
+  window._caInit = load;
+
   window.addEventListener('hashchange', function () {
     if (window.location.hash.indexOf('/Bridges(') !== -1) {
       setTimeout(load, 700);
     }
   });
 
-  // Initial load
   setTimeout(load, 800);
 }());

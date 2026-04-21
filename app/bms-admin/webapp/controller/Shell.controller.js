@@ -28,6 +28,19 @@ sap.ui.define([
       this._qualityPollTimer = setInterval(this._pollQualityAlert.bind(this), 5 * 60 * 1000);
     },
 
+    onAfterRendering: function () {
+      const host = window.location.hostname;
+      var env = "LOCAL";
+      if (host !== "localhost" && host !== "127.0.0.1") {
+        if      (/\bdev\b/i.test(host))  env = "DEV";
+        else if (/\buat\b/i.test(host))  env = "UAT";
+        else if (/\bprod\b/i.test(host)) env = "PROD";
+        else                             env = host.split(".")[0].toUpperCase();
+      }
+      const badge = this.byId("appVersionEnv");
+      if (badge && !badge.getText()) badge.setText("v1.0.0 · " + env);
+    },
+
     onExit: function () {
       if (this._qualityPollTimer) clearInterval(this._qualityPollTimer);
     },

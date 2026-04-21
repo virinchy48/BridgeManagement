@@ -7,6 +7,7 @@ sap.ui.define([
     var GIS_SCRIPT = "/admin-bridges/webapp/ext/controller/gisMapInit.js";
     var NUMERIC_GUARD_SCRIPT = "/admin-bridges/webapp/ext/controller/NumericInputGuard.js";
     var RESTRICTIONS_VALIDATION_SCRIPT = "/admin-bridges/webapp/ext/controller/RestrictionsValidation.js";
+    var CUSTOM_ATTRS_SCRIPT = "/admin-bridges/webapp/ext/controller/CustomAttributesInit.js";
 
     function loadScript(id, src) {
         if (document.getElementById(id)) return;
@@ -28,6 +29,24 @@ sap.ui.define([
         obs.observe(document.body, { childList: true, subtree: true });
     }
 
+    function startCustomAttributes() {
+        var obs = new MutationObserver(function () {
+            var el = document.getElementById("ca-bridge-root");
+            if (el && !el._caReady) {
+                el._caReady = true;
+                if (!document.getElementById("_ca_script")) {
+                    var s = document.createElement("script");
+                    s.id = "_ca_script";
+                    s.src = CUSTOM_ATTRS_SCRIPT + "?" + Date.now();
+                    document.head.appendChild(s);
+                } else {
+                    setTimeout(function () { window._caInit && window._caInit(); }, 100);
+                }
+            }
+        });
+        obs.observe(document.body, { childList: true, subtree: true });
+    }
+
     function startNumericInputGuard() {
         loadScript("_bms_numeric_guard_script", NUMERIC_GUARD_SCRIPT);
     }
@@ -41,6 +60,7 @@ sap.ui.define([
         init: function () {
             AppComponent.prototype.init.apply(this, arguments);
             startGIS();
+            startCustomAttributes();
             startNumericInputGuard();
             startRestrictionsValidation();
         }
