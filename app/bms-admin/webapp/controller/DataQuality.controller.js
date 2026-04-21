@@ -75,12 +75,30 @@ sap.ui.define([
 
     onInit: function () {
       this._allBridges   = [];
+      this._csrfToken    = null;
       this._qualityModel = new JSONModel({ bridges: [] });
       this.getView().setModel(this._qualityModel, "quality");
       this._rulesModel = new JSONModel({ rules: [] });
       this.getView().setModel(this._rulesModel, "rules");
       this._loadSummary();
       this._loadIssues();
+    },
+
+    _getCsrfToken: function () {
+      if (this._csrfToken) return Promise.resolve(this._csrfToken);
+      return fetch("/quality/api/rules", { method: "HEAD", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
+        .then(r => { this._csrfToken = r.headers.get("X-CSRF-Token") || "unsafe"; return this._csrfToken; })
+        .catch(() => { this._csrfToken = "unsafe"; return this._csrfToken; });
+    },
+
+    _mutate: function (url, method, body) {
+      return this._getCsrfToken().then(token =>
+        fetch(url, {
+          method, credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+          body: body != null ? JSON.stringify(body) : undefined
+        }).then(r => { if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error?.message || r.statusText))); return r.json(); })
+      );
     },
 
     _loadSummary: function () {
@@ -207,8 +225,7 @@ sap.ui.define([
       MessageBox.confirm('Delete rule "' + rule.name + '"?', {
         onClose: (action) => {
           if (action !== MessageBox.Action.OK) return;
-          fetch("/quality/api/rules/" + rule.id, { method: "DELETE", credentials: "same-origin" })
-            .then(r => { if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error?.message || r.statusText))); return r.json(); })
+          this._mutate("/quality/api/rules/" + rule.id, "DELETE")
             .then(() => { MessageToast.show("Rule deleted."); this._loadRules(); })
             .catch(err => MessageBox.error("Failed to delete: " + err.message));
         }
@@ -221,12 +238,7 @@ sap.ui.define([
       if (!oCtx) return;
       const rule = oCtx.getObject();
       const enabled = oEvent.getParameter("selected");
-      fetch("/quality/api/rules/" + rule.id, {
-        method: "PUT", credentials: "same-origin",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...rule, enabled })
-      })
-        .then(r => { if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error?.message || r.statusText))); return r.json(); })
+      this._mutate("/quality/api/rules/" + rule.id, "PUT", { ...rule, enabled })
         .then(() => this._loadRules())
         .catch(err => { MessageBox.error("Failed to update: " + err.message); this._loadRules(); });
     },
@@ -330,8 +342,7 @@ sap.ui.define([
             }
             const url    = isEdit ? "/quality/api/rules/" + rule.id : "/quality/api/rules";
             const method = isEdit ? "PUT" : "POST";
-            fetch(url, { method, credentials: "same-origin", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-              .then(r => { if (!r.ok) return r.json().then(e => Promise.reject(new Error(e.error?.message || r.statusText))); return r.json(); })
+            this._mutate(url, method, payload)
               .then(() => { MessageToast.show(isEdit ? "Rule updated." : "Rule created."); dialog.close(); this._loadRules(); })
               .catch(err => MessageBox.error("Failed to save rule: " + err.message));
           }

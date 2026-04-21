@@ -1499,6 +1499,7 @@ cds.on('bootstrap', (app) => {
 
   // ── Data Quality API ──────────────────────────────────────────────────────
   const qualityRouter = express.Router()
+  qualityRouter.use(express.json())
 
   // Default completeness fields — used as fallback when no required_field rules are configured
   const QUALITY_COMPLETENESS_FIELDS_DEFAULT = [
@@ -1731,8 +1732,6 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  qualityRouter.use(express.json())
-
   qualityRouter.get('/rules', async (_req, res) => {
     try {
       const db = await cds.connect.to('db')
@@ -1745,11 +1744,18 @@ cds.on('bootstrap', (app) => {
     }
   })
 
+  const ALLOWED_RULE_FIELDS = new Set(['bridgeId','bridgeName','state','region','assetOwner','latitude','longitude',
+    'structureType','condition','conditionRating','postingStatus','lastInspectionDate','geoJson',
+    'yearBuilt','scourRisk','nhvrAssessed','freightRoute'])
+
   qualityRouter.post('/rules', async (req, res) => {
     try {
       const { name, category, severity, ruleType, field, config, message, enabled, sortOrder, weight } = req.body || {}
       if (!name || !category || !severity || !ruleType || !message) {
         return res.status(400).json({ error: { message: 'name, category, severity, ruleType, and message are required' } })
+      }
+      if (field && !ALLOWED_RULE_FIELDS.has(field)) {
+        return res.status(400).json({ error: { message: `Invalid field: "${field}"` } })
       }
       const id = cds.utils.uuid()
       const db = await cds.connect.to('db')
@@ -1776,6 +1782,9 @@ cds.on('bootstrap', (app) => {
       const { name, category, severity, ruleType, field, config, message, enabled, sortOrder, weight } = req.body || {}
       if (!name || !category || !severity || !ruleType || !message) {
         return res.status(400).json({ error: { message: 'name, category, severity, ruleType, and message are required' } })
+      }
+      if (field && !ALLOWED_RULE_FIELDS.has(field)) {
+        return res.status(400).json({ error: { message: `Invalid field: "${field}"` } })
       }
       const db = await cds.connect.to('db')
       const existing = await db.run(SELECT.one.from('bridge.management.DataQualityRules').where({ id }))
