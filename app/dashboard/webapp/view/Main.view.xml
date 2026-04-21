@@ -95,7 +95,7 @@
                   header="{i18n>kpiBridgesClosed}"
                   subheader="{i18n>kpiBridgesClosedSubtitle}"
                   frameType="OneByOne"
-                  press=".onNavigateBridges"
+                  press=".onNavigateClosedBridges"
                   class="dashboardKpiTile">
                   <tileContent>
                     <TileContent>

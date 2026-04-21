@@ -529,6 +529,12 @@ annotate AdminService.BridgeRestrictions with @(
   // Deletable kept true so draft-mode rows can be removed; server blocks delete on committed records
   Capabilities.DeleteRestrictions.Deletable  : true,
   UI: {
+    HeaderInfo: {
+      TypeName      : 'Bridge Restriction',
+      TypeNamePlural: 'Bridge Restrictions',
+      Title         : { $Type: 'UI.DataField', Value: restrictionType },
+      Description   : { $Type: 'UI.DataField', Value: restrictionRef }
+    },
     // ── Inline table actions — deactivate / reactivate committed restriction rows ──
     Identification: [
       {
@@ -751,6 +757,12 @@ annotate AdminService.BridgeCapacities with @(
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : true,
   UI: {
+    HeaderInfo: {
+      TypeName      : 'Bridge Capacity',
+      TypeNamePlural: 'Bridge Capacities',
+      Title         : { $Type: 'UI.DataField', Value: capacityType },
+      Description   : { $Type: 'UI.DataField', Value: capacityStatus }
+    },
     LineItem: [
       {Value: capacityType,       Label: 'Capacity Type'},
       {Value: grossMassLimit,     Label: 'GVM (t)'},
@@ -881,6 +893,12 @@ annotate AdminService.BridgeScourAssessments with @(
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : true,
   UI: {
+    HeaderInfo: {
+      TypeName      : 'Scour Assessment',
+      TypeNamePlural: 'Scour Assessments',
+      Title         : { $Type: 'UI.DataField', Value: assessmentType },
+      Description   : { $Type: 'UI.DataField', Value: assessmentDate }
+    },
     LineItem: [
       {Value: assessmentDate,   Label: 'Date'},
       {Value: assessmentType,   Label: 'Type'},

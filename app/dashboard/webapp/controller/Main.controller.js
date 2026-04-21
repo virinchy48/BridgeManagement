@@ -52,6 +52,10 @@ sap.ui.define([
       window.location.href = "#Bridges-manage";
     },
 
+    onNavigateClosedBridges: function () {
+      window.location.href = "#Bridges-manage?postingStatus=Closed";
+    },
+
     onNavigateRestrictions: function () {
       window.location.href = "#Restrictions-manage";
     },

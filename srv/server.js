@@ -522,10 +522,7 @@ async function loadDashboardAnalytics() {
   }
 
   // ── Other KPIs ────────────────────────────────────────────────────────────
-  // Closed = postingStatus is Restricted or Under Review (no 'Closed' value in schema)
-  const closedBridges = bridgeList.filter(b =>
-    b.postingStatus === 'Restricted' || b.postingStatus === 'Under Review'
-  ).length
+  const closedBridges = bridgeList.filter(b => b.postingStatus === 'Closed').length
 
   const scourCritical = bridgeList.filter(b => b.scourRisk === 'High').length
 
