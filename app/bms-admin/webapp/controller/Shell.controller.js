@@ -37,8 +37,7 @@ sap.ui.define([
         else if (/\bprod\b/i.test(host)) env = "PROD";
         else                             env = host.split(".")[0].toUpperCase();
       }
-      const fullId = this.getView().getId() + "--appVersionEnv";
-      const badge  = sap.ui.getCore().byId(fullId);
+      const badge = this.byId("appVersionEnv");
       if (badge) badge.setText("v1.0.0 · " + env);
     },
 
