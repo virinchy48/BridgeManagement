@@ -23,12 +23,12 @@ sap.ui.define([
     onInit: function () {
       const oRouter = this.getOwnerComponent().getRouter();
       oRouter.attachRouteMatched(this._onRouteMatched, this);
-      // Poll data quality for critical issues every 5 minutes
       this._pollQualityAlert();
       this._qualityPollTimer = setInterval(this._pollQualityAlert.bind(this), 5 * 60 * 1000);
+      setTimeout(this._setVersionBadge.bind(this), 0);
     },
 
-    onAfterRendering: function () {
+    _setVersionBadge: function () {
       const host = window.location.hostname;
       var env = "LOCAL";
       if (host !== "localhost" && host !== "127.0.0.1") {
@@ -37,8 +37,9 @@ sap.ui.define([
         else if (/\bprod\b/i.test(host)) env = "PROD";
         else                             env = host.split(".")[0].toUpperCase();
       }
-      const badge = this.byId("appVersionEnv");
-      if (badge && !badge.getText()) badge.setText("v1.0.0 · " + env);
+      const fullId = this.getView().getId() + "--appVersionEnv";
+      const badge  = sap.ui.getCore().byId(fullId);
+      if (badge) badge.setText("v1.0.0 · " + env);
     },
 
     onExit: function () {
