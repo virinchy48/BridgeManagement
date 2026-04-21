@@ -123,6 +123,25 @@ sap.ui.define([
     return fileInput && fileInput.files && fileInput.files[0] || null;
   }
 
+  var _csrfToken = null;
+  function getCsrfToken() {
+    if (_csrfToken) return Promise.resolve(_csrfToken);
+    return fetch("/admin-bridges/api/bridges", { method: "HEAD", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
+      .then(function (r) { _csrfToken = r.headers.get("X-CSRF-Token") || "unsafe"; return _csrfToken; })
+      .catch(function () { _csrfToken = "unsafe"; return _csrfToken; });
+  }
+
+  function mutate(url, method, body) {
+    return getCsrfToken().then(function (token) {
+      var opts = { method: method, credentials: "same-origin", headers: { "X-CSRF-Token": token } };
+      if (body !== undefined) {
+        opts.headers["Content-Type"] = "application/json";
+        opts.body = JSON.stringify(body);
+      }
+      return fetch(url, opts);
+    });
+  }
+
   async function load(host) {
     var model = getModel(host);
     var bridgeId = await resolveBridgeId(host);
@@ -189,18 +208,11 @@ sap.ui.define([
           throw new Error("This file is too large for browser upload. Use a file smaller than 75 MB.");
         }
         var contentBase64 = await readFileAsBase64(file);
-        var response = await fetch("/admin-bridges/api/bridges/" + encodeURIComponent(bridgeId) + "/attachments", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            fileName: file.name,
-            mediaType: file.type || "application/octet-stream",
-            fileSize: file.size,
-            contentBase64: contentBase64
-          })
-        });
+        var response = await mutate(
+          "/admin-bridges/api/bridges/" + encodeURIComponent(bridgeId) + "/attachments",
+          "POST",
+          { fileName: file.name, mediaType: file.type || "application/octet-stream", fileSize: file.size, contentBase64: contentBase64 }
+        );
         var payload = await readJsonResponse(response);
         if (!response.ok) {
           throw new Error(payload.error && payload.error.message || "Upload failed");
@@ -237,7 +249,7 @@ sap.ui.define([
           var model = getModel(host);
           model.setProperty("/busy", true);
           try {
-            var response = await fetch(item.deleteUrl, { method: "DELETE" });
+            var response = await mutate(item.deleteUrl, "DELETE");
             if (!response.ok) {
               var payload = await response.json().catch(function () { return {}; });
               throw new Error(payload.error && payload.error.message || "Delete failed");
