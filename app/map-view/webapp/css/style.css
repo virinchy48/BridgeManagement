@@ -971,3 +971,165 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
   color: #354a5f;
   line-height: 1.5;
 }
+
+/* ── Elegant Feature Detail Dialog ─────────────────────────────────── */
+.nhvrDetailDialog.sapMDialog {
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  overflow: hidden;
+}
+
+.nhvrDetailDialog .sapMDialogScroll {
+  padding: 0 !important;
+}
+
+/* Header */
+.nhvrDlgHeader {
+  padding: 14px 16px 10px;
+  background: #fff;
+  border-bottom: 1px solid #e8eef7;
+}
+
+.nhvrDlgHeaderRow {
+  margin-bottom: 6px;
+}
+
+.nhvrDlgHeaderText {
+  flex: 1;
+  min-width: 0;
+  padding-right: 8px;
+}
+
+.nhvrDlgTitle.sapMTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1c2733;
+  line-height: 1.3;
+}
+
+.nhvrDlgSubtitle {
+  margin-top: 2px;
+  flex-wrap: nowrap;
+}
+
+.nhvrDlgId.sapMText,
+.nhvrDlgSep.sapMText {
+  font-size: 0.78rem;
+  color: #6b7c93;
+}
+
+.nhvrDlgCloseBtn.sapMBtn {
+  min-width: 28px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  flex-shrink: 0;
+  border-radius: 50%;
+}
+
+.nhvrDlgCloseBtn .sapMBtnIcon {
+  font-size: 0.75rem;
+}
+
+/* Status badges */
+.nhvrDlgBadges {
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.nhvrBadge.sapMObjStatus {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 1px 6px;
+}
+
+/* Body */
+.nhvrDlgBody {
+  padding: 12px 16px 4px;
+  background: #fff;
+}
+
+/* Coordinates row */
+.nhvrDlgCoords {
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.nhvrCoordsIcon.sapUiIcon {
+  font-size: 0.8rem;
+  color: #6b7c93;
+}
+
+.nhvrCoordsText.sapMText {
+  font-size: 0.78rem;
+  color: #6b7c93;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Metrics 2×2 grid */
+.nhvrMetricsGrid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.nhvrMetricItem {
+  background: #f4f7fb;
+  border: 1px solid #e4ebf5;
+  border-radius: 8px;
+  padding: 7px 10px;
+}
+
+.nhvrMetricLabel.sapMText {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8696a9;
+  margin-bottom: 2px;
+}
+
+.nhvrMetricValue.sapMText,
+.nhvrMetricValue.sapMObjStatus {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1c2733;
+}
+
+.nhvrStructureType.sapMText {
+  font-size: 0.78rem;
+  color: #6b7c93;
+  margin-bottom: 8px;
+}
+
+/* Restrictions */
+.nhvrDlgRestrictions {
+  border-top: 1px solid #edf1f7;
+  padding-top: 8px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.nhvrRestrictionsLabel.sapMText {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8696a9;
+  margin-bottom: 5px;
+}
+
+.nhvrRestrictionBadges {
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Permit/escort row */
+.nhvrPermitRow {
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+  margin-bottom: 8px;
+}

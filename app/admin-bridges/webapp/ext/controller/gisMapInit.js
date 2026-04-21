@@ -110,11 +110,13 @@
 
     window._gisOpen = function () {
         var id = getId();
-        if (id && MAP_APP) {
-            window.open(MAP_APP + "?highlightId=" + encodeURIComponent(id), "_blank", "noopener,noreferrer");
-        } else if (id) {
-            // Fiori shell hash navigation fallback
-            window.location.hash = "Map-display?bridgeId=" + id;
+        if (!id) return;
+        try {
+            var nav = sap.ushell.Container.getService("CrossApplicationNavigation");
+            nav.toExternal({ target: { semanticObject: "Map", action: "display" }, params: { bridgeId: id } });
+        } catch (e) {
+            var base = window.location.origin + window.location.pathname;
+            window.location.href = base + "?bridgeId=" + encodeURIComponent(id) + "#Map-display";
         }
     };
 

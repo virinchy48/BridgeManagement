@@ -3,116 +3,118 @@
   xmlns:core="sap.ui.core">
 
   <Dialog id="featureDetailDialog"
-          title="{= ${view>/selectedFeature/type} === 'restriction' ? 'Restriction Detail' : 'Bridge Detail' }"
-          contentWidth="420px"
-          resizable="true"
+          contentWidth="380px"
+          resizable="false"
           draggable="true"
-          verticalScrolling="true">
+          verticalScrolling="false"
+          showHeader="false"
+          class="nhvrDetailDialog">
 
     <content>
-      <!-- Bridge detail -->
-      <VBox visible="{= ${view>/selectedFeature/type} === 'bridge' }" class="nhvrFeatureDetail">
-        <ObjectHeader
-          title="{view>/selectedFeature/data/bridgeName}"
-          number="{view>/selectedFeature/data/bridgeId}"
-          numberUnit="{view>/selectedFeature/data/state}"
-          class="nhvrFeatureHeader">
-          <statuses>
-            <ObjectStatus text="{view>/selectedFeature/data/postingStatusLabel}"
-                          state="{view>/selectedFeature/data/postingStatusState}" />
-            <ObjectStatus text="{view>/selectedFeature/data/conditionBandLabel}"
-                          state="{view>/selectedFeature/data/conditionState}" />
-          </statuses>
-        </ObjectHeader>
-        <VBox class="nhvrFeatureSection">
-          <Label text="Coordinates" class="nhvrFeatureSectionTitle" />
-          <Text text="{view>/selectedFeature/data/coordinateText}" />
-        </VBox>
-        <VBox class="nhvrFeatureSection">
-          <Label text="Physical" class="nhvrFeatureSectionTitle" />
-          <HBox class="nhvrFeatureMetrics">
-            <VBox class="nhvrFeatureMetric">
-              <Label text="Condition" />
-              <ObjectStatus text="{view>/selectedFeature/data/metricRating}" state="{view>/selectedFeature/data/conditionState}" />
-            </VBox>
-            <VBox class="nhvrFeatureMetric">
-              <Label text="Clearance" />
-              <Text text="{view>/selectedFeature/data/metricClearance}" />
-            </VBox>
-            <VBox class="nhvrFeatureMetric">
-              <Label text="Year Built" />
-              <Text text="{view>/selectedFeature/data/metricYear}" />
-            </VBox>
+      <!-- Custom header with X button always visible -->
+      <VBox class="nhvrDlgHeader">
+        <HBox justifyContent="SpaceBetween" alignItems="Center" class="nhvrDlgHeaderRow">
+          <VBox class="nhvrDlgHeaderText">
+            <Title text="{= ${view>/selectedFeature/type} === 'restriction' ? ${view>/selectedFeature/data/restrictionType} : ${view>/selectedFeature/data/bridgeName} }"
+                   level="H5" wrapping="true" class="nhvrDlgTitle" />
+            <!-- Bridge subtitle -->
+            <HBox alignItems="Center" visible="{= ${view>/selectedFeature/type} === 'bridge' }" class="nhvrDlgSubtitle">
+              <Text text="{view>/selectedFeature/data/bridgeId}" class="nhvrDlgId" />
+              <Text text=" · " class="nhvrDlgSep" />
+              <Text text="{view>/selectedFeature/data/state}" class="nhvrDlgSep" />
+            </HBox>
+            <!-- Restriction subtitle -->
+            <HBox alignItems="Center" visible="{= ${view>/selectedFeature/type} === 'restriction' }" class="nhvrDlgSubtitle">
+              <Text text="{view>/selectedFeature/data/bridgeName}" class="nhvrDlgId" />
+              <Text text=" · " class="nhvrDlgSep" />
+              <Text text="{view>/selectedFeature/data/restrictionRef}" class="nhvrDlgSep" />
+            </HBox>
+          </VBox>
+          <Button icon="sap-icon://decline" type="Transparent" press=".onCloseFeaturePanel"
+                  tooltip="Close" class="nhvrDlgCloseBtn" />
+        </HBox>
+        <!-- Status badges row -->
+        <HBox class="nhvrDlgBadges" visible="{= ${view>/selectedFeature/type} === 'bridge' }">
+          <ObjectStatus text="{view>/selectedFeature/data/postingStatusLabel}"
+                        state="{view>/selectedFeature/data/postingStatusState}"
+                        inverted="true" class="nhvrBadge" />
+          <ObjectStatus text="{view>/selectedFeature/data/conditionBandLabel}"
+                        state="{view>/selectedFeature/data/conditionState}"
+                        class="nhvrBadge sapUiTinyMarginBegin" />
+        </HBox>
+        <HBox class="nhvrDlgBadges" visible="{= ${view>/selectedFeature/type} === 'restriction' }">
+          <ObjectStatus text="{view>/selectedFeature/data/restrictionStatus}"
+                        state="Warning" inverted="true" class="nhvrBadge" />
+        </HBox>
+      </VBox>
+
+      <!-- Bridge body -->
+      <VBox visible="{= ${view>/selectedFeature/type} === 'bridge' }" class="nhvrDlgBody">
+        <!-- Coordinates -->
+        <HBox alignItems="Center" class="nhvrDlgCoords">
+          <core:Icon src="sap-icon://map" class="nhvrCoordsIcon" />
+          <Text text="{view>/selectedFeature/data/coordinateText}" class="nhvrCoordsText" />
+        </HBox>
+
+        <!-- Metrics 2×2 grid -->
+        <HBox class="nhvrMetricsGrid">
+          <VBox class="nhvrMetricItem">
+            <Text text="Condition" class="nhvrMetricLabel" />
+            <ObjectStatus text="{view>/selectedFeature/data/metricRating}"
+                          state="{view>/selectedFeature/data/conditionState}" class="nhvrMetricValue" />
+          </VBox>
+          <VBox class="nhvrMetricItem">
+            <Text text="Clearance" class="nhvrMetricLabel" />
+            <Text text="{view>/selectedFeature/data/metricClearance}" class="nhvrMetricValue" />
+          </VBox>
+          <VBox class="nhvrMetricItem">
+            <Text text="Year Built" class="nhvrMetricLabel" />
+            <Text text="{view>/selectedFeature/data/metricYear}" class="nhvrMetricValue" />
+          </VBox>
+          <VBox class="nhvrMetricItem">
+            <Text text="Span" class="nhvrMetricLabel" />
+            <Text text="{view>/selectedFeature/data/spanLengthText}" class="nhvrMetricValue" />
+          </VBox>
+        </HBox>
+        <Text text="{view>/selectedFeature/data/structureType}" class="nhvrStructureType" />
+
+        <!-- Restrictions -->
+        <VBox visible="{= ${view>/selectedFeature/data/restrictions/length} > 0 }" class="nhvrDlgRestrictions">
+          <Text text="Active Restrictions" class="nhvrRestrictionsLabel" />
+          <HBox wrap="Wrap" class="nhvrRestrictionBadges">
+            <ObjectStatus text="{view>name}" state="Error" inverted="true"
+                          class="nhvrBadge sapUiTinyMarginEnd" />
           </HBox>
-          <HBox class="nhvrFeatureMetrics">
-            <VBox class="nhvrFeatureMetric">
-              <Label text="Structure Type" />
-              <Text text="{view>/selectedFeature/data/structureType}" />
-            </VBox>
-            <VBox class="nhvrFeatureMetric">
-              <Label text="Span Length" />
-              <Text text="{view>/selectedFeature/data/spanLengthText}" />
-            </VBox>
-          </HBox>
-        </VBox>
-        <VBox class="nhvrFeatureSection" visible="{= ${view>/selectedFeature/data/restrictions/length} > 0 }">
-          <Label text="Active Restrictions" class="nhvrFeatureSectionTitle" />
-          <List items="{view>/selectedFeature/data/restrictions}" showSeparators="None">
-            <items>
-              <CustomListItem>
-                <HBox alignItems="Center" class="nhvrRestrictionRow">
-                  <ObjectStatus text="{view>name}" state="Error" inverted="false" />
-                  <Text text="{view>restrictionValue} {view>restrictionUnit}" class="sapUiSmallMarginBegin" />
-                </HBox>
-              </CustomListItem>
-            </items>
-          </List>
         </VBox>
       </VBox>
 
-      <!-- Restriction detail -->
-      <VBox visible="{= ${view>/selectedFeature/type} === 'restriction' }" class="nhvrFeatureDetail">
-        <ObjectHeader
-          title="{view>/selectedFeature/data/restrictionType}"
-          number="{view>/selectedFeature/data/restrictionRef}"
-          class="nhvrFeatureHeader">
-          <statuses>
-            <ObjectStatus text="{view>/selectedFeature/data/restrictionStatus}" state="Warning" />
-          </statuses>
-        </ObjectHeader>
-        <VBox class="nhvrFeatureSection">
-          <Label text="Bridge" class="nhvrFeatureSectionTitle" />
-          <Text text="{view>/selectedFeature/data/bridgeName}" />
-          <Text text="{view>/selectedFeature/data/bridgeId}" class="nhvrSubText" />
-        </VBox>
-        <VBox class="nhvrFeatureSection">
-          <Label text="Restriction Limits" class="nhvrFeatureSectionTitle" />
-          <HBox class="nhvrFeatureMetrics" visible="{= !!${view>/selectedFeature/data/grossMassLimit} }">
-            <VBox class="nhvrFeatureMetric">
-              <Label text="Gross Mass" />
-              <Text text="{view>/selectedFeature/data/grossMassLimit} t" />
-            </VBox>
-          </HBox>
-          <HBox class="nhvrFeatureMetrics" visible="{= !!${view>/selectedFeature/data/heightLimit} }">
-            <VBox class="nhvrFeatureMetric">
-              <Label text="Height Limit" />
-              <Text text="{view>/selectedFeature/data/heightLimit} m" />
-            </VBox>
-          </HBox>
-          <HBox class="nhvrFeatureMetrics" visible="{= !!${view>/selectedFeature/data/speedLimit} }">
-            <VBox class="nhvrFeatureMetric">
-              <Label text="Speed Limit" />
-              <Text text="{view>/selectedFeature/data/speedLimit} km/h" />
-            </VBox>
-          </HBox>
-        </VBox>
-        <VBox class="nhvrFeatureSection">
-          <CheckBox text="Permit Required" selected="{view>/selectedFeature/data/permitRequired}" enabled="false" />
-          <CheckBox text="Escort Required" selected="{view>/selectedFeature/data/escortRequired}" enabled="false" />
-        </VBox>
+      <!-- Restriction body -->
+      <VBox visible="{= ${view>/selectedFeature/type} === 'restriction' }" class="nhvrDlgBody">
+        <HBox class="nhvrMetricsGrid">
+          <VBox class="nhvrMetricItem" visible="{= !!${view>/selectedFeature/data/grossMassLimit} }">
+            <Text text="Gross Mass" class="nhvrMetricLabel" />
+            <Text text="{view>/selectedFeature/data/grossMassLimit} t" class="nhvrMetricValue" />
+          </VBox>
+          <VBox class="nhvrMetricItem" visible="{= !!${view>/selectedFeature/data/heightLimit} }">
+            <Text text="Height Limit" class="nhvrMetricLabel" />
+            <Text text="{view>/selectedFeature/data/heightLimit} m" class="nhvrMetricValue" />
+          </VBox>
+          <VBox class="nhvrMetricItem" visible="{= !!${view>/selectedFeature/data/speedLimit} }">
+            <Text text="Speed Limit" class="nhvrMetricLabel" />
+            <Text text="{view>/selectedFeature/data/speedLimit} km/h" class="nhvrMetricValue" />
+          </VBox>
+        </HBox>
+        <HBox class="nhvrPermitRow">
+          <ObjectStatus text="Permit Required" state="Warning" inverted="false"
+                        visible="{view>/selectedFeature/data/permitRequired}" class="nhvrBadge" />
+          <ObjectStatus text="Escort Required" state="Error" inverted="false"
+                        visible="{view>/selectedFeature/data/escortRequired}"
+                        class="nhvrBadge sapUiTinyMarginBegin" />
+        </HBox>
       </VBox>
     </content>
 
+    <!-- Footer actions -->
     <beginButton>
       <Button text="View Bridge on Map" icon="sap-icon://map-2"
               type="Emphasized" press=".onViewBridgeFromRestriction"
@@ -124,7 +126,6 @@
               visible="{= ${view>/selectedFeature/type} === 'bridge' }" />
       <Button text="Open in Register" icon="sap-icon://open-command-field"
               press=".onOpenInBridgeRegister" />
-      <Button text="Close" icon="sap-icon://decline" type="Default" press=".onCloseFeaturePanel" />
     </buttons>
 
   </Dialog>

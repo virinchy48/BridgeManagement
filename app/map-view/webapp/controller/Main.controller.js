@@ -930,12 +930,15 @@ sap.ui.define([
     },
 
     _checkUrlParams: function () {
-      const search = window.location.search || "";
-      const params = new URLSearchParams(search);
-      const bridgeId = params.get("bridgeId") || params.get("highlightId");
+      // Check query string (direct href navigation) and hash params (shell toExternal)
+      const searchParams = new URLSearchParams(window.location.search || "");
+      const hashPart = (window.location.hash || "").split("?")[1] || "";
+      const hashParams = new URLSearchParams(hashPart);
+      const bridgeId = searchParams.get("bridgeId") || searchParams.get("highlightId")
+                    || hashParams.get("bridgeId") || hashParams.get("highlightId");
       if (bridgeId) {
         const allBridges = this._vm().getProperty("/allBridges") || [];
-        const bridge = allBridges.find(function (candidateBridge) { return String(candidateBridge.ID) === String(bridgeId) || candidateBridge.bridgeId === bridgeId; });
+        const bridge = allBridges.find(function (b) { return String(b.ID) === String(bridgeId) || b.bridgeId === bridgeId; });
         if (bridge) {
           setTimeout(function () { this._selectFeature("bridge", bridge); }.bind(this), 500);
         }
