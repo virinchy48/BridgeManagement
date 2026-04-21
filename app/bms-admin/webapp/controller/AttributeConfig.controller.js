@@ -57,10 +57,11 @@ sap.ui.define([
 
     _loadAttrDetail: function (attrId) {
       var self = this;
+      var ok = function (r) { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); };
       Promise.all([
-        fetch(BASE + "/AttributeDefinitions('" + attrId + "')").then(function (attributeResponse) { return attributeResponse.json(); }),
-        fetch(BASE + "/AttributeAllowedValues?$filter=attribute_ID eq '" + attrId + "'&$orderby=displayOrder").then(function (allowedValuesResponse) { return allowedValuesResponse.json(); }),
-        fetch(BASE + "/AttributeObjectTypeConfig?$filter=attribute_ID eq '" + attrId + "'").then(function (objectTypeConfigResponse) { return objectTypeConfigResponse.json(); })
+        fetch(BASE + "/AttributeDefinitions('" + attrId + "')").then(ok),
+        fetch(BASE + "/AttributeAllowedValues?$filter=attribute_ID eq '" + attrId + "'&$orderby=displayOrder").then(ok),
+        fetch(BASE + "/AttributeObjectTypeConfig?$filter=attribute_ID eq '" + attrId + "'").then(ok)
       ]).then(function (results) {
         var attr = results[0];
         var allowedValues = results[1].value || [];
@@ -85,7 +86,7 @@ sap.ui.define([
         self.byId("configTable").setModel(new JSONModel(configRows));
 
         self.byId("attrDetailPanel").setVisible(true);
-      });
+      }).catch(function (err) { MessageBox.error("Failed to load attribute details: " + err.message); });
     },
 
     onObjectTypeChange: function (oEvent) {
@@ -277,7 +278,7 @@ sap.ui.define([
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ enabled: row.enabled, required: row.required, displayOrder: row.displayOrder || null })
-        }).catch(function () {});
+        }).catch(function (err) { MessageToast.show("Config update failed: " + err.message); });
       });
     },
 
@@ -396,7 +397,7 @@ sap.ui.define([
           ctrl = new Input({ id: dialogField.id, value: dialogField.value || "", type: dialogField.type === "number" ? "Number" : "Text" });
         }
         inputMap[dialogField.id] = ctrl;
-        content.addItem(new VBox({ items: [lbl, ctrl], class: "sapUiTinyMarginBottom" }));
+        content.addItem(new VBox({ items: [lbl, ctrl] }).addStyleClass("sapUiTinyMarginBottom"));
       });
 
       var dlg = new Dialog({
