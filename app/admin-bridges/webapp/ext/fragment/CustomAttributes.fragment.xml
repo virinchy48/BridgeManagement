@@ -4,7 +4,7 @@
     &lt;script&gt;
       (function() {
         var customAttributesScript = document.createElement('script');
-        customAttributesScript.src = '../webapp/ext/controller/CustomAttributesInit.js?' + Date.now();
+        customAttributesScript.src = '/admin-bridges/webapp/ext/controller/CustomAttributesInit.js?' + Date.now();
         document.head.appendChild(customAttributesScript);
       })();
     &lt;/script&gt;
