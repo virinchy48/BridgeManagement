@@ -1005,17 +1005,6 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
-  // ── Stub SAP LREP / UI Flexibility endpoints (not available in local CAP dev) ──
-  // UI5 always requests these; without stubs they produce harmless but noisy 404s.
-  app.get('/sap/bc/lrep/flex/settings', (_req, res) => {
-    res.json({ isKeyUser: false, isVariantAdaptationEnabled: false, isContextSharingEnabled: false })
-  })
-  app.get('/sap/bc/lrep/flex/data/:appId', (_req, res) => {
-    res.json({ changes: [], compVariants: [], comp: { variants: [], changes: [], defaultVariants: [], standardVariants: [] }, variants: [], variantChanges: [], variantDependentControlChanges: [], variantManagementChanges: [], ui2personalization: {}, cacheKey: null })
-  })
-  app.post('/sap/bc/lrep/changes', (_req, res) => res.status(200).json({}))
-  app.delete('/sap/bc/lrep/changes', (_req, res) => res.status(200).json({}))
-
   // ── Health probe (no auth — used by BTP health checks and load balancers) ──
   app.get('/health', (_req, res) => {
     res.json({

@@ -1,17 +1,25 @@
 (function () {
     "use strict";
 
-    var NUMERIC_TYPES = ["Mass Limit", "Speed Restriction", "Dimension Limit"];
-    var NUMERIC_UNITS = ["km/h", "m", "t"];
+    var TYPE_UNIT_MAP = {
+        "Speed Restriction": ["km/h"],
+        "Mass Limit":        ["t"],
+        "Dimension Limit":   ["m"],
+        "Access Restriction": ["approval"]
+    };
+    var NUMERIC_TYPES   = ["Mass Limit", "Speed Restriction", "Dimension Limit"];
+    var NUMERIC_UNITS   = ["km/h", "m", "t"];
     var DECIMAL_PATTERN = /^-?(?:\d+|\d*\.\d*)?$/;
 
-    function getBindingContext(input) {
+    function getControl(input) {
         try {
-            var ctrlId = input.id.replace(/-inner$/, "").replace(/-placeholder$/, "");
-            var ctrl = sap.ui.getCore().byId(ctrlId);
-            if (ctrl) return ctrl.getBindingContext && ctrl.getBindingContext();
-        } catch (e) {}
-        return null;
+            return sap.ui.getCore().byId(input.id.replace(/-inner$/, "").replace(/-placeholder$/, ""));
+        } catch (e) { return null; }
+    }
+
+    function getBindingContext(input) {
+        var ctrl = getControl(input);
+        return ctrl && ctrl.getBindingContext && ctrl.getBindingContext();
     }
 
     function requiresNumeric(ctx) {
@@ -28,7 +36,44 @@
         return value.slice(0, start) + (event.data || "") + value.slice(end);
     }
 
-    function applyGuard(input) {
+    function showUnitWarning(type, unit) {
+        var allowed = TYPE_UNIT_MAP[type];
+        if (!allowed) return;
+        try {
+            sap.m.MessageToast.show(
+                "Unit \u201c" + unit + "\u201d is not valid for \u201c" + type +
+                "\u201d. Expected: " + allowed.join(", ") + ".",
+                { duration: 4000 }
+            );
+        } catch (e) {}
+    }
+
+    function setUnitValueState(errorMsg) {
+        document.querySelectorAll("input[id*='restrictionUnit']").forEach(function (input) {
+            var ctrl = getControl(input);
+            if (!ctrl) return;
+            if (ctrl.setValueState) {
+                ctrl.setValueState(errorMsg ? "Error" : "None");
+                if (ctrl.setValueStateText) ctrl.setValueStateText(errorMsg || "");
+            }
+        });
+    }
+
+    function checkTypeUnitCompatibility(ctx) {
+        if (!ctx) return;
+        var type    = ctx.getProperty("restrictionType") || "";
+        var unit    = ctx.getProperty("restrictionUnit") || "";
+        var allowed = TYPE_UNIT_MAP[type];
+        if (type && unit && allowed && allowed.indexOf(unit) === -1) {
+            showUnitWarning(type, unit);
+            setUnitValueState("Unit \u201c" + unit + "\u201d is not valid for \u201c" + type + "\u201d. Expected: " + allowed.join(", ") + ".");
+        } else {
+            setUnitValueState(null);
+        }
+    }
+
+    /* ── Guard: restrictionValue must be numeric when type/unit requires it ── */
+    function applyValueGuard(input) {
         if (input._bmsRestrictionValueGuard) return;
         input._bmsRestrictionValueGuard = true;
 
@@ -54,8 +99,21 @@
         });
     }
 
+    /* ── Watch: restrictionUnit / restrictionType changes → compatibility check ── */
+    function applyCompatibilityWatch(input) {
+        if (input._bmsCompatWatch) return;
+        input._bmsCompatWatch = true;
+        input.addEventListener("change", function () {
+            setTimeout(function () {
+                var ctx = getBindingContext(input);
+                checkTypeUnitCompatibility(ctx);
+            }, 150);
+        });
+    }
+
     function scan() {
-        document.querySelectorAll("input[id*='restrictionValue']").forEach(applyGuard);
+        document.querySelectorAll("input[id*='restrictionValue']").forEach(applyValueGuard);
+        document.querySelectorAll("input[id*='restrictionUnit'], input[id*='restrictionType']").forEach(applyCompatibilityWatch);
     }
 
     scan();

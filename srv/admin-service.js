@@ -304,14 +304,31 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   }
 
   this.before('SAVE', Bridges, req => validateEntityFields('Bridges', req))
-  this.before('SAVE', BridgeRestrictions, req => {
-    validateEntityFields('BridgeRestrictions', req)
-    const NUMERIC_TYPES = ['Mass Limit', 'Speed Restriction', 'Dimension Limit']
-    const NUMERIC_UNITS  = ['km/h', 'm', 't']
-    const data  = req.data
-    const type  = data.restrictionType  || ''
-    const unit  = data.restrictionUnit  || ''
+  const TYPE_UNIT_MAP = {
+    'Speed Restriction': ['km/h'],
+    'Mass Limit':        ['t'],
+    'Dimension Limit':  ['m'],
+    'Access Restriction': ['approval']
+  }
+  const NUMERIC_TYPES = ['Mass Limit', 'Speed Restriction', 'Dimension Limit']
+  const NUMERIC_UNITS  = ['km/h', 'm', 't']
+
+  const validateRestrictionTypeUnit = (data, req) => {
+    const type  = data.restrictionType || ''
+    const unit  = data.restrictionUnit || ''
     const value = data.restrictionValue
+
+    const allowedUnits = TYPE_UNIT_MAP[type]
+    if (type && unit && allowedUnits && !allowedUnits.includes(unit)) {
+      req.error({
+        code:    'INVALID_RESTRICTION_UNIT',
+        message: `Unit "${unit}" is not valid for "${type}". Allowed: ${allowedUnits.join(', ')}.`,
+        target:  'restrictionUnit',
+        status:  400
+      })
+      return false
+    }
+
     if (!isBlank(value) && (NUMERIC_TYPES.includes(type) || NUMERIC_UNITS.includes(unit))) {
       if (!isDecimalValue(value)) {
         req.error({
@@ -320,12 +337,21 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
           target:  'restrictionValue',
           status:  400
         })
-        return
+        return false
       }
       const numVal = parseFloat(value)
       if (type === 'Mass Limit' && data.grossMassLimit == null) data.grossMassLimit = numVal
       if (type === 'Speed Restriction' && data.speedLimit == null) data.speedLimit = Math.round(numVal)
     }
+    return true
+  }
+
+  this.before('SAVE', BridgeRestrictions, req => {
+    validateEntityFields('BridgeRestrictions', req)
+    validateRestrictionTypeUnit(req.data, req)
+  })
+  this.before(['CREATE', 'UPDATE'], BridgeRestrictions, async req => {
+    validateRestrictionTypeUnit(req.data, req)
   })
   this.before('SAVE', BridgeCapacities, req => validateEntityFields('BridgeCapacities', req))
   this.before('SAVE', BridgeScourAssessments, req => validateEntityFields('BridgeScourAssessments', req))
