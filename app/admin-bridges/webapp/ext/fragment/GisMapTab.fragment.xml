@@ -4,8 +4,8 @@
   &lt;div style='display:flex;align-items:center;padding:10px 14px;background:#fff;border-bottom:1px solid #e5e5e5'&gt;
     &lt;span style='font-size:15px;font-weight:600;color:#32363a'&gt;Location&lt;/span&gt;
     &lt;div style='flex:1'&gt;&lt;/div&gt;
-    &lt;button onclick='window._gisOpen()' style='padding:6px 14px;background:#0a6ed1;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer;margin-right:6px'&gt;&#128506; Open Map&lt;/button&gt;
-    &lt;button onclick='window._gisCopy()' style='padding:6px 10px;background:transparent;color:#0a6ed1;border:1px solid #0a6ed1;border-radius:4px;font-size:13px;cursor:pointer'&gt;&#128203; Copy&lt;/button&gt;
+    &lt;button id='gisOpenBtn' style='padding:6px 14px;background:#0a6ed1;color:#fff;border:none;border-radius:4px;font-size:13px;cursor:pointer;margin-right:6px'&gt;&#128506; Open Map&lt;/button&gt;
+    &lt;button id='gisCopyBtn' style='padding:6px 10px;background:transparent;color:#0a6ed1;border:1px solid #0a6ed1;border-radius:4px;font-size:13px;cursor:pointer'&gt;&#128203; Copy&lt;/button&gt;
   &lt;/div&gt;
   &lt;div id='gisCoordBar' style='padding:8px 14px;font-size:13px;color:#32363a;background:#fafafa;border-bottom:1px solid #e5e5e5'&gt;&#128205; Loading...&lt;/div&gt;
   &lt;div id='gisMapCanvas' style='width:100%;height:360px'&gt;&lt;/div&gt;

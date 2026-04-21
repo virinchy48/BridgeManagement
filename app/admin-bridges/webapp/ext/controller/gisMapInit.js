@@ -37,6 +37,10 @@
     window._gisInit = function () {
         var el = document.getElementById("gisMapCanvas");
         if (!el) return;
+        var openBtn = document.getElementById("gisOpenBtn");
+        if (openBtn && !openBtn._bmsWired) { openBtn._bmsWired = true; openBtn.addEventListener("click", window._gisOpen); }
+        var copyBtn = document.getElementById("gisCopyBtn");
+        if (copyBtn && !copyBtn._bmsWired) { copyBtn._bmsWired = true; copyBtn.addEventListener("click", window._gisCopy); }
         if (!getBridgeKeyPredicate()) { setCoord("No bridge ID in URL"); return; }
         readBridge("latitude,longitude,bridgeName,bridgeId,state,postingStatus")
             .then(draw)

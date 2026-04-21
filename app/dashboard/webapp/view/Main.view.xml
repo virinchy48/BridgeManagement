@@ -24,13 +24,16 @@
                 <Title text="{i18n>appTitle}" level="H1" />
                 <Text text="{i18n>pageSubtitle}" class="dashboardSubtitle" />
               </VBox>
-              <HBox>
-                <Button
-                  icon="sap-icon://refresh"
-                  tooltip="{i18n>refreshTooltip}"
-                  press=".onRefresh"
-                  type="Transparent"
-                  class="dashboardRefreshBtn" />
+              <HBox alignItems="Start">
+                <VBox alignItems="Center">
+                  <Button
+                    icon="sap-icon://refresh"
+                    tooltip="{i18n>refreshTooltip}"
+                    press=".onRefresh"
+                    type="Transparent"
+                    class="dashboardRefreshBtn" />
+                  <Text text="{view>/lastRefreshedLabel}" class="dashboardMuted dashboardRefreshTimestamp" />
+                </VBox>
                 <Button
                   icon="sap-icon://information"
                   tooltip="How to use this dashboard"
@@ -43,7 +46,7 @@
             <Title text="{i18n>sectionSummary}" level="H4" class="dashboardSectionTitle" />
             <FlexBox wrap="Wrap" class="sapUiSmallMarginBottom">
 
-              <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+              <VBox class="dashboardKpiTileWrapper sapUiTinyMarginEnd sapUiTinyMarginBottom">
                 <GenericTile
                   header="{i18n>kpiTotalAssets}"
                   subheader="{i18n>kpiTotalAssetsSubtitle}"
@@ -63,12 +66,12 @@
                   </tileContent>
                 </GenericTile>
                 <Button icon="sap-icon://information" tooltip="About: Total Assets" type="Transparent"
-                  press=".onTileInfo" class="sapUiTinyMarginTop">
+                  press=".onTileInfo" class="dashboardKpiTileInfo">
                   <customData><core:CustomData key="tileKey" value="totalAssets"/></customData>
                 </Button>
               </VBox>
 
-              <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+              <VBox class="dashboardKpiTileWrapper sapUiTinyMarginEnd sapUiTinyMarginBottom">
                 <GenericTile
                   header="{i18n>kpiActiveRestrictions}"
                   subheader="{i18n>kpiActiveRestrictionsSubtitle}"
@@ -88,12 +91,12 @@
                   </tileContent>
                 </GenericTile>
                 <Button icon="sap-icon://information" tooltip="About: Active Restrictions" type="Transparent"
-                  press=".onTileInfo" class="sapUiTinyMarginTop">
+                  press=".onTileInfo" class="dashboardKpiTileInfo">
                   <customData><core:CustomData key="tileKey" value="activeRestrictions"/></customData>
                 </Button>
               </VBox>
 
-              <VBox class="sapUiTinyMarginEnd sapUiTinyMarginBottom">
+              <VBox class="dashboardKpiTileWrapper sapUiTinyMarginEnd sapUiTinyMarginBottom">
                 <GenericTile
                   header="{i18n>kpiBridgesClosed}"
                   subheader="{i18n>kpiBridgesClosedSubtitle}"
@@ -113,7 +116,7 @@
                   </tileContent>
                 </GenericTile>
                 <Button icon="sap-icon://information" tooltip="About: Bridges Closed" type="Transparent"
-                  press=".onTileInfo" class="sapUiTinyMarginTop">
+                  press=".onTileInfo" class="dashboardKpiTileInfo">
                   <customData><core:CustomData key="tileKey" value="bridgesClosed"/></customData>
                 </Button>
               </VBox>
@@ -209,40 +212,6 @@
               </VBox>
 
             </FlexBox>
-
-            <!-- ═══ ROW 4 · Active Restrictions Detail ═══ -->
-            <Title text="{i18n>sectionActiveRestrictions}" level="H4" class="dashboardSectionTitle" />
-            <VBox class="dashboardCard sapUiSmallMarginBottom">
-              <HBox class="dashboardCardHeader" alignItems="Center" justifyContent="SpaceBetween">
-                <HBox alignItems="Center">
-                  <core:Icon src="sap-icon://warning2" color="#E76500" size="1rem" class="sapUiTinyMarginEnd" />
-                  <Text text="{i18n>postedRestrictionsLabel}" class="dashboardBodyText" />
-                </HBox>
-                <ObjectNumber
-                  number="{view>/postedRestrictions}"
-                  unit="{i18n>postedRestrictionsUnit}"
-                  state="{= ${view>/postedRestrictions} > 0 ? 'Warning' : 'None' }"
-                  emphasized="false" />
-              </HBox>
-            </VBox>
-
-            <!-- ═══ ROW 5 · Quick Navigation ═══ -->
-            <Title text="Quick Navigation" level="H4" class="dashboardSectionTitle" />
-            <FlexBox wrap="Wrap" class="sapUiSmallMarginBottom dashboardQuickNav">
-              <Button text="Bridge Register" icon="sap-icon://functional-location" press=".onNavigateBridges"
-                type="Emphasized" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-              <Button text="Restrictions" icon="sap-icon://alert" press=".onNavigateRestrictions"
-                type="Emphasized" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-              <Button text="Map View" icon="sap-icon://map" press=".onNavigateMap"
-                type="Emphasized" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-              <Button text="Mass Edit" icon="sap-icon://edit" press=".onNavigateMassEdit"
-                type="Default" class="sapUiTinyMarginEnd sapUiTinyMarginBottom" />
-            </FlexBox>
-
-            <!-- Last refreshed -->
-            <HBox justifyContent="End" class="sapUiSmallMarginBottom">
-              <Text text="{view>/lastRefreshedLabel}" class="dashboardMuted" />
-            </HBox>
 
           </VBox>
         </ScrollContainer>

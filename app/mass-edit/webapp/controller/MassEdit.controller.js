@@ -41,26 +41,26 @@ sap.ui.define([
       stateField: "state",
       searchFields: ["bridgeId", "bridgeName", "route", "region", "assetOwner", "remarks"],
       fields: [
-        { key: "bridgeId",          labelKey: "bridgeId",          type: "text",    editable: false, width: "9rem"  },
-        { key: "bridgeName",        labelKey: "bridgeName",        type: "text",    editable: true,  width: "14rem" },
-        { key: "state",             labelKey: "state",             type: "select",  editable: true,  width: "10rem", optionsPath: "/options/states"            },
-        { key: "route",             labelKey: "route",             type: "text",    editable: true,  width: "10rem" },
-        { key: "region",            labelKey: "region",            type: "text",    editable: true,  width: "10rem" },
-        { key: "assetOwner",        labelKey: "assetOwner",        type: "text",    editable: true,  width: "12rem" },
-        { key: "structureType",     labelKey: "structureType",     type: "select",  editable: true,  width: "11rem", optionsPath: "/options/structureTypes"     },
-        { key: "yearBuilt",         labelKey: "yearBuilt",         type: "number",  editable: true,  width: "8rem"  },
-        { key: "condition",         labelKey: "condition",         type: "select",  editable: true,  width: "9rem",  optionsPath: "/options/conditions"         },
-        { key: "conditionRating",   labelKey: "conditionRating",   type: "number",  editable: true,  width: "9rem"  },
-        { key: "postingStatus",     labelKey: "postingStatus",     type: "select",  editable: true,  width: "11rem", optionsPath: "/options/postingStatuses"    },
-        { key: "lastInspectionDate",labelKey: "lastInspectionDate",type: "date",    editable: true,  width: "10rem" },
-        { key: "scourRisk",         labelKey: "scourRisk",         type: "select",  editable: true,  width: "10rem", optionsPath: "/options/scourRisks"         },
-        { key: "pbsApprovalClass",  labelKey: "pbsApprovalClass",  type: "select",  editable: true,  width: "11rem", optionsPath: "/options/pbsApprovalClasses" },
-        { key: "nhvrAssessed",      labelKey: "nhvrAssessed",      type: "boolean", editable: true,  width: "8rem"  },
-        { key: "freightRoute",      labelKey: "freightRoute",      type: "boolean", editable: true,  width: "8rem"  },
-        { key: "overMassRoute",     labelKey: "overMassRoute",     type: "boolean", editable: true,  width: "8rem"  },
-        { key: "hmlApproved",       labelKey: "hmlApproved",       type: "boolean", editable: true,  width: "8rem"  },
-        { key: "bDoubleApproved",   labelKey: "bDoubleApproved",   type: "boolean", editable: true,  width: "8rem"  },
-        { key: "remarks",           labelKey: "remarks",           type: "text",    editable: true,  width: "16rem" }
+        { key: "bridgeId",          labelKey: "bridgeId",          type: "text",    editable: false, minWidth: 110 },
+        { key: "bridgeName",        labelKey: "bridgeName",        type: "text",    editable: true,  minWidth: 180 },
+        { key: "state",             labelKey: "state",             type: "select",  editable: true,  minWidth: 220, optionsPath: "/options/states"            },
+        { key: "route",             labelKey: "route",             type: "text",    editable: true,  minWidth: 130 },
+        { key: "region",            labelKey: "region",            type: "text",    editable: true,  minWidth: 160 },
+        { key: "assetOwner",        labelKey: "assetOwner",        type: "text",    editable: true,  minWidth: 160 },
+        { key: "structureType",     labelKey: "structureType",     type: "select",  editable: true,  minWidth: 160, optionsPath: "/options/structureTypes"     },
+        { key: "yearBuilt",         labelKey: "yearBuilt",         type: "number",  editable: true,  minWidth: 100 },
+        { key: "condition",         labelKey: "condition",         type: "select",  editable: true,  minWidth: 120, optionsPath: "/options/conditions"         },
+        { key: "conditionRating",   labelKey: "conditionRating",   type: "number",  editable: true,  minWidth: 110 },
+        { key: "postingStatus",     labelKey: "postingStatus",     type: "select",  editable: true,  minWidth: 170, optionsPath: "/options/postingStatuses"    },
+        { key: "lastInspectionDate",labelKey: "lastInspectionDate",type: "date",    editable: true,  minWidth: 140 },
+        { key: "scourRisk",         labelKey: "scourRisk",         type: "select",  editable: true,  minWidth: 130, optionsPath: "/options/scourRisks"         },
+        { key: "pbsApprovalClass",  labelKey: "pbsApprovalClass",  type: "select",  editable: true,  minWidth: 155, optionsPath: "/options/pbsApprovalClasses" },
+        { key: "nhvrAssessed",      labelKey: "nhvrAssessed",      type: "boolean", editable: true,  minWidth: 100 },
+        { key: "freightRoute",      labelKey: "freightRoute",      type: "boolean", editable: true,  minWidth: 100 },
+        { key: "overMassRoute",     labelKey: "overMassRoute",     type: "boolean", editable: true,  minWidth: 100 },
+        { key: "hmlApproved",       labelKey: "hmlApproved",       type: "boolean", editable: true,  minWidth: 100 },
+        { key: "bDoubleApproved",   labelKey: "bDoubleApproved",   type: "boolean", editable: true,  minWidth: 110 },
+        { key: "remarks",           labelKey: "remarks",           type: "text",    editable: true,  minWidth: 200 }
       ]
     },
     RESTRICTION: {
@@ -73,29 +73,29 @@ sap.ui.define([
       stateField: null,
       searchFields: ["restrictionRef", "bridgeRef", "restrictionType", "approvedBy", "remarks"],
       fields: [
-        { key: "restrictionRef",        labelKey: "restrictionRef",        type: "text",    editable: false, width: "11rem" },
-        { key: "bridgeRef",             labelKey: "bridgeRef",             type: "text",    editable: false, width: "10rem" },
-        { key: "restrictionCategory",   labelKey: "restrictionCategory",   type: "select",  editable: true,  width: "10rem", optionsPath: "/options/restrictionCategories" },
-        { key: "restrictionType",       labelKey: "restrictionType",       type: "select",  editable: true,  width: "11rem", optionsPath: "/options/restrictionTypes"      },
-        { key: "restrictionValue",      labelKey: "restrictionValue",      type: "text",    editable: true,  width: "10rem" },
-        { key: "restrictionUnit",       labelKey: "restrictionUnit",       type: "select",  editable: true,  width: "8rem",  optionsPath: "/options/restrictionUnits"      },
-        { key: "restrictionStatus",     labelKey: "restrictionStatus",     type: "select",  editable: true,  width: "11rem", optionsPath: "/options/restrictionStatuses"   },
-        { key: "appliesToVehicleClass", labelKey: "appliesToVehicleClass", type: "select",  editable: true,  width: "11rem", optionsPath: "/options/vehicleClasses"        },
-        { key: "grossMassLimit",        labelKey: "grossMassLimit",        type: "decimal", editable: true,  width: "8rem"  },
-        { key: "axleMassLimit",         labelKey: "axleMassLimit",         type: "decimal", editable: true,  width: "8rem"  },
-        { key: "heightLimit",           labelKey: "heightLimit",           type: "decimal", editable: true,  width: "7rem"  },
-        { key: "widthLimit",            labelKey: "widthLimit",            type: "decimal", editable: true,  width: "7rem"  },
-        { key: "lengthLimit",           labelKey: "lengthLimit",           type: "decimal", editable: true,  width: "7rem"  },
-        { key: "speedLimit",            labelKey: "speedLimit",            type: "number",  editable: true,  width: "7rem"  },
-        { key: "permitRequired",        labelKey: "permitRequired",        type: "boolean", editable: true,  width: "8rem"  },
-        { key: "escortRequired",        labelKey: "escortRequired",        type: "boolean", editable: true,  width: "8rem"  },
-        { key: "temporary",             labelKey: "temporary",             type: "boolean", editable: true,  width: "8rem"  },
-        { key: "active",                labelKey: "active",                type: "boolean", editable: true,  width: "8rem"  },
-        { key: "effectiveFrom",         labelKey: "effectiveFrom",         type: "date",    editable: true,  width: "10rem" },
-        { key: "effectiveTo",           labelKey: "effectiveTo",           type: "date",    editable: true,  width: "10rem" },
-        { key: "approvedBy",            labelKey: "approvedBy",            type: "text",    editable: true,  width: "11rem" },
-        { key: "direction",             labelKey: "direction",             type: "select",  editable: true,  width: "9rem",  optionsPath: "/options/restrictionDirections" },
-        { key: "remarks",               labelKey: "remarks",               type: "text",    editable: true,  width: "14rem" }
+        { key: "restrictionRef",        labelKey: "restrictionRef",        type: "text",    editable: false, minWidth: 140 },
+        { key: "bridgeRef",             labelKey: "bridgeRef",             type: "text",    editable: false, minWidth: 120 },
+        { key: "restrictionCategory",   labelKey: "restrictionCategory",   type: "select",  editable: true,  minWidth: 160, optionsPath: "/options/restrictionCategories" },
+        { key: "restrictionType",       labelKey: "restrictionType",       type: "select",  editable: true,  minWidth: 170, optionsPath: "/options/restrictionTypes"      },
+        { key: "restrictionValue",      labelKey: "restrictionValue",      type: "text",    editable: true,  minWidth: 120 },
+        { key: "restrictionUnit",       labelKey: "restrictionUnit",       type: "select",  editable: true,  minWidth: 110, optionsPath: "/options/restrictionUnits"      },
+        { key: "restrictionStatus",     labelKey: "restrictionStatus",     type: "select",  editable: true,  minWidth: 155, optionsPath: "/options/restrictionStatuses"   },
+        { key: "appliesToVehicleClass", labelKey: "appliesToVehicleClass", type: "select",  editable: true,  minWidth: 180, optionsPath: "/options/vehicleClasses"        },
+        { key: "grossMassLimit",        labelKey: "grossMassLimit",        type: "decimal", editable: true,  minWidth: 110 },
+        { key: "axleMassLimit",         labelKey: "axleMassLimit",         type: "decimal", editable: true,  minWidth: 110 },
+        { key: "heightLimit",           labelKey: "heightLimit",           type: "decimal", editable: true,  minWidth:  95 },
+        { key: "widthLimit",            labelKey: "widthLimit",            type: "decimal", editable: true,  minWidth:  95 },
+        { key: "lengthLimit",           labelKey: "lengthLimit",           type: "decimal", editable: true,  minWidth:  95 },
+        { key: "speedLimit",            labelKey: "speedLimit",            type: "number",  editable: true,  minWidth:  95 },
+        { key: "permitRequired",        labelKey: "permitRequired",        type: "boolean", editable: true,  minWidth: 105 },
+        { key: "escortRequired",        labelKey: "escortRequired",        type: "boolean", editable: true,  minWidth: 105 },
+        { key: "temporary",             labelKey: "temporary",             type: "boolean", editable: true,  minWidth:  95 },
+        { key: "active",                labelKey: "active",                type: "boolean", editable: true,  minWidth:  80 },
+        { key: "effectiveFrom",         labelKey: "effectiveFrom",         type: "date",    editable: true,  minWidth: 130 },
+        { key: "effectiveTo",           labelKey: "effectiveTo",           type: "date",    editable: true,  minWidth: 130 },
+        { key: "approvedBy",            labelKey: "approvedBy",            type: "text",    editable: true,  minWidth: 140 },
+        { key: "direction",             labelKey: "direction",             type: "select",  editable: true,  minWidth: 115, optionsPath: "/options/restrictionDirections" },
+        { key: "remarks",               labelKey: "remarks",               type: "text",    editable: true,  minWidth: 180 }
       ]
     }
   };
@@ -119,6 +119,7 @@ sap.ui.define([
 
       this.getView().setModel(new JSONModel({
         busy:              false,
+        lastRefreshedLabel: "",
         entityKey:         "BRIDGE",
         allItems:          [],
         dirtyCount:        0,
@@ -325,6 +326,8 @@ sap.ui.define([
         vm.setProperty("/allItems", rows);
         this._lastFilterKey = null;
         this._applyFilters();
+        const now = new Date();
+        vm.setProperty("/lastRefreshedLabel", now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
       } catch (err) {
         if (gen !== this._loadGeneration) { return; }
         MessageBox.error(err.message || this._t("loadError"));
@@ -345,7 +348,7 @@ sap.ui.define([
 
       config.fields.forEach(function (field) {
         table.addColumn(new Column({
-          width:          field.width,
+          minWidth:       field.minWidth,
           label:          new Text({ text: this._t(field.labelKey), wrapping: true }),
           template:       this._createCell(field),
           sortProperty:   field.key,

@@ -304,7 +304,29 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   }
 
   this.before('SAVE', Bridges, req => validateEntityFields('Bridges', req))
-  this.before('SAVE', BridgeRestrictions, req => validateEntityFields('BridgeRestrictions', req))
+  this.before('SAVE', BridgeRestrictions, req => {
+    validateEntityFields('BridgeRestrictions', req)
+    const NUMERIC_TYPES = ['Mass Limit', 'Speed Restriction', 'Dimension Limit']
+    const NUMERIC_UNITS  = ['km/h', 'm', 't']
+    const data  = req.data
+    const type  = data.restrictionType  || ''
+    const unit  = data.restrictionUnit  || ''
+    const value = data.restrictionValue
+    if (!isBlank(value) && (NUMERIC_TYPES.includes(type) || NUMERIC_UNITS.includes(unit))) {
+      if (!isDecimalValue(value)) {
+        req.error({
+          code:    'INVALID_RESTRICTION_VALUE',
+          message: `Value must be a number for "${type || unit}" restrictions.`,
+          target:  'restrictionValue',
+          status:  400
+        })
+        return
+      }
+      const numVal = parseFloat(value)
+      if (type === 'Mass Limit' && data.grossMassLimit == null) data.grossMassLimit = numVal
+      if (type === 'Speed Restriction' && data.speedLimit == null) data.speedLimit = Math.round(numVal)
+    }
+  })
   this.before('SAVE', BridgeCapacities, req => validateEntityFields('BridgeCapacities', req))
   this.before('SAVE', BridgeScourAssessments, req => validateEntityFields('BridgeScourAssessments', req))
   this.before(['CREATE', 'UPDATE'], Bridges, req => validateRequiredFieldsWithExisting(Bridges, 'Bridges', req))

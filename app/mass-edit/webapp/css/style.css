@@ -63,3 +63,11 @@
   border-left: 3px solid #0a6ed1;
   padding-left: 0.75rem;
 }
+
+.massEditRefreshTimestamp {
+  font-size: 0.7rem;
+  color: #7a8899;
+  margin-top: -0.2rem;
+  text-align: center;
+  width: 100%;
+}

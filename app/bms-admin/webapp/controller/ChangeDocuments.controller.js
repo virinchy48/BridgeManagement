@@ -20,6 +20,149 @@ sap.ui.define([
              Dialog, Button, ScrollContainer, FormattedText) {
   "use strict";
 
+  var FIELD_LABELS = {
+    // Bridge — identity & location
+    bridgeId:                 "Bridge ID",
+    bridgeName:               "Bridge Name",
+    state:                    "State",
+    region:                   "Region",
+    lga:                      "LGA",
+    route:                    "Route",
+    routeNumber:              "Route Number",
+    location:                 "Location",
+    latitude:                 "Latitude",
+    longitude:                "Longitude",
+    // Bridge — ownership
+    assetClass:               "Asset Class",
+    assetOwner:               "Asset Owner",
+    managingAuthority:        "Managing Authority",
+    // Bridge — structure
+    structureType:            "Structure Type",
+    material:                 "Material",
+    yearBuilt:                "Year Built",
+    designLoad:               "Design Load",
+    designStandard:           "Design Standard",
+    spanCount:                "Span Count",
+    spanLength:               "Span Length (m)",
+    totalLength:              "Total Length (m)",
+    deckWidth:                "Deck Width (m)",
+    clearanceHeight:          "Clearance Height (m)",
+    numberOfLanes:            "Number of Lanes",
+    // Bridge — condition
+    condition:                "Condition",
+    conditionRating:          "Condition Rating",
+    conditionStandard:        "Condition Standard",
+    conditionSummary:         "Condition Summary",
+    conditionAssessor:        "Assessed By",
+    conditionReportRef:       "Report Reference",
+    conditionNotes:           "Condition Notes",
+    structuralAdequacy:       "Structural Adequacy",
+    structuralAdequacyRating: "Structural Adequacy Rating",
+    // Bridge — risk & inspection
+    postingStatus:            "Posting Status",
+    status:                   "Status",
+    scourRisk:                "Scour Risk",
+    lastInspectionDate:       "Last Inspection Date",
+    seismicZone:              "Seismic Zone",
+    scourDepthLastMeasured:   "Scour Depth Last Measured (m)",
+    floodImmunityAriYears:    "Flood Immunity ARI (years)",
+    floodImpacted:            "Flood Impacted",
+    highPriorityAsset:        "High Priority Asset",
+    asBuiltDrawingReference:  "As-Built Drawing Reference",
+    remarks:                  "Remarks",
+    // Bridge — NHVR & approvals
+    nhvrAssessed:             "NHVR Assessed",
+    nhvrAssessmentDate:       "NHVR Assessment Date",
+    nhvrReferenceUrl:         "NHVR Reference URL",
+    loadRating:               "Load Rating (t)",
+    pbsApprovalClass:         "PBS Approval Class",
+    importanceLevel:          "Importance Level",
+    averageDailyTraffic:      "Average Daily Traffic (ADT)",
+    heavyVehiclePercent:      "Heavy Vehicle Percentage (%)",
+    gazetteReference:         "Gazette Reference",
+    freightRoute:             "Freight Route",
+    overMassRoute:            "Over Mass Route",
+    hmlApproved:              "HML Approved",
+    bDoubleApproved:          "B-Double Approved",
+    // Bridge — provenance
+    dataSource:               "Data Source",
+    sourceReferenceUrl:       "Source Reference URL",
+    openDataReference:        "Open Data Reference",
+    sourceRecordId:           "Source Record ID",
+    isActive:                 "Active",
+    // Restriction / BridgeRestriction
+    restrictionRef:           "Reference",
+    bridgeRef:                "Bridge Reference",
+    bridge_ID:                "Bridge",
+    restrictionCategory:      "Category",
+    restrictionType:          "Restriction Type",
+    restrictionValue:         "Value",
+    restrictionUnit:          "Unit",
+    restrictionStatus:        "Status",
+    active:                   "Active",
+    temporary:                "Temporary",
+    appliesToVehicleClass:    "Applies to Vehicle Class",
+    direction:                "Direction",
+    effectiveFrom:            "Effective From",
+    effectiveTo:              "Effective To",
+    grossMassLimit:           "Gross Mass Limit (t)",
+    axleMassLimit:            "Axle Mass Limit (t)",
+    heightLimit:              "Height Limit (m)",
+    widthLimit:               "Width Limit (m)",
+    lengthLimit:              "Length Limit (m)",
+    speedLimit:               "Speed Limit (km/h)",
+    permitRequired:           "Permit Required",
+    escortRequired:           "Escort Required",
+    approvedBy:               "Approved By",
+    approvalReference:        "Approval Reference",
+    legalReference:           "Gazette / Legal Reference",
+    issuingAuthority:         "Issuing Authority",
+    enforcementAuthority:     "Enforcement Authority",
+    temporaryFrom:            "Temporary From",
+    temporaryTo:              "Temporary To",
+    temporaryReason:          "Temporary Reason",
+    name:                     "Name",
+    descr:                    "Description",
+    // Capacity
+    capacityType:             "Capacity Type",
+    capacityStatus:           "Capacity Status",
+    ratingMethod:             "Rating Method",
+    ratingFactor:             "Rating Factor",
+    minClearancePosted:       "Min. Clearance Posted",
+    grossCombined:            "Gross Combined (t)",
+    steerAxleLimit:           "Steer Axle Limit (t)",
+    singleAxleLimit:          "Single Axle Limit (t)",
+    tandemGroupLimit:         "Tandem Group Limit (t)",
+    triAxleGroupLimit:        "Tri-Axle Group Limit (t)",
+    lane1Clearance:           "Lane 1 Clearance (m)",
+    lane2Clearance:           "Lane 2 Clearance (m)",
+    carriagewayWidth:         "Carriageway Width (m)",
+    trafficableWidth:         "Trafficable Width (m)",
+    laneWidth:                "Lane Width (m)",
+    consumedLife:             "Consumed Life (%)",
+    designLife:               "Design Life (years)",
+    pbsClass:                 "PBS Class",
+    // Scour assessment
+    assessmentDate:           "Assessment Date",
+    assessmentType:           "Assessment Type",
+    assessor:                 "Assessor",
+    scourCriticalDepth:       "Scour Critical Depth (m)",
+    currentScourDepth:        "Current Scour Depth (m)",
+    floodClosureLevel:        "Flood Closure Level (m)",
+    measuredDepth:            "Measured Scour Depth (m)",
+    notes:                    "Notes",
+    // System
+    ID:                       "Record ID",
+    createdAt:                "Created At",
+    createdBy:                "Created By",
+    modifiedAt:               "Modified At",
+    modifiedBy:               "Modified By"
+  };
+
+  function fieldLabel(rawName) {
+    return FIELD_LABELS[rawName] || rawName;
+  }
+
   return Controller.extend("BridgeManagement.bmsadmin.controller.ChangeDocuments", {
 
     onInit: function () {
@@ -147,15 +290,16 @@ sap.ui.define([
           });
           const fieldList = new sap.m.List({ mode: "None" });
           for (const fieldChange of batch.fields) {
-            const row = new HBox({ alignItems: "Start", class: "sapUiTinyMarginTop sapUiTinyMarginBottom" });
-            const fieldLabel = new Label({ text: fieldChange.fieldName, width: "180px", class: "sapUiSmallMarginEnd" });
-            const previousValue = new Text({ text: fieldChange.oldValue || "-", wrapping: false });
-            const newValue = new Text({ text: fieldChange.newValue || "-", wrapping: false });
+            const row = new HBox({ alignItems: "Center", class: "sapUiTinyMarginTop sapUiTinyMarginBottom" });
+            const oFieldLabel = new Label({ text: fieldLabel(fieldChange.fieldName), width: "200px", wrapping: false });
+            oFieldLabel.addStyleClass("sapUiSmallMarginEnd");
+            const previousValue = new Text({ text: fieldChange.oldValue || "-", wrapping: true, width: "160px" });
+            const newValue      = new Text({ text: fieldChange.newValue || "-", wrapping: true });
             previousValue.addStyleClass("bmsAuditOld");
             newValue.addStyleClass("bmsAuditNew");
-            row.addItem(fieldLabel);
+            row.addItem(oFieldLabel);
             row.addItem(previousValue);
-            row.addItem(new sap.ui.core.Icon({ src: "sap-icon://arrow-right", class: "sapUiSmallMarginBeginEnd" }));
+            row.addItem(new sap.ui.core.Icon({ src: "sap-icon://arrow-right", color: "#8696a9", size: "0.75rem", class: "sapUiSmallMarginBeginEnd" }));
             row.addItem(newValue);
             fieldList.addItem(new sap.m.CustomListItem({ content: [row] }));
           }

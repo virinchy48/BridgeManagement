@@ -33,6 +33,22 @@
   max-width: 14rem;
 }
 
+.dashboardKpiTile .sapMGTSubHdr {
+  margin-top: 0.3rem;
+}
+
+.dashboardKpiTileWrapper {
+  position: relative;
+}
+
+/* Take the info-button's sapMFlexItem wrapper out of the flex flow */
+.dashboardKpiTileWrapper > .sapMFlexItem:last-child {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+}
+
 /* ── Condition Distribution Card ── */
 .dashboardCard {
   background: #fff;
@@ -152,6 +168,12 @@
 /* ── Refresh button ── */
 .dashboardRefreshBtn .sapMBtnInner {
   color: #3f6df6;
+}
+
+.dashboardRefreshTimestamp {
+  font-size: 0.7rem;
+  text-align: center;
+  margin-top: -0.25rem;
 }
 
 /* ── Responsive ── */

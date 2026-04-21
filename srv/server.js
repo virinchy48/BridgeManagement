@@ -234,48 +234,34 @@ async function assertBridgeExists(db, bridgeId) {
   return ID
 }
 
-async function loadCodeList(entityName) {
-  const db = await cds.connect.to('db')
-  const rows = await db.run(
-    SELECT.from(entityName)
-      .columns('code', 'name')
-      .orderBy('code')
-  )
-
-  return (rows || []).map((row) => ({
-    key: row.code,
-    text: row.name || row.code
-  }))
+function mapCodeList(rows) {
+  return (rows || []).map((row) => ({ key: row.code, text: row.name || row.code }))
 }
 
 async function loadMassEditLookups() {
+  const db = await cds.connect.to('db')
+  const entities = [
+    'bridge.management.States',
+    'bridge.management.ConditionStates',
+    'bridge.management.PostingStatuses',
+    'bridge.management.StructureTypes',
+    'bridge.management.ScourRiskLevels',
+    'bridge.management.PbsApprovalClasses',
+    'bridge.management.RestrictionCategories',
+    'bridge.management.RestrictionTypes',
+    'bridge.management.RestrictionStatuses',
+    'bridge.management.RestrictionUnits',
+    'bridge.management.RestrictionDirections',
+    'bridge.management.VehicleClasses'
+  ]
+  const results = await Promise.all(
+    entities.map(e => db.run(SELECT.from(e).columns('code', 'name').orderBy('code')))
+  )
   const [
-    states,
-    conditions,
-    postingStatuses,
-    structureTypes,
-    scourRisks,
-    pbsApprovalClasses,
-    restrictionCategories,
-    restrictionTypes,
-    restrictionStatuses,
-    restrictionUnits,
-    restrictionDirections,
-    vehicleClasses
-  ] = await Promise.all([
-    loadCodeList('bridge.management.States'),
-    loadCodeList('bridge.management.ConditionStates'),
-    loadCodeList('bridge.management.PostingStatuses'),
-    loadCodeList('bridge.management.StructureTypes'),
-    loadCodeList('bridge.management.ScourRiskLevels'),
-    loadCodeList('bridge.management.PbsApprovalClasses'),
-    loadCodeList('bridge.management.RestrictionCategories'),
-    loadCodeList('bridge.management.RestrictionTypes'),
-    loadCodeList('bridge.management.RestrictionStatuses'),
-    loadCodeList('bridge.management.RestrictionUnits'),
-    loadCodeList('bridge.management.RestrictionDirections'),
-    loadCodeList('bridge.management.VehicleClasses')
-  ])
+    states, conditions, postingStatuses, structureTypes, scourRisks,
+    pbsApprovalClasses, restrictionCategories, restrictionTypes,
+    restrictionStatuses, restrictionUnits, restrictionDirections, vehicleClasses
+  ] = results.map(mapCodeList)
 
   return {
     states,
@@ -1019,6 +1005,17 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
+  // ── Stub SAP LREP / UI Flexibility endpoints (not available in local CAP dev) ──
+  // UI5 always requests these; without stubs they produce harmless but noisy 404s.
+  app.get('/sap/bc/lrep/flex/settings', (_req, res) => {
+    res.json({ isKeyUser: false, isVariantAdaptationEnabled: false, isContextSharingEnabled: false })
+  })
+  app.get('/sap/bc/lrep/flex/data/:appId', (_req, res) => {
+    res.json({ changes: [], compVariants: [], comp: { variants: [], changes: [], defaultVariants: [], standardVariants: [] }, variants: [], variantChanges: [], variantDependentControlChanges: [], variantManagementChanges: [], ui2personalization: {}, cacheKey: null })
+  })
+  app.post('/sap/bc/lrep/changes', (_req, res) => res.status(200).json({}))
+  app.delete('/sap/bc/lrep/changes', (_req, res) => res.status(200).json({}))
+
   // ── Health probe (no auth — used by BTP health checks and load balancers) ──
   app.get('/health', (_req, res) => {
     res.json({

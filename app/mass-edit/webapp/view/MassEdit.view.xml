@@ -29,7 +29,10 @@
           <Title text="{i18n>massEdit}" level="H1"/>
         </f:heading>
         <f:actions>
-          <Button text="{i18n>refresh}" icon="sap-icon://refresh" press="onRefresh"/>
+          <VBox alignItems="Center">
+            <Button text="{i18n>refresh}" icon="sap-icon://refresh" press="onRefresh"/>
+            <Text text="{view>/lastRefreshedLabel}" class="massEditRefreshTimestamp" visible="{= !!${view>/lastRefreshedLabel} }"/>
+          </VBox>
           <Button
             text="{i18n>saveChanges}"
             icon="sap-icon://save"
@@ -50,7 +53,7 @@
       <f:DynamicPageHeader pinnable="true">
         <VBox class="sapUiSmallMarginBegin sapUiSmallMarginEnd sapUiSmallMarginTop sapUiSmallMarginBottom">
 
-          <HBox wrap="Wrap" alignItems="Center" class="massEditFilterBar">
+          <HBox wrap="Wrap" alignItems="End" class="massEditFilterBar">
             <!-- OneWay so two-way binding does NOT write entityKey before selectionChange fires -->
             <SegmentedButton
               selectedKey="{path: 'view>/entityKey', mode: 'OneWay'}"
@@ -103,7 +106,7 @@
                  backgroundDesign="Transparent"
                  class="sapUiTinyMarginTop massEditBulkPanel">
             <content>
-              <HBox wrap="Wrap" alignItems="Center" class="massEditBulkBar">
+              <HBox wrap="Wrap" alignItems="End" class="massEditBulkBar">
                 <VBox>
                   <Label text="{i18n>field}"/>
                   <Select id="bulkFieldSelect" selectedKey="{view>/bulkFieldKey}"
@@ -113,20 +116,26 @@
                   </Select>
                 </VBox>
 
-                <Input id="bulkValueInput" width="14rem"
-                       visible="{= ${view>/bulkInputType} === 'text' || ${view>/bulkInputType} === 'number' || ${view>/bulkInputType} === 'decimal' }"/>
-                <Select id="bulkValueSelect" width="14rem"
-                        visible="{= ${view>/bulkInputType} === 'select' }"
-                        items="{view>/options/bulkFieldOptions}">
-                  <core:Item key="{view>key}" text="{view>text}"/>
-                </Select>
-                <DatePicker id="bulkValueDate" width="12rem"
-                            valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy"
-                            visible="{= ${view>/bulkInputType} === 'date' }"/>
-                <CheckBox id="bulkValueBool"
-                          visible="{= ${view>/bulkInputType} === 'boolean' }"/>
+                <VBox>
+                  <Label text=" "/>
+                  <Input id="bulkValueInput" width="14rem"
+                         visible="{= ${view>/bulkInputType} === 'text' || ${view>/bulkInputType} === 'number' || ${view>/bulkInputType} === 'decimal' }"/>
+                  <Select id="bulkValueSelect" width="14rem"
+                          visible="{= ${view>/bulkInputType} === 'select' }"
+                          items="{view>/options/bulkFieldOptions}">
+                    <core:Item key="{view>key}" text="{view>text}"/>
+                  </Select>
+                  <DatePicker id="bulkValueDate" width="12rem"
+                              valueFormat="yyyy-MM-dd" displayFormat="dd/MM/yyyy"
+                              visible="{= ${view>/bulkInputType} === 'date' }"/>
+                  <CheckBox id="bulkValueBool"
+                            visible="{= ${view>/bulkInputType} === 'boolean' }"/>
+                </VBox>
 
-                <Button text="{view>/applyButtonText}" type="Emphasized" press="onBulkApply"/>
+                <VBox alignItems="Start">
+                  <Label text=" "/>
+                  <Button text="{view>/applyButtonText}" type="Emphasized" press="onBulkApply"/>
+                </VBox>
               </HBox>
             </content>
           </Panel>
@@ -150,6 +159,7 @@
         rowSelectionChange="onTableSelectionChange"
         visibleRowCountMode="Fixed"
         visibleRowCount="18"
+        columnHeaderHeight="48"
         rowHeight="52"
         fixedColumnCount="1"
         alternateRowColors="true"
