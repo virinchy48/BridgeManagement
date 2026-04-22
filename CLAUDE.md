@@ -207,6 +207,51 @@ node scripts/rebuild-bridge-csvs.js
 
 ---
 
+## Engineering Standards
+
+These standards apply to all development on this project. Every developer and AI assistant must follow them without exception.
+
+### Technology Stack — non-negotiable
+- **Runtime:** Node.js only — never Java CAP, Spring Boot, Maven, or any JVM technology
+- **OData:** v4 only — never v2, never `@sap/cds-odata-v2-adapter-proxy`, never `sap.ui.model.odata.v2.ODataModel`
+- **Database (production):** SAP HANA Cloud via HDI container — never PostgreSQL, MySQL, SQLite in production
+- **Auth (production):** SAP IAS + XSUAA — never custom JWT, Auth0, Passport.js, or `dummy` auth outside local dev
+- **Gateway:** SAP App Router (`app/router/`) for all user-facing traffic — never expose CAP service endpoints directly
+- **Frontend:** SAP UI5 / `sap.m` controls only — never React, Vue, Angular, Leaflet (map-view is a frozen exception), jQuery plugins, Bootstrap, or Tailwind
+- **JavaScript:** Plain ES5/ES6 + `fetch`/`Promise` — never axios, lodash, or npm packages imported into frontend controllers
+
+### Fiori / UI5 Development
+- **Annotation-first:** Always start with Fiori Elements (ListReport, ObjectPage) driven by CDS `@UI.*` annotations. Custom XML views and controllers are last resort only — when FE templates provably cannot express the required UX.
+- **No hardcoding in views or controllers:** All constants in `webapp/constants/Constants.js`; all UI text in `i18n/i18n.properties`; all dropdown options from OData `@Common.ValueList` or `manifest.json` appConfig model — never inline strings or arrays in JS or XML.
+- **No heavy custom CSS:** Use SAP standard utility classes (`sapUiSmallMargin`, `sapUiContentPadding`) and theme CSS variables (`--sapHighlightColor`, `--sapTextColor`, etc.). Never inline `style=` attributes in XML views.
+- **Descriptive variable names:** Never use single-letter names (`e`, `i`, `v`, `src`, `ctx`, `cfg`, `res`, `dlg`) or the SAP `o`-prefix convention (`oModel`, `oDialog`). All names must be self-explanatory.
+- **Refresh on navigation:** Every custom controller must reload data in `attachPatternMatched` / `_onRouteMatched`, not only in `onInit`. After any CUD operation, call `listBinding.refresh()` or `this.getModel().refresh()`. Never use polling.
+- **CUD messages:** Every Create/Update/Delete must show `sap.m.MessageToast` on success, `sap.m.MessageBox.error()` on failure, `sap.m.MessageBox.confirm()` before Delete. All message text in `i18n`. Never silent success or silent failure.
+- **Full-stack cleanup:** Removing any UI screen, field, or action must also remove the corresponding service definition, handler logic, CDS annotations, schema entity/field, seed CSV column, and manifest route. Never leave orphaned code in lower layers.
+
+### CAP / CDS Development
+- **Generic runtimes first:** Exhaust CAP built-in capabilities before writing any custom code. Evaluation order: (1) CDS annotation → (2) calculated element → (3) mixin/aspect → (4) `@from`/`@to` status flow → (5) `before` hook → (6) `after` hook → (7) `on` hook (last resort). Never replace generic CRUD with a custom `on` handler unless absolutely unavoidable.
+- **Declarative constraints:** All input validation via `@assert.notNull`, `@assert.range`, `@assert.format`, `@assert.target`, `@mandatory`, `@readonly` on service projection elements. Use `@assert: (case when ... then '{i18n>key}' end)` for multi-condition CXL rules. Every assertion message uses an i18n key — never plain English strings. Custom `before` handlers only for cross-entity rules CXL cannot express.
+- **Auto-generated keys:** All new entities use `key ID : UUID` — CAP fills it on CREATE automatically. Never call `cds.utils.uuid()` manually in handlers. Deep inserts propagate parent FK to composition children automatically — never set FK manually.
+- **Status transitions:** Use `@from`/`@to` annotations on bound actions for state machine flows — CAP generic handlers validate entry state (409 if invalid) and update status automatically. FE generates `@Core.OperationAvailable` and `@Common.SideEffects` annotations automatically.
+- **Pagination:** All lists use `operationMode: "Server"` + `growing="true" growingThreshold="50"`. Set `cds.query.limit.default=50, max=10000` in `package.json`. Custom REST endpoints accept `limit`/`offset` params with `Math.min/max` guards. Never `$top=1000` or `.limit(1000)` as a cap.
+- **Concurrency — ETag (optimistic):** Annotate all mutable entities with `@odata.etag: modifiedAt`. FE handles `If-Match` automatically. Custom `fetch()` PATCH/DELETE must GET first to read ETag then send `If-Match`. A `412` response = `MessageBox.warning` + reload. Never `If-Match: *`.
+- **Concurrency — Pessimistic locking:** In every `before UPDATE/DELETE` handler, lock the record with `SELECT.one.from(...).where({ID}).forUpdate({wait:5})`. Catch lock timeout and return `req.error(409, 'msg.recordLocked')`. Lock by PK only — never lock a whole table. Never lock draft entities or lookup tables.
+- **Hooks:** Use `before`/`after` to extend generic runtime. Use `on` only for custom actions/functions or when full handler replacement is truly required. `before`/`after` listeners run in parallel — any error aborts the request.
+- **Service file co-location:** `srv/admin-service.cds` → `srv/admin-service.js` (auto-discovered by CAP). For large services, delegate to `srv/handlers/*.js` required from the main `.js`. Never put business logic in the `.cds` file.
+- **Custom actions/functions:** Use `action` for data-modifying operations, `function` for read-only. Prefer bound actions on entity instances. Implement via class-style `module.exports = class MyService extends cds.Service { ... }`. Always prefix bound HTTP calls with service name: `POST /Bridges(key)/AdminService.deactivate`.
+
+### Production Infrastructure
+- `DEFAULT_STATE` and `MULTI_STATE_ENABLED` are NOT in `mta.yaml` — set them as BTP environment variables (`cf set-env` or MTA extension file)
+- Empty lookup tables on first deploy — all seed CSVs removed; admin must use Mass Upload to seed States, StructureTypes, ConditionStates, etc. before app is usable
+- All mutating custom `fetch()` calls must include `X-CSRF-Token` header in production (XSUAA enforces this)
+
+### Git / Commits
+- Never include `Co-Authored-By: Claude` or any AI attribution in commit messages
+- Never commit `.claude/` directory — it is gitignored and machine-specific
+
+---
+
 ## Contributing to this file
 
 If you discover a new convention, fix a recurring mistake, or learn something about the
