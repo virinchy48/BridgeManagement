@@ -921,9 +921,13 @@ sap.ui.define([
 
     _getViewportBbox: function () {
       if (!this._leafletMap) return null;
+      if (!this._vm().getProperty("/viewportMode")) return null;
+      const zoom = this._leafletMap.getZoom();
+      if (zoom < 8) return null;
       const bounds = this._leafletMap.getBounds();
       if (!bounds) return null;
-      return bounds.getWest() + "," + bounds.getSouth() + "," + bounds.getEast() + "," + bounds.getNorth();
+      return [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
+        .map(function (v) { return v.toFixed(5); }).join(",");
     },
 
     _checkUrlParams: function () {
@@ -1206,9 +1210,10 @@ sap.ui.define([
       this._leafletMap.on("moveend zoomend", function () {
         if (this._viewportDebounce) clearTimeout(this._viewportDebounce);
         this._viewportDebounce = setTimeout(function () {
-          if (this._vm().getProperty("/viewportMode")) {
-            this._loadData();
-          }
+          if (!this._vm().getProperty("/viewportMode")) return;
+          const zoom = this._leafletMap ? this._leafletMap.getZoom() : 0;
+          if (zoom < 8) return;
+          this._loadData();
         }.bind(this), 400);
       }.bind(this));
 
