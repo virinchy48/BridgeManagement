@@ -1,0 +1,8 @@
+code,name,description
+SingleSpanAbutment,Single Span Abutments,Two abutments only — no intermediate piers (single-span bridge)
+MultiSpanPier,Multi-Span with Piers,Abutments and one or more intermediate pier bents
+IntegralAbutment,Integral Abutment,Abutment cast integral with superstructure — no expansion joint
+SemiIntegral,Semi-Integral Abutment,Superstructure integral with abutment stem but bearing on footing
+CantileverRetaining,Cantilever Retaining Abutment,Reinforced concrete cantilever wall supporting embankment
+BankSeat,Bank Seat / Spill-Through,Low bank-seat abutment with open spill-through slopes at each end
+Culvert,Culvert / Pipe Arch,Buried culvert substructure — headwalls and wingwalls only

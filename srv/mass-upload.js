@@ -70,7 +70,29 @@ const BRIDGE_COLUMNS = [
   column('openDataReference', 'string'),
   column('sourceRecordId', 'string'),
   column('restriction_ID', 'string'),
-  column('geoJson', 'string')
+  column('geoJson', 'string'),
+  // ── Inspection Scheduling (TfNSW-BIM §4.1–4.2) ──────────────────────────
+  column('inspectionType', 'string'),
+  column('inspectionFrequencyYears', 'integer'),
+  column('nextInspectionDue', 'date'),
+  column('conditionTrend', 'string'),
+  // ── Physical Characteristics — Standards Gaps ────────────────────────────
+  column('surfaceType', 'string'),
+  column('substructureType', 'string'),
+  column('foundationType', 'string'),
+  column('waterwayType', 'string'),
+  // ── NHVR Approval Dates (NHVR-HVNL §§100–104) ───────────────────────────
+  column('pbsApprovalDate', 'date'),
+  column('pbsApprovalExpiry', 'date'),
+  column('hmlApprovalDate', 'date'),
+  column('hmlApprovalExpiry', 'date'),
+  // ── Gazette & Legal (Roads Act 1993 NSW §§121–124) ───────────────────────
+  column('gazetteEffectiveDate', 'date'),
+  column('gazetteExpiryDate', 'date'),
+  column('postingStatusReason', 'string'),
+  column('closureDate', 'date'),
+  column('closureEndDate', 'date'),
+  column('closureReason', 'string')
 ]
 
 const RESTRICTION_COLUMNS = [
@@ -108,7 +130,18 @@ const RESTRICTION_COLUMNS = [
   column('approvalReference', 'string'),
   column('issuingAuthority', 'string'),
   column('legalReference', 'string'),
-  column('remarks', 'string')
+  column('remarks', 'string'),
+  // ── AS 1742.10 Sign Management ────────────────────────────────────────────
+  column('postingSignId', 'string'),
+  // ── Gazette & Load Limit Order (Roads Act 1993 NSW §§121–124) ────────────
+  column('gazetteNumber', 'string'),
+  column('gazettePublicationDate', 'date'),
+  column('gazetteExpiryDate', 'date'),
+  column('loadLimitOrderRef', 'string'),
+  column('loadLimitOrderDate', 'date'),
+  column('loadLimitOrderExpiry', 'date'),
+  // ── NHVR Escort requirements ──────────────────────────────────────────────
+  column('pilotVehicleCount', 'integer')
 ]
 
 const DATASETS = Object.freeze([
@@ -127,6 +160,13 @@ const DATASETS = Object.freeze([
   lookupDataset('RestrictionCategories', 'Restriction Categories', 'Restriction category dropdown values'),
   lookupDataset('RestrictionUnits', 'Restriction Units', 'Restriction unit dropdown values'),
   lookupDataset('RestrictionDirections', 'Restriction Directions', 'Restriction direction dropdown values'),
+  lookupDataset('InspectionTypes', 'Inspection Types', 'Bridge inspection type dropdown values (TfNSW-BIM §4.1)'),
+  lookupDataset('ConditionTrends', 'Condition Trends', 'Condition trend dropdown values (AP-G71)'),
+  lookupDataset('SurfaceTypes', 'Surface Types', 'Bridge deck surface type dropdown values (Austroads)'),
+  lookupDataset('SubstructureTypes', 'Substructure Types', 'Bridge substructure type dropdown values (TfNSW-BAIS)'),
+  lookupDataset('FoundationTypes', 'Foundation Types', 'Bridge foundation type dropdown values (AS 5100.7 §6.2.5)'),
+  lookupDataset('WaterwayTypes', 'Waterway Types', 'Waterway type dropdown values (Austroads AP-G71.8 §3.1)'),
+  lookupDataset('FatigueDetailCategories', 'Fatigue Detail Categories', 'AS 5100.6 §13.5 fatigue detail category dropdown values'),
   {
     name: 'Bridges',
     label: 'Bridges',
@@ -159,6 +199,12 @@ const REFERENCE_EXAMPLES = Object.freeze([
   { sheet: 'Bridges', column: 'condition', dataset: 'ConditionStates' },
   { sheet: 'Bridges', column: 'scourRisk', dataset: 'ScourRiskLevels' },
   { sheet: 'Bridges', column: 'pbsApprovalClass', dataset: 'PbsApprovalClasses' },
+  { sheet: 'Bridges', column: 'inspectionType', dataset: 'InspectionTypes' },
+  { sheet: 'Bridges', column: 'conditionTrend', dataset: 'ConditionTrends' },
+  { sheet: 'Bridges', column: 'surfaceType', dataset: 'SurfaceTypes' },
+  { sheet: 'Bridges', column: 'substructureType', dataset: 'SubstructureTypes' },
+  { sheet: 'Bridges', column: 'foundationType', dataset: 'FoundationTypes' },
+  { sheet: 'Bridges', column: 'waterwayType', dataset: 'WaterwayTypes' },
   { sheet: 'Restrictions', column: 'restrictionCategory', dataset: 'RestrictionCategories' },
   { sheet: 'Restrictions', column: 'restrictionType', dataset: 'RestrictionTypes' },
   { sheet: 'Restrictions', column: 'restrictionUnit', dataset: 'RestrictionUnits' },
@@ -925,7 +971,7 @@ function parseSheetRows(sheet, dataset) {
   const normalizedHeaders = new Map(headers.map((header) => [String(header).replace(/^\uFEFF/, '').replace(/\*$/, '').trim().toLowerCase(), header]))
 
   for (const columnDef of dataset.columns) {
-    if (!normalizedHeaders.has(columnDef.name.toLowerCase())) {
+    if (columnDef.required && !normalizedHeaders.has(columnDef.name.toLowerCase())) {
       throw new Error(`Sheet "${dataset.name}" must contain a "${columnDef.name}" column.`)
     }
   }

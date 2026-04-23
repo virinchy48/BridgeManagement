@@ -50,6 +50,16 @@
                     "icon": "sap-icon://map-2",
                     "targetURL": "#Map-display"
                   }
+                },
+                {
+                  "id": "Reports",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Reports",
+                    "subtitle": "Network Analytics",
+                    "icon": "sap-icon://bar-chart",
+                    "targetURL": "#Reports-display"
+                  }
                 }
               ]
             },
@@ -215,6 +225,20 @@
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.massedit",
                 "url": "/mass-edit/webapp"
+              }
+            },
+            "Reports-display": {
+              "semanticObject": "Reports",
+              "action": "display",
+              "title": "Reports",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.reports",
+                "url": "/reports/webapp"
               }
             }
           }

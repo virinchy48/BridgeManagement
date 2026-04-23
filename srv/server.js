@@ -11,6 +11,7 @@ const {
 } = require('./mass-upload')
 
 const mountAttributesApi = require('./attributes-api')
+const mountReportsApi = require('./reports-api')
 
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 
@@ -1311,10 +1312,15 @@ cds.on('bootstrap', (app) => {
   mapRouter.get('/proximity', async (req, res) => {
     try {
       const { lat, lng, radius } = req.query;
+      const latNum = Number(lat);
+      const lngNum = Number(lng);
+      if (!Number.isFinite(latNum) || !Number.isFinite(lngNum)) {
+        return res.status(400).json({ error: { message: 'lat and lng are required and must be valid numbers' } });
+      }
       const radiusKm = Math.max(0.1, Math.min(500, Number(radius || 10)));
       if (!Number.isFinite(radiusKm)) return res.status(400).json({ error: { message: 'Invalid radius' } });
-      const bridges = await loadProximityBridges({ lat, lng, radiusKm });
-      res.json({ bridges, searchCenter: { lat: Number(lat), lng: Number(lng) }, radiusKm });
+      const bridges = await loadProximityBridges({ lat: latNum, lng: lngNum, radiusKm });
+      res.json({ bridges, searchCenter: { lat: latNum, lng: lngNum }, radiusKm });
     } catch (error) {
       res.status(error.message.includes('required') ? 400 : 500)
          .json({ error: { message: error.message || 'Proximity search failed' } });
@@ -2302,6 +2308,8 @@ cds.on('bootstrap', (app) => {
       }
     } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
+
+  mountReportsApi(app, requiresAuthentication)
 
   app.use('/bnac/api', requiresAuthentication, validateCsrfToken, bnacRouter)
 })

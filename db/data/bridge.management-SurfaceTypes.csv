@@ -1,0 +1,8 @@
+code,name,description
+Asphalt,Asphalt / Bitumen,Dense graded asphalt wearing course — standard road surface (Austroads Pavement Guide)
+Concrete,Concrete,Portland cement concrete deck surface — common on older bridges
+OpenGrating,Open Steel Grating,Open-bar steel grating — high drainage but affects width restriction for cyclists
+TimberDecking,Timber Decking,Hardwood or treated softwood decking — heritage and rural timber bridges
+CompositeOverlay,Composite Overlay,Asphalt over concrete or timber — rehabilitation surface
+EpoxyOverlay,Epoxy / Polymer Overlay,Thin bonded polymer overlay — applied to deteriorated concrete decks
+NoSurface,Bare Structure,No wearing surface — bare concrete or steel (inspection item)

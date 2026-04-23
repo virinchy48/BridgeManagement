@@ -594,11 +594,28 @@ sap.ui.define([
       return bridgePatch;
     },
 
+    _csrfToken: null,
+
+    _getCsrfToken: async function () {
+      if (this._csrfToken) { return this._csrfToken; }
+      const res = await fetch("/mass-edit/api/bridges", {
+        method: "HEAD",
+        headers: { "X-CSRF-Token": "Fetch" }
+      });
+      this._csrfToken = res.headers.get("X-CSRF-Token") || "unsafe";
+      return this._csrfToken;
+    },
+
     _fetchJson: async function (path, options) {
       const url = "/mass-edit/" + String(path || "").replace(/^\/+/, "");
+      const opts = options || {};
+      if (["POST", "PUT", "PATCH", "DELETE"].includes((opts.method || "GET").toUpperCase())) {
+        const token = await this._getCsrfToken();
+        opts.headers = Object.assign({}, opts.headers, { "X-CSRF-Token": token });
+      }
       let res, data;
       try {
-        res  = await fetch(url, options || {});
+        res  = await fetch(url, opts);
         const ct = res.headers.get("content-type") || "";
         if (!ct.includes("application/json")) {
           const text = await res.text();

@@ -26,6 +26,13 @@ sap.ui.define([
       this._pollQualityAlert();
       this._qualityPollTimer = setInterval(this._pollQualityAlert.bind(this), 5 * 60 * 1000);
       setTimeout(this._setVersionBadge.bind(this), 0);
+      // Expand side nav on desktop; keep collapsed on mobile (< 768px)
+      if (window.innerWidth >= 768) {
+        setTimeout(function () {
+          const page = this.byId("toolPage");
+          if (page) { page.setSideExpanded(true); }
+        }.bind(this), 0);
+      }
     },
 
     _setVersionBadge: function () {

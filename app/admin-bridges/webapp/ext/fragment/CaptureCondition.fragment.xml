@@ -15,7 +15,19 @@
     </endButton>
     <content>
       <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
-        <Label text="Condition Rating" labelFor="condRating"/>
+        <Label text="Inspection Type" labelFor="condInspType"/>
+        <Select
+          id="condInspType"
+          selectedKey="{captureCondition>/inspectionType}">
+          <core:Item key="Principal" text="Principal Inspection"/>
+          <core:Item key="RoutineVisual" text="Routine Visual"/>
+          <core:Item key="SpecialScour" text="Special Scour"/>
+          <core:Item key="Underwater" text="Underwater / Dive"/>
+          <core:Item key="LoadRating" text="Load Rating Review"/>
+          <core:Item key="PostEvent" text="Post-Event Inspection"/>
+          <core:Item key="NDT" text="NDT Inspection"/>
+        </Select>
+        <Label text="Condition Rating (1–10)" labelFor="condRating" class="sapUiTinyMarginTop"/>
         <RatingIndicator
           id="condRating"
           maxValue="10"
@@ -31,17 +43,40 @@
           <core:Item key="Poor" text="Poor"/>
           <core:Item key="Critical" text="Critical"/>
         </Select>
+        <Label text="Condition Trend" labelFor="condTrend" class="sapUiTinyMarginTop"/>
+        <Select
+          id="condTrend"
+          selectedKey="{captureCondition>/conditionTrend}">
+          <core:Item key="Improving" text="Improving"/>
+          <core:Item key="Stable" text="Stable"/>
+          <core:Item key="Deteriorating" text="Deteriorating"/>
+          <core:Item key="RapidDeterioration" text="Rapid Deterioration"/>
+        </Select>
         <Label text="Assessment Date" labelFor="condDate" class="sapUiTinyMarginTop"/>
         <DatePicker
           id="condDate"
           value="{captureCondition>/lastInspectionDate}"
           valueFormat="yyyy-MM-dd"
           displayFormat="dd MMM yyyy"/>
+        <Label text="Next Inspection Due" labelFor="condNextDue" class="sapUiTinyMarginTop"/>
+        <DatePicker
+          id="condNextDue"
+          value="{captureCondition>/nextInspectionDue}"
+          valueFormat="yyyy-MM-dd"
+          displayFormat="dd MMM yyyy"/>
+        <Label text="Inspection Frequency (years)" labelFor="condFreq" class="sapUiTinyMarginTop"/>
+        <StepInput
+          id="condFreq"
+          value="{captureCondition>/inspectionFrequencyYears}"
+          min="1"
+          max="10"
+          step="1"
+          displayValuePrecision="0"/>
         <Label text="Assessor Name" labelFor="condAssessor" class="sapUiTinyMarginTop"/>
         <Input
           id="condAssessor"
           value="{captureCondition>/conditionAssessor}"
-          placeholder="Full name of assessor"/>
+          placeholder="Full name of assessor (TfNSW-BIM §3.1 accredited)"/>
         <Label text="Report Reference" labelFor="condReportRef" class="sapUiTinyMarginTop"/>
         <Input
           id="condReportRef"

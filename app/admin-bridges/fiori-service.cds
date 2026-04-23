@@ -56,39 +56,43 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Ownership',           Target: '@UI.FieldGroup#Ownership'},
         ]
       },
-      // ── Tab 2: Physical Characteristics (2 sub-sections) ─────────────────
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Physical Characteristics',
-        ID    : 'PhysicalCharacteristics',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Structure',  Target: '@UI.FieldGroup#Structure'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Dimensions', Target: '@UI.FieldGroup#Dimensions'},
-        ]
-      },
-      // ── Tab 3: Condition & Inspection (3 sub-sections) ───────────────────
+      // ── Tab 2: Physical Characteristics — removed; merged into Tab 5 below ─
+      // ── Tab 3: Condition & Inspection (4 sub-sections) ───────────────────
       {
         $Type : 'UI.CollectionFacet',
         Label : 'Condition & Inspection',
         ID    : 'ConditionInspection',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Condition Assessment', Target: '@UI.FieldGroup#ConditionAssessment'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Resilience',    Target: '@UI.FieldGroup#RiskResilience'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Field Notes',          Target: '@UI.FieldGroup#FieldNotes'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Condition Assessment',    Target: '@UI.FieldGroup#ConditionAssessment'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Scheduling',   Target: '@UI.FieldGroup#InspectionScheduling'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Resilience',       Target: '@UI.FieldGroup#RiskResilience'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Field Notes',             Target: '@UI.FieldGroup#FieldNotes'},
         ]
       },
-      // ── Tab 4: NHVR & Traffic Approvals (3 sub-sections) ─────────────────
+      // ── Tab 4: NHVR & Traffic Approvals (4 sub-sections) ─────────────────
       {
         $Type : 'UI.CollectionFacet',
         Label : 'NHVR & Traffic Approvals',
         ID    : 'NHVRTraffic',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Traffic Data',        Target: '@UI.FieldGroup#TrafficData'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Route Classification', Target: '@UI.FieldGroup#RouteClass'},
-          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Approvals',       Target: '@UI.FieldGroup#NHVRApprovals'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Traffic Data',          Target: '@UI.FieldGroup#TrafficData'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Route Classification',   Target: '@UI.FieldGroup#RouteClass'},
+          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Approvals',         Target: '@UI.FieldGroup#NHVRApprovals'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Gazette & Legal',        Target: '@UI.FieldGroup#GazetteLegal'},
         ]
       },
-      // ── Tab 5–7: Sub-entity tables ────────────────────────────────────────
+      // ── Tab 5: Physical Characteristics extended (2 sub-sections) ───────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Physical Characteristics',
+        ID    : 'PhysicalCharacteristics',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Structure',    Target: '@UI.FieldGroup#Structure'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Dimensions',   Target: '@UI.FieldGroup#Dimensions'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Site Context', Target: '@UI.FieldGroup#SiteContext'},
+        ]
+      },
+      // ── Sub-entity tables ────────────────────────────────────────────────
       {$Type: 'UI.ReferenceFacet', Label: 'Capacity',         Target: 'capacities/@UI.LineItem'},
       {$Type: 'UI.ReferenceFacet', Label: 'Restrictions',     Target: 'restrictions/@UI.LineItem'},
       {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessment', Target: 'scourAssessments/@UI.LineItem'},
@@ -157,17 +161,26 @@ annotate AdminService.Bridges with @(
         {Value: numberOfLanes},
       ]
     },
+    // Tab 5 — Site Context (AS 5100.7 §6.2; AP-G71.8 §3.1)
+    FieldGroup#SiteContext: {
+      Data: [
+        {Value: surfaceType},
+        {Value: substructureType},
+        {Value: foundationType},
+        {Value: waterwayType},
+        {Value: seismicZone},
+        {Value: asBuiltDrawingReference},
+      ]
+    },
 
     // Tab 3 — Condition & Inspection
     FieldGroup#ConditionAssessment: {
       Data: [
         {Value: conditionRating},
         {Value: conditionSummary},
-        {Value: postingStatus},
-        {Value: lastInspectionDate},
-        {Value: conditionAssessor},
-        {Value: conditionReportRef},
         {Value: structuralAdequacy},
+        {Value: structuralAdequacyRating},
+        {Value: conditionStandard},
         {Value: highPriorityAsset},
         {Value: conditionNotes},
       ]
@@ -184,6 +197,19 @@ annotate AdminService.Bridges with @(
     FieldGroup#FieldNotes: {
       Data: [
         {Value: remarks},
+      ]
+    },
+
+    // Tab 3 — Inspection Scheduling (TfNSW-BIM §4.1–4.2)
+    FieldGroup#InspectionScheduling: {
+      Data: [
+        {Value: inspectionType},
+        {Value: lastInspectionDate},
+        {Value: nextInspectionDue},
+        {Value: inspectionFrequencyYears},
+        {Value: conditionTrend},
+        {Value: conditionAssessor},
+        {Value: conditionReportRef},
       ]
     },
 
@@ -209,8 +235,28 @@ annotate AdminService.Bridges with @(
       Data: [
         {Value: nhvrAssessed},
         {Value: nhvrAssessmentDate},
-        {Value: gazetteReference},
+        {Value: pbsApprovalClass},
+        {Value: pbsApprovalDate},
+        {Value: pbsApprovalExpiry},
+        {Value: hmlApproved},
+        {Value: hmlApprovalDate},
+        {Value: hmlApprovalExpiry},
+        {Value: bDoubleApproved},
         {Value: nhvrReferenceUrl},
+      ]
+    },
+
+    // Tab 4 — Gazette & Legal (Roads Act 1993 NSW §§121–124)
+    FieldGroup#GazetteLegal: {
+      Data: [
+        {Value: gazetteReference},
+        {Value: gazetteEffectiveDate},
+        {Value: gazetteExpiryDate},
+        {Value: postingStatus},
+        {Value: postingStatusReason},
+        {Value: closureDate},
+        {Value: closureEndDate},
+        {Value: closureReason},
       ]
     },
 
@@ -431,6 +477,68 @@ annotate AdminService.Bridges with {
     ]}
   ) @title: 'Structural Adequacy';
   conditionNotes         @title: 'Condition Notes'  @UI.MultiLineText;
+
+  // ── Inspection Scheduling (TfNSW-BIM §4.1–4.2) ──────────────────────────
+  inspectionType @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'InspectionTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: inspectionType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Inspection Type';
+  inspectionFrequencyYears @title: 'Inspection Frequency (years)'  @Common.QuickInfo: 'TfNSW-BIM: 1 yr (poor/critical), 2 yr (road), 5 yr (rail)';
+  nextInspectionDue        @title: 'Next Inspection Due'           @Common.QuickInfo: 'TfNSW-BIM §4.2 — maximum 5-year interval';
+  conditionTrend @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'ConditionTrends', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: conditionTrend, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Condition Trend';
+
+  // ── Physical Characteristics — Site Context ──────────────────────────────
+  surfaceType @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'SurfaceTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: surfaceType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Deck Surface Type';
+  substructureType @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'SubstructureTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: substructureType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Substructure Type';
+  foundationType @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'FoundationTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: foundationType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Foundation Type'  @Common.QuickInfo: 'AS 5100.7 §6.2.5 — critical for scour risk assessment';
+  waterwayType @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'WaterwayTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: waterwayType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Waterway Type'  @Common.QuickInfo: 'Austroads AP-G71.8 §3.1 — determines scour risk methodology';
+
+  // ── NHVR Approval Dates (NHVR-HVNL §§100–104) ───────────────────────────
+  pbsApprovalDate    @title: 'PBS Approval Date';
+  pbsApprovalExpiry  @title: 'PBS Approval Expiry'  @Common.QuickInfo: 'Alert generated 30/60/90 days before expiry';
+  hmlApprovalDate    @title: 'HML Approval Date';
+  hmlApprovalExpiry  @title: 'HML Approval Expiry'  @Common.QuickInfo: 'Alert generated 30/60/90 days before expiry';
+
+  // ── Gazette & Legal (Roads Act 1993 NSW §§121–124) ───────────────────────
+  gazetteEffectiveDate  @title: 'Gazette Effective Date'  @Common.QuickInfo: 'Date gazette order came into effect — Roads Act 1993 §122';
+  gazetteExpiryDate     @title: 'Gazette Expiry Date'     @Common.QuickInfo: 'Drives renewal alerts 90/60/30 days before expiry';
+  postingStatusReason   @title: 'Posting Status Reason';
+  closureDate           @title: 'Closure Date';
+  closureEndDate        @title: 'Expected Reopening Date';
+  closureReason         @title: 'Closure Reason'  @UI.MultiLineText;
 };
 
 // Hide the ID on the Restrictions VH so it doesn't appear as a column
@@ -521,6 +629,17 @@ annotate AdminService.BridgeRestrictions with {
   remarks               @title: 'Remarks'  @UI.MultiLineText;
   name                  @UI.Hidden;
   descr                 @UI.Hidden;
+  // ── AS 1742.10 Sign Management ────────────────────────────────────────────
+  postingSignId         @title: 'Posting Sign ID'       @Common.QuickInfo: 'AS 1742.10 sign reference number';
+  // ── Gazette & Load Limit Order (Roads Act 1993 NSW §§121–124) ────────────
+  gazetteNumber         @title: 'Gazette Number'        @Common.QuickInfo: 'NSW Gazette order number (Roads Act 1993 §122)';
+  gazettePublicationDate @title: 'Gazette Published';
+  gazetteExpiryDate     @title: 'Gazette Expiry'        @Common.QuickInfo: 'Alert generated 90/60/30 days before expiry';
+  loadLimitOrderRef     @title: 'Load Limit Order Ref'  @Common.QuickInfo: 'Roads Act 1993 LLO reference (e.g. LLO-2024-001)';
+  loadLimitOrderDate    @title: 'LLO Issued Date';
+  loadLimitOrderExpiry  @title: 'LLO Expiry Date';
+  // ── NHVR Escort requirements ──────────────────────────────────────────────
+  pilotVehicleCount     @title: 'Pilot Vehicle Count'   @Common.QuickInfo: 'Number of pilot/escort vehicles required (NHVR-HVNL)';
 };
 
 annotate AdminService.BridgeRestrictions with @(
@@ -619,9 +738,10 @@ annotate AdminService.BridgeRestrictions with @(
         ID    : 'BRValidity',
         Facets: [
           {$Type: 'UI.ReferenceFacet', Label: 'Effective Period',    Target: '@UI.FieldGroup#BREffective'},
-          // Temporary Condition sub-section shown only for Temporary restrictions (fields self-hide otherwise)
           {$Type: 'UI.ReferenceFacet', Label: 'Temporary Condition', Target: '@UI.FieldGroup#BRTemporary'},
           {$Type: 'UI.ReferenceFacet', Label: 'Approval & Legal',    Target: '@UI.FieldGroup#BRApproval'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Gazette & LLO',       Target: '@UI.FieldGroup#BRGazette'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Signage (AS 1742.10)', Target: '@UI.FieldGroup#BRSignage'},
           {$Type: 'UI.ReferenceFacet', Label: 'Enforcement',         Target: '@UI.FieldGroup#BREnforcement'},
         ]
       },
@@ -692,6 +812,24 @@ annotate AdminService.BridgeRestrictions with @(
         {Value: approvalReference},
         {Value: legalReference},
         {Value: issuingAuthority},
+        {Value: pilotVehicleCount},
+      ]
+    },
+    // Gazette & Load Limit Order — Roads Act 1993 NSW §§121–124
+    FieldGroup#BRGazette: {
+      Data: [
+        {Value: gazetteNumber},
+        {Value: gazettePublicationDate},
+        {Value: gazetteExpiryDate},
+        {Value: loadLimitOrderRef},
+        {Value: loadLimitOrderDate},
+        {Value: loadLimitOrderExpiry},
+      ]
+    },
+    // Signage — AS 1742.10
+    FieldGroup#BRSignage: {
+      Data: [
+        {Value: postingSignId},
       ]
     },
     FieldGroup#BREnforcement: {
@@ -749,7 +887,14 @@ annotate AdminService.BridgeCapacities with {
   ) @title: 'Status';
   lastReviewedBy   @title: 'Last Reviewed By';
   statusReviewDue  @title: 'Next Review Due';
-  engineeringNotes @UI.MultiLineText  @title: 'Engineering Notes';
+  engineeringNotes      @UI.MultiLineText  @title: 'Engineering Notes';
+  fatigueDetailCategory @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'FatigueDetailCategories', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: fatigueDetailCategory, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Fatigue Detail Category'  @Common.QuickInfo: 'AS 5100.6 §13.5 — A (best) to G (worst)';
 };
 
 annotate AdminService.BridgeCapacities with @(
@@ -843,6 +988,7 @@ annotate AdminService.BridgeCapacities with @(
         {Value: designLife},
         {Value: consumedLife},
         {Value: fatigueSensitive},
+        {Value: fatigueDetailCategory},
         {Value: criticalElement},
       ]
     },
@@ -883,8 +1029,31 @@ annotate AdminService.BridgeScourAssessments with {
   floodImmunityAriYears @title: 'Flood Immunity (ARI years)';
   mitigationStatus      @title: 'Mitigation Status';
   assessor              @Common.FieldControl: #Mandatory  @title: 'Assessor';
+  inspectorAccreditationLevel @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: false, CollectionPath: 'InspectionTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: inspectorAccreditationLevel, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Inspector Accreditation Level'  @Common.QuickInfo: 'TfNSW-BIM §3.1 — Level 1 to Level 4';
   nextReviewDate        @title: 'Next Review Date';
   reportReference       @title: 'Report Reference';
+  waterwayType @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'WaterwayTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: waterwayType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Waterway Type';
+  foundationType @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'FoundationTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: foundationType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Foundation Type';
+  scourCountermeasureType      @title: 'Countermeasure Type'       @Common.QuickInfo: 'Austroads AP-G71.8 §7.3';
+  scourCountermeasureCondition @title: 'Countermeasure Condition';
   remarks               @title: 'Remarks'  @UI.MultiLineText;
 };
 
@@ -900,12 +1069,16 @@ annotate AdminService.BridgeScourAssessments with @(
       Description   : { $Type: 'UI.DataField', Value: assessmentDate }
     },
     LineItem: [
-      {Value: assessmentDate,   Label: 'Date'},
-      {Value: assessmentType,   Label: 'Type'},
-      {Value: scourRisk,        Label: 'Scour Risk'},
-      {Value: measuredDepth,    Label: 'Measured Depth (m)'},
-      {Value: mitigationStatus, Label: 'Mitigation'},
-      {Value: nextReviewDate,   Label: 'Next Review'},
+      {Value: assessmentDate,              Label: 'Date'},
+      {Value: assessmentType,              Label: 'Type'},
+      {Value: scourRisk,                   Label: 'Scour Risk'},
+      {Value: measuredDepth,               Label: 'Measured Depth (m)'},
+      {Value: waterwayType,                Label: 'Waterway'},
+      {Value: foundationType,              Label: 'Foundation'},
+      {Value: scourCountermeasureType,     Label: 'Countermeasure'},
+      {Value: scourCountermeasureCondition, Label: 'CM Condition'},
+      {Value: mitigationStatus,            Label: 'Mitigation'},
+      {Value: nextReviewDate,              Label: 'Next Review'},
     ],
     Facets: [
       {$Type: 'UI.ReferenceFacet', Label: 'Assessment Details', Target: '@UI.FieldGroup#ScourAssessmentDetails'},
@@ -917,8 +1090,13 @@ annotate AdminService.BridgeScourAssessments with @(
         {Value: scourRisk},
         {Value: measuredDepth},
         {Value: floodImmunityAriYears},
+        {Value: waterwayType},
+        {Value: foundationType},
         {Value: mitigationStatus},
+        {Value: scourCountermeasureType},
+        {Value: scourCountermeasureCondition},
         {Value: assessor},
+        {Value: inspectorAccreditationLevel},
         {Value: nextReviewDate},
         {Value: reportReference},
         {Value: remarks},
@@ -1008,6 +1186,7 @@ annotate AdminService.BridgeAttributes with {
 ////////////////////////////////////////////////////////////////////////////
 
 annotate AdminService.Bridges with {
+  inspectionFrequencyYears @assert.range: [1, 10]    @Common.QuickInfo: 'Valid range: 1 – 10 years';
   spanCount              @assert.range: [1, 500]     @Common.QuickInfo: 'Valid range: 1 – 500';
   numberOfLanes          @assert.range: [1, 20]      @Common.QuickInfo: 'Valid range: 1 – 20';
   spanLength             @assert.range: [0.1, 5000]  @Common.QuickInfo: 'Valid range: 0.1 – 5,000 m';
@@ -1021,6 +1200,7 @@ annotate AdminService.Bridges with {
 };
 
 annotate AdminService.BridgeRestrictions with {
+  pilotVehicleCount @assert.range: [0, 10] @Common.QuickInfo: 'Valid range: 0 – 10 escort vehicles';
   speedLimit     @assert.range: [0, 130]  @Common.QuickInfo: 'Valid range: 0 – 130 km/h';
   grossMassLimit @assert.range: [0, 1000] @Common.QuickInfo: 'Valid range: 0 – 1,000 t';
   axleMassLimit  @assert.range: [0, 500]  @Common.QuickInfo: 'Valid range: 0 – 500 t';

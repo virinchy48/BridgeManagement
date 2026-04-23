@@ -14,6 +14,7 @@ extend service BridgeManagementService with {
         freightRoute, isActive, version
     };
 
+    @requires: ['BridgeManager', 'Admin']
     action massEditBridges(rows: array of {
         ID: UUID; condition: String; conditionRating: Integer;
         postingStatus: String; loadRating: Decimal;

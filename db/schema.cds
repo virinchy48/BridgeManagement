@@ -1,8 +1,17 @@
 // Bridge Management System — DB Schema Barrel
+using { bridge.management.Bridges } from './schema/bridge-entity';
+using from './schema/bridge-entity';
 using from './schema/types';
 using from './schema/core';
 using from './schema/restrictions';
 using from './schema/admin';
+using from './schema/extensions';
+using from './schema/load-ratings';
+using from './schema/risk-assessments';
+using from './schema/nhvr-compliance';
+using from './schema/elements';
+using from './schema/defects';
+using from './schema/alerts';
 using {
   Currency,
   cuid,
@@ -13,66 +22,9 @@ using {
 using from './attributes-schema';
 
 namespace bridge.management;
+// entity Bridges is defined in ./schema/bridge-entity.cds
 
-entity Bridges : managed {
-  key ID           : Integer;
-      descr        : String(2000);
-      bridgeId     : String(40);
-      bridgeName   : String(111) @mandatory;
-      assetClass   : String(40);
-      route        : String(111);
-      state        : String(40) @mandatory;
-      region       : String(80);
-      lga          : String(111);
-      routeNumber  : String(40);
-      latitude     : Decimal(15,6) @mandatory @assert.range: [-90, 90];
-      longitude    : Decimal(15,6) @mandatory @assert.range: [-180, 180];
-      location     : String(255);
-      assetOwner   : String(111) @mandatory;
-      managingAuthority : String(111);
-      structureType : String(60);
-      yearBuilt    : Integer @assert.range: [1800, 2100];
-      designLoad   : String(40);
-      designStandard : String(111);
-      clearanceHeight : Decimal(9,2);
-      spanLength   : Decimal(9,2);
-      material     : String(60);
-      spanCount    : Integer;
-      totalLength  : Decimal(9,2);
-      deckWidth    : Decimal(9,2);
-      numberOfLanes : Integer;
-      condition    : String(40);
-      conditionRating : Integer @assert.range: [1, 10];
-      structuralAdequacyRating : Integer @assert.range: [1, 10];
-      postingStatus : String(40);
-      conditionStandard : String(111);
-      seismicZone  : String(40);
-      asBuiltDrawingReference : String(111);
-      scourDepthLastMeasured : Decimal(9,2);
-      floodImmunityAriYears : Integer;
-      floodImpacted : Boolean;
-      highPriorityAsset : Boolean;
-      remarks      : LargeString;
-      status       : String(40);
-      scourRisk    : String(20);
-      lastInspectionDate : Date;
-      nhvrAssessed : Boolean;
-      nhvrAssessmentDate : Date;
-      loadRating   : Decimal(9,2);
-      pbsApprovalClass : String(40);
-      importanceLevel : Integer @assert.range: [1, 4];
-      averageDailyTraffic : Integer;
-      heavyVehiclePercent : Decimal(5,2) @assert.range: [0, 100];
-      gazetteReference : String(111);
-      nhvrReferenceUrl : String(255);
-      freightRoute : Boolean;
-      overMassRoute : Boolean;
-      hmlApproved  : Boolean;
-      bDoubleApproved : Boolean;
-      dataSource   : String(111);
-      sourceReferenceUrl : String(255);
-      openDataReference : String(255);
-      sourceRecordId : String(111);
+extend entity Bridges with {
       restriction  : Association to Restrictions;
       capacities   : Composition of many BridgeCapacities
                        on capacities.bridge = $self;
@@ -84,12 +36,6 @@ entity Bridges : managed {
                        on scourAssessments.bridge = $self;
       documents    : Composition of many BridgeDocuments
                        on documents.bridge = $self;
-      geoJson      : LargeString;
-      conditionSummary    : String(60);
-      conditionAssessor   : String(111);
-      conditionReportRef  : String(111);
-      structuralAdequacy  : String(40);
-      conditionNotes      : LargeString;
 }
 
 /** Hierarchically organized Restrictions */
@@ -127,6 +73,17 @@ entity Restrictions : cuid, managed {
   issuingAuthority    : String(111);
   legalReference      : String(111);
   remarks             : LargeString;
+  // ── AS 1742.10 Sign Management ────────────────────────────────────────────
+  postingSignId       : String(40);    // AS 1742.10 sign reference number
+  // ── Gazette & Load Limit Order (Roads Act 1993 NSW §§121–124) ────────────
+  gazetteNumber       : String(30);    // NSW Gazette order number (e.g. 2024-GOV-4521)
+  gazettePublicationDate : Date;       // Date gazette was published
+  gazetteExpiryDate   : Date;          // Expiry of gazette authority (drives alerts)
+  loadLimitOrderRef   : String(50);    // Load Limit Order reference (e.g. LLO-2024-001)
+  loadLimitOrderDate  : Date;          // Date LLO was issued
+  loadLimitOrderExpiry : Date;         // Date LLO expires
+  // ── NHVR Escort requirements ─────────────────────────────────────────────
+  pilotVehicleCount   : Integer;       // Number of pilot/escort vehicles required (NHVR-HVNL)
   parent   : Association to Restrictions;
   children : Composition of many Restrictions
                on children.parent = $self;
@@ -165,6 +122,17 @@ entity BridgeRestrictions : cuid, managed {
   issuingAuthority    : String(111);
   legalReference      : String(111);
   remarks             : LargeString;
+  // ── AS 1742.10 Sign Management ────────────────────────────────────────────
+  postingSignId       : String(40);    // AS 1742.10 sign reference number
+  // ── Gazette & Load Limit Order (Roads Act 1993 NSW §§121–124) ────────────
+  gazetteNumber       : String(30);    // NSW Gazette order number
+  gazettePublicationDate : Date;
+  gazetteExpiryDate   : Date;
+  loadLimitOrderRef   : String(50);    // Load Limit Order reference (e.g. LLO-2024-001)
+  loadLimitOrderDate  : Date;
+  loadLimitOrderExpiry : Date;
+  // ── NHVR Escort requirements ─────────────────────────────────────────────
+  pilotVehicleCount   : Integer;       // Number of pilot/escort vehicles required (NHVR-HVNL)
 }
 
 entity BridgeCapacities : cuid, managed {
@@ -206,11 +174,12 @@ entity BridgeCapacities : cuid, managed {
   currentScourDepth     : Decimal(9,2);   // Current Scour Depth (m)
   floodClosureLevel     : Decimal(9,2);   // Flood Closure Level (m AHD)
 
-  // ── Fatigue Life Assessment (AS 5100.7 S11) ──────────────────────────────
+  // ── Fatigue Life Assessment (AS 5100.7 S11; AS 5100.6 §13.5) ────────────
   designLife            : Integer;        // Design Fatigue Life (years)
   consumedLife          : Decimal(9,2);   // Consumed Life (%)
   fatigueSensitive      : Boolean;        // Fatigue-Sensitive Structure
   criticalElement       : String(255);    // Critical fatigue element
+  fatigueDetailCategory : String(10);     // AS 5100.6 §13.5 detail category (A|B|C|D|E|F|G)
 
   // ── Capacity Status ───────────────────────────────────────────────────────
   capacityStatus        : String(40);     // e.g. Current, Under Review, Superseded
@@ -234,17 +203,23 @@ entity BridgeAttributes : cuid, managed {
 }
 
 entity BridgeScourAssessments : cuid, managed {
-  bridge              : Association to Bridges;
-  assessmentDate      : Date;
-  assessmentType      : String(60);
-  scourRisk           : String(20);
-  measuredDepth       : Decimal(9,2);
-  floodImmunityAriYears : Integer;
-  mitigationStatus    : String(60);
-  assessor            : String(111);
-  nextReviewDate      : Date;
-  reportReference     : String(111);
-  remarks             : LargeString;
+  bridge                      : Association to Bridges;
+  assessmentDate              : Date;
+  assessmentType              : String(60);   // Visual Dive | GPR | Bathymetric | Sonar | Hydrologic
+  scourRisk                   : String(20);
+  measuredDepth               : Decimal(9,2);
+  floodImmunityAriYears       : Integer;
+  mitigationStatus            : String(60);
+  assessor                    : String(111);
+  inspectorAccreditationLevel : String(20);   // TfNSW-BIM §3.1: Level 1 | Level 2 | Level 3 | Level 4
+  nextReviewDate              : Date;
+  reportReference             : String(111);
+  // ── Austroads AP-G71.8 §3.1 & §4 fields ──────────────────────────────────
+  waterwayType                : String(40);   // River | Creek | Tidal | Drainage | Culvert
+  foundationType              : String(40);   // Pile | Spread Footing | Caisson | Rock | Pad
+  scourCountermeasureType     : String(50);   // None | Riprap | Sheet Pile | Caisson | Bed Grout | Combination
+  scourCountermeasureCondition : String(20);  // Good | Fair | Poor | Failed
+  remarks                     : LargeString;
 }
 
 entity BridgeDocuments : cuid, managed {
@@ -336,6 +311,36 @@ entity RestrictionUnits : sap.common.CodeList {
 
 entity RestrictionDirections : sap.common.CodeList {
   key code : String(40);
+}
+
+// ── New lookup tables — standards compliance additions ────────────────────────
+
+entity InspectionTypes : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity ConditionTrends : sap.common.CodeList {
+  key code : String(20);
+}
+
+entity SurfaceTypes : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity SubstructureTypes : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity FoundationTypes : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity WaterwayTypes : sap.common.CodeList {
+  key code : String(40);
+}
+
+entity FatigueDetailCategories : sap.common.CodeList {
+  key code : String(10);
 }
 
 type Price : Decimal(9, 2);

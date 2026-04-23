@@ -1,0 +1,5 @@
+code,name,description
+Improving,Improving,Condition rating has improved since previous inspection (maintenance or rehabilitation effective)
+Stable,Stable,Condition rating unchanged since previous inspection — standard deterioration within expected range
+Deteriorating,Deteriorating,Condition rating has declined since previous inspection — intervention planning required
+RapidDeterioration,Rapid Deterioration,Condition has declined significantly — immediate intervention required (AP-G71 §5.5)

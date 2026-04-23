@@ -3,8 +3,8 @@ const cds = require('@sap/cds')
 module.exports = function registerDashboardHandlers (srv, { logAudit }) {
 
     srv.on('getNetworkKPIs', async req => {
-        let db = await cds.connect.to('db')
-        let [bridges, restrictions] = await Promise.all([
+        const db = await cds.connect.to('db')
+        const [bridges, restrictions] = await Promise.all([
             db.run(SELECT.from('nhvr.Bridge').where({ isDeleted: false })),
             db.run(SELECT.from('nhvr.Restriction').where({ status: 'ACTIVE', isActive: true }))
         ])
@@ -21,26 +21,125 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
     })
 
     srv.on('getConditionDistribution', async req => {
-        let { state, region } = req.data
-        let db = await cds.connect.to('db')
-        let where = { isDeleted: false }
+        const { state, region } = req.data
+        const db = await cds.connect.to('db')
+        const where = { isDeleted: false }
         if (state)  where.state  = state
         if (region) where.region = region
-        let bridges = await db.run(SELECT.from('nhvr.Bridge').where(where))
-        let dist = {}
+        const bridges = await db.run(SELECT.from('nhvr.Bridge').where(where))
+        const dist = {}
         bridges.forEach(b => { dist[b.condition] = (dist[b.condition] || 0) + 1 })
         return Object.entries(dist).map(([condition, count]) => ({ condition, count }))
     })
 
     srv.on('getRestrictionSummary', async req => {
-        let { state, region } = req.data
-        let db = await cds.connect.to('db')
+        const { state, region } = req.data
+        const db = await cds.connect.to('db')
+        // FIX: apply state/region filter via bridge join
         let restrictions = await db.run(
             SELECT.from('nhvr.Restriction').where({ status: 'ACTIVE', isActive: true })
         )
-        let summary = {}
-        restrictions.forEach(activeRestriction => { summary[activeRestriction.restrictionType] = (summary[activeRestriction.restrictionType] || 0) + 1 })
+        if (state || region) {
+            const bridgeWhere = { isDeleted: false }
+            if (state)  bridgeWhere.state  = state
+            if (region) bridgeWhere.region = region
+            const bridges = await db.run(SELECT.from('nhvr.Bridge').where(bridgeWhere))
+            const bridgeIds = new Set(bridges.map(b => b.ID))
+            restrictions = restrictions.filter(r => bridgeIds.has(r.bridge_ID))
+        }
+        const summary = {}
+        restrictions.forEach(r => {
+            summary[r.restrictionType] = (summary[r.restrictionType] || 0) + 1
+        })
         return Object.entries(summary).map(([restrictionType, count]) => ({ restrictionType, count }))
+    })
+
+    srv.on('getConditionTrend', async req => {
+        const { months = 12, state } = req.data
+        const db = await cds.connect.to('db')
+        const cutoff = new Date()
+        cutoff.setMonth(cutoff.getMonth() - months)
+        const where = { snapshotType: 'Daily' }
+        if (state) where.state = state
+        const snapshots = await db.run(
+            SELECT.from('bridge.management.KPISnapshots')
+                .where(where)
+                .and(`snapshotDate >= '${cutoff.toISOString().split('T')[0]}'`)
+                .orderBy('snapshotDate asc')
+        )
+        return snapshots.map(s => ({
+            snapshotDate: s.snapshotDate,
+            avgConditionRating: s.avgConditionRating,
+            criticalCondition: s.criticalCondition
+        }))
+    })
+
+    srv.on('getGazetteExpiryTimeline', async req => {
+        const { daysAhead = 90, state } = req.data
+        const db = await cds.connect.to('db')
+        const today = new Date().toISOString().split('T')[0]
+        const cutoff = new Date()
+        cutoff.setDate(cutoff.getDate() + daysAhead)
+        const cutoffStr = cutoff.toISOString().split('T')[0]
+        const where = { isDeleted: false }
+        if (state) where.state = state
+        const bridges = await db.run(SELECT.from('nhvr.Bridge').where(where))
+        return bridges
+            .filter(b => b.gazetteExpiryDate && b.gazetteExpiryDate >= today && b.gazetteExpiryDate <= cutoffStr)
+            .map(b => {
+                const expiry = new Date(b.gazetteExpiryDate)
+                const now = new Date()
+                const daysUntilExpiry = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))
+                return {
+                    bridgeId: b.bridgeId,
+                    bridgeName: b.name,
+                    gazetteExpiryDate: b.gazetteExpiryDate,
+                    daysUntilExpiry,
+                    postingStatus: b.postingStatus
+                }
+            })
+            .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry)
+    })
+
+    srv.on('captureKPISnapshot', async req => {
+        const { snapshotType = 'Daily' } = req.data
+        const db = await cds.connect.to('db')
+        const today = new Date().toISOString().split('T')[0]
+        const bridges = await db.run(SELECT.from('nhvr.Bridge').where({ isDeleted: false }))
+        const restrictions = await db.run(
+            SELECT.from('nhvr.Restriction').where({ status: 'ACTIVE', isActive: true })
+        )
+        const states = [...new Set(bridges.map(b => b.state).filter(Boolean)), 'ALL']
+        let recorded = 0
+        for (const state of states) {
+            const subset = state === 'ALL' ? bridges : bridges.filter(b => b.state === state)
+            if (subset.length === 0) continue
+            const avgRating = subset.reduce((s, b) => s + (b.conditionRating || 0), 0) / subset.length
+            await db.run(
+                INSERT.into('bridge.management.KPISnapshots').entries({
+                    snapshotDate:      today,
+                    snapshotType,
+                    state,
+                    totalBridges:      subset.length,
+                    activeBridges:     subset.filter(b => b.isActive).length,
+                    criticalCondition: subset.filter(b => b.condition === 'CRITICAL').length,
+                    highPriority:      subset.filter(b => b.highPriorityAsset).length,
+                    overdueInspections: subset.filter(b => b.overdueFlag).length,
+                    activeRestrictions: state === 'ALL' ? restrictions.length
+                        : restrictions.filter(r => {
+                            const br = bridges.find(b => b.ID === r.bridge_ID)
+                            return br?.state === state
+                        }).length,
+                    openAlerts:        0,
+                    avgConditionRating: Math.round(avgRating * 100) / 100,
+                    highRiskCount:     0,
+                    lrcExpiringCount:  0,
+                    nhvrExpiringCount: 0
+                })
+            )
+            recorded++
+        }
+        return { recorded, snapshotDate: today }
     })
 
     srv.on('me', req => ({

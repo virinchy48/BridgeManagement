@@ -132,3 +132,24 @@ entity PostingSigns : cuid, managed {
 extend Bridge with {
     restrictions : Association to many Restriction on restrictions.bridge = $self;
 }
+
+// ── P5: NHVR Compliance Extensions ───────────────────────────────────────────
+extend entity Restriction with {
+    nhvrAssessorName               : String(100);
+    nhvrAssessorAccreditationNo    : String(50);
+    nhvrAssessmentVersion          : String(20);
+    nhvrAssessmentConditions       : LargeString;
+    nhvrApprovedVehicleConfigurations : LargeString;
+
+    hvnlExemptionInstrumentNo      : String(50);
+    hvnlExemptionVehicleClasses    : String(500);
+    hvnlExemptionExpiry            : Date;
+
+    nhvrPortalConditionJson        : LargeString;
+
+    dimensionLimitOverhangFront    : Decimal(6,2);
+    dimensionLimitOverhangRear     : Decimal(6,2);
+    combinedMassLimit              : Decimal(8,2);
+    axleSpacingMinimum             : Decimal(6,2);
+    structuralAssessmentRef        : String(100);
+}

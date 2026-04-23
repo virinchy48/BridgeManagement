@@ -224,21 +224,22 @@ sap.ui.define([
       }
 
       const model = this._getViewModel();
+      const dataset = model.getProperty("/selectedDataset");
+      const fileName = (this._file.name || "").toLowerCase();
+      if (fileName.endsWith(".csv") && dataset === this._ALL_DATASETS_KEY) {
+        MessageBox.error("CSV format does not support 'All Datasets'. Select a specific dataset or use an Excel (.xlsx) file.");
+        return;
+      }
+
       model.setProperty("/busy", true);
       this._clearPreview();
 
       try {
         const contentBase64 = await this._readFileAsBase64(this._file);
-        const response = await fetch("/mass-upload/api/validate", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            fileName: this._file.name,
-            dataset: model.getProperty("/selectedDataset"),
-            contentBase64
-          })
+        const response = await this._mutate("/mass-upload/api/validate", "POST", {
+          fileName: this._file.name,
+          dataset,
+          contentBase64
         });
 
         const payload = await response.json();
@@ -287,16 +288,10 @@ sap.ui.define([
 
       try {
         const contentBase64 = await this._readFileAsBase64(this._file);
-        const response = await fetch("/mass-upload/api/upload", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            fileName: this._file.name,
-            dataset: model.getProperty("/selectedDataset"),
-            contentBase64
-          })
+        const response = await this._mutate("/mass-upload/api/upload", "POST", {
+          fileName: this._file.name,
+          dataset: model.getProperty("/selectedDataset"),
+          contentBase64
         });
 
         const contentType = response.headers.get("content-type") || "";
@@ -377,6 +372,27 @@ sap.ui.define([
       } finally {
         model.setProperty("/busy", false);
       }
+    },
+
+    _csrfToken: null,
+
+    _getCsrfToken: async function () {
+      if (this._csrfToken) { return this._csrfToken; }
+      const res = await fetch("/mass-upload/api/validate", {
+        method: "HEAD",
+        headers: { "X-CSRF-Token": "Fetch" }
+      });
+      this._csrfToken = res.headers.get("X-CSRF-Token") || "unsafe";
+      return this._csrfToken;
+    },
+
+    _mutate: async function (url, method, body) {
+      const token = await this._getCsrfToken();
+      return fetch(url, {
+        method: method || "POST",
+        headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+        body: JSON.stringify(body)
+      });
     },
 
     _readFileAsBase64: function (file) {

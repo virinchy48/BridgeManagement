@@ -42,12 +42,16 @@ sap.ui.define([
       var oContext = _oView && _oView.getBindingContext();
 
       var oModel = new JSONModel({
-        conditionRating:    oContext ? (oContext.getProperty("conditionRating")    || 0)         : 0,
-        condition:          oContext ? (oContext.getProperty("condition")          || "")        : "",
-        lastInspectionDate: oContext ? (oContext.getProperty("lastInspectionDate") || todayIso()) : todayIso(),
-        conditionAssessor:  oContext ? (oContext.getProperty("conditionAssessor")  || "")        : "",
-        conditionReportRef: oContext ? (oContext.getProperty("conditionReportRef") || "")        : "",
-        conditionNotes:     oContext ? (oContext.getProperty("conditionNotes")     || "")        : ""
+        inspectionType:          oContext ? (oContext.getProperty("inspectionType")          || "RoutineVisual") : "RoutineVisual",
+        conditionRating:         oContext ? (oContext.getProperty("conditionRating")         || 0)              : 0,
+        condition:               oContext ? (oContext.getProperty("condition")               || "")             : "",
+        conditionTrend:          oContext ? (oContext.getProperty("conditionTrend")          || "Stable")       : "Stable",
+        lastInspectionDate:      oContext ? (oContext.getProperty("lastInspectionDate")      || todayIso())     : todayIso(),
+        nextInspectionDue:       oContext ? (oContext.getProperty("nextInspectionDue")       || "")             : "",
+        inspectionFrequencyYears: oContext ? (oContext.getProperty("inspectionFrequencyYears") || 2)            : 2,
+        conditionAssessor:       oContext ? (oContext.getProperty("conditionAssessor")       || "")             : "",
+        conditionReportRef:      oContext ? (oContext.getProperty("conditionReportRef")      || "")             : "",
+        conditionNotes:          oContext ? (oContext.getProperty("conditionNotes")          || "")             : ""
       });
 
       if (!_oDialog) {
@@ -81,7 +85,8 @@ sap.ui.define([
       var data = _oDialog.getModel("captureCondition").getData();
 
       try {
-        ["conditionRating", "condition", "lastInspectionDate",
+        ["inspectionType", "conditionRating", "condition", "conditionTrend",
+          "lastInspectionDate", "nextInspectionDue", "inspectionFrequencyYears",
           "conditionAssessor", "conditionReportRef", "conditionNotes"
         ].forEach(function (field) {
           oContext.setProperty(field, data[field] || null);

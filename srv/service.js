@@ -1,12 +1,18 @@
 const cds = require('@sap/cds')
 
-const registerCommonHelpers   = require('./handlers/common')
-const registerDashboardHandlers = require('./handlers/dashboard')
-const registerBridgeHandlers  = require('./handlers/bridges')
-const registerRestrictionHandlers = require('./handlers/restrictions')
-const registerUploadHandlers  = require('./handlers/upload')
-const registerAdminHandlers   = require('./handlers/admin')
-const registerMassEditHandlers = require('./handlers/mass-edit')
+const registerCommonHelpers        = require('./handlers/common')
+const registerDashboardHandlers    = require('./handlers/dashboard')
+const registerBridgeHandlers       = require('./handlers/bridges')
+const registerRestrictionHandlers  = require('./handlers/restrictions')
+const registerUploadHandlers       = require('./handlers/upload')
+const registerAdminHandlers        = require('./handlers/admin')
+const registerMassEditHandlers     = require('./handlers/mass-edit')
+const registerLoadRatingHandlers   = require('./handlers/load-ratings')
+const registerRiskAssessmentHandlers = require('./handlers/risk-assessments')
+const registerNhvrComplianceHandlers = require('./handlers/nhvr-compliance')
+const registerElementHandlers      = require('./handlers/elements')
+const registerDefectHandlers       = require('./handlers/defects')
+const registerAlertHandlers        = require('./handlers/alerts')
 
 module.exports = class BridgeManagementService extends cds.ApplicationService { init() {
 
@@ -18,6 +24,12 @@ module.exports = class BridgeManagementService extends cds.ApplicationService { 
     registerUploadHandlers(this, helpers)
     registerAdminHandlers(this, helpers)
     registerMassEditHandlers(this, helpers)
+    registerLoadRatingHandlers(this)
+    registerRiskAssessmentHandlers(this)
+    registerNhvrComplianceHandlers(this)
+    registerElementHandlers(this)
+    registerDefectHandlers(this)
+    registerAlertHandlers(this)
 
     // Map View — inline (no external state needed)
     this.on('geocodeAddress',  req => ({ latitude: null, longitude: null, formattedAddress: req.data.address }))

@@ -5,7 +5,7 @@
   xmlns:tnt="sap.tnt"
   displayBlock="true">
 
-  <tnt:ToolPage id="toolPage" sideExpanded="true">
+  <tnt:ToolPage id="toolPage" sideExpanded="false">
 
     <tnt:header>
       <tnt:ToolHeader>

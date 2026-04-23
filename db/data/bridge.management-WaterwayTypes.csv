@@ -1,0 +1,9 @@
+code,name,description
+River,River,Perennial river or major stream — continuous flow year-round; high scour potential
+Creek,Creek / Stream,Seasonal or intermittent watercourse — flash flood scour risk
+Tidal,Tidal / Estuarine,Tidal waterway — bi-directional flow; salt corrosion and scour (AP-G71.8 §3.2)
+DrainageChannel,Drainage Channel / Drain,Constructed or improved stormwater channel — typically concrete-lined
+FloodPlain,Flood Plain Crossing,Bridge on embankment across flood plain — wide flow path during flood events
+LakeReservoir,Lake / Reservoir,Crossing of still water body — minimal scour; wave action consideration
+DryGully,Dry Gully / Ephemeral,Normally dry watercourse — rainfall-triggered flash flooding only
+Overpass,Overpass / Road-over-Road,No waterway — spanning road, rail, or infrastructure corridor

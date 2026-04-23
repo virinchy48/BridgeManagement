@@ -1,0 +1,9 @@
+code,name,description
+PileSteel,Steel Pile,Driven steel H-pile or pipe pile — AS 5100.7 §6.2.5; most vulnerable to scour
+PileConcrete,Concrete Pile,Precast or cast-in-situ concrete pile — AP-G71.8 §4 foundation classification
+PileTimber,Timber Pile,Driven hardwood or treated timber pile — heritage bridges; high scour vulnerability
+SpreadFooting,Spread / Pad Footing,Shallow spread footing on soil — susceptible to scour undermining
+RockBearing,Rock Bearing / Socketed,Footing bearing directly on or socketed into bedrock — low scour risk
+Caisson,Open Caisson / Cofferdam,Large-diameter drilled shaft or caisson foundation
+WellFoundation,Well Foundation,Mass concrete well sunk through soil — older masonry bridges
+Raft,Raft / Mat Foundation,Continuous mat slab under multiple pier columns
