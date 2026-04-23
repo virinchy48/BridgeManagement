@@ -14,7 +14,7 @@ sap.ui.define(
         fetch("/map/api/bridges")
           .then((r) => r.json())
           .then((data) => {
-            const bridges = Array.isArray(data) ? data : (data.value || []);
+            const bridges = Array.isArray(data) ? data : (data.bridges || data.value || []);
             this._allBridges = bridges;
             this.getView().getModel("view").setProperty("/bridges", bridges);
           })

@@ -1883,7 +1883,7 @@ cds.on('bootstrap', (app) => {
 
   // ── Admin Bridges attachment API ─────────────────────────────────────────
   const adminBridgeRouter = express.Router()
-  adminBridgeRouter.use(express.json({ limit: '100mb' }))
+  adminBridgeRouter.use(express.json({ limit: '25mb' }))
 
   adminBridgeRouter.get('/bridges/:bridgeId/attachments', async (req, res) => {
     try {
@@ -2130,7 +2130,7 @@ cds.on('bootstrap', (app) => {
             'hmlApproved', 'bDoubleApproved', 'remarks')
       )
       const restrictions = await db.run(
-        SELECT.from('bridge.management.BridgeRestrictions')
+        SELECT.from('bridge.management.Restrictions')
           .where({ bridge_ID: bridgeId, active: true })
           .columns('restrictionType', 'restrictionValue', 'restrictionUnit', 'effectiveFrom', 'effectiveTo')
       )

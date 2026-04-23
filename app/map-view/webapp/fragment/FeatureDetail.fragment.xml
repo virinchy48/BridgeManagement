@@ -81,10 +81,15 @@
         <!-- Restrictions -->
         <VBox visible="{= ${view>/selectedFeature/data/restrictions/length} > 0 }" class="nhvrDlgRestrictions">
           <Text text="Active Restrictions" class="nhvrRestrictionsLabel" />
-          <HBox wrap="Wrap" class="nhvrRestrictionBadges">
-            <ObjectStatus text="{view>name}" state="Error" inverted="true"
-                          class="nhvrBadge sapUiTinyMarginEnd" />
-          </HBox>
+          <List items="{view>/selectedFeature/data/restrictions}" showSeparators="None"
+                backgroundDesign="Transparent">
+            <items>
+              <CustomListItem>
+                <ObjectStatus text="{view>name}" state="Error" inverted="true"
+                              class="nhvrBadge sapUiTinyMarginEnd" />
+              </CustomListItem>
+            </items>
+          </List>
         </VBox>
       </VBox>
 
