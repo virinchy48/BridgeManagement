@@ -1,6 +1,14 @@
 using {bridge.management as my} from '../db/schema';
 
+@requires: ['view', 'manage', 'admin']
 service AdminService {
+
+  // ── Bridges ── viewer: read | manager: create/update/actions | admin: delete
+  @restrict: [
+    { grant: 'READ',                                         to: 'view'   },
+    { grant: ['CREATE','UPDATE','deactivate','reactivate'],  to: 'manage' },
+    { grant: 'DELETE',                                       to: 'admin'  }
+  ]
   entity Bridges as projection on my.Bridges {
     *,
     virtual hasCapacity : Boolean
@@ -8,55 +16,220 @@ service AdminService {
     action deactivate() returns Bridges;
     action reactivate() returns Bridges;
   };
+
+  // ── Restrictions ── viewer: read | manager: create/update/actions | admin: delete
+  @restrict: [
+    { grant: 'READ',                                         to: 'view'   },
+    { grant: ['CREATE','UPDATE','deactivate','reactivate'],  to: 'manage' },
+    { grant: 'DELETE',                                       to: 'admin'  }
+  ]
   entity Restrictions as projection on my.Restrictions actions {
     action deactivate() returns Restrictions;
     action reactivate() returns Restrictions;
   };
+
+  // ── Bridge Restrictions ── viewer: read | manager: create/update/actions | admin: delete
+  @restrict: [
+    { grant: 'READ',                                         to: 'view'   },
+    { grant: ['CREATE','UPDATE','deactivate','reactivate'],  to: 'manage' },
+    { grant: 'DELETE',                                       to: 'admin'  }
+  ]
   entity BridgeRestrictions as projection on my.BridgeRestrictions actions {
     action deactivate() returns BridgeRestrictions;
     action reactivate() returns BridgeRestrictions;
   };
-  entity BridgeCapacities as projection on my.BridgeCapacities;
-  entity BridgeAttributes as projection on my.BridgeAttributes;
-  entity BridgeScourAssessments as projection on my.BridgeScourAssessments;
-  entity BridgeDocuments as projection on my.BridgeDocuments;
-  entity AssetClasses as projection on my.AssetClasses;
-  entity States as projection on my.States;
-  entity Regions as projection on my.Regions;
-  entity StructureTypes as projection on my.StructureTypes;
-  entity DesignLoads as projection on my.DesignLoads;
-  entity PostingStatuses    as projection on my.PostingStatuses;
-  entity CapacityStatuses   as projection on my.CapacityStatuses;
-  entity ConditionStates as projection on my.ConditionStates;
-  entity ScourRiskLevels as projection on my.ScourRiskLevels;
-  entity PbsApprovalClasses as projection on my.PbsApprovalClasses;
-  entity ConditionSummaries as projection on my.ConditionSummaries;
-  entity StructuralAdequacyTypes as projection on my.StructuralAdequacyTypes;
-  entity RestrictionTypes as projection on my.RestrictionTypes;
-  entity RestrictionStatuses as projection on my.RestrictionStatuses;
-  entity VehicleClasses as projection on my.VehicleClasses;
-  entity RestrictionCategories as projection on my.RestrictionCategories;
-  entity RestrictionUnits as projection on my.RestrictionUnits;
-  entity RestrictionDirections as projection on my.RestrictionDirections;
-  entity GISConfig as projection on my.GISConfig;
-  entity ReferenceLayerConfig as projection on my.ReferenceLayerConfig;
-  @readonly entity ChangeLog as projection on my.ChangeLog;
 
-  // Configurable Attributes — admin-managed metadata
-  entity AttributeGroups           as projection on my.AttributeGroups;
-  entity AttributeDefinitions      as projection on my.AttributeDefinitions;
-  entity AttributeAllowedValues    as projection on my.AttributeAllowedValues;
-  entity AttributeObjectTypeConfig as projection on my.AttributeObjectTypeConfig;
-  @readonly entity AttributeValues       as projection on my.AttributeValues;
-  @readonly entity AttributeValueHistory as projection on my.AttributeValueHistory;
-  @readonly entity UserActivity          as projection on my.UserActivity;
+  // ── Bridge detail entities ── viewer: read | manager: write
+  @restrict: [
+    { grant: 'READ',                       to: 'view'   },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'manage' }
+  ]
+  entity BridgeCapacities as projection on my.BridgeCapacities;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'   },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'manage' }
+  ]
+  entity BridgeAttributes as projection on my.BridgeAttributes;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'   },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'manage' }
+  ]
+  entity BridgeScourAssessments as projection on my.BridgeScourAssessments;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'   },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'manage' }
+  ]
+  entity BridgeDocuments as projection on my.BridgeDocuments;
+
+  // ── Lookup tables ── viewer: read | admin: mutate
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity AssetClasses as projection on my.AssetClasses;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity States as projection on my.States;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity Regions as projection on my.Regions;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity StructureTypes as projection on my.StructureTypes;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity DesignLoads as projection on my.DesignLoads;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity PostingStatuses as projection on my.PostingStatuses;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity CapacityStatuses as projection on my.CapacityStatuses;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity ConditionStates as projection on my.ConditionStates;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity ScourRiskLevels as projection on my.ScourRiskLevels;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity PbsApprovalClasses as projection on my.PbsApprovalClasses;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity ConditionSummaries as projection on my.ConditionSummaries;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity StructuralAdequacyTypes as projection on my.StructuralAdequacyTypes;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity RestrictionTypes as projection on my.RestrictionTypes;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity RestrictionStatuses as projection on my.RestrictionStatuses;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity VehicleClasses as projection on my.VehicleClasses;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity RestrictionCategories as projection on my.RestrictionCategories;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity RestrictionUnits as projection on my.RestrictionUnits;
+
+  @restrict: [
+    { grant: 'READ',                       to: 'view'  },
+    { grant: ['CREATE','UPDATE','DELETE'],  to: 'admin' }
+  ]
+  entity RestrictionDirections as projection on my.RestrictionDirections;
+
+  // ── Read-only for all authenticated users ──
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'view' }]
+  entity AttributeValues as projection on my.AttributeValues;
+
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'view' }]
+  entity AttributeValueHistory as projection on my.AttributeValueHistory;
+
+  // ── Admin tile — configuration entities — admin only ──
+  @restrict: [{ grant: '*', to: 'admin' }]
+  entity GISConfig as projection on my.GISConfig;
+
+  @restrict: [{ grant: '*', to: 'admin' }]
+  entity ReferenceLayerConfig as projection on my.ReferenceLayerConfig;
+
+  @restrict: [{ grant: '*', to: 'admin' }]
   entity SystemConfig as projection on my.SystemConfig;
-  entity BnacEnvironment   as projection on my.BnacEnvironment;
-  entity BnacObjectIdMap   as projection on my.BnacObjectIdMap;
-  @readonly entity BnacLoadHistory as projection on my.BnacLoadHistory;
+
+  @restrict: [{ grant: '*', to: 'admin' }]
   entity DataQualityRules as projection on my.DataQualityRules;
 
-  // ── Demo Mode ────────────────────────────────────────────────────────────────
+  @restrict: [{ grant: '*', to: 'admin' }]
+  entity AttributeGroups as projection on my.AttributeGroups;
+
+  @restrict: [{ grant: '*', to: 'admin' }]
+  entity AttributeDefinitions as projection on my.AttributeDefinitions;
+
+  @restrict: [{ grant: '*', to: 'admin' }]
+  entity AttributeAllowedValues as projection on my.AttributeAllowedValues;
+
+  @restrict: [{ grant: '*', to: 'admin' }]
+  entity AttributeObjectTypeConfig as projection on my.AttributeObjectTypeConfig;
+
+  @restrict: [{ grant: '*', to: 'admin' }]
+  entity BnacEnvironment as projection on my.BnacEnvironment;
+
+  @restrict: [{ grant: '*', to: 'admin' }]
+  entity BnacObjectIdMap as projection on my.BnacObjectIdMap;
+
+  // ── Audit and monitoring — manager+admin read only ──
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'manage' }]
+  entity ChangeLog as projection on my.ChangeLog;
+
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'admin' }]
+  entity UserActivity as projection on my.UserActivity;
+
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'admin' }]
+  entity BnacLoadHistory as projection on my.BnacLoadHistory;
+
+  // ── Demo Mode — admin only ──
+  @requires: 'admin'
   action loadDemoData()  returns String;
+
+  @requires: 'admin'
   action clearDemoData() returns String;
 }

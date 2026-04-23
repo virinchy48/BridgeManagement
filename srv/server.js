@@ -1,6 +1,7 @@
 const cds = require('@sap/cds')
 const express = require('express')
 const { recordActivity } = require('./user-activity')
+const { buildSandboxConfig, buildEmptySandboxConfig } = require('./launchpad')
 
 const {
   buildCsvTemplate,
@@ -1059,6 +1060,24 @@ cds.on('bootstrap', (app) => {
     }
     next()
   }
+
+  // ── Launchpad config — returns role-filtered sandbox tile config ──
+  app.get('/launchpad/config', requiresAuthentication, (req, res) => {
+    let scopes = []
+    const auth = req.headers?.authorization || ''
+    if (auth.startsWith('Bearer ')) {
+      try {
+        const payload = JSON.parse(Buffer.from(auth.slice(7).split('.')[1], 'base64').toString())
+        scopes = Array.isArray(payload.scope) ? payload.scope : []
+      } catch { /* ignore malformed token — scopes stay empty */ }
+    } else if (_isDummyAuth && req.user?.roles) {
+      scopes = req.user.roles.map(r => `bridge-management.${r.toLowerCase()}`)
+    }
+    const isAdmin   = scopes.some(s => s.endsWith('.admin'))
+    const hasBmsRole = scopes.some(s => s.endsWith('.admin') || s.endsWith('.manage') || s.endsWith('.view'))
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+    res.json(hasBmsRole ? buildSandboxConfig(isAdmin) : buildEmptySandboxConfig())
+  })
 
   // Track user activity on every API request
   app.use((req, _res, next) => {

@@ -8,6 +8,13 @@
       "authenticationType": "xsuaa"
     },
     {
+      "source": "^/appconfig/fioriSandboxConfig\\.json$",
+      "target": "/launchpad/config",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
       "source": "^/appconfig/(.*)$",
       "localDir": ".",
       "authenticationType": "xsuaa"
