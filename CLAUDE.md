@@ -249,6 +249,13 @@ Only `app/admin-bridges` uses standard Fiori Elements + CAP annotations (`@odata
 ### SAP FE console errors in local shell emulator
 - `"There should be a sap.fe.core.AppComponent as owner of the control"` errors appear when navigating between apps in the local Fiori launchpad shell emulator. These are SAP FE framework limitations in the emulated shell — **not bugs in our code**. Ignore in local dev; they do not appear in BTP with the real shell.
 
+### CDS sub-schema file circular reference pattern
+- **`entity Bridges` lives in `db/schema/bridge-entity.cds`** — moved out of the `db/schema.cds` barrel so that other schema sub-files can import it without a circular dependency. `db/schema.cds` loads it via `using { bridge.management.Bridges } from './schema/bridge-entity'` and all sub-files that define associations to Bridges import it via `using { bridge.management.Bridges } from './bridge-entity'`.
+- **`using from 'path'` (wildcard) does NOT make entities available to other files in the barrel** — only `using { X } from 'path'` (named import) resolves references across files. CDS deploy succeeds with wildcard imports but `cds-serve` runtime fails at model load. Always use named imports when one schema sub-file references an entity defined in another sub-file.
+- **CDS linter strips `using { X } from '../schema'` (parent barrel) as circular** — any import that points back to the barrel file (`db/schema.cds`) will be silently removed. Fix: point the import to the defining file directly (`'./bridge-entity'`), not the barrel.
+- **`action resolve()` conflicts with ApplicationService base class** — CDS CAP `ApplicationService` has a built-in `resolve()` method. Naming an OData bound action `resolve` on any entity generates a warning and shadows the base method. Use a domain-specific name like `resolveAlert` instead.
+- **`npx cds deploy` tolerates circular imports at deploy-time; `cds-serve` does not** — a deploy that shows no errors does not guarantee the runtime server will start. Always test `npm start` (or `node -e "cds.load(...)"`) after schema changes, not just deploy.
+
 ---
 
 ## Contributing to this file
