@@ -1,8 +1,9 @@
 sap.ui.define([
+  "sap/ui/core/mvc/ControllerExtension",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageBox",
   "sap/m/MessageToast"
-], function (JSONModel, MessageBox, MessageToast) {
+], function (ControllerExtension, JSONModel, MessageBox, MessageToast) {
   "use strict";
 
   var _oDialog = null;
@@ -20,18 +21,19 @@ sap.ui.define([
     return new Date().toISOString().slice(0, 10);
   }
 
-  return {
+  return ControllerExtension.extend("BridgeManagement.adminbridges.ext.controller.CaptureCondition", {
+
     onCaptureConditionOpen: function () {
-      var oView = this.getView();
+      var oView = this.base.getView();
       var oContext = oView.getBindingContext();
 
       var oModel = new JSONModel({
-        conditionRating: oContext ? (oContext.getProperty("conditionRating") || 0) : 0,
-        condition: oContext ? (oContext.getProperty("condition") || "") : "",
+        conditionRating:    oContext ? (oContext.getProperty("conditionRating")    || 0)         : 0,
+        condition:          oContext ? (oContext.getProperty("condition")          || "")        : "",
         lastInspectionDate: oContext ? (oContext.getProperty("lastInspectionDate") || todayIso()) : todayIso(),
-        conditionAssessor: oContext ? (oContext.getProperty("conditionAssessor") || "") : "",
-        conditionReportRef: oContext ? (oContext.getProperty("conditionReportRef") || "") : "",
-        conditionNotes: oContext ? (oContext.getProperty("conditionNotes") || "") : ""
+        conditionAssessor:  oContext ? (oContext.getProperty("conditionAssessor")  || "")        : "",
+        conditionReportRef: oContext ? (oContext.getProperty("conditionReportRef") || "")        : "",
+        conditionNotes:     oContext ? (oContext.getProperty("conditionNotes")     || "")        : ""
       });
 
       if (!_oDialog) {
@@ -58,7 +60,7 @@ sap.ui.define([
     },
 
     onCaptureConditionSave: async function () {
-      var oView = this.getView();
+      var oView = this.base.getView();
       var oContext = oView.getBindingContext();
 
       if (!oContext) {
@@ -70,15 +72,9 @@ sap.ui.define([
       var data = oModel.getData();
 
       try {
-        var fields = [
-          "conditionRating",
-          "condition",
-          "lastInspectionDate",
-          "conditionAssessor",
-          "conditionReportRef",
-          "conditionNotes"
-        ];
-        fields.forEach(function (field) {
+        ["conditionRating", "condition", "lastInspectionDate",
+          "conditionAssessor", "conditionReportRef", "conditionNotes"
+        ].forEach(function (field) {
           oContext.setProperty(field, data[field] || null);
         });
 
@@ -90,9 +86,7 @@ sap.ui.define([
         _oDialog.close();
         MessageToast.show("Condition saved");
       } catch (error) {
-        MessageBox.error(
-          (error && error.message) || "Failed to save condition"
-        );
+        MessageBox.error((error && error.message) || "Failed to save condition");
       }
     },
 
@@ -103,12 +97,12 @@ sap.ui.define([
     },
 
     onExportCard: function () {
-      var oView = this.getView();
-      var oContext = oView && oView.getBindingContext();
+      var oContext = this.base.getView().getBindingContext();
       if (!oContext) return;
       var id = oContext.getProperty("ID");
       if (!id) return;
       window.open("/admin-bridges/api/bridges/" + encodeURIComponent(id) + "/card", "_blank", "noopener");
     }
-  };
+
+  });
 });
