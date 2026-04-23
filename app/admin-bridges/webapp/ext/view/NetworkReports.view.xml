@@ -1,0 +1,326 @@
+<mvc:View
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:l="sap.ui.layout"
+  displayBlock="true"
+  controllerName="BridgeManagement.adminbridges.ext.controller.NetworkReports">
+
+  <Page id="networkReportsPage" title="Network Reports" showNavButton="true" navButtonPress=".onNavBack" class="rptPage">
+    <headerContent>
+      <Select id="stateFilter" change="onStateFilterChange" width="160px">
+        <items>
+          <core:Item key="" text="All States"/>
+          <core:Item key="NSW" text="NSW"/>
+          <core:Item key="VIC" text="VIC"/>
+          <core:Item key="QLD" text="QLD"/>
+          <core:Item key="WA" text="WA"/>
+          <core:Item key="SA" text="SA"/>
+          <core:Item key="TAS" text="TAS"/>
+          <core:Item key="ACT" text="ACT"/>
+          <core:Item key="NT" text="NT"/>
+        </items>
+      </Select>
+      <Button icon="sap-icon://refresh" press="onRefresh" tooltip="Refresh"/>
+    </headerContent>
+
+    <content>
+      <IconTabBar id="reportTabs" selectedKey="{view>/selectedTab}" select="onTabSelect" expandable="false" expanded="true" stretchContentHeight="false" class="sapUiNoContentPadding">
+        <items>
+
+          <IconTabFilter key="health" icon="sap-icon://pulse" text="Network Health" id="tabHealth">
+            <content>
+              <VBox class="rptTabContent">
+                <core:HTML id="healthKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="healthStateChart" content=""/>
+                <VBox class="rptSection">
+                  <Label text="Worst Condition Bridges" class="rptSectionHeader"/>
+                  <Table id="worstBridgesTable" items="{view>/health/worstBridges}" noDataText="No bridge data" growing="true" growingThreshold="10">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Region"/></Column>
+                      <Column><Text text="Condition"/></Column>
+                      <Column><Text text="Rating"/></Column>
+                      <Column><Text text="Posting Status"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <Text text="{view>region}"/>
+                          <ObjectStatus text="{view>condition}" state="{path: 'view>condition', formatter: '.fmtConditionState'}"/>
+                          <Text text="{view>conditionRating}"/>
+                          <ObjectStatus text="{view>postingStatus}" state="{path: 'view>postingStatus', formatter: '.fmtPostingState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="inspection" icon="sap-icon://calendar" text="Inspections" id="tabInspection">
+            <content>
+              <VBox class="rptTabContent">
+                <core:HTML id="inspKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="inspStateChart" content=""/>
+                <VBox class="rptSection">
+                  <Label text="Overdue Inspections" class="rptSectionHeader"/>
+                  <Table id="overdueTable" items="{view>/inspection/overdueInspections}" noDataText="No overdue inspections">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Days Overdue"/></Column>
+                      <Column><Text text="Last Inspected"/></Column>
+                      <Column><Text text="Was Due"/></Column>
+                      <Column><Text text="Condition"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectStatus text="{view>daysOverdue}" state="Error"/>
+                          <Text text="{path:'view>lastInspectionDate', formatter:'.fmtDate'}"/>
+                          <Text text="{path:'view>nextInspectionDueDate', formatter:'.fmtDate'}"/>
+                          <ObjectStatus text="{view>condition}" state="{path:'view>condition', formatter:'.fmtConditionState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+                <VBox class="rptSection">
+                  <Label text="Upcoming Inspections (Next 90 Days)" class="rptSectionHeader"/>
+                  <Table id="upcomingTable" items="{view>/inspection/upcomingInspections}" noDataText="No upcoming inspections in next 90 days">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Due In (days)"/></Column>
+                      <Column><Text text="Due Date"/></Column>
+                      <Column><Text text="Last Inspected"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectStatus text="{view>daysUntilDue}" state="{path:'view>daysUntilDue', formatter:'.fmtDueState'}"/>
+                          <Text text="{path:'view>nextInspectionDueDate', formatter:'.fmtDate'}"/>
+                          <Text text="{path:'view>lastInspectionDate', formatter:'.fmtDate'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="regulatory" icon="sap-icon://official-service" text="Compliance" id="tabRegulatory">
+            <content>
+              <VBox class="rptTabContent">
+                <core:HTML id="regulatoryKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="regulatoryCharts" content=""/>
+                <VBox class="rptSection">
+                  <Label text="Compliance Action Required" class="rptSectionHeader"/>
+                  <Table id="urgentBridgesTable" items="{view>/regulatory/urgentBridges}" noDataText="No urgent compliance issues">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Gazette Urgency"/></Column>
+                      <Column><Text text="Gazette Expiry"/></Column>
+                      <Column><Text text="PBS Expiry"/></Column>
+                      <Column><Text text="HML Expiry"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectStatus text="{view>gazetteExpiryUrgency}" state="{path:'view>gazetteExpiryUrgency', formatter:'.fmtUrgencyState'}"/>
+                          <Text text="{path:'view>gazetteExpiryDate', formatter:'.fmtDate'}"/>
+                          <Text text="{path:'view>pbsApprovalExpiry', formatter:'.fmtDate'}"/>
+                          <Text text="{path:'view>hmlApprovalExpiry', formatter:'.fmtDate'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="risk" icon="sap-icon://alert" text="Risk Register" id="tabRisk">
+            <content>
+              <VBox class="rptTabContent">
+                <core:HTML id="riskKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="riskCharts" content=""/>
+                <VBox class="rptSection">
+                  <Label text="Top Risk Bridges" class="rptSectionHeader"/>
+                  <Table id="topRiskTable" items="{view>/risk/topRiskBridges}" noDataText="No high-risk bridges identified">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Condition"/></Column>
+                      <Column><Text text="Scour Risk"/></Column>
+                      <Column><Text text="Priority"/></Column>
+                      <Column><Text text="Risk Score"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectStatus text="{view>condition}" state="{path:'view>condition', formatter:'.fmtConditionState'}"/>
+                          <ObjectStatus text="{view>scourRisk}" state="{path:'view>scourRisk', formatter:'.fmtScourState'}"/>
+                          <Text text="{path:'view>importanceLevel', formatter:'.fmtImportance'}"/>
+                          <ObjectNumber number="{view>riskScore}" state="{path:'view>riskScore', formatter:'.fmtRiskScoreState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="restrictions" icon="sap-icon://restriction" text="Bridges &amp; Restrictions" id="tabRestrictions">
+            <content>
+              <VBox class="rptTabContent">
+                <core:HTML id="restrictionsKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="restrictionsCharts" content=""/>
+                <VBox class="rptSection">
+                  <Label text="Mass Restricted Bridges" class="rptSectionHeader"/>
+                  <Table id="massRestrictedTable" items="{view>/restrictions/massRestrictedBridges}" noDataText="No restricted bridges">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Posting Status"/></Column>
+                      <Column><Text text="Condition"/></Column>
+                      <Column><Text text="Condition Rating"/></Column>
+                      <Column><Text text="Load Rating (t)"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectStatus text="{view>postingStatus}" state="{path:'view>postingStatus', formatter:'.fmtPostingState'}"/>
+                          <ObjectStatus text="{view>condition}" state="{path:'view>condition', formatter:'.fmtConditionState'}"/>
+                          <Text text="{view>conditionRating}"/>
+                          <Text text="{view>loadRating}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+                <VBox class="rptSection">
+                  <Label text="Height Restricted Bridges (by Clearance Height)" class="rptSectionHeader"/>
+                  <Table id="heightRestrictedTable" items="{view>/restrictions/heightRestrictedBridges}" noDataText="No height restriction data available">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Clearance Height (m)"/></Column>
+                      <Column><Text text="Posting Status"/></Column>
+                      <Column><Text text="Condition"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectNumber number="{view>clearanceHeight}" unit="m" state="{path:'view>clearanceHeight', formatter:'.fmtClearanceState'}"/>
+                          <ObjectStatus text="{view>postingStatus}" state="{path:'view>postingStatus', formatter:'.fmtPostingState'}"/>
+                          <ObjectStatus text="{view>condition}" state="{path:'view>condition', formatter:'.fmtConditionState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+                <VBox class="rptSection">
+                  <Label text="Full Capacity / Approved Bridges" class="rptSectionHeader"/>
+                  <Table id="fullCapacityTable" items="{view>/restrictions/fullCapacityBridges}" noDataText="No approved bridges found">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="HML"/></Column>
+                      <Column><Text text="B-Double"/></Column>
+                      <Column><Text text="Freight Route"/></Column>
+                      <Column><Text text="Over Mass"/></Column>
+                      <Column><Text text="NHVR Assessed"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectStatus text="{path:'view>hmlApproved', formatter:'.fmtBool'}" state="{path:'view>hmlApproved', formatter:'.fmtBoolState'}"/>
+                          <ObjectStatus text="{path:'view>bDoubleApproved', formatter:'.fmtBool'}" state="{path:'view>bDoubleApproved', formatter:'.fmtBoolState'}"/>
+                          <ObjectStatus text="{path:'view>freightRoute', formatter:'.fmtBool'}" state="{path:'view>freightRoute', formatter:'.fmtBoolState'}"/>
+                          <ObjectStatus text="{path:'view>overMassRoute', formatter:'.fmtBool'}" state="{path:'view>overMassRoute', formatter:'.fmtBoolState'}"/>
+                          <ObjectStatus text="{path:'view>nhvrAssessed', formatter:'.fmtBool'}" state="{path:'view>nhvrAssessed', formatter:'.fmtBoolState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="quality" icon="sap-icon://quality-issue" text="Data Quality" id="tabQuality">
+            <content>
+              <VBox class="rptTabContent">
+                <core:HTML id="qualityKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="qualityDistChart" content=""/>
+                <VBox class="rptSection">
+                  <Label text="Lowest Quality Records" class="rptSectionHeader"/>
+                  <Table id="lowestQualityTable" items="{view>/quality/lowestBridges}" noDataText="No data quality issues found">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Region"/></Column>
+                      <Column><Text text="DQ Score"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <Text text="{view>region}"/>
+                          <ObjectNumber number="{view>dataQualityScore}" unit="%" state="{path:'view>dataQualityScore', formatter:'.fmtQualityState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+        </items>
+      </IconTabBar>
+    </content>
+  </Page>
+</mvc:View>

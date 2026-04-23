@@ -42,7 +42,8 @@
 }
 
 /* Take the info-button's sapMFlexItem wrapper out of the flex flow */
-.dashboardKpiTileWrapper > .sapMFlexItem:last-child {
+/* :not(:first-child) guards against tiles that have no info button (single child) */
+.dashboardKpiTileWrapper > .sapMFlexItem:last-child:not(:first-child) {
   position: absolute;
   top: 6px;
   right: 6px;
@@ -174,6 +175,28 @@
   font-size: 0.7rem;
   text-align: center;
   margin-top: -0.25rem;
+}
+
+/* ── Indicator variants ── */
+.dashboardIndicatorValueWarn {
+  color: #E76500;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.dashboardIndicatorLink {
+  color: #0a6ed1;
+  font-size: 0.8rem;
+  margin-top: 0.35rem;
+  cursor: pointer;
+}
+
+/* ── Priority Actions panels ── */
+.dashboardPriorityPanel {
+  flex: 1;
+  min-width: 280px;
+  max-width: 580px;
 }
 
 /* ── Responsive ── */

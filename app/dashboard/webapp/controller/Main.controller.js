@@ -29,9 +29,15 @@ sap.ui.define([
         scourCritical: 0,
         deficient: 0,
         sufficiencyPct: 0,
+        nci: 0,
+        deficiencyRate: 0,
+        overdueCount: 0,
+        gazetteIssueCount: 0,
         conditionRows: [],
         conditionSummaryLabel: "",
-        lastRefreshedLabel: ""
+        lastRefreshedLabel: "",
+        overdueInspections: [],
+        gazetteWatchlist: []
       });
       this.getView().setModel(model, "view");
       this._loadAnalytics();
@@ -66,19 +72,42 @@ sap.ui.define([
     },
 
     onNavigateDeficient: function () {
-      window.location.href = "#Reports-display?tab=risk";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=risk";
     },
 
     onNavigateScourCritical: function () {
-      window.location.href = "#Reports-display?tab=risk";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=risk";
     },
 
     onNavigateSufficiency: function () {
-      window.location.href = "#Reports-display?tab=health";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=health";
     },
 
-    onConditionRowPress: function (oEvent) {
-      window.location.href = "#Reports-display?tab=health";
+    onConditionRowPress: function () {
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=health";
+    },
+
+    onNavigateOverdue: function () {
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=inspection";
+    },
+
+    onNavigateGazette: function () {
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=regulatory";
+    },
+
+    onStateFilterChange: function () {
+      this._loadAnalytics();
+    },
+
+    onBridgePress: function (oEvent) {
+      var ctx = oEvent.getSource().getBindingContext("view");
+      if (!ctx) return;
+      var id = ctx.getProperty("ID");
+      if (id) window.location.href = "#Bridges-manage&/Bridges(" + id + ")";
+    },
+
+    fmtUrgencyState: function (urgency) {
+      return { GREEN: "Success", AMBER: "Warning", RED: "Error", EXPIRED: "Error" }[urgency] || "None";
     },
 
     _loadAnalytics: async function () {
@@ -86,7 +115,10 @@ sap.ui.define([
       model.setProperty("/busy", true);
 
       try {
-        const response = await fetch("/dashboard/api/analytics");
+        const stateCtrl = this.byId("stateFilter");
+        const state = stateCtrl ? stateCtrl.getSelectedKey() : "";
+        const url = "/dashboard/api/analytics" + (state ? "?state=" + encodeURIComponent(state) : "");
+        const response = await fetch(url);
         if (!response.ok) {
           const ct = response.headers.get("content-type") || "";
           const msg = ct.includes("application/json")
@@ -143,6 +175,12 @@ sap.ui.define([
       model.setProperty("/scourCritical",      data.scourCritical      || 0);
       model.setProperty("/deficient",          data.deficient          || 0);
       model.setProperty("/sufficiencyPct",     data.sufficiencyPct     || 0);
+      model.setProperty("/nci",                data.nci                || 0);
+      model.setProperty("/deficiencyRate",     data.deficiencyRate     || 0);
+      model.setProperty("/overdueCount",       data.overdueCount       || 0);
+      model.setProperty("/gazetteIssueCount",  data.gazetteIssueCount  || 0);
+      model.setProperty("/overdueInspections", data.overdueInspections || []);
+      model.setProperty("/gazetteWatchlist",   data.gazetteWatchlist   || []);
       model.setProperty("/conditionRows",      conditionRows);
       model.setProperty("/conditionSummaryLabel", summaryLabel);
       model.setProperty("/lastRefreshedLabel", "Last refreshed: " + timeStr);

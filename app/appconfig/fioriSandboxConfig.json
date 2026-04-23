@@ -16,7 +16,7 @@
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
                     "title": "Dashboard",
-                    "subtitle": "Portfolio Insights",
+                    "subtitle": "Operations Centre",
                     "icon": "sap-icon://home",
                     "targetURL": "#Dashboard-display"
                   }
@@ -55,10 +55,10 @@
                   "id": "Reports",
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
-                    "title": "Reports",
-                    "subtitle": "Network Analytics",
+                    "title": "Network Reports",
+                    "subtitle": "Analytics & Risk Register",
                     "icon": "sap-icon://bar-chart",
-                    "targetURL": "#Reports-display"
+                    "targetURL": "#Bridges-manage&/NetworkReports"
                   }
                 }
               ]

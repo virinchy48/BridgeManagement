@@ -1,0 +1,280 @@
+/* KPI Strip */
+.rptKpiStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.rptKpiCard {
+  min-width: 160px;
+  flex: 1;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 1rem;
+  border-top: 4px solid #0a6ed1;
+}
+
+.rptKpiCard.rptKpiGood { border-top-color: #107E3E; }
+.rptKpiCard.rptKpiWarn { border-top-color: #E76500; }
+.rptKpiCard.rptKpiError { border-top-color: #BB0000; }
+.rptKpiCard.rptKpiCritical { border-top-color: #6E0000; }
+
+.rptKpiValue {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1;
+}
+
+.rptKpiLabel {
+  font-size: 0.75rem;
+  color: #6a6a6a;
+  margin-top: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Chart sections */
+.rptChartSection {
+  margin-bottom: 2rem;
+}
+
+.rptChartTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Stacked bar */
+.rptStackedBar {
+  display: flex;
+  height: 28px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #f0f0f0;
+}
+
+.rptSeg {
+  height: 100%;
+  transition: width 0.4s ease;
+}
+
+.rptSegGood { background: #107E3E; }
+.rptSegFair { background: #E76500; }
+.rptSegPoor { background: #BB0000; }
+.rptSegCritical { background: #6E0000; }
+
+/* Legend */
+.rptLegend {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.rptLegendDot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Bar chart rows */
+.rptBarGrid {
+  display: grid;
+  grid-template-columns: auto 1fr 40px;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.rptBarLabel {
+  font-size: 0.8rem;
+  color: #444;
+  white-space: nowrap;
+  text-align: right;
+  min-width: 50px;
+}
+
+.rptBarTrack {
+  background: #f0f0f0;
+  border-radius: 3px;
+  height: 18px;
+  overflow: hidden;
+}
+
+.rptBarFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s ease;
+  background: #0a6ed1;
+}
+
+.rptBarCount {
+  font-size: 0.75rem;
+  color: #666;
+  text-align: right;
+}
+
+/* Bar fill color overrides */
+.rptBarFill.rptBarError { background: #BB0000; }
+
+/* Gazette urgency colors */
+.rptBarFill.rptExpired { background: #6E0000; }
+.rptBarFill.rptRed { background: #BB0000; }
+.rptBarFill.rptAmber { background: #E76500; }
+.rptBarFill.rptGreen { background: #107E3E; }
+
+/* Score gauge */
+.rptGaugeWrap {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.rptGaugeSvg {
+  width: 80px;
+  height: 80px;
+}
+
+.rptGaugeTrack {
+  fill: none;
+  stroke: #e0e0e0;
+  stroke-width: 4;
+}
+
+.rptGaugeFill {
+  fill: none;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.4s;
+}
+
+.rptGaugeText {
+  font-size: 0.85rem;
+  font-weight: 700;
+  fill: #1a1a1a;
+  dominant-baseline: middle;
+  text-anchor: middle;
+}
+
+/* Risk badges */
+.rptRiskBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+}
+
+.rptRiskHigh { background: #BB0000; }
+.rptRiskMedium { background: #E76500; }
+.rptRiskLow { background: #107E3E; }
+.rptRiskVeryHigh { background: #6E0000; }
+
+/* Condition badges */
+.rptCondBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+}
+
+.rptCondGood { background: #107E3E; }
+.rptCondFair { background: #E76500; }
+.rptCondPoor { background: #BB0000; }
+.rptCondCritical { background: #6E0000; }
+
+/* Urgency badges */
+.rptUrgBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+}
+
+.rptUrgExpired { background: #6E0000; }
+.rptUrgRed { background: #BB0000; }
+.rptUrgAmber { background: #E76500; }
+.rptUrgGreen { background: #107E3E; }
+
+/* Data table */
+.rptDataTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.rptDataTable th {
+  text-align: left;
+  padding: 8px 10px;
+  background: #f7f7f7;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd;
+  white-space: nowrap;
+}
+
+.rptDataTable td {
+  padding: 7px 10px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.rptDataTable tr:hover td {
+  background: #f5f9ff;
+}
+
+.rptDataTable tr.rptRowClickable {
+  cursor: pointer;
+}
+
+.rptTableWrap {
+  overflow-x: auto;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+}
+
+/* General layout */
+.rptTabContent {
+  padding: 1rem 1.5rem;
+}
+
+.rptSection {
+  margin-bottom: 2rem;
+}
+
+.rptSectionHeader {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #eee;
+}
+
+.rptEmptyState {
+  text-align: center;
+  padding: 2rem;
+  color: #999;
+  font-style: italic;
+}
+
+/* Score color utility */
+.rptScore90 { color: #107E3E; font-weight: 700; }
+.rptScore75 { color: #E76500; font-weight: 700; }
+.rptScore50 { color: #BB0000; font-weight: 700; }
+.rptScoreLow { color: #6E0000; font-weight: 700; }

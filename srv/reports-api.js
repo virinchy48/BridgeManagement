@@ -105,7 +105,7 @@ function mountReportsApi(app, requiresAuthentication) {
       const bridges = await db.run(
         SELECT.from('bridge.management.Bridges').columns(
           'ID', 'bridgeId', 'bridgeName', 'state', 'region',
-          'lastInspectionDate', 'nextInspectionDueDate', 'condition', 'postingStatus'
+          'lastInspectionDate', 'nextInspectionDue', 'condition', 'postingStatus'
         )
       )
 
@@ -123,8 +123,8 @@ function mountReportsApi(app, requiresAuthentication) {
           totalDaysSince += daysSince
           countWithInspection++
         }
-        if (b.nextInspectionDueDate) {
-          const due = new Date(b.nextInspectionDueDate)
+        if (b.nextInspectionDue) {
+          const due = new Date(b.nextInspectionDue)
           due.setHours(0, 0, 0, 0)
           const daysUntil = Math.floor((due - today) / 86400000)
           if (daysUntil < 0) {
@@ -252,13 +252,14 @@ function mountReportsApi(app, requiresAuthentication) {
   router.get('/risk-register', async (_req, res) => {
     try {
       const db = await cds.connect.to('db')
-      const bridges = await db.run(
-        SELECT.from('bridge.management.Bridges').columns(
-          'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'condition',
+      const raw = await db.run(
+        SELECT.from('nhvr.Bridge').columns(
+          'ID', 'bridgeId', 'name', 'state', 'region', 'condition',
           'conditionRating', 'scourRisk', 'criticalDefectFlag', 'highPriorityAsset',
-          'importanceLevel', 'postingStatus', 'structuralAdequacyRating', 'yearBuilt'
+          'importanceLevel', 'postingStatus', 'yearBuilt'
         )
       )
+      const bridges = raw.map(b => ({ ...b, bridgeName: b.name }))
 
       let criticalCondition = 0, highScour = 0, criticalDefects = 0, highPriority = 0
       const riskByStateMap = {}
@@ -272,7 +273,7 @@ function mountReportsApi(app, requiresAuthentication) {
         const defectScore = b.criticalDefectFlag ? 20 : 0
         const priorityScore = b.highPriorityAsset ? 5 : 0
         const il = b.importanceLevel
-        const ilScore = il === 1 ? 10 : il === 2 ? 7 : il === 3 ? 4 : il === 4 ? 1 : 0
+        const ilScore = il === 'Critical' || il === 1 ? 10 : il === 'Essential' || il === 2 ? 7 : il === 'Important' || il === 3 ? 4 : il === 'Ordinary' || il === 4 ? 1 : 0
         const riskScore = condScore + scourScore + defectScore + priorityScore + ilScore
 
         if (ck === 'critical' || ck === 'poor') criticalCondition++
@@ -319,11 +320,12 @@ function mountReportsApi(app, requiresAuthentication) {
   router.get('/data-quality', async (_req, res) => {
     try {
       const db = await cds.connect.to('db')
-      const bridges = await db.run(
-        SELECT.from('bridge.management.Bridges').columns(
-          'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'dataQualityScore'
+      const rawBridges = await db.run(
+        SELECT.from('nhvr.Bridge').columns(
+          'ID', 'bridgeId', 'name', 'state', 'region', 'dataQualityScore'
         )
       )
+      const bridges = rawBridges.map(b => ({ ...b, bridgeName: b.name }))
 
       const total = bridges.length
       const withScore = bridges.filter(b => b.dataQualityScore != null)

@@ -10,6 +10,15 @@ sap.ui.define(["sap/m/MessageToast"], function (MessageToast) {
       }
     },
 
+    onOpenNetworkReports: function () {
+      var router = sap.ui.core.UIComponent.getRouterFor(this);
+      if (router) {
+        router.navTo("NetworkReports");
+      } else {
+        window.location.hash = "#NetworkReports";
+      }
+    },
+
     onExportCsv: function () {
       var url = "/admin-bridges/api/bridges/export";
       var a = document.createElement("a");

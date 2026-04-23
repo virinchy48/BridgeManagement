@@ -469,24 +469,19 @@ async function saveMassEditRestrictions(updates, { user } = {}) {
   }
 }
 
-async function loadDashboardAnalytics() {
+async function loadDashboardAnalytics({ state } = {}) {
   const db = await cds.connect.to('db')
 
-  // Fetch all bridges and active restrictions in two queries.
-  // This avoids CDS aggregate-expression compatibility issues (count(1) as cnt,
-  // avg(...) in SELECT.columns) which caused all KPIs to return 0.
-  // Entity: bridge.management.Bridges / bridge.management.Restrictions
-  // Field value reference (from seed data):
-  //   condition      → 'Good' | 'Fair' | 'Poor' | 'Critical'  (title case)
-  //   postingStatus  → 'Unrestricted' | 'Restricted' | 'Under Review'  (title case)
-  //   scourRisk      → 'High' | 'Medium' | 'Low'  (title case)
-  //   Restrictions.active           → boolean true/false
-  //   Restrictions.restrictionStatus → 'Active' (title case)
+  const bridgeQuery = SELECT.from('bridge.management.Bridges').columns(
+    'ID', 'bridgeId', 'bridgeName', 'state',
+    'condition', 'conditionRating', 'structuralAdequacyRating',
+    'postingStatus', 'scourRisk',
+    'nextInspectionDue', 'gazetteExpiryDate'
+  )
+  if (state) bridgeQuery.where({ state })
+
   const [bridges, restrictions] = await Promise.all([
-    db.run(SELECT.from('bridge.management.Bridges').columns(
-      'ID', 'condition', 'conditionRating', 'structuralAdequacyRating',
-      'postingStatus', 'scourRisk'
-    )),
+    db.run(bridgeQuery),
     db.run(SELECT.from('bridge.management.Restrictions').columns(
       'ID', 'active', 'restrictionStatus'
     ).where({ active: true }))
@@ -496,17 +491,45 @@ async function loadDashboardAnalytics() {
   const restrictionList = restrictions || []
   const total           = bridgeList.length
 
-  // ── Condition distribution ────────────────────────────────────────────────
-  const dist = { good: 0, fair: 0, poor: 0, critical: 0 }
-  for (const b of bridgeList) {
-    const cond = (b.condition || 'Good').toLowerCase()
-    if      (cond === 'critical') dist.critical++
-    else if (cond === 'poor')     dist.poor++
-    else if (cond === 'fair')     dist.fair++
-    else                          dist.good++     // Good or unknown
+  // Handles both numeric (TfNSW 1–5) and text condition values
+  const condKey = (b) => {
+    const c = b.condition
+    if (c == null) return 'good'
+    if (typeof c === 'number' || /^\d+(\.\d+)?$/.test(String(c))) {
+      const n = Number(c)
+      if (n >= 5) return 'critical'
+      if (n >= 3) return 'poor'
+      if (n >= 2) return 'fair'
+      return 'good'
+    }
+    const s = String(c).toLowerCase()
+    if (s === 'critical') return 'critical'
+    if (s === 'poor' || s === 'very poor') return 'poor'
+    if (s === 'fair') return 'fair'
+    return 'good'
   }
 
-  // ── Sufficiency: avg structuralAdequacyRating (1–10 scale) → 0–100 % ─────
+  // ── Condition distribution ────────────────────────────────────────────────
+  const dist = { good: 0, fair: 0, poor: 0, critical: 0 }
+  for (const b of bridgeList) dist[condKey(b)]++
+
+  // ── Network Condition Index (weighted, 0–100) ─────────────────────────────
+  const nci = total > 0
+    ? Math.round((dist.good * 100 + dist.fair * 67 + dist.poor * 33) / total)
+    : 0
+  const deficiencyRate = total > 0 ? Math.round((dist.poor + dist.critical) / total * 100) : 0
+
+  // ── Condition by state ────────────────────────────────────────────────────
+  const stateMap = {}
+  for (const b of bridgeList) {
+    const s = b.state || 'Unknown'
+    if (!stateMap[s]) stateMap[s] = { state: s, good: 0, fair: 0, poor: 0, critical: 0, total: 0 }
+    stateMap[s].total++
+    stateMap[s][condKey(b)]++
+  }
+  const conditionByState = Object.values(stateMap).sort((a, b) => b.total - a.total)
+
+  // ── Structural adequacy ───────────────────────────────────────────────────
   const ratedBridges = bridgeList.filter(b => b.structuralAdequacyRating != null && b.structuralAdequacyRating > 0)
   let sufficiencyPct = 0
   if (ratedBridges.length > 0) {
@@ -515,32 +538,68 @@ async function loadDashboardAnalytics() {
   }
 
   // ── Other KPIs ────────────────────────────────────────────────────────────
-  const closedBridges = bridgeList.filter(b => b.postingStatus === 'Closed').length
+  const closedBridges      = bridgeList.filter(b => b.postingStatus === 'Closed').length
+  const scourCritical      = bridgeList.filter(b => b.scourRisk === 'High' || b.scourRisk === 'VeryHigh').length
+  const deficient          = dist.poor + dist.critical
+  const activeRestrictions = restrictionList.length
+  const postedRestrictions = restrictionList.filter(r => r.restrictionStatus === 'Active').length
 
-  const scourCritical = bridgeList.filter(b => b.scourRisk === 'High').length
+  // ── Overdue inspections top 5 ─────────────────────────────────────────────
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  const allOverdue = bridgeList
+    .filter(b => b.nextInspectionDue && new Date(b.nextInspectionDue) < today)
+    .map(b => ({
+      ID: b.ID,
+      bridgeName: b.bridgeName || b.bridgeId || String(b.ID),
+      bridgeId:   b.bridgeId,
+      state:      b.state,
+      daysOverdue: Math.floor((today - new Date(b.nextInspectionDue)) / 86400000),
+      nextInspectionDue: b.nextInspectionDue
+    }))
+    .sort((a, b) => b.daysOverdue - a.daysOverdue)
+  const overdueInspections = allOverdue.slice(0, 5)
 
-  // Deficient = condition Poor or Critical
-  const deficient = dist.poor + dist.critical
-
-  // Active restrictions = those with active = true (already filtered in query)
-  const activeRestrictions  = restrictionList.length
-  const postedRestrictions  = restrictionList.filter(r => r.restrictionStatus === 'Active').length
+  // ── Gazette expiry watchlist top 5 ────────────────────────────────────────
+  const gazetteUrgency = (date) => {
+    if (!date) return null
+    const d = new Date(date); d.setHours(0, 0, 0, 0)
+    const days = Math.floor((d - today) / 86400000)
+    if (days < 0)   return 'EXPIRED'
+    if (days <= 30) return 'RED'
+    if (days <= 90) return 'AMBER'
+    return null
+  }
+  const urgOrd = { EXPIRED: 0, RED: 1, AMBER: 2 }
+  const gazetteWatchlist = bridgeList
+    .map(b => ({ ...b, urg: gazetteUrgency(b.gazetteExpiryDate) }))
+    .filter(b => b.urg != null)
+    .sort((a, b) => urgOrd[a.urg] - urgOrd[b.urg])
+    .slice(0, 5)
+    .map(b => ({
+      ID:                   b.ID,
+      bridgeName:           b.bridgeName || b.bridgeId || String(b.ID),
+      bridgeId:             b.bridgeId,
+      state:                b.state,
+      gazetteExpiryUrgency: b.urg,
+      gazetteExpiryDate:    b.gazetteExpiryDate
+    }))
 
   return {
-    totalBridges:    total,
+    totalBridges: total,
+    nci,
+    deficiencyRate,
     activeRestrictions,
     closedBridges,
     postedRestrictions,
     scourCritical,
     deficient,
     sufficiencyPct,
-    conditionDistribution: {
-      good:     dist.good,
-      fair:     dist.fair,
-      poor:     dist.poor,
-      critical: dist.critical,
-      total
-    }
+    conditionDistribution: { good: dist.good, fair: dist.fair, poor: dist.poor, critical: dist.critical, total },
+    conditionByState,
+    overdueCount:       allOverdue.length,
+    overdueInspections,
+    gazetteIssueCount:  bridgeList.filter(b => gazetteUrgency(b.gazetteExpiryDate) != null).length,
+    gazetteWatchlist
   }
 }
 
@@ -1179,9 +1238,10 @@ cds.on('bootstrap', (app) => {
   // UAT-FIX-5: Expose dashboard data on both /analytics and /overview.
   // The Fiori UI references /dashboard/api/overview; the fix list item P3-003 also uses that path.
   // Both paths call the same loadDashboardAnalytics() function.
-  const dashboardHandler = async (_req, res) => {
+  const dashboardHandler = async (req, res) => {
     try {
-      const data = await loadDashboardAnalytics()
+      const { state } = req.query
+      const data = await loadDashboardAnalytics({ state: state || undefined })
       res.json(data)
     } catch (error) {
       res.status(500).json({ error: { message: error.message || 'Failed to load analytics' } })

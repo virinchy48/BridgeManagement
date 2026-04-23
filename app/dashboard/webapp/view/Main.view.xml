@@ -24,7 +24,20 @@
                 <Title text="{i18n>appTitle}" level="H1" />
                 <Text text="{i18n>pageSubtitle}" class="dashboardSubtitle" />
               </VBox>
-              <HBox alignItems="Start">
+              <HBox alignItems="Center" gap="0.5rem">
+                <Select id="stateFilter" change="onStateFilterChange" width="150px" class="sapUiTinyMarginEnd">
+                  <items>
+                    <core:Item key="" text="All States"/>
+                    <core:Item key="NSW" text="NSW"/>
+                    <core:Item key="VIC" text="VIC"/>
+                    <core:Item key="QLD" text="QLD"/>
+                    <core:Item key="WA" text="WA"/>
+                    <core:Item key="SA" text="SA"/>
+                    <core:Item key="TAS" text="TAS"/>
+                    <core:Item key="ACT" text="ACT"/>
+                    <core:Item key="NT" text="NT"/>
+                  </items>
+                </Select>
                 <VBox alignItems="Center">
                   <Button
                     icon="sap-icon://refresh"
@@ -121,6 +134,48 @@
                 </Button>
               </VBox>
 
+              <VBox class="dashboardKpiTileWrapper sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <GenericTile
+                  header="Overdue Inspections"
+                  subheader="Inspections past due date"
+                  frameType="OneByOne"
+                  press=".onNavigateOverdue"
+                  class="dashboardKpiTile">
+                  <tileContent>
+                    <TileContent>
+                      <content>
+                        <NumericContent
+                          value="{view>/overdueCount}"
+                          icon="sap-icon://calendar"
+                          valueColor="{= ${view>/overdueCount} > 0 ? 'Critical' : 'Good' }"
+                          withMargin="false" />
+                      </content>
+                    </TileContent>
+                  </tileContent>
+                </GenericTile>
+              </VBox>
+
+              <VBox class="dashboardKpiTileWrapper sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <GenericTile
+                  header="Gazette Issues"
+                  subheader="Expired or expiring soon"
+                  frameType="OneByOne"
+                  press=".onNavigateGazette"
+                  class="dashboardKpiTile">
+                  <tileContent>
+                    <TileContent>
+                      <content>
+                        <NumericContent
+                          value="{view>/gazetteIssueCount}"
+                          icon="sap-icon://official-service"
+                          valueColor="{= ${view>/gazetteIssueCount} > 0 ? 'Critical' : 'Good' }"
+                          withMargin="false" />
+                      </content>
+                    </TileContent>
+                  </tileContent>
+                </GenericTile>
+              </VBox>
+
             </FlexBox>
 
             <!-- ═══ ROW 2 · Condition State Distribution ═══ -->
@@ -212,6 +267,102 @@
                 </HBox>
                 <Text text="{i18n>indicatorDeficientHint}" class="dashboardMuted" />
                 <Link text="View Risk Register →" press=".onNavigateDeficient" class="dashboardIndicatorLink" />
+              </VBox>
+
+              <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <Text text="Network Condition Index" class="dashboardIndicatorLabel" />
+                <HBox alignItems="Baseline">
+                  <Text text="{view>/nci}"
+                    class="{= ${view>/nci} >= 80 ? 'dashboardIndicatorValue' : ${view>/nci} >= 60 ? 'dashboardIndicatorValueWarn' : 'dashboardIndicatorValueCritical' }" />
+                  <Text text="%" class="dashboardIndicatorUnit" />
+                </HBox>
+                <Text text="Weighted condition score (0–100)" class="dashboardMuted" />
+                <Link text="View Network Health →" press=".onNavigateSufficiency" class="dashboardIndicatorLink" />
+              </VBox>
+
+              <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
+                <Text text="Deficiency Rate" class="dashboardIndicatorLabel" />
+                <HBox alignItems="Baseline">
+                  <Text text="{view>/deficiencyRate}"
+                    class="{= ${view>/deficiencyRate} > 15 ? 'dashboardIndicatorValueCritical' : ${view>/deficiencyRate} > 5 ? 'dashboardIndicatorValueWarn' : 'dashboardIndicatorValue' }" />
+                  <Text text="%" class="dashboardIndicatorUnit" />
+                </HBox>
+                <Text text="Bridges rated Poor or Critical" class="dashboardMuted" />
+                <Link text="View Risk Register →" press=".onNavigateDeficient" class="dashboardIndicatorLink" />
+              </VBox>
+
+            </FlexBox>
+
+            <!-- ═══ ROW 4 · Priority Actions ═══ -->
+            <Title text="Priority Actions" level="H4" class="dashboardSectionTitle" />
+            <FlexBox wrap="Wrap" alignItems="Start" class="sapUiSmallMarginBottom">
+
+              <VBox class="dashboardCard dashboardPriorityPanel sapUiTinyMarginEnd sapUiSmallMarginBottom">
+                <HBox justifyContent="SpaceBetween" alignItems="Center" class="dashboardCardHeader">
+                  <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://calendar" class="sapUiTinyMarginEnd" color="#BB0000" />
+                    <Text text="Overdue Inspections" class="dashboardConditionSummary" />
+                  </HBox>
+                  <ObjectStatus
+                    text="{view>/overdueCount} overdue"
+                    state="{= ${view>/overdueCount} > 0 ? 'Error' : 'Success' }"/>
+                </HBox>
+                <Table id="overdueTable"
+                  items="{view>/overdueInspections}"
+                  noDataText="No overdue inspections"
+                  showSeparators="Inner"
+                  class="sapUiNoContentPadding">
+                  <columns>
+                    <Column hAlign="Begin"><Text text="Bridge"/></Column>
+                    <Column width="4.5rem"><Text text="State"/></Column>
+                    <Column width="7rem" hAlign="End"><Text text="Days Overdue"/></Column>
+                  </columns>
+                  <items>
+                    <ColumnListItem type="Active" press="onBridgePress">
+                      <cells>
+                        <Text text="{view>bridgeName}" wrapping="false" maxLines="1"/>
+                        <Text text="{view>state}"/>
+                        <ObjectStatus text="{view>daysOverdue} days" state="Error"/>
+                      </cells>
+                    </ColumnListItem>
+                  </items>
+                </Table>
+                <Link text="View all overdue inspections →" press=".onNavigateOverdue" class="dashboardIndicatorLink sapUiTinyMarginTop" />
+              </VBox>
+
+              <VBox class="dashboardCard dashboardPriorityPanel sapUiSmallMarginBottom">
+                <HBox justifyContent="SpaceBetween" alignItems="Center" class="dashboardCardHeader">
+                  <HBox alignItems="Center">
+                    <core:Icon src="sap-icon://official-service" class="sapUiTinyMarginEnd" color="#E76500" />
+                    <Text text="Gazette Expiry Watchlist" class="dashboardConditionSummary" />
+                  </HBox>
+                  <ObjectStatus
+                    text="{view>/gazetteIssueCount} issues"
+                    state="{= ${view>/gazetteIssueCount} > 0 ? 'Error' : 'Success' }"/>
+                </HBox>
+                <Table id="gazetteTable"
+                  items="{view>/gazetteWatchlist}"
+                  noDataText="No urgent gazette expiries"
+                  showSeparators="Inner"
+                  class="sapUiNoContentPadding">
+                  <columns>
+                    <Column hAlign="Begin"><Text text="Bridge"/></Column>
+                    <Column width="4.5rem"><Text text="State"/></Column>
+                    <Column width="6rem"><Text text="Urgency"/></Column>
+                  </columns>
+                  <items>
+                    <ColumnListItem type="Active" press="onBridgePress">
+                      <cells>
+                        <Text text="{view>bridgeName}" wrapping="false" maxLines="1"/>
+                        <Text text="{view>state}"/>
+                        <ObjectStatus
+                          text="{view>gazetteExpiryUrgency}"
+                          state="{path:'view>gazetteExpiryUrgency', formatter:'.fmtUrgencyState'}"/>
+                      </cells>
+                    </ColumnListItem>
+                  </items>
+                </Table>
+                <Link text="View all compliance issues →" press=".onNavigateGazette" class="dashboardIndicatorLink sapUiTinyMarginTop" />
               </VBox>
 
             </FlexBox>

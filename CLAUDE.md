@@ -248,6 +248,14 @@ Only `app/admin-bridges` uses standard Fiori Elements + CAP annotations (`@odata
 
 ### SAP FE console errors in local shell emulator
 - `"There should be a sap.fe.core.AppComponent as owner of the control"` errors appear when navigating between apps in the local Fiori launchpad shell emulator. These are SAP FE framework limitations in the emulated shell — **not bugs in our code**. Ignore in local dev; they do not appear in BTP with the real shell.
+- **`#admin-bridges-manage&/Bridges/new` cannot be resolved in local FLP shell.** FE4 auto-generates this navigation target for the ListReport's Create button using the component's internal ID (`admin-bridges-manage`) rather than the FLP inbound key (`Bridges-manage`). This shows a persistent "Sorry, the app couldn't be opened" dialog in local dev — it is a known FLP shell limitation and does not affect BTP.
+
+### Dashboard and Reports architecture (as of 2026-04)
+- **The live dashboard app is `app/dashboard/webapp/`**, resolved by FLP inbound `Dashboard-display`. `app/operations/dashboard/webapp/` is an older duplicate that is NOT loaded by FLP — do not edit it for dashboard features.
+- **Network Reports is embedded in the Bridges app** at `#Bridges-manage&/NetworkReports`. It is NOT a standalone app. The `app/reports/webapp/` manifest has empty inbounds — the FLP Reports tile now routes to `#Bridges-manage&/NetworkReports`.
+- **Dashboard KPI deep-links to NetworkReports tab** via `window.location.href = "#Bridges-manage&/NetworkReports?tab=<key>"`. The NetworkReports controller reads `window.location.hash.match(/[?&]tab=([^&]+)/)` in `onInit` to select the correct tab.
+- **`admin-bridges` uses `sap.m.NavContainer`, NOT `sap.f.FlexibleColumnLayout`.** Custom XMLView routing targets (`GISConfig`, `NetworkReports`) must NOT specify `controlId: "fcl"` or `controlAggregation: "midColumnPages"` — there is no FCL in this app. Remove both properties entirely and let FE4's router handle placement. Specifying `controlId: "fcl"` causes `Control with ID fcl could not be found` routing errors.
+- **Dashboard CSS `.dashboardKpiTileWrapper > .sapMFlexItem:last-child`** positions the info button absolutely. Guard with `:not(:first-child)` to prevent tiles that have no info button (single child) from having their GenericTile yanked out of the flex flow: `.dashboardKpiTileWrapper > .sapMFlexItem:last-child:not(:first-child) { position: absolute; ... }`.
 
 ### CDS sub-schema file circular reference pattern
 - **`entity Bridges` lives in `db/schema/bridge-entity.cds`** — moved out of the `db/schema.cds` barrel so that other schema sub-files can import it without a circular dependency. `db/schema.cds` loads it via `using { bridge.management.Bridges } from './schema/bridge-entity'` and all sub-files that define associations to Bridges import it via `using { bridge.management.Bridges } from './bridge-entity'`.

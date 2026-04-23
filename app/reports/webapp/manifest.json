@@ -8,17 +8,7 @@
     "i18n": "i18n/i18n.properties",
     "applicationVersion": { "version": "1.0.0" },
     "crossNavigation": {
-      "inbounds": {
-        "Reports-display": {
-          "signature": { "parameters": {}, "additionalParameters": "allowed" },
-          "semanticObject": "Reports",
-          "action": "display",
-          "title": "{{appTitle}}",
-          "info": "{{appDescription}}",
-          "subTitle": "{{appSubTitle}}",
-          "icon": "sap-icon://bar-chart"
-        }
-      }
+      "inbounds": {}
     }
   },
   "sap.ui": {

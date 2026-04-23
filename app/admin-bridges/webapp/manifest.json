@@ -84,6 +84,11 @@
           "pattern": "GISConfig:?query:",
           "name": "GISConfig",
           "target": "GISConfig"
+        },
+        {
+          "pattern": "NetworkReports:?query:",
+          "name": "NetworkReports",
+          "target": "NetworkReports"
         }
       ],
       "targets": {
@@ -91,9 +96,13 @@
           "type": "XMLView",
           "id": "GISConfig",
           "viewName": "BridgeManagement.adminbridges.ext.view.GISConfig",
-          "viewLevel": 1,
-          "controlAggregation": "midColumnPages",
-          "controlId": "fcl"
+          "viewLevel": 1
+        },
+        "NetworkReports": {
+          "type": "XMLView",
+          "id": "NetworkReports",
+          "viewName": "BridgeManagement.adminbridges.ext.view.NetworkReports",
+          "viewLevel": 1
         },
         "BridgesList": {
           "type": "Component",
@@ -116,6 +125,12 @@
                     "exportCsv": {
                       "press": "BridgeManagement.adminbridges.ext.controller.ListReportExt.onExportCsv",
                       "text": "Export CSV",
+                      "enabled": true,
+                      "requiresSelection": false
+                    },
+                    "networkReports": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.ListReportExt.onOpenNetworkReports",
+                      "text": "Network Reports",
                       "enabled": true,
                       "requiresSelection": false
                     }
@@ -164,10 +179,14 @@
                   }
                 },
                 "scourAssessments/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": { "enablePaste": false }
+                  "tableSettings": {
+                    "enablePaste": false
+                  }
                 },
                 "documents/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": { "enablePaste": false }
+                  "tableSettings": {
+                    "enablePaste": false
+                  }
                 }
               },
               "content": {
@@ -244,6 +263,13 @@
           }
         }
       }
+    },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/reports.css"
+        }
+      ]
     },
     "contentDensities": {
       "compact": true,
