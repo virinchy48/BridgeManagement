@@ -523,12 +523,12 @@ sap.ui.define([
 
     onListItemPress: function (oEvent) {
       const item = oEvent.getSource();
-      this._focusBridge(item.getBindingContext("view").getObject());
+      this._flyToBridge(item.getBindingContext("view").getObject());
     },
 
     onListItemDetail: function (oEvent) {
       const item = oEvent.getSource().getParent();
-      this._focusBridge(item.getBindingContext("view").getObject());
+      this._flyToBridge(item.getBindingContext("view").getObject());
     },
 
     onNavToDashboard: function () {
@@ -1453,6 +1453,19 @@ sap.ui.define([
     _focusBridge: function (bridge) {
       if (!bridge || !this._leafletMap) return;
       this._selectFeature("bridge", bridge);
+    },
+
+    _flyToBridge: function (bridge) {
+      if (!bridge) return;
+      const model = this._vm();
+      model.setProperty("/selectedFeature", { type: "bridge", data: bridge });
+      model.setProperty("/selectedBridge", bridge);
+      model.setProperty("/selectedRestrictions", bridge.restrictions || []);
+      model.setProperty("/detailOpen", true);
+      this._renderMarkers(false);
+      if (bridge.latitude && bridge.longitude && this._leafletMap) {
+        this._leafletMap.flyTo([bridge.latitude, bridge.longitude], Math.max(this._leafletMap.getZoom(), 14), { animate: true, duration: 0.6 });
+      }
     },
 
     _applyLayoutMode: function () {
