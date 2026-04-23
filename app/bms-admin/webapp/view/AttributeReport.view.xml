@@ -27,7 +27,7 @@
       <layout:VerticalLayout width="100%">
         <!-- Summary tiles -->
         <HBox id="summaryBar" class="sapUiSmallMarginBottom" wrap="Wrap">
-          <GenericTile id="tileTotalObjects" header="Total Bridges" subheader="in system" class="sapUiSmallMarginEnd sapUiSmallMarginBottom" tileContent="">
+          <GenericTile id="tileTotalObjects" header="Total Bridges" subheader="in system" class="sapUiSmallMarginEnd sapUiSmallMarginBottom">
             <tileContent>
               <TileContent>
                 <content><NumericContent id="numTotalObjects" value="0" icon="sap-icon://bridge" withMargin="false"/></content>
