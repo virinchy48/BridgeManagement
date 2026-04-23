@@ -188,6 +188,11 @@
                       "enabled": true,
                       "requiresSelection": false,
                       "type": "Default"
+                    },
+                    "exportCardAction": {
+                      "text": "Export Card",
+                      "press": "BridgeManagement.adminbridges.ext.controller.CaptureCondition.onExportCard",
+                      "enabled": true
                     }
                   }
                 },

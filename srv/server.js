@@ -1999,6 +1999,148 @@ cds.on('bootstrap', (app) => {
     }
   })
 
+  function buildBridgeCardHtml(bridge, restrictions) {
+    const esc = (v) => String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const fmt = (v) => v == null || v === '' ? '—' : esc(v)
+    const fmtBool = (v) => v === true || v === 1 ? 'Yes' : v === false || v === 0 ? 'No' : '—'
+    const fmtDate = (v) => v ? esc(String(v).slice(0, 10)) : '—'
+    const fmtCoord = (lat, lng) => (lat != null && lng != null) ? `${esc(lat)}, ${esc(lng)}` : '—'
+    const today = new Date().toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' })
+
+    const condRating = bridge.conditionRating != null ? `${esc(bridge.conditionRating)}/10` : '—'
+
+    const fields = [
+      ['Structure Type', fmt(bridge.structureType)],
+      ['Year Built', fmt(bridge.yearBuilt)],
+      ['Condition Rating', condRating],
+      ['Condition', fmt(bridge.condition)],
+      ['Span Length (m)', fmt(bridge.spanLength)],
+      ['Deck Width (m)', fmt(bridge.deckWidth)],
+      ['Clearance Height (m)', fmt(bridge.clearanceHeight)],
+      ['Posting Status', fmt(bridge.postingStatus)],
+      ['Scour Risk', fmt(bridge.scourRisk)],
+      ['Last Assessment Date', fmtDate(bridge.lastInspectionDate)],
+      ['Assessor', fmt(bridge.conditionAssessor)],
+      ['Report Ref', fmt(bridge.conditionReportRef)],
+      ['Managing Authority', fmt(bridge.managingAuthority)],
+      ['Route', fmt(bridge.route)],
+      ['Region', fmt(bridge.region)],
+      ['Coordinates', fmtCoord(bridge.latitude, bridge.longitude)],
+      ['NHVR Assessed', fmtBool(bridge.nhvrAssessed)],
+      ['Freight Route', fmtBool(bridge.freightRoute)],
+      ['Over Mass Route', fmtBool(bridge.overMassRoute)],
+      ['HML Approved', fmtBool(bridge.hmlApproved)],
+      ['B-Double Approved', fmtBool(bridge.bDoubleApproved)]
+    ]
+
+    const fieldRows = fields.map(([label, value]) =>
+      `<div class="field"><span class="label">${label}</span><span class="value">${value}</span></div>`
+    ).join('')
+
+    const notesSection = bridge.conditionNotes
+      ? `<div class="section"><h2>Notes</h2><p class="notes">${esc(bridge.conditionNotes)}</p></div>`
+      : ''
+
+    const restrictionsSection = restrictions && restrictions.length > 0
+      ? `<div class="section">
+          <h2>Active Restrictions</h2>
+          <table class="restrictions-table">
+            <thead><tr><th>Type</th><th>Value</th><th>Unit</th><th>Effective From</th><th>Effective To</th></tr></thead>
+            <tbody>${restrictions.map(r =>
+              `<tr><td>${fmt(r.restrictionType)}</td><td>${fmt(r.restrictionValue)}</td><td>${fmt(r.restrictionUnit)}</td><td>${fmtDate(r.effectiveFrom)}</td><td>${fmtDate(r.effectiveTo)}</td></tr>`
+            ).join('')}</tbody>
+          </table>
+        </div>`
+      : ''
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bridge Card — ${esc(bridge.bridgeName)}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 11pt; color: #1a1a1a; background: #fff; }
+  .page { max-width: 210mm; margin: 0 auto; padding: 20mm; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #0070a9; padding-bottom: 10px; margin-bottom: 18px; }
+  .header-left h1 { font-size: 18pt; font-weight: bold; color: #0070a9; line-height: 1.2; }
+  .header-left .subtitle { font-size: 10pt; color: #555; margin-top: 4px; }
+  .header-right { text-align: right; }
+  .bms-logo { font-size: 22pt; font-weight: 900; color: #0070a9; letter-spacing: 2px; }
+  .date-generated { font-size: 9pt; color: #888; margin-top: 4px; }
+  .section { margin-bottom: 20px; }
+  .section h2 { font-size: 12pt; font-weight: bold; color: #0070a9; border-bottom: 1px solid #d0e8f5; padding-bottom: 4px; margin-bottom: 10px; }
+  .fields-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+  .field { display: flex; flex-direction: column; padding: 4px 0; border-bottom: 1px dotted #e0e0e0; }
+  .label { font-size: 8pt; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+  .value { font-size: 10.5pt; color: #1a1a1a; margin-top: 2px; font-weight: 500; }
+  .notes { font-size: 10pt; line-height: 1.5; color: #333; white-space: pre-wrap; }
+  .restrictions-table { width: 100%; border-collapse: collapse; font-size: 9.5pt; }
+  .restrictions-table th { background: #f0f7ff; color: #0070a9; font-weight: bold; text-align: left; padding: 5px 8px; border: 1px solid #c8dff0; }
+  .restrictions-table td { padding: 4px 8px; border: 1px solid #ddd; }
+  .restrictions-table tr:nth-child(even) td { background: #f9fbfd; }
+  .print-btn { display: inline-block; margin-bottom: 16px; padding: 8px 20px; background: #0070a9; color: #fff; border: none; border-radius: 4px; font-size: 11pt; cursor: pointer; }
+  .print-btn:hover { background: #005a87; }
+  @media print {
+    body { margin: 0; }
+    .no-print { display: none; }
+    .page { padding: 0; max-width: none; }
+    @page { size: A4 portrait; margin: 20mm; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="no-print" style="padding-bottom:8px;"><button class="print-btn" onclick="window.print()">Print / Save as PDF</button></div>
+  <div class="header">
+    <div class="header-left">
+      <h1>${esc(bridge.bridgeName)}</h1>
+      <div class="subtitle">Bridge ID: ${esc(bridge.bridgeId)} &nbsp;|&nbsp; ${esc(bridge.state)}</div>
+    </div>
+    <div class="header-right">
+      <div class="bms-logo">BMS</div>
+      <div class="date-generated">Generated: ${today}</div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>Bridge Details</h2>
+    <div class="fields-grid">${fieldRows}</div>
+  </div>
+  ${notesSection}
+  ${restrictionsSection}
+</div>
+<script>window.onload = function() { window.print(); };</script>
+</body>
+</html>`
+  }
+
+  adminBridgeRouter.get('/bridges/:bridgeId/card', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const bridgeId = await assertBridgeExists(db, req.params.bridgeId)
+      const bridge = await db.run(
+        SELECT.one.from('bridge.management.Bridges').where({ ID: bridgeId })
+          .columns('bridgeName', 'bridgeId', 'state', 'route', 'region', 'managingAuthority',
+            'structureType', 'yearBuilt', 'spanLength', 'totalLength', 'deckWidth',
+            'clearanceHeight', 'numberOfLanes', 'condition', 'conditionRating',
+            'structuralAdequacyRating', 'postingStatus', 'scourRisk',
+            'lastInspectionDate', 'conditionAssessor', 'conditionReportRef', 'conditionNotes',
+            'latitude', 'longitude', 'nhvrAssessed', 'freightRoute', 'overMassRoute',
+            'hmlApproved', 'bDoubleApproved', 'remarks')
+      )
+      const restrictions = await db.run(
+        SELECT.from('bridge.management.BridgeRestrictions')
+          .where({ bridge_ID: bridgeId, active: true })
+          .columns('restrictionType', 'restrictionValue', 'restrictionUnit', 'effectiveFrom', 'effectiveTo')
+      )
+      res.setHeader('Content-Type', 'text/html; charset=utf-8')
+      res.send(buildBridgeCardHtml(bridge, restrictions))
+    } catch (error) {
+      res.status(error.status || 500).json({ error: { message: error.message || 'Failed to generate bridge card' } })
+    }
+  })
+
   adminBridgeRouter.delete('/bridges/:bridgeId/attachments/:attachmentId', async (req, res) => {
     try {
       const db = await cds.connect.to('db')

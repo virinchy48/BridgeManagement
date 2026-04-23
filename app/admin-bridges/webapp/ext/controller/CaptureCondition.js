@@ -100,6 +100,15 @@ sap.ui.define([
       if (_oDialog) {
         _oDialog.close();
       }
+    },
+
+    onExportCard: function () {
+      var oView = this.getView();
+      var oContext = oView && oView.getBindingContext();
+      if (!oContext) return;
+      var id = oContext.getProperty("ID");
+      if (!id) return;
+      window.open("/admin-bridges/api/bridges/" + encodeURIComponent(id) + "/card", "_blank", "noopener");
     }
   };
 });
