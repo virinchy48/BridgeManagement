@@ -148,7 +148,6 @@
             "settings": {
               "entitySet": "Bridges",
               "editableHeaderContent": false,
-              "sharingEnabled": false,
               "navigation": {
                 "capacities": {
                   "detail": {
@@ -245,8 +244,7 @@
           "options": {
             "settings": {
               "entitySet": "BridgeCapacities",
-              "editableHeaderContent": false,
-              "sharingEnabled": false
+              "editableHeaderContent": false
             }
           }
         },
@@ -257,8 +255,7 @@
           "options": {
             "settings": {
               "entitySet": "BridgeRestrictions",
-              "editableHeaderContent": false,
-              "sharingEnabled": false
+              "editableHeaderContent": false
             }
           }
         }

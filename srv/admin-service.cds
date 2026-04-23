@@ -35,6 +35,13 @@ service AdminService {
   entity RestrictionCategories as projection on my.RestrictionCategories;
   entity RestrictionUnits as projection on my.RestrictionUnits;
   entity RestrictionDirections as projection on my.RestrictionDirections;
+  entity InspectionTypes as projection on my.InspectionTypes;
+  entity ConditionTrends as projection on my.ConditionTrends;
+  entity SurfaceTypes as projection on my.SurfaceTypes;
+  entity SubstructureTypes as projection on my.SubstructureTypes;
+  entity FoundationTypes as projection on my.FoundationTypes;
+  entity WaterwayTypes as projection on my.WaterwayTypes;
+  entity FatigueDetailCategories as projection on my.FatigueDetailCategories;
   entity GISConfig as projection on my.GISConfig;
   entity ReferenceLayerConfig as projection on my.ReferenceLayerConfig;
   @readonly entity ChangeLog as projection on my.ChangeLog;

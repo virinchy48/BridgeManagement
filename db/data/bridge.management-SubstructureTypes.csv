@@ -1,4 +1,4 @@
-code,name,description
+code,name,descr
 SingleSpanAbutment,Single Span Abutments,Two abutments only — no intermediate piers (single-span bridge)
 MultiSpanPier,Multi-Span with Piers,Abutments and one or more intermediate pier bents
 IntegralAbutment,Integral Abutment,Abutment cast integral with superstructure — no expansion joint

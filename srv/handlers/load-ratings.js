@@ -49,8 +49,8 @@ module.exports = function registerLoadRatingHandlers (srv) {
         const certs = await db.run(
             SELECT.from('bridge.management.LoadRatingCertificates')
                 .where({ status: 'Current' })
-                .and(`certificateExpiryDate <= '${cutoffStr}'`)
-                .and(`certificateExpiryDate >= '${today}'`)
+                .and('certificateExpiryDate <=', cutoffStr)
+                .and('certificateExpiryDate >=', today)
         )
         return certs.map(c => {
             const expiry = new Date(c.certificateExpiryDate)

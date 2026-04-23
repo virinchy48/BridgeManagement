@@ -2,97 +2,103 @@
     controllerName="BridgeManagement.dashboard.controller.Main"
     xmlns:mvc="sap.ui.core.mvc"
     xmlns="sap.m"
+    xmlns:core="sap.ui.core"
     xmlns:l="sap.ui.layout"
     displayBlock="true"
     height="100%">
-    <App id="app">
-        <pages>
-            <Page title="{i18n>appTitle}" showHeader="true">
-                <headerContent>
-                    <Button
-                        icon="sap-icon://refresh"
-                        tooltip="Refresh"
-                        press=".onRefresh"/>
-                </headerContent>
-                <content>
-                    <VBox class="sapUiMediumMargin">
-                        <Text id="lastUpdated" text="{view>/lastUpdated}" class="sapUiSmallMarginBottom"/>
-                        <l:Grid
-                            defaultSpan="XL3 L3 M6 S12"
-                            hSpacing="1"
-                            vSpacing="1">
-                            <GenericTile
-                                id="totalBridgesTile"
-                                header="Total Bridges"
-                                subheader="All registered bridges"
-                                press=".onNavigateBridges">
-                                <tileContent>
-                                    <TileContent>
-                                        <content>
-                                            <NumericContent
-                                                id="totalBridgesValue"
-                                                value="{view>/totalBridges}"
-                                                scale=""
-                                                valueColor="Neutral"/>
-                                        </content>
-                                    </TileContent>
-                                </tileContent>
-                            </GenericTile>
-                            <GenericTile
-                                id="activeRestrictionsTile"
-                                header="Active Restrictions"
-                                subheader="Current load/access restrictions"
-                                press=".onNavigateRestrictions">
-                                <tileContent>
-                                    <TileContent>
-                                        <content>
-                                            <NumericContent
-                                                id="activeRestrictionsValue"
-                                                value="{view>/activeRestrictions}"
-                                                scale=""
-                                                valueColor="Critical"/>
-                                        </content>
-                                    </TileContent>
-                                </tileContent>
-                            </GenericTile>
-                            <GenericTile
-                                id="closedBridgesTile"
-                                header="Closed Bridges"
-                                subheader="Bridges currently closed"
-                                press=".onNavigateClosedBridges">
-                                <tileContent>
-                                    <TileContent>
-                                        <content>
-                                            <NumericContent
-                                                id="closedBridgesValue"
-                                                value="{view>/closedBridges}"
-                                                scale=""
-                                                valueColor="Error"/>
-                                        </content>
-                                    </TileContent>
-                                </tileContent>
-                            </GenericTile>
-                            <GenericTile
-                                id="poorConditionTile"
-                                header="Poor / Critical Condition"
-                                subheader="Bridges needing attention"
-                                press=".onNavigatePoorCondition">
-                                <tileContent>
-                                    <TileContent>
-                                        <content>
-                                            <NumericContent
-                                                id="poorConditionValue"
-                                                value="{view>/poorCondition}"
-                                                scale=""
-                                                valueColor="Error"/>
-                                        </content>
-                                    </TileContent>
-                                </tileContent>
-                            </GenericTile>
-                        </l:Grid>
-                    </VBox>
-                </content>
-            </Page>
-        </pages>
-    </App>
+
+  <App id="dashboardApp">
+    <pages>
+      <Page id="dashboardPage" title="Network Operations Dashboard" showHeader="true">
+
+        <headerContent>
+          <Select id="stateFilter" change="onStateFilterChange" width="160px">
+            <items>
+              <core:Item key="" text="All States"/>
+              <core:Item key="NSW" text="NSW"/>
+              <core:Item key="VIC" text="VIC"/>
+              <core:Item key="QLD" text="QLD"/>
+              <core:Item key="WA" text="WA"/>
+              <core:Item key="SA" text="SA"/>
+              <core:Item key="TAS" text="TAS"/>
+              <core:Item key="ACT" text="ACT"/>
+              <core:Item key="NT" text="NT"/>
+            </items>
+          </Select>
+          <Button icon="sap-icon://refresh" tooltip="Refresh" press="onRefresh"/>
+        </headerContent>
+
+        <content>
+          <VBox class="dshContent">
+
+            <core:HTML id="lastUpdatedHtml" content=""/>
+
+            <!-- Headline KPIs -->
+            <core:HTML id="kpiStrip" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+
+            <!-- Network Condition chart -->
+            <core:HTML id="conditionChart" content=""/>
+
+            <!-- Priority action tables -->
+            <core:HTML id="priorityHeader" content=""/>
+
+            <VBox class="dshPriorityRow" id="priorityPanels">
+
+              <VBox class="dshPriorityPanel" id="overduePanelBox">
+                <Label text="Overdue Inspections" class="rptSectionHeader"/>
+                <Table id="overdueTable"
+                  items="{view>/overdueInspections}"
+                  noDataText="No overdue inspections"
+                  alternateRowColors="true">
+                  <columns>
+                    <Column hAlign="Begin"><Text text="Bridge"/></Column>
+                    <Column width="5rem"><Text text="State"/></Column>
+                    <Column width="7rem" hAlign="End"><Text text="Days Overdue"/></Column>
+                  </columns>
+                  <items>
+                    <ColumnListItem type="Active" press="onBridgePress">
+                      <cells>
+                        <Text text="{view>bridgeName}" wrapping="false" maxLines="1"/>
+                        <Text text="{view>state}"/>
+                        <ObjectStatus text="{view>daysOverdue}" state="Error"/>
+                      </cells>
+                    </ColumnListItem>
+                  </items>
+                </Table>
+                <core:HTML id="overdueFooter" content=""/>
+              </VBox>
+
+              <VBox class="dshPriorityPanel" id="gazettePanelBox">
+                <Label text="Gazette Expiry Watchlist" class="rptSectionHeader"/>
+                <Table id="gazetteTable"
+                  items="{view>/gazetteWatchlist}"
+                  noDataText="No urgent gazette expiries"
+                  alternateRowColors="true">
+                  <columns>
+                    <Column hAlign="Begin"><Text text="Bridge"/></Column>
+                    <Column width="5rem"><Text text="State"/></Column>
+                    <Column width="7rem"><Text text="Urgency"/></Column>
+                  </columns>
+                  <items>
+                    <ColumnListItem type="Active" press="onBridgePress">
+                      <cells>
+                        <Text text="{view>bridgeName}" wrapping="false" maxLines="1"/>
+                        <Text text="{view>state}"/>
+                        <ObjectStatus
+                          text="{view>gazetteExpiryUrgency}"
+                          state="{path:'view>gazetteExpiryUrgency', formatter:'.fmtUrgencyState'}"/>
+                      </cells>
+                    </ColumnListItem>
+                  </items>
+                </Table>
+                <core:HTML id="gazetteFooter" content=""/>
+              </VBox>
+
+            </VBox>
+          </VBox>
+        </content>
+
+      </Page>
+    </pages>
+  </App>
 </mvc:View>

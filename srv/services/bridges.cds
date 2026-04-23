@@ -18,15 +18,20 @@ extend service BridgeManagementService with {
         attributes        : redirected to BridgeAttributes
     } actions {
         // Legacy action — kept for backward compatibility
+        @requires: ['BridgeManager','Admin']
         action changeCondition(conditionValue: String, score: Integer)
                returns { ID: UUID; bridgeId: String; name: String; condition: String; conditionScore: Integer };
         // TfNSW condition rating action — records to ConditionHistory
+        @requires: ['BridgeManager','Admin']
         action changeConditionTfnsw(conditionRatingTfnsw: Integer, notes: String, assessmentDate: Date)
                returns Bridges;
+        @requires: ['BridgeManager','Admin']
         action closeForTraffic()
                returns { ID: UUID; bridgeId: String; name: String; postingStatus: String };
+        @requires: ['BridgeManager','Admin']
         action reopenForTraffic()
                returns { ID: UUID; bridgeId: String; name: String; postingStatus: String };
+        @requires: ['BridgeManager','Admin']
         action addRestriction(
             restrictionType: String, value: Decimal, unit: String,
             validFromDate: Date, validToDate: Date, status: String,

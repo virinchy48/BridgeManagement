@@ -21,6 +21,23 @@ sap.ui.define([
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.AttributeConfig", {
 
+    _getCsrfToken: function () {
+      if (this._csrfToken) return Promise.resolve(this._csrfToken);
+      return fetch("/odata/v4/admin/AttributeDefinitions", { method: "HEAD", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
+        .then(function (r) { this._csrfToken = r.headers.get("X-CSRF-Token") || "unsafe"; return this._csrfToken; }.bind(this))
+        .catch(function () { this._csrfToken = "unsafe"; return this._csrfToken; }.bind(this));
+    },
+
+    _mutate: function (url, method, body) {
+      return this._getCsrfToken().then(function (token) {
+        return fetch(url, {
+          method: method, credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+          body: body != null ? JSON.stringify(body) : undefined
+        }).then(function (r) { if (!r.ok) return r.json().then(function (e) { return Promise.reject(new Error(e.error && e.error.message || r.statusText)); }); return r; });
+      });
+    },
+
     onInit: function () {
       this._objectType = "bridge";
       this._selectedGroup = null;
@@ -114,11 +131,7 @@ sap.ui.define([
         { label: "Internal Key", id: "dlg-key", required: true },
         { label: "Display Order", id: "dlg-order", type: "number" }
       ], function (vals) {
-        fetch(BASE + "/AttributeGroups", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: vals["dlg-name"], internalKey: vals["dlg-key"], objectType: self._objectType, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: "Active" })
-        }).then(function (createGroupResponse) { if (!createGroupResponse.ok) throw new Error(createGroupResponse.statusText); return createGroupResponse.json(); })
+        self._mutate(BASE + "/AttributeGroups", "POST", { name: vals["dlg-name"], internalKey: vals["dlg-key"], objectType: self._objectType, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: "Active" })
           .then(function () { self._loadGroups(); MessageToast.show("Group created."); })
           .catch(function (error) { MessageBox.error("Failed to create group: " + error.message); });
       });
@@ -133,11 +146,7 @@ sap.ui.define([
         { label: "Display Order", id: "dlg-order", value: String(selectedGroup.displayOrder || 0), type: "number" },
         { label: "Status", id: "dlg-status", type: "select", options: STATUS_OPTS, value: selectedGroup.status }
       ], function (vals) {
-        fetch(BASE + "/AttributeGroups('" + selectedGroup.ID + "')", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: vals["dlg-name"], displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: vals["dlg-status"] })
-        }).then(function (updateGroupResponse) { if (!updateGroupResponse.ok) throw new Error(updateGroupResponse.statusText); })
+        self._mutate(BASE + "/AttributeGroups('" + selectedGroup.ID + "')", "PATCH", { name: vals["dlg-name"], displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: vals["dlg-status"] })
           .then(function () { self._loadGroups(); MessageToast.show("Group updated."); })
           .catch(function (error) { MessageBox.error("Failed to update group: " + error.message); });
       });
@@ -149,8 +158,7 @@ sap.ui.define([
       MessageBox.confirm("Delete group \"" + self._selectedGroup.name + "\"? This will also delete its attribute definitions.", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(BASE + "/AttributeGroups('" + self._selectedGroup.ID + "')", { method: "DELETE" })
-            .then(function (deleteGroupResponse) { if (!deleteGroupResponse.ok && deleteGroupResponse.status !== 204) throw new Error(deleteGroupResponse.statusText); })
+          self._mutate(BASE + "/AttributeGroups('" + self._selectedGroup.ID + "')", "DELETE", null)
             .then(function () { self._loadGroups(); MessageToast.show("Group deleted."); })
             .catch(function (error) { MessageBox.error("Failed to delete group: " + error.message); });
         }
@@ -170,23 +178,19 @@ sap.ui.define([
         { label: "Min Value (numeric types)", id: "dlg-min", type: "number" },
         { label: "Max Value (numeric types)", id: "dlg-max", type: "number" }
       ], function (vals) {
-        fetch(BASE + "/AttributeDefinitions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            group_ID: self._selectedGroup.ID,
-            objectType: self._objectType,
-            name: vals["dlg-name"],
-            internalKey: vals["dlg-key"],
-            dataType: vals["dlg-type"],
-            unit: vals["dlg-unit"] || null,
-            helpText: vals["dlg-help"] || null,
-            displayOrder: parseInt(vals["dlg-order"] || "0", 10),
-            minValue: vals["dlg-min"] ? parseFloat(vals["dlg-min"]) : null,
-            maxValue: vals["dlg-max"] ? parseFloat(vals["dlg-max"]) : null,
-            status: "Active"
-          })
-        }).then(function (createAttributeResponse) { if (!createAttributeResponse.ok) throw new Error(createAttributeResponse.statusText); return createAttributeResponse.json(); })
+        self._mutate(BASE + "/AttributeDefinitions", "POST", {
+          group_ID: self._selectedGroup.ID,
+          objectType: self._objectType,
+          name: vals["dlg-name"],
+          internalKey: vals["dlg-key"],
+          dataType: vals["dlg-type"],
+          unit: vals["dlg-unit"] || null,
+          helpText: vals["dlg-help"] || null,
+          displayOrder: parseInt(vals["dlg-order"] || "0", 10),
+          minValue: vals["dlg-min"] ? parseFloat(vals["dlg-min"]) : null,
+          maxValue: vals["dlg-max"] ? parseFloat(vals["dlg-max"]) : null,
+          status: "Active"
+        })
           .then(function () { self._loadAttributes(self._selectedGroup.ID); MessageToast.show("Attribute created."); })
           .catch(function (error) { MessageBox.error("Failed: " + error.message); });
       });
@@ -203,11 +207,7 @@ sap.ui.define([
         { label: "Display Order", id: "dlg-order", value: String(selectedAttribute.displayOrder || 0), type: "number" },
         { label: "Status", id: "dlg-status", type: "select", options: STATUS_OPTS, value: selectedAttribute.status }
       ], function (vals) {
-        fetch(BASE + "/AttributeDefinitions('" + selectedAttribute.ID + "')", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: vals["dlg-name"], unit: vals["dlg-unit"] || null, helpText: vals["dlg-help"] || null, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: vals["dlg-status"] })
-        }).then(function (updateAttributeResponse) { if (!updateAttributeResponse.ok) throw new Error(updateAttributeResponse.statusText); })
+        self._mutate(BASE + "/AttributeDefinitions('" + selectedAttribute.ID + "')", "PATCH", { name: vals["dlg-name"], unit: vals["dlg-unit"] || null, helpText: vals["dlg-help"] || null, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: vals["dlg-status"] })
           .then(function () { self._loadAttributes(self._selectedGroup.ID); self._loadAttrDetail(selectedAttribute.ID); MessageToast.show("Attribute updated."); })
           .catch(function (error) { MessageBox.error("Failed: " + error.message); });
       });
@@ -219,12 +219,7 @@ sap.ui.define([
       MessageBox.confirm("Delete attribute \"" + self._selectedAttr.name + "\"?", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(BASE + "/AttributeDefinitions('" + self._selectedAttr.ID + "')", { method: "DELETE" })
-            .then(function (deleteAttributeResponse) {
-              if (!deleteAttributeResponse.ok && deleteAttributeResponse.status !== 204) {
-                return deleteAttributeResponse.json().then(function (errorBody) { throw new Error(errorBody.error?.message || deleteAttributeResponse.statusText); });
-              }
-            })
+          self._mutate(BASE + "/AttributeDefinitions('" + self._selectedAttr.ID + "')", "DELETE", null)
             .then(function () { self._loadAttributes(self._selectedGroup.ID); self.byId("attrDetailPanel").setVisible(false); MessageToast.show("Attribute deleted."); })
             .catch(function (error) { MessageBox.error(error.message); });
         }
@@ -239,11 +234,7 @@ sap.ui.define([
         { label: "Display Label", id: "dlg-label" },
         { label: "Display Order", id: "dlg-order", type: "number" }
       ], function (vals) {
-        fetch(BASE + "/AttributeAllowedValues", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ attribute_ID: self._selectedAttr.ID, value: vals["dlg-val"], label: vals["dlg-label"] || null, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: "Active" })
-        }).then(function (createAllowedValueResponse) { if (!createAllowedValueResponse.ok) throw new Error(createAllowedValueResponse.statusText); })
+        self._mutate(BASE + "/AttributeAllowedValues", "POST", { attribute_ID: self._selectedAttr.ID, value: vals["dlg-val"], label: vals["dlg-label"] || null, displayOrder: parseInt(vals["dlg-order"] || "0", 10), status: "Active" })
           .then(function () { self._loadAttrDetail(self._selectedAttr.ID); MessageToast.show("Value added."); })
           .catch(function (error) { MessageBox.error("Failed: " + error.message); });
       });
@@ -256,12 +247,7 @@ sap.ui.define([
       MessageBox.confirm("Delete allowed value \"" + allowedValue.value + "\"?", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(BASE + "/AttributeAllowedValues('" + allowedValue.ID + "')", { method: "DELETE" })
-            .then(function (deleteAllowedValueResponse) {
-              if (!deleteAllowedValueResponse.ok && deleteAllowedValueResponse.status !== 204) {
-                return deleteAllowedValueResponse.json().then(function (errorBody) { throw new Error(errorBody.error?.message || deleteAllowedValueResponse.statusText); });
-              }
-            })
+          self._mutate(BASE + "/AttributeAllowedValues('" + allowedValue.ID + "')", "DELETE", null)
             .then(function () { self._loadAttrDetail(self._selectedAttr.ID); MessageToast.show("Value deleted."); })
             .catch(function (error) { MessageBox.error(error.message); });
         }
@@ -274,11 +260,8 @@ sap.ui.define([
       var rows = model.getData();
       rows.forEach(function (row) {
         if (!row.ID) return;
-        fetch(BASE + "/AttributeObjectTypeConfig('" + row.ID + "')", {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ enabled: row.enabled, required: row.required, displayOrder: row.displayOrder || null })
-        }).catch(function (err) { MessageToast.show("Config update failed: " + err.message); });
+        self._mutate(BASE + "/AttributeObjectTypeConfig('" + row.ID + "')", "PATCH", { enabled: row.enabled, required: row.required, displayOrder: row.displayOrder || null })
+          .catch(function (err) { MessageToast.show("Config update failed: " + err.message); });
       });
     },
 
@@ -286,11 +269,7 @@ sap.ui.define([
       var ctx = oEvent.getSource().getBindingContext();
       var row = ctx.getObject();
       var self = this;
-      fetch(BASE + "/AttributeObjectTypeConfig", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ attribute_ID: row.attribute_ID, objectType: row.objectType, enabled: true, required: false })
-      }).then(function (createConfigResponse) { if (!createConfigResponse.ok) throw new Error(createConfigResponse.statusText); })
+      self._mutate(BASE + "/AttributeObjectTypeConfig", "POST", { attribute_ID: row.attribute_ID, objectType: row.objectType, enabled: true, required: false })
         .then(function () { self._loadAttrDetail(self._selectedAttr.ID); MessageToast.show("Config added."); })
         .catch(function (error) { MessageBox.error("Failed: " + error.message); });
     },
@@ -320,11 +299,7 @@ sap.ui.define([
             { label: "Object Type", id: "dlg-otype", type: "select", options: ["bridge", "restriction"], required: true },
             { label: "Mode", id: "dlg-mode", type: "select", options: ["skip", "all"], required: true }
           ], function (vals) {
-            fetch(ATTR_API + "/import?objectType=" + vals["dlg-otype"] + "&mode=" + vals["dlg-mode"], {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ fileName: file.name, contentBase64: base64 })
-            })
+            self._mutate(ATTR_API + "/import?objectType=" + vals["dlg-otype"] + "&mode=" + vals["dlg-mode"], "POST", { fileName: file.name, contentBase64: base64 })
             .then(function (importResponse) { return importResponse.json(); })
             .then(function (result) {
               if (result.error) { sap.m.MessageBox.error(result.error.message); return; }

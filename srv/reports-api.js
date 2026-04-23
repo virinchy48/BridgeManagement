@@ -253,13 +253,13 @@ function mountReportsApi(app, requiresAuthentication) {
     try {
       const db = await cds.connect.to('db')
       const raw = await db.run(
-        SELECT.from('nhvr.Bridge').columns(
-          'ID', 'bridgeId', 'name', 'state', 'region', 'condition',
-          'conditionRating', 'scourRisk', 'criticalDefectFlag', 'highPriorityAsset',
+        SELECT.from('bridge.management.Bridges').columns(
+          'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'condition',
+          'conditionRating', 'scourRisk', 'highPriorityAsset',
           'importanceLevel', 'postingStatus', 'yearBuilt'
         )
       )
-      const bridges = raw.map(b => ({ ...b, bridgeName: b.name }))
+      const bridges = raw
 
       let criticalCondition = 0, highScour = 0, criticalDefects = 0, highPriority = 0
       const riskByStateMap = {}
@@ -270,7 +270,7 @@ function mountReportsApi(app, requiresAuthentication) {
         const condScore = ck === 'critical' ? 40 : ck === 'poor' ? 25 : ck === 'fair' ? 10 : 0
         const scour = (b.scourRisk || '').replace(/\s/g, '')
         const scourScore = scour === 'VeryHigh' ? 35 : scour === 'High' ? 30 : scour === 'Medium' ? 15 : scour === 'Low' ? 5 : 0
-        const defectScore = b.criticalDefectFlag ? 20 : 0
+        const defectScore = 0
         const priorityScore = b.highPriorityAsset ? 5 : 0
         const il = b.importanceLevel
         const ilScore = il === 'Critical' || il === 1 ? 10 : il === 'Essential' || il === 2 ? 7 : il === 'Important' || il === 3 ? 4 : il === 'Ordinary' || il === 4 ? 1 : 0
@@ -279,7 +279,6 @@ function mountReportsApi(app, requiresAuthentication) {
         if (ck === 'critical' || ck === 'poor') criticalCondition++
         const scourNorm = (b.scourRisk || '').replace(/\s/g, '')
         if (scourNorm === 'High' || scourNorm === 'VeryHigh') highScour++
-        if (b.criticalDefectFlag) criticalDefects++
         if (b.highPriorityAsset) highPriority++
 
         const scourKey = b.scourRisk || 'Unknown'
@@ -289,7 +288,6 @@ function mountReportsApi(app, requiresAuthentication) {
         if (!riskByStateMap[st]) riskByStateMap[st] = { state: st, critical: 0, highScour: 0, defect: 0, total: 0 }
         if (ck === 'critical' || ck === 'poor') riskByStateMap[st].critical++
         if (scourNorm === 'High' || scourNorm === 'VeryHigh') riskByStateMap[st].highScour++
-        if (b.criticalDefectFlag) riskByStateMap[st].defect++
         riskByStateMap[st].total++
 
         return { ...b, riskScore }
@@ -321,11 +319,11 @@ function mountReportsApi(app, requiresAuthentication) {
     try {
       const db = await cds.connect.to('db')
       const rawBridges = await db.run(
-        SELECT.from('nhvr.Bridge').columns(
-          'ID', 'bridgeId', 'name', 'state', 'region', 'dataQualityScore'
+        SELECT.from('bridge.management.Bridges').columns(
+          'ID', 'bridgeId', 'bridgeName', 'state', 'region'
         )
       )
-      const bridges = rawBridges.map(b => ({ ...b, bridgeName: b.name }))
+      const bridges = rawBridges
 
       const total = bridges.length
       const withScore = bridges.filter(b => b.dataQualityScore != null)

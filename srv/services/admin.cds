@@ -21,6 +21,7 @@ extend service BridgeManagementService with {
     @restrict: [{ grant: ['READ'], to: ['Admin','BridgeManager'] }]
     entity AuditLogs as projection on nhvr.AuditLog;
 
+    @requires: ['Admin']
     action saveRoleConfig(configs: array of {
         role: String; featureKey: String; featureType: String;
         label: String; visible: Boolean; editable: Boolean; featureEnabled: Boolean

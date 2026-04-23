@@ -72,33 +72,50 @@ sap.ui.define([
       MessageToast.show("Refreshed.");
     },
 
+    _getCsrfToken: function () {
+      if (this._csrfToken) return Promise.resolve(this._csrfToken);
+      return fetch("/odata/v4/admin/GISConfig", { method: "HEAD", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
+        .then(function (r) { this._csrfToken = r.headers.get("X-CSRF-Token") || "unsafe"; return this._csrfToken; }.bind(this))
+        .catch(function () { this._csrfToken = "unsafe"; return this._csrfToken; }.bind(this));
+    },
+
+    _mutate: function (url, method, body) {
+      return this._getCsrfToken().then(function (token) {
+        return fetch(url, {
+          method: method, credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+          body: body != null ? JSON.stringify(body) : undefined
+        }).then(function (r) { if (!r.ok) return r.json().then(function (e) { return Promise.reject(new Error(e.error && e.error.message || r.statusText)); }); return r; });
+      });
+    },
+
     onSave: function () {
+      var self = this;
       var model = this.getView().getModel("config");
       var data = JSON.parse(JSON.stringify(model.getData()));
       data.customWmsLayers = JSON.stringify(data.customWmsLayers || []);
       delete data["@context"];
       delete data["@metadataEtag"];
 
-      fetch(GIS_CONFIG_URL, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json", "Accept": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify(data)
-      })
-        .then(function (res) {
+      self._getCsrfToken().then(function (token) {
+        return fetch(GIS_CONFIG_URL, {
+          method: "PATCH", credentials: "same-origin",
+          headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+          body: JSON.stringify(data)
+        }).then(function (res) {
           if (res.status === 404) {
             return fetch("/odata/v4/admin/GISConfig", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "Accept": "application/json" },
-              credentials: "same-origin",
+              method: "POST", credentials: "same-origin",
+              headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
               body: JSON.stringify(data)
             });
           }
-          if (!res.ok) return Promise.reject(res.statusText);
+          if (!res.ok) return Promise.reject(new Error(res.statusText));
           return res;
-        })
+        });
+      })
         .then(function (res) {
-          if (res && !res.ok) return Promise.reject(res.statusText);
+          if (res && !res.ok) return Promise.reject(new Error(res.statusText));
           MessageToast.show("GIS configuration saved successfully.");
         })
         .catch(function (err) {
@@ -142,22 +159,16 @@ sap.ui.define([
       var src = oEvent.getSource();
       var ctx = src.getBindingContext("refLayers") || (src.getParent && src.getParent().getBindingContext("refLayers"));
       var row  = ctx.getObject();
-      fetch(REF_LAYER_URL + "('" + row.ID + "')", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ active: oEvent.getParameter("state") })
-      }).catch(function () { MessageToast.show("Failed to update layer."); });
+      this._mutate(REF_LAYER_URL + "('" + row.ID + "')", "PATCH", { active: oEvent.getParameter("state") })
+        .catch(function () { MessageToast.show("Failed to update layer."); });
     },
 
     onToggleRefLayerDefault: function (oEvent) {
       var src = oEvent.getSource();
       var ctx = src.getBindingContext("refLayers") || (src.getParent && src.getParent().getBindingContext("refLayers"));
       var row = ctx.getObject();
-      fetch(REF_LAYER_URL + "('" + row.ID + "')", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabledByDefault: oEvent.getParameter("state") })
-      }).catch(function () { MessageToast.show("Failed to update layer."); });
+      this._mutate(REF_LAYER_URL + "('" + row.ID + "')", "PATCH", { enabledByDefault: oEvent.getParameter("state") })
+        .catch(function () { MessageToast.show("Failed to update layer."); });
     },
 
     _openRefLayerDialog: function (oData) {
@@ -184,8 +195,7 @@ sap.ui.define([
       var body   = Object.assign({}, data);
       delete body["@context"]; delete body["@metadataEtag"];
       var self = this;
-      fetch(url, { method: method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-        .then(function (res) { return res.ok ? res : Promise.reject(res.statusText); })
+      this._mutate(url, method, body)
         .then(function () { self._loadRefLayers(); self.byId("refLayerDialog").close(); })
         .catch(function (error) { MessageBox.error("Failed to save layer: " + error); });
     },
@@ -212,7 +222,7 @@ sap.ui.define([
       MessageBox.confirm("Delete layer \"" + row.name + "\"?", {
         onClose: function (action) {
           if (action !== "OK") return;
-          fetch(REF_LAYER_URL + "('" + row.ID + "')", { method: "DELETE" })
+          self._mutate(REF_LAYER_URL + "('" + row.ID + "')", "DELETE", null)
             .then(function () { self._loadRefLayers(); })
             .catch(function () { MessageToast.show("Failed to delete layer."); });
         }
