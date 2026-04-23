@@ -278,7 +278,18 @@ body.bridgeMapFullBleed #application-Map-display-component > div {
   min-height: 6rem;
   border-top: 1px solid #cfd7e2;
   background: #fff;
-  overflow: hidden;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.nhvrListPanel > .sapMList,
+.nhvrListPanel > .sapMScrollCont,
+.nhvrListPanel .sapMListTbl {
+  overflow-x: auto;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .nhvrResizeHandle {

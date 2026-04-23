@@ -857,7 +857,7 @@ sap.ui.define([
       model.setProperty("/selectedBridge", null);
       model.setProperty("/selectedRestrictions", []);
       model.setProperty("/detailOpen", false);
-      model.setProperty("/showList", false);
+      // showList is NOT reset here — table stays visible after popup is closed
       setTimeout(this._invalidateMap.bind(this), 120);
     },
 
