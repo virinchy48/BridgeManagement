@@ -1,0 +1,69 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core">
+  <Dialog
+    id="captureConditionDialog"
+    title="Capture Bridge Condition"
+    contentWidth="480px"
+    draggable="true"
+    resizable="true">
+    <endButton>
+      <Button
+        icon="sap-icon://decline"
+        type="Transparent"
+        press=".onCaptureConditionCancel"/>
+    </endButton>
+    <content>
+      <VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginTopBottom">
+        <Label text="Condition Rating" labelFor="condRating"/>
+        <RatingIndicator
+          id="condRating"
+          maxValue="10"
+          value="{captureCondition>/conditionRating}"
+          iconSize="1.5rem"
+          liveChange=".onConditionRatingChange"/>
+        <Label text="Condition" labelFor="condSelect" class="sapUiTinyMarginTop"/>
+        <Select
+          id="condSelect"
+          selectedKey="{captureCondition>/condition}">
+          <core:Item key="Good" text="Good"/>
+          <core:Item key="Fair" text="Fair"/>
+          <core:Item key="Poor" text="Poor"/>
+          <core:Item key="Critical" text="Critical"/>
+        </Select>
+        <Label text="Assessment Date" labelFor="condDate" class="sapUiTinyMarginTop"/>
+        <DatePicker
+          id="condDate"
+          value="{captureCondition>/lastInspectionDate}"
+          valueFormat="yyyy-MM-dd"
+          displayFormat="dd MMM yyyy"/>
+        <Label text="Assessor Name" labelFor="condAssessor" class="sapUiTinyMarginTop"/>
+        <Input
+          id="condAssessor"
+          value="{captureCondition>/conditionAssessor}"
+          placeholder="Full name of assessor"/>
+        <Label text="Report Reference" labelFor="condReportRef" class="sapUiTinyMarginTop"/>
+        <Input
+          id="condReportRef"
+          value="{captureCondition>/conditionReportRef}"
+          placeholder="Report or reference number"/>
+        <Label text="Notes" labelFor="condNotes" class="sapUiTinyMarginTop"/>
+        <TextArea
+          id="condNotes"
+          value="{captureCondition>/conditionNotes}"
+          rows="4"
+          growing="true"
+          placeholder="Free text notes"/>
+      </VBox>
+    </content>
+    <buttons>
+      <Button
+        text="Save"
+        type="Emphasized"
+        press=".onCaptureConditionSave"/>
+      <Button
+        text="Cancel"
+        press=".onCaptureConditionCancel"/>
+    </buttons>
+  </Dialog>
+</core:FragmentDefinition>

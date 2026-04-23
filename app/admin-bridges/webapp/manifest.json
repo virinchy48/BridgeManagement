@@ -43,6 +43,15 @@
         "sap.ui.layout": {}
       }
     },
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ObjectPage.ObjectPageController": {
+            "controllerName": "BridgeManagement.adminbridges.ext.controller.CaptureCondition"
+          }
+        }
+      }
+    },
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
@@ -171,6 +180,17 @@
                 }
               },
               "content": {
+                "header": {
+                  "actions": {
+                    "captureConditionAction": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.CaptureCondition.onCaptureConditionOpen",
+                      "text": "Capture Condition",
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "type": "Default"
+                    }
+                  }
+                },
                 "body": {
                   "sections": {
                     "attachmentsSection": {
