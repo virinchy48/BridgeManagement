@@ -8,10 +8,85 @@
     <App id="app">
         <pages>
             <Page title="{i18n>appTitle}" showHeader="true">
+                <headerContent>
+                    <Button
+                        icon="sap-icon://refresh"
+                        tooltip="Refresh"
+                        press=".onRefresh"/>
+                </headerContent>
                 <content>
                     <VBox class="sapUiMediumMargin">
-                        <Title text="{i18n>appTitle}" level="H2" class="sapUiSmallMarginBottom"/>
-                        <Text text="{i18n>appDescription}"/>
+                        <Text id="lastUpdated" text="{view>/lastUpdated}" class="sapUiSmallMarginBottom"/>
+                        <l:Grid
+                            defaultSpan="XL3 L3 M6 S12"
+                            hSpacing="1"
+                            vSpacing="1">
+                            <GenericTile
+                                id="totalBridgesTile"
+                                header="Total Bridges"
+                                subheader="All registered bridges"
+                                tileContent="">
+                                <tileContent>
+                                    <TileContent>
+                                        <content>
+                                            <NumericContent
+                                                id="totalBridgesValue"
+                                                value="{view>/totalBridges}"
+                                                scale=""
+                                                valueColor="Neutral"/>
+                                        </content>
+                                    </TileContent>
+                                </tileContent>
+                            </GenericTile>
+                            <GenericTile
+                                id="activeRestrictionsTile"
+                                header="Active Restrictions"
+                                subheader="Current load/access restrictions">
+                                <tileContent>
+                                    <TileContent>
+                                        <content>
+                                            <NumericContent
+                                                id="activeRestrictionsValue"
+                                                value="{view>/activeRestrictions}"
+                                                scale=""
+                                                valueColor="Critical"/>
+                                        </content>
+                                    </TileContent>
+                                </tileContent>
+                            </GenericTile>
+                            <GenericTile
+                                id="closedBridgesTile"
+                                header="Closed Bridges"
+                                subheader="Bridges currently closed">
+                                <tileContent>
+                                    <TileContent>
+                                        <content>
+                                            <NumericContent
+                                                id="closedBridgesValue"
+                                                value="{view>/closedBridges}"
+                                                scale=""
+                                                valueColor="Error"/>
+                                        </content>
+                                    </TileContent>
+                                </tileContent>
+                            </GenericTile>
+                            <GenericTile
+                                id="poorConditionTile"
+                                header="Poor / Critical Condition"
+                                subheader="Bridges needing attention">
+                                <tileContent>
+                                    <TileContent>
+                                        <content>
+                                            <NumericContent
+                                                id="poorConditionValue"
+                                                value="{view>/poorCondition}"
+                                                scale=""
+                                                valueColor="Error"/>
+                                        </content>
+                                    </TileContent>
+                                </tileContent>
+                            </GenericTile>
+                        </l:Grid>
                     </VBox>
                 </content>
             </Page>

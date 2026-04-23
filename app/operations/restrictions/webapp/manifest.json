@@ -1,7 +1,7 @@
 {
   "_version": "1.8.0",
   "sap.app": {
-    "id": "bms.restrictions",
+    "id": "bms.operations.restrictions",
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
@@ -9,15 +9,7 @@
     "applicationVersion": {
       "version": "1.0.0"
     },
-    "dataSources": {
-      "BridgeManagementService": {
-        "uri": "/bridge-management/",
-        "type": "OData",
-        "settings": {
-          "odataVersion": "4.0"
-        }
-      }
-    },
+    "dataSources": {},
     "crossNavigation": {
       "inbounds": {
         "Restrictions-display": {
@@ -37,71 +29,22 @@
     "dependencies": {
       "minUI5Version": "1.120.0",
       "libs": {
-        "sap.fe.templates": {}
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.ui.layout": {}
       }
     },
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
         "uri": "i18n/i18n.properties"
-      },
-      "": {
-        "dataSource": "BridgeManagementService",
-        "settings": {
-          "synchronizationMode": "None",
-          "operationMode": "Server",
-          "autoExpandSelect": true,
-          "earlyRequests": true
-        },
-        "type": "sap.ui.model.odata.v4.ODataModel"
       }
     },
-    "routing": {
-      "routes": [
-        {
-          "pattern": ":?query:",
-          "name": "RestrictionsList",
-          "target": "RestrictionsList"
-        },
-        {
-          "pattern": "Restrictions({key}):?query:",
-          "name": "RestrictionsDetails",
-          "target": "RestrictionsDetails"
-        }
-      ],
-      "targets": {
-        "RestrictionsList": {
-          "type": "Component",
-          "id": "RestrictionsList",
-          "name": "sap.fe.templates.ListReport",
-          "options": {
-            "settings": {
-              "entitySet": "Restrictions",
-              "liveMode": true,
-              "navigation": {
-                "Restrictions": {
-                  "detail": {
-                    "route": "RestrictionsDetails"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "RestrictionsDetails": {
-          "type": "Component",
-          "id": "RestrictionsDetails",
-          "name": "sap.fe.templates.ObjectPage",
-          "options": {
-            "settings": {
-              "entitySet": "Restrictions"
-            }
-          }
-        }
-      },
-      "config": {
-        "routerClass": "sap.fe.core.AppRouter"
-      }
+    "rootView": {
+      "viewName": "bms.operations.restrictions.view.Main",
+      "type": "XML",
+      "async": true,
+      "id": "root"
     },
     "contentDensities": {
       "compact": true,
@@ -118,6 +61,6 @@
   },
   "sap.fiori": {
     "registrationIds": [],
-    "archeType": "transactional"
+    "archeType": "analytical"
   }
 }

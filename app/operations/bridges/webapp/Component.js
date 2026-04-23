@@ -1,6 +1,6 @@
-sap.ui.define(["sap/fe/core/AppComponent"], (AppComponent) => {
+sap.ui.define(["sap/ui/core/UIComponent"], (UIComponent) => {
   "use strict";
-  return AppComponent.extend("bms.bridges", {
+  return UIComponent.extend("bms.operations.bridges", {
     metadata: { manifest: "json" }
   });
 });

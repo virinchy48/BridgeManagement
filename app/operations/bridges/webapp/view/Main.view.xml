@@ -1,0 +1,60 @@
+<mvc:View
+    controllerName="bms.operations.bridges.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    displayBlock="true"
+    height="100%">
+    <App id="app">
+        <pages>
+            <Page title="{i18n>appTitle}" showHeader="true">
+                <subHeader>
+                    <Bar>
+                        <contentMiddle>
+                            <SearchField
+                                id="bridgeSearch"
+                                placeholder="Search by name or ID"
+                                width="40%"
+                                search=".onSearch"
+                                liveChange=".onSearch"/>
+                        </contentMiddle>
+                    </Bar>
+                </subHeader>
+                <content>
+                    <Table
+                        id="bridgesTable"
+                        items="{view>/bridges}"
+                        growing="true"
+                        growingThreshold="50"
+                        noDataText="No bridges found">
+                        <columns>
+                            <Column><Text text="Bridge Name"/></Column>
+                            <Column><Text text="ID"/></Column>
+                            <Column><Text text="State"/></Column>
+                            <Column><Text text="Posting Status"/></Column>
+                            <Column><Text text="Condition Rating"/></Column>
+                            <Column><Text text="Structure Type"/></Column>
+                            <Column hAlign="End"><Text text=""/></Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <Text text="{view>bridgeName}"/>
+                                    <Text text="{view>ID}"/>
+                                    <Text text="{view>state}"/>
+                                    <Text text="{view>postingStatus}"/>
+                                    <Text text="{view>conditionRating}"/>
+                                    <Text text="{view>structureType}"/>
+                                    <Button
+                                        icon="sap-icon://map"
+                                        tooltip="Open in Map"
+                                        type="Transparent"
+                                        press=".onOpenInMap"/>
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </content>
+            </Page>
+        </pages>
+    </App>
+</mvc:View>

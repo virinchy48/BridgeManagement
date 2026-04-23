@@ -1,0 +1,56 @@
+<mvc:View
+    controllerName="bms.operations.restrictions.controller.Main"
+    xmlns:mvc="sap.ui.core.mvc"
+    xmlns="sap.m"
+    displayBlock="true"
+    height="100%">
+    <App id="app">
+        <pages>
+            <Page title="{i18n>appTitle}" showHeader="true">
+                <subHeader>
+                    <Bar>
+                        <contentMiddle>
+                            <SearchField
+                                id="restrictionSearch"
+                                placeholder="Search by bridge name"
+                                width="40%"
+                                search=".onSearch"
+                                liveChange=".onSearch"/>
+                        </contentMiddle>
+                    </Bar>
+                </subHeader>
+                <content>
+                    <Table
+                        id="restrictionsTable"
+                        items="{view>/restrictions}"
+                        growing="true"
+                        growingThreshold="50"
+                        noDataText="No active restrictions found">
+                        <columns>
+                            <Column><Text text="Restriction Type"/></Column>
+                            <Column><Text text="Bridge Name"/></Column>
+                            <Column><Text text="Status"/></Column>
+                            <Column hAlign="End"><Text text="Gross Mass (t)"/></Column>
+                            <Column hAlign="End"><Text text="Height (m)"/></Column>
+                            <Column hAlign="End"><Text text="Speed (km/h)"/></Column>
+                            <Column hAlign="Center"><Text text="Permit Required"/></Column>
+                        </columns>
+                        <items>
+                            <ColumnListItem>
+                                <cells>
+                                    <Text text="{view>restrictionType}"/>
+                                    <Text text="{view>bridgeName}"/>
+                                    <Text text="{view>restrictionStatus}"/>
+                                    <Text text="{view>grossMassLimit}"/>
+                                    <Text text="{view>heightLimit}"/>
+                                    <Text text="{view>speedLimit}"/>
+                                    <Text text="{= ${view>permitRequired} ? 'Yes' : 'No' }"/>
+                                </cells>
+                            </ColumnListItem>
+                        </items>
+                    </Table>
+                </content>
+            </Page>
+        </pages>
+    </App>
+</mvc:View>
