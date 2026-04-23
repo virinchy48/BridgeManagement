@@ -15,7 +15,8 @@
   },
   "scripts": {
     "start": "PORT=8008 cds-serve",
-    "test": "jest --testPathPattern=test/ --forceExit"
+    "test": "jest --testPathPattern=test/ --forceExit",
+    "validate-build": "npx cds build --production && mbt build --mtar BridgeManagement-validate.mtar && echo 'BUILD OK'"
   },
   "jest": {
     "testEnvironment": "node",
