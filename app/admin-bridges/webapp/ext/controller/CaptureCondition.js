@@ -1,12 +1,12 @@
 sap.ui.define([
-  "sap/ui/core/mvc/ControllerExtension",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageBox",
   "sap/m/MessageToast"
-], function (ControllerExtension, JSONModel, MessageBox, MessageToast) {
+], function (JSONModel, MessageBox, MessageToast) {
   "use strict";
 
   var _oDialog = null;
+  var _oView   = null;
 
   function ratingToCondition(rating) {
     var r = Number(rating) || 0;
@@ -21,11 +21,25 @@ sap.ui.define([
     return new Date().toISOString().slice(0, 10);
   }
 
-  return ControllerExtension.extend("BridgeManagement.adminbridges.ext.controller.CaptureCondition", {
+  function getView(oEvent) {
+    // FE4 press handlers: `this` is the FE controller — try that first.
+    // Fallback: traverse up from the event source.
+    if (typeof this !== "undefined" && this && typeof this.getView === "function") {
+      return this.getView();
+    }
+    var parent = oEvent && oEvent.getSource && oEvent.getSource();
+    while (parent) {
+      if (parent.isA && parent.isA("sap.ui.core.mvc.View")) return parent;
+      parent = parent.getParent ? parent.getParent() : null;
+    }
+    return _oView;
+  }
 
-    onCaptureConditionOpen: function () {
-      var oView = this.base.getView();
-      var oContext = oView.getBindingContext();
+  return {
+
+    onCaptureConditionOpen: function (oEvent) {
+      _oView = getView.call(this, oEvent);
+      var oContext = _oView && _oView.getBindingContext();
 
       var oModel = new JSONModel({
         conditionRating:    oContext ? (oContext.getProperty("conditionRating")    || 0)         : 0,
@@ -38,11 +52,11 @@ sap.ui.define([
 
       if (!_oDialog) {
         _oDialog = sap.ui.xmlfragment(
-          oView.getId(),
+          _oView.getId(),
           "BridgeManagement.adminbridges.ext.fragment.CaptureCondition",
           this
         );
-        oView.addDependent(_oDialog);
+        _oView.addDependent(_oDialog);
       }
 
       _oDialog.setModel(oModel, "captureCondition");
@@ -54,22 +68,17 @@ sap.ui.define([
       var oModel = _oDialog.getModel("captureCondition");
       oModel.setProperty("/conditionRating", Math.round(rating));
       var derived = ratingToCondition(Math.round(rating));
-      if (derived) {
-        oModel.setProperty("/condition", derived);
-      }
+      if (derived) oModel.setProperty("/condition", derived);
     },
 
     onCaptureConditionSave: async function () {
-      var oView = this.base.getView();
-      var oContext = oView.getBindingContext();
-
+      var oContext = _oView && _oView.getBindingContext();
       if (!oContext) {
         MessageBox.error("No bridge record is loaded.");
         return;
       }
 
-      var oModel = _oDialog.getModel("captureCondition");
-      var data = oModel.getData();
+      var data = _oDialog.getModel("captureCondition").getData();
 
       try {
         ["conditionRating", "condition", "lastInspectionDate",
@@ -78,7 +87,7 @@ sap.ui.define([
           oContext.setProperty(field, data[field] || null);
         });
 
-        var oPageModel = oView.getModel();
+        var oPageModel = _oView.getModel();
         if (oPageModel && oPageModel.submitBatch) {
           await oPageModel.submitBatch("$auto");
         }
@@ -91,18 +100,17 @@ sap.ui.define([
     },
 
     onCaptureConditionCancel: function () {
-      if (_oDialog) {
-        _oDialog.close();
-      }
+      if (_oDialog) _oDialog.close();
     },
 
-    onExportCard: function () {
-      var oContext = this.base.getView().getBindingContext();
+    onExportCard: function (oEvent) {
+      var oView = getView.call(this, oEvent) || _oView;
+      var oContext = oView && oView.getBindingContext();
       if (!oContext) return;
       var id = oContext.getProperty("ID");
       if (!id) return;
       window.open("/admin-bridges/api/bridges/" + encodeURIComponent(id) + "/card", "_blank", "noopener");
     }
 
-  });
+  };
 });
