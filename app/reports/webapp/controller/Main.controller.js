@@ -15,14 +15,30 @@ sap.ui.define([
     onInit: function () {
       const model = new JSONModel({
         busy: false,
-        health:      { loaded: false, kpis: {}, conditionDistribution: {}, conditionByState: [], worstBridges: [] },
-        inspection:  { loaded: false, kpis: {}, overdueByState: [], overdueInspections: [], upcomingInspections: [] },
-        regulatory:  { loaded: false, kpis: {}, gazetteBreakdown: [], restrictionsByType: [], urgentBridges: [] },
-        risk:        { loaded: false, kpis: {}, scourDistribution: [], riskByState: [], topRiskBridges: [] },
-        quality:     { loaded: false, kpis: {}, scoreDistribution: [], lowestBridges: [] }
+        selectedTab: "health",
+        health:       { loaded: false, kpis: {}, conditionDistribution: {}, conditionByState: [], worstBridges: [] },
+        inspection:   { loaded: false, kpis: {}, overdueByState: [], overdueInspections: [], upcomingInspections: [] },
+        regulatory:   { loaded: false, kpis: {}, gazetteBreakdown: [], restrictionsByType: [], urgentBridges: [] },
+        risk:         { loaded: false, kpis: {}, scourDistribution: [], riskByState: [], topRiskBridges: [] },
+        restrictions: { loaded: false, kpis: {}, postingBreakdown: [], massRestrictedBridges: [], heightRestrictedBridges: [], fullCapacityBridges: [] },
+        quality:      { loaded: false, kpis: {}, scoreDistribution: [], lowestBridges: [] }
       });
       this.getView().setModel(model, "view");
-      this._loadTab("health");
+
+      // Honour ?tab= startup parameter from dashboard drill-through
+      const m = window.location.hash.match(/[?&]tab=([^&]+)/);
+      const startTab = m ? decodeURIComponent(m[1]) : "health";
+      model.setProperty("/selectedTab", startTab);
+      this._loadTab(startTab);
+    },
+
+    onAfterRendering: function () {
+      window.bmsScrollTo = (id) => {
+        const ctrl = this.byId(id);
+        if (ctrl && ctrl.getDomRef()) {
+          ctrl.getDomRef().scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      };
     },
 
     // ── Event handlers ────────────────────────────────────────────────────────
@@ -61,11 +77,12 @@ sap.ui.define([
       if (model.getProperty("/" + key + "/loaded")) return;
 
       const endpoints = {
-        health:     "/reports/api/network-health",
-        inspection: "/reports/api/inspection-compliance",
-        regulatory: "/reports/api/regulatory-compliance",
-        risk:       "/reports/api/risk-register",
-        quality:    "/reports/api/data-quality"
+        health:        "/reports/api/network-health",
+        inspection:    "/reports/api/inspection-compliance",
+        regulatory:    "/reports/api/regulatory-compliance",
+        risk:          "/reports/api/risk-register",
+        restrictions:  "/reports/api/bridges-restrictions",
+        quality:       "/reports/api/data-quality"
       };
 
       const url = endpoints[key];
@@ -85,11 +102,12 @@ sap.ui.define([
 
     _renderTab: function (key, data) {
       const render = {
-        health:     () => this._renderHealth(data),
-        inspection: () => this._renderInspection(data),
-        regulatory: () => this._renderRegulatory(data),
-        risk:       () => this._renderRisk(data),
-        quality:    () => this._renderQuality(data)
+        health:        () => this._renderHealth(data),
+        inspection:    () => this._renderInspection(data),
+        regulatory:    () => this._renderRegulatory(data),
+        risk:          () => this._renderRisk(data),
+        restrictions:  () => this._renderRestrictions(data),
+        quality:       () => this._renderQuality(data)
       };
       if (render[key]) render[key]();
     },
@@ -102,10 +120,10 @@ sap.ui.define([
       const total = dist.total || 1;
 
       const kpiHtml = this._kpiStrip([
-        { label: "Total Bridges",          value: k.totalBridges || 0,                    cls: "rptKpiNeutral" },
-        { label: "Network Condition Index", value: (k.networkConditionIndex || 0) + "%",   cls: this._nciClass(k.networkConditionIndex) },
-        { label: "Deficiency Rate",         value: (k.deficiencyRate || 0) + "%",          cls: k.deficiencyRate > 15 ? "rptKpiError" : k.deficiencyRate > 5 ? "rptKpiWarn" : "rptKpiGood" },
-        { label: "Structural Adequacy",     value: (k.structuralAdequacyPct || 0) + "%",   cls: k.structuralAdequacyPct >= 70 ? "rptKpiGood" : k.structuralAdequacyPct >= 50 ? "rptKpiWarn" : "rptKpiError" }
+        { label: "Total Bridges",          value: k.totalBridges || 0,                    cls: "rptKpiNeutral",  nav: "#Bridges-manage" },
+        { label: "Network Condition Index", value: (k.networkConditionIndex || 0) + "%",   cls: this._nciClass(k.networkConditionIndex), scroll: "worstBridgesTable" },
+        { label: "Deficiency Rate",         value: (k.deficiencyRate || 0) + "%",          cls: k.deficiencyRate > 15 ? "rptKpiError" : k.deficiencyRate > 5 ? "rptKpiWarn" : "rptKpiGood", scroll: "worstBridgesTable" },
+        { label: "Structural Adequacy",     value: (k.structuralAdequacyPct || 0) + "%",   cls: k.structuralAdequacyPct >= 70 ? "rptKpiGood" : k.structuralAdequacyPct >= 50 ? "rptKpiWarn" : "rptKpiError", scroll: "worstBridgesTable" }
       ]);
 
       const chartHtml = `
@@ -136,10 +154,10 @@ sap.ui.define([
     _renderInspection: function (d) {
       const k = d.kpis || {};
       const kpiHtml = this._kpiStrip([
-        { label: "Overdue Inspections", value: k.overdue || 0,       cls: k.overdue > 0 ? "rptKpiError" : "rptKpiGood" },
-        { label: "Due Within 30 Days",  value: k.due30 || 0,         cls: k.due30 > 5 ? "rptKpiWarn" : "rptKpiNeutral" },
-        { label: "Due in 31\u201390 Days",  value: k.due31to90 || 0, cls: "rptKpiNeutral" },
-        { label: "Avg Days Since Insp", value: k.avgDaysSince || 0,  cls: k.avgDaysSince > 365 ? "rptKpiWarn" : "rptKpiGood" }
+        { label: "Overdue Inspections", value: k.overdue || 0,       cls: k.overdue > 0 ? "rptKpiError" : "rptKpiGood",   scroll: "overdueTable" },
+        { label: "Due Within 30 Days",  value: k.due30 || 0,         cls: k.due30 > 5 ? "rptKpiWarn" : "rptKpiNeutral",   scroll: "upcomingTable" },
+        { label: "Due in 31\u201390 Days",  value: k.due31to90 || 0, cls: "rptKpiNeutral",                                scroll: "upcomingTable" },
+        { label: "Avg Days Since Insp", value: k.avgDaysSince || 0,  cls: k.avgDaysSince > 365 ? "rptKpiWarn" : "rptKpiGood", scroll: "overdueTable" }
       ]);
       this._setHtml("inspKpiChart", kpiHtml);
 
@@ -161,10 +179,10 @@ sap.ui.define([
     _renderRegulatory: function (d) {
       const k = d.kpis || {};
       const kpiHtml = this._kpiStrip([
-        { label: "Gazette Expired",        value: k.gazetteExpired || 0,    cls: k.gazetteExpired > 0 ? "rptKpiCritical" : "rptKpiGood" },
-        { label: "Gazette Expiring < 30d", value: k.gazetteRed || 0,        cls: k.gazetteRed > 0 ? "rptKpiError" : "rptKpiGood" },
-        { label: "Gazette Expiring < 90d", value: k.gazetteAmber || 0,      cls: k.gazetteAmber > 0 ? "rptKpiWarn" : "rptKpiGood" },
-        { label: "Active Restrictions",    value: k.totalRestrictions || 0, cls: "rptKpiNeutral" }
+        { label: "Gazette Expired",        value: k.gazetteExpired || 0,    cls: k.gazetteExpired > 0 ? "rptKpiCritical" : "rptKpiGood", scroll: "urgentBridgesTable" },
+        { label: "Gazette Expiring < 30d", value: k.gazetteRed || 0,        cls: k.gazetteRed > 0 ? "rptKpiError" : "rptKpiGood",       scroll: "urgentBridgesTable" },
+        { label: "Gazette Expiring < 90d", value: k.gazetteAmber || 0,      cls: k.gazetteAmber > 0 ? "rptKpiWarn" : "rptKpiGood",      scroll: "urgentBridgesTable" },
+        { label: "Active Restrictions",    value: k.totalRestrictions || 0, cls: "rptKpiNeutral",                                        nav: "#Restrictions-manage" }
       ]);
 
       const gaz = d.gazetteBreakdown || [];
@@ -200,10 +218,10 @@ sap.ui.define([
     _renderRisk: function (d) {
       const k = d.kpis || {};
       const kpiHtml = this._kpiStrip([
-        { label: "Poor/Critical Condition",  value: k.criticalCondition || 0, cls: k.criticalCondition > 0 ? "rptKpiError" : "rptKpiGood" },
-        { label: "High/VeryHigh Scour Risk", value: k.highScour || 0,         cls: k.highScour > 0 ? "rptKpiError" : "rptKpiGood" },
-        { label: "Critical Defects",         value: k.criticalDefects || 0,   cls: k.criticalDefects > 0 ? "rptKpiCritical" : "rptKpiGood" },
-        { label: "High Priority Assets",     value: k.highPriority || 0,      cls: "rptKpiWarn" }
+        { label: "Poor/Critical Condition",  value: k.criticalCondition || 0, cls: k.criticalCondition > 0 ? "rptKpiError" : "rptKpiGood",     scroll: "topRiskTable" },
+        { label: "High/VeryHigh Scour Risk", value: k.highScour || 0,         cls: k.highScour > 0 ? "rptKpiError" : "rptKpiGood",             scroll: "topRiskTable" },
+        { label: "Critical Defects",         value: k.criticalDefects || 0,   cls: k.criticalDefects > 0 ? "rptKpiCritical" : "rptKpiGood",    scroll: "topRiskTable" },
+        { label: "High Priority Assets",     value: k.highPriority || 0,      cls: "rptKpiWarn",                                               scroll: "topRiskTable" }
       ]);
 
       const scour = d.scourDistribution || [];
@@ -238,6 +256,37 @@ sap.ui.define([
       this._setHtml("riskCharts", scourHtml + stateRiskHtml);
     },
 
+    _renderRestrictions: function (d) {
+      const k = d.kpis || {};
+      const total = (k.totalRestricted || 0) + (k.underReview || 0) + (k.unrestricted || 0);
+
+      const kpiHtml = this._kpiStrip([
+        { label: "Mass Restricted",   value: k.totalRestricted || 0,  cls: k.totalRestricted > 0 ? "rptKpiError" : "rptKpiGood", scroll: "massRestrictedTable" },
+        { label: "Under Review",      value: k.underReview || 0,      cls: k.underReview > 0 ? "rptKpiWarn" : "rptKpiNeutral",   scroll: "massRestrictedTable" },
+        { label: "Unrestricted",      value: k.unrestricted || 0,     cls: "rptKpiGood",                                         nav: "#Bridges-manage" },
+        { label: "Height Limited",    value: k.withHeightLimit || 0,  cls: "rptKpiNeutral",                                      scroll: "heightRestrictedTable" },
+        { label: "HML Approved",      value: k.hmlApproved || 0,      cls: "rptKpiGood",                                         scroll: "fullCapacityTable" },
+        { label: "B-Double Approved", value: k.bDoubleApproved || 0,  cls: "rptKpiGood",                                         scroll: "fullCapacityTable" }
+      ]);
+
+      const breakdown = d.postingBreakdown || [];
+      const maxB = Math.max(...breakdown.map(b => b.count), 1);
+      const colorMap = { Unrestricted: "#107E3E", Restricted: "#BB0000", "Under Review": "#E76500", Closed: "#6E0000" };
+      const breakdownHtml = breakdown.length ? `
+        <div class="rptChartSection">
+          <div class="rptChartTitle">Posting Status Distribution (${total} bridges)</div>
+          <div class="rptBarGrid">
+            ${breakdown.map(b => `
+              <div class="rptBarLabel">${b.status}</div>
+              <div class="rptBarTrack"><div class="rptBarFill" style="width:${Math.round(b.count / maxB * 100)}%;background:${colorMap[b.status] || "#999"}"></div></div>
+              <div class="rptBarCount">${b.count} (${total > 0 ? Math.round(b.count / total * 100) : 0}%)</div>`).join("")}
+          </div>
+        </div>` : "";
+
+      this._setHtml("restrictionsKpiChart", kpiHtml);
+      this._setHtml("restrictionsCharts", breakdownHtml);
+    },
+
     _renderQuality: function (d) {
       const k = d.kpis || {};
       const score = k.avgScore || 0;
@@ -259,10 +308,10 @@ sap.ui.define([
       const kpiHtml = `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem">
         ${gaugeHtml}
         ${this._kpiStrip([
-          { label: "Complete (\u2265 90%)",   value: k.complete100 || 0,  cls: "rptKpiGood" },
-          { label: "Partial (75\u201389%)",   value: k.partial75 || 0,    cls: "rptKpiWarn" },
-          { label: "Incomplete (< 50%)",       value: k.incomplete50 || 0, cls: k.incomplete50 > 0 ? "rptKpiError" : "rptKpiGood" },
-          { label: "Total Bridges",            value: k.total || 0,        cls: "rptKpiNeutral" }
+          { label: "Complete (\u2265 90%)",   value: k.complete100 || 0,  cls: "rptKpiGood",                                         scroll: "lowestQualityTable" },
+          { label: "Partial (75\u201389%)",   value: k.partial75 || 0,    cls: "rptKpiWarn",                                         scroll: "lowestQualityTable" },
+          { label: "Incomplete (< 50%)",       value: k.incomplete50 || 0, cls: k.incomplete50 > 0 ? "rptKpiError" : "rptKpiGood",   scroll: "lowestQualityTable" },
+          { label: "Total Bridges",            value: k.total || 0,        cls: "rptKpiNeutral",                                      nav: "#Bridges-manage" }
         ], true)}
       </div>`;
 
@@ -290,11 +339,17 @@ sap.ui.define([
     _kpiStrip: function (items, inline) {
       const wrap = inline ? "display:inline-flex" : "display:flex";
       return `<div class="rptKpiStrip" style="${wrap};gap:1rem;flex-wrap:wrap;margin-bottom:${inline ? "0" : "1.5rem"}">
-        ${items.map(item => `
-          <div class="rptKpiCard ${item.cls || "rptKpiNeutral"}">
+        ${items.map(item => {
+          const hasLink = item.nav || item.scroll;
+          const onclick = item.nav
+            ? `onclick="window.location.href='${item.nav}'"`
+            : `onclick="window.bmsScrollTo && window.bmsScrollTo('${item.scroll}')"`;
+          const pointer = hasLink ? `${onclick} style="cursor:pointer" title="Click to view details"` : "";
+          return `<div class="rptKpiCard ${item.cls || "rptKpiNeutral"}" ${pointer}>
             <div class="rptKpiValue">${item.value}</div>
-            <div class="rptKpiLabel">${item.label}</div>
-          </div>`).join("")}
+            <div class="rptKpiLabel">${item.label}${hasLink ? ' <span style="font-size:0.65rem;opacity:0.55;margin-left:2px">&#x2197;</span>' : ""}</div>
+          </div>`;
+        }).join("")}
       </div>`;
     },
 
@@ -383,6 +438,17 @@ sap.ui.define([
     fmtImportance: function (level) {
       const map = { 1: "Critical", 2: "Essential", 3: "Important", 4: "Ordinary" };
       return map[level] || "";
+    },
+
+    fmtBool: function (v) { return v ? "Yes" : "No"; },
+
+    fmtBoolState: function (v) { return v ? "Success" : "None"; },
+
+    fmtClearanceState: function (h) {
+      if (h == null) return "None";
+      if (h < 4.6) return "Error";
+      if (h < 5.0) return "Warning";
+      return "None";
     }
 
   });

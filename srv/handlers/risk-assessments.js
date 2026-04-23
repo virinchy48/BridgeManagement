@@ -32,11 +32,11 @@ module.exports = function registerRiskAssessmentHandlers (srv) {
     })
 
     srv.on('getHighRiskBridges', async req => {
-        const minScore = req.data.minResidualScore || 15
+        const minScore = Math.max(0, Math.min(100, Number(req.data.minResidualScore) || 15))
         const db = await cds.connect.to('db')
         const risks = await db.run(
             SELECT.from('bridge.management.BridgeRiskAssessments')
-                .where(`residualRiskScore >= ${minScore}`)
+                .where('residualRiskScore >=', minScore)
                 .orderBy('residualRiskScore desc')
         )
         return risks.map(r => ({

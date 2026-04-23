@@ -25,7 +25,7 @@
                                 id="totalBridgesTile"
                                 header="Total Bridges"
                                 subheader="All registered bridges"
-                                tileContent="">
+                                press=".onNavigateBridges">
                                 <tileContent>
                                     <TileContent>
                                         <content>
@@ -41,7 +41,8 @@
                             <GenericTile
                                 id="activeRestrictionsTile"
                                 header="Active Restrictions"
-                                subheader="Current load/access restrictions">
+                                subheader="Current load/access restrictions"
+                                press=".onNavigateRestrictions">
                                 <tileContent>
                                     <TileContent>
                                         <content>
@@ -57,7 +58,8 @@
                             <GenericTile
                                 id="closedBridgesTile"
                                 header="Closed Bridges"
-                                subheader="Bridges currently closed">
+                                subheader="Bridges currently closed"
+                                press=".onNavigateClosedBridges">
                                 <tileContent>
                                     <TileContent>
                                         <content>
@@ -73,7 +75,8 @@
                             <GenericTile
                                 id="poorConditionTile"
                                 header="Poor / Critical Condition"
-                                subheader="Bridges needing attention">
+                                subheader="Bridges needing attention"
+                                press=".onNavigatePoorCondition">
                                 <tileContent>
                                     <TileContent>
                                         <content>

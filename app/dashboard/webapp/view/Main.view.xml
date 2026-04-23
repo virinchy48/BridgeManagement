@@ -143,7 +143,7 @@
                   showSeparators="None"
                   class="dashboardConditionList">
                   <items>
-                    <CustomListItem class="dashboardConditionItem">
+                    <CustomListItem type="Active" press=".onConditionRowPress" class="dashboardConditionItem">
                       <HBox alignItems="Center" class="dashboardConditionRow">
                         <core:Icon src="{view>icon}" color="{view>color}" size="1rem" class="dashboardConditionIcon" />
                         <Text text="{view>label}" width="5.5rem" class="dashboardConditionLabel" />
@@ -183,6 +183,7 @@
                   <Text text="%" class="dashboardIndicatorUnit" />
                 </HBox>
                 <Text text="{i18n>indicatorSufficiencyHint}" class="dashboardMuted" />
+                <Link text="View Network Health →" press=".onNavigateSufficiency" class="dashboardIndicatorLink" />
               </VBox>
 
               <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
@@ -196,6 +197,7 @@
                   <Text text="{view>/scourCritical}" class="{= ${view>/scourCritical} > 0 ? 'dashboardIndicatorValueCritical' : 'dashboardIndicatorValue' }" />
                 </HBox>
                 <Text text="{i18n>indicatorScourCriticalHint}" class="dashboardMuted" />
+                <Link text="View Risk Register →" press=".onNavigateScourCritical" class="dashboardIndicatorLink" />
               </VBox>
 
               <VBox class="dashboardIndicatorCard sapUiTinyMarginEnd sapUiTinyMarginBottom">
@@ -209,6 +211,7 @@
                   <Text text="{view>/deficient}" class="{= ${view>/deficient} > 0 ? 'dashboardIndicatorValueCritical' : 'dashboardIndicatorValue' }" />
                 </HBox>
                 <Text text="{i18n>indicatorDeficientHint}" class="dashboardMuted" />
+                <Link text="View Risk Register →" press=".onNavigateDeficient" class="dashboardIndicatorLink" />
               </VBox>
 
             </FlexBox>

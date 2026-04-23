@@ -2,6 +2,16 @@ const cds = require('@sap/cds')
 const express = require('express')
 const { SELECT } = cds.ql
 
+function gazetteUrgency(expiryDate, today) {
+  if (!expiryDate) return ''
+  const d = new Date(expiryDate); d.setHours(0, 0, 0, 0)
+  const days = Math.floor((d - today) / 86400000)
+  if (days < 0) return 'EXPIRED'
+  if (days <= 30) return 'RED'
+  if (days <= 90) return 'AMBER'
+  return 'GREEN'
+}
+
 function conditionKey(c) {
   const n = Number(c)
   if (!isNaN(n) && n > 0) {
@@ -157,7 +167,7 @@ function mountReportsApi(app, requiresAuthentication) {
         db.run(
           SELECT.from('bridge.management.Bridges').columns(
             'ID', 'bridgeId', 'bridgeName', 'state', 'region',
-            'gazetteExpiryDate', 'gazetteExpiryUrgency', 'pbsApprovalExpiry',
+            'gazetteExpiryDate', 'pbsApprovalExpiry',
             'hmlApprovalExpiry', 'postingStatus', 'nhvrAssessed'
           )
         ),
@@ -176,7 +186,8 @@ function mountReportsApi(app, requiresAuthentication) {
       const urgentBridges = []
 
       for (const b of bridges) {
-        const urg = (b.gazetteExpiryUrgency || '').toUpperCase()
+        b.gazetteExpiryUrgency = gazetteUrgency(b.gazetteExpiryDate, today)
+        const urg = b.gazetteExpiryUrgency
         if (urg === 'EXPIRED') gazetteExpired++
         else if (urg === 'RED') gazetteRed++
         else if (urg === 'AMBER') gazetteAmber++
@@ -350,6 +361,109 @@ function mountReportsApi(app, requiresAuthentication) {
         scoreDistribution,
         lowestBridges
       })
+    } catch (err) { res.status(500).json({ error: { message: err.message } }) }
+  })
+
+  router.get('/bridges-restrictions', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const bridges = await db.run(
+        SELECT.from('bridge.management.Bridges').columns(
+          'ID', 'bridgeId', 'bridgeName', 'state', 'region',
+          'postingStatus', 'condition', 'conditionRating',
+          'clearanceHeight', 'loadRating', 'hmlApproved',
+          'bDoubleApproved', 'freightRoute', 'overMassRoute', 'nhvrAssessed'
+        )
+      )
+
+      const statusCount = {}
+      let withHeightLimit = 0, hmlCount = 0, bDoubleCount = 0, freightCount = 0
+
+      for (const b of bridges) {
+        const s = b.postingStatus || 'Unknown'
+        statusCount[s] = (statusCount[s] || 0) + 1
+        if (b.clearanceHeight != null) withHeightLimit++
+        if (b.hmlApproved) hmlCount++
+        if (b.bDoubleApproved) bDoubleCount++
+        if (b.freightRoute) freightCount++
+      }
+
+      const postingBreakdown = Object.entries(statusCount)
+        .map(([status, count]) => ({ status, count }))
+        .sort((a, b) => b.count - a.count)
+
+      const massRestrictedBridges = bridges
+        .filter(b => b.postingStatus === 'Restricted' || b.postingStatus === 'Under Review')
+        .sort((a, b) => (b.conditionRating || 0) - (a.conditionRating || 0))
+
+      const heightRestrictedBridges = bridges
+        .filter(b => b.clearanceHeight != null)
+        .sort((a, b) => a.clearanceHeight - b.clearanceHeight)
+
+      const fullCapacityBridges = bridges
+        .filter(b => b.hmlApproved || b.bDoubleApproved || b.overMassRoute)
+        .sort((a, b) => (a.bridgeName || '').localeCompare(b.bridgeName || ''))
+
+      res.json({
+        kpis: {
+          totalRestricted: statusCount['Restricted'] || 0,
+          underReview: statusCount['Under Review'] || 0,
+          unrestricted: statusCount['Unrestricted'] || 0,
+          withHeightLimit,
+          hmlApproved: hmlCount,
+          bDoubleApproved: bDoubleCount,
+          freightRoute: freightCount
+        },
+        postingBreakdown,
+        massRestrictedBridges,
+        heightRestrictedBridges,
+        fullCapacityBridges
+      })
+    } catch (err) { res.status(500).json({ error: { message: err.message } }) }
+  })
+
+  const ALLOWED_GROUP_BY = ['state', 'region', 'condition', 'postingStatus', 'structureType', 'material', 'scourRisk']
+
+  app.get('/reports/api/custom', requiresAuthentication, async (req, res) => {
+    try {
+      const { groupBy, filterField, filterValue, state } = req.query
+
+      if (!groupBy || !ALLOWED_GROUP_BY.includes(groupBy))
+        return res.status(400).json({ error: { message: `groupBy must be one of: ${ALLOWED_GROUP_BY.join(', ')}` } })
+
+      if (filterField && !ALLOWED_GROUP_BY.includes(filterField))
+        return res.status(400).json({ error: { message: `filterField must be one of: ${ALLOWED_GROUP_BY.join(', ')}` } })
+
+      const db = await cds.connect.to('db')
+      let bridges = await db.run(
+        SELECT.from('bridge.management.Bridges').columns(
+          'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'condition',
+          'conditionRating', 'postingStatus', 'structureType', 'material', 'scourRisk'
+        )
+      )
+
+      if (state) bridges = bridges.filter(b => b.state === state)
+      if (filterField && filterValue !== undefined)
+        bridges = bridges.filter(b => (b[filterField] || '').toString().toLowerCase() === filterValue.toLowerCase())
+
+      const groupMap = {}
+      for (const b of bridges) {
+        const key = b[groupBy] || 'Unknown'
+        if (!groupMap[key]) groupMap[key] = []
+        groupMap[key].push(b)
+      }
+
+      const groups = Object.entries(groupMap)
+        .map(([key, members]) => ({ key, count: members.length, bridges: members.slice(0, 5) }))
+        .sort((a, b) => b.count - a.count)
+
+      const filterApplied = (filterField && filterValue !== undefined)
+        ? { field: filterField, value: filterValue }
+        : state
+          ? { field: 'state', value: state }
+          : null
+
+      res.json({ groupBy, filterApplied, totalCount: bridges.length, groups })
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 

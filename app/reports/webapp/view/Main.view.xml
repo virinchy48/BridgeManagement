@@ -26,7 +26,7 @@
     </headerContent>
 
     <content>
-      <IconTabBar id="reportTabs" select="onTabSelect" expandable="false" expanded="true" stretchContentHeight="false" class="sapUiNoContentPadding">
+      <IconTabBar id="reportTabs" selectedKey="{view>/selectedTab}" select="onTabSelect" expandable="false" expanded="true" stretchContentHeight="false" class="sapUiNoContentPadding">
         <items>
 
           <IconTabFilter key="health" icon="sap-icon://pulse" text="Network Health" id="tabHealth">
@@ -189,6 +189,96 @@
                           <ObjectStatus text="{view>scourRisk}" state="{path:'view>scourRisk', formatter:'.fmtScourState'}"/>
                           <Text text="{path:'view>importanceLevel', formatter:'.fmtImportance'}"/>
                           <ObjectNumber number="{view>riskScore}" state="{path:'view>riskScore', formatter:'.fmtRiskScoreState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="restrictions" icon="sap-icon://restriction" text="Bridges &amp; Restrictions" id="tabRestrictions">
+            <content>
+              <VBox class="rptTabContent">
+                <core:HTML id="restrictionsKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="restrictionsCharts" content=""/>
+                <VBox class="rptSection">
+                  <Label text="Mass Restricted Bridges" class="rptSectionHeader"/>
+                  <Table id="massRestrictedTable" items="{view>/restrictions/massRestrictedBridges}" noDataText="No restricted bridges">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Posting Status"/></Column>
+                      <Column><Text text="Condition"/></Column>
+                      <Column><Text text="Condition Rating"/></Column>
+                      <Column><Text text="Load Rating (t)"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectStatus text="{view>postingStatus}" state="{path:'view>postingStatus', formatter:'.fmtPostingState'}"/>
+                          <ObjectStatus text="{view>condition}" state="{path:'view>condition', formatter:'.fmtConditionState'}"/>
+                          <Text text="{view>conditionRating}"/>
+                          <Text text="{view>loadRating}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+                <VBox class="rptSection">
+                  <Label text="Height Restricted Bridges (by Clearance Height)" class="rptSectionHeader"/>
+                  <Table id="heightRestrictedTable" items="{view>/restrictions/heightRestrictedBridges}" noDataText="No height restriction data available">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Clearance Height (m)"/></Column>
+                      <Column><Text text="Posting Status"/></Column>
+                      <Column><Text text="Condition"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectNumber number="{view>clearanceHeight}" unit="m" state="{path:'view>clearanceHeight', formatter:'.fmtClearanceState'}"/>
+                          <ObjectStatus text="{view>postingStatus}" state="{path:'view>postingStatus', formatter:'.fmtPostingState'}"/>
+                          <ObjectStatus text="{view>condition}" state="{path:'view>condition', formatter:'.fmtConditionState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+                <VBox class="rptSection">
+                  <Label text="Full Capacity / Approved Bridges" class="rptSectionHeader"/>
+                  <Table id="fullCapacityTable" items="{view>/restrictions/fullCapacityBridges}" noDataText="No approved bridges found">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="HML"/></Column>
+                      <Column><Text text="B-Double"/></Column>
+                      <Column><Text text="Freight Route"/></Column>
+                      <Column><Text text="Over Mass"/></Column>
+                      <Column><Text text="NHVR Assessed"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectStatus text="{path:'view>hmlApproved', formatter:'.fmtBool'}" state="{path:'view>hmlApproved', formatter:'.fmtBoolState'}"/>
+                          <ObjectStatus text="{path:'view>bDoubleApproved', formatter:'.fmtBool'}" state="{path:'view>bDoubleApproved', formatter:'.fmtBoolState'}"/>
+                          <ObjectStatus text="{path:'view>freightRoute', formatter:'.fmtBool'}" state="{path:'view>freightRoute', formatter:'.fmtBoolState'}"/>
+                          <ObjectStatus text="{path:'view>overMassRoute', formatter:'.fmtBool'}" state="{path:'view>overMassRoute', formatter:'.fmtBoolState'}"/>
+                          <ObjectStatus text="{path:'view>nhvrAssessed', formatter:'.fmtBool'}" state="{path:'view>nhvrAssessed', formatter:'.fmtBoolState'}"/>
                         </cells>
                       </ColumnListItem>
                     </items>

@@ -65,6 +65,22 @@ sap.ui.define([
       window.location.href = "#MassEdit-manage";
     },
 
+    onNavigateDeficient: function () {
+      window.location.href = "#Reports-display?tab=risk";
+    },
+
+    onNavigateScourCritical: function () {
+      window.location.href = "#Reports-display?tab=risk";
+    },
+
+    onNavigateSufficiency: function () {
+      window.location.href = "#Reports-display?tab=health";
+    },
+
+    onConditionRowPress: function (oEvent) {
+      window.location.href = "#Reports-display?tab=health";
+    },
+
     _loadAnalytics: async function () {
       const model = this._vm();
       model.setProperty("/busy", true);

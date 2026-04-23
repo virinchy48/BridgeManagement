@@ -64,7 +64,7 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
         const snapshots = await db.run(
             SELECT.from('bridge.management.KPISnapshots')
                 .where(where)
-                .and(`snapshotDate >= '${cutoff.toISOString().split('T')[0]}'`)
+                .and('snapshotDate >=', cutoff.toISOString().split('T')[0])
                 .orderBy('snapshotDate asc')
         )
         return snapshots.map(s => ({

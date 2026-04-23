@@ -18,6 +18,11 @@ sap.ui.define(["sap/ui/core/mvc/Controller", "sap/ui/model/json/JSONModel"], (Co
       this._loadAnalytics();
     },
 
+    onNavigateBridges() { window.location.href = "#Bridges-manage"; },
+    onNavigateRestrictions() { window.location.href = "#Restrictions-manage"; },
+    onNavigateClosedBridges() { window.location.href = "#Bridges-manage?postingStatus=Closed"; },
+    onNavigatePoorCondition() { window.location.href = "#Reports-display?tab=risk"; },
+
     _loadAnalytics() {
       fetch("/dashboard/api/analytics")
         .then((r) => r.json())
