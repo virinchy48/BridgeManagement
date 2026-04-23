@@ -1,6 +1,14 @@
 code;name;descr
-All Vehicles;All Vehicles;Applies to all vehicles.
-Heavy Vehicles;Heavy Vehicles;Applies to heavy vehicles.
-PBS Vehicles;PBS Vehicles;Applies to PBS-approved vehicles.
-Oversize Overmass;Oversize Overmass;Applies to oversize or overmass vehicles.
-B-Double;B-Double;Applies to B-Double vehicles.
+AllVehicles;All Vehicles;Applies to all vehicle types — no class distinction
+LightVehicle;Light Vehicle;Passenger cars and light commercials (GVM ≤ 4.5 t) — HVNL does not apply
+HeavyVehicle;Heavy Vehicle;Any vehicle with GVM > 4.5 t — subject to HVNL 2013
+BDouble;B-Double;Two semi-trailers coupled in combination; max 26 m / 62.5 t GCM (NHVR HVNL §154–157)
+RoadTrain;Road Train;A-train, B-train or C-train combinations > 26 m — approved route permit required (HVNL Part 4)
+PBS1;PBS Level 1;Performance Based Standards Level 1 — short road trains up to 19 m (NHVR)
+PBS2;PBS Level 2;Performance Based Standards Level 2 — B-doubles and medium road trains up to 26 m (NHVR)
+PBS3;PBS Level 3;Performance Based Standards Level 3 — large road trains up to 36.5 m (NHVR)
+PBS4;PBS Level 4;Performance Based Standards Level 4 — extra-long combinations up to 53.5 m (NHVR)
+HML;HML (High Mass Limit);Higher Mass Limit vehicles — approved axle-mass concession above General Mass Limits (HVNL §§96–99)
+CML;CML (Concessional Mass Limit);Concessional Mass Limit vehicles — special permit for oversize/overmass (HVNL Part 4.7)
+OversizeOvermass;Oversize / Overmass;Vehicles exceeding standard dimension or mass limits — OSOM permit required (HVNL Part 4.7)
+Pedestrian;Pedestrian / Cyclist;Non-motorised — foot traffic and bicycles; relevant for pedestrian/shared path bridges

@@ -1,5 +1,5 @@
 code;name;descr
-Unrestricted;Unrestricted;No posting restrictions applied.
-Restricted;Restricted;Bridge has operating or access restrictions.
-Closed;Closed;Bridge is closed to traffic.
-Under Review;Under Review;Bridge posting status is under review.
+Unrestricted;Unrestricted;No posting restrictions applied — bridge is at full assessed capacity
+Under Review;Under Review;Bridge posting status is under review — assessment or gazette renewal in progress
+Restricted;Restricted;Bridge has active load, dimension, height or access restrictions
+Closed;Closed;Bridge is closed to all traffic — emergency or structural assessment

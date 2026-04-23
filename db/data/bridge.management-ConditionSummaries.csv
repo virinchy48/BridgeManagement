@@ -1,10 +1,7 @@
 code;name
-Excellent;Excellent
-Good;Good
-Fair;Fair
-Poor;Poor
-Critical;Critical
-VeryGood;Very good — minor cosmetic only
-VeryPoor;Very poor — major rehab needed
-Failed;Failed — out of service
+Good;Good — serviceable, no significant defects (TfNSW Condition 1)
+Fair;Fair — moderate deterioration, attention warranted (TfNSW Condition 2)
+Poor;Poor — significant defects, active management required (TfNSW Condition 3)
+VeryPoor;Very Poor — major defects, urgent repairs required (TfNSW Condition 4)
+Critical;Critical — imminent failure risk, immediate action required (TfNSW Condition 5)
 Unknown;Unknown — not yet assessed

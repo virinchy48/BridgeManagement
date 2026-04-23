@@ -1,6 +1,18 @@
 code;name;descr
-Arch Bridge;Arch Bridge;Bridge supported by arches.
-Cable-stayed;Cable-stayed;Bridge with deck supported by cables connected to towers.
-Cantilever;Cantilever;Bridge built using cantilevers.
-Box Girder;Box Girder;Bridge using box girder structural sections.
-Beam Bridge;Beam Bridge;Bridge using simple beams as the main structural element.
+BeamBridge;Beam Bridge;Simply supported or continuous beam — precast or in-situ concrete/steel; most common type in Australia
+TGirder;T-Girder / Deck Girder;Reinforced or prestressed concrete T-section girders — common on NSW/VIC rural roads (Austroads AGBT)
+BoxGirder;Box Girder;Hollow rectangular cross-section — prestressed concrete or steel; highway bridges and longer spans (AS 5100.5)
+PrestressedConcrete;Prestressed Concrete;Super-T, I-girder, U-beam or in-situ prestressed systems (AS 5100.5)
+SlabBridge;Slab Bridge;Solid or voided reinforced concrete deck spanning directly on abutments — short spans on local roads
+TrussBridge;Truss Bridge;Triangulated steel truss — Warren / Pratt / Howe; heritage and rail bridges (AS 5100.3)
+ArchBridge;Arch Bridge;Concrete or steel arch; load carried in compression — scenic, urban and heritage crossings (AS 5100.3)
+MasonryArch;Masonry Arch;Stone or brick masonry arch — heritage bridges; TfNSW Heritage Bridges Guidelines
+Portal;Portal Frame;Rigid frame with legs integral with deck — culvert-style box or inclined leg portal (AS 5100.3)
+CableStayed;Cable-Stayed;Deck suspended by cables attached directly to towers — long-span highway bridges
+Suspension;Suspension Bridge;Deck suspended from main catenary cables over towers — major long-span crossings
+CantileverBridge;Cantilever Bridge;Cantilevered sections from piers joined at midspan — Gerber or balanced cantilever (AS 5100.3)
+ThroughGirder;Through Girder / Pony Truss;Deck runs through the structural frame rather than on top — common on older rail bridges
+TimberBridge;Timber Bridge;Hardwood or treated timber deck, stringers and girders — rural heritage bridges; TfNSW Timber Bridge Manual
+CulvertStructure;Culvert Structure;Buried RC box, arch or pipe culvert — headwalls and wingwalls only above ground (AS 1597)
+Viaduct;Viaduct / Multi-Span;Long multi-span elevated structure crossing a valley or urban precinct
+Movable;Movable Bridge;Bascule, swing, lift or pontoon — opening mechanism for marine traffic clearance

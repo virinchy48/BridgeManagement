@@ -1,11 +1,11 @@
 code;name;descr
-T44;T44;Traditional heavy vehicle loading standard.
-SM1600;SM1600;Standard moving load model.
-AS5100;AS5100;Design load aligned with AS 5100.
-HLP400;HLP400 Heavy Load Platform;"Heavy Load Platform — 400 tonne load. Used for oversize/overmass transport on approved routes."
-W80;W80 Wheel Load;"NSW wheel load model — 80kN per wheel. Used for local road bridges and pedestrian bridges in NSW."
-A160;A160 Axle Load;"NSW axle load model — 160kN per axle. NSW-specific heavy vehicle load for bridges on gazetted routes."
-CooperE;Cooper E Loading;"Cooper E railway loading model — standard North American/ARTC freight train axle pattern."
-UIC60;UIC 60 Loading;"Union Internationale des Chemins de fer loading — European heavy freight standard used for ARTC bridges."
-AS5100_GP;AS 5100 General Purpose;"AS 5100.2 General Purpose loading model for standard road bridges."
-AS5100_HP;AS 5100 Heavy Precision;"AS 5100.2 Heavy Precision loading model for special purpose bridges."
+T44;T44;Legacy Australian road bridge loading — 44-tonne articulated vehicle; pre-AS 5100 standard (Austroads 1992)
+W80;W80 Wheel Load;NSW wheel load model — 80 kN per wheel; local road bridges and pedestrian bridges (NSW Roads)
+A160;A160 Axle Load;NSW axle load model — 160 kN per axle; NSW gazetted heavy vehicle routes (NSW Roads)
+SM1600;SM1600;Austroads standard moving load — 1600 kN/lane; current standard for new road bridges (AS 5100.2)
+AS5100_GP;AS 5100 General Purpose;AS 5100.2 General Purpose loading — standard road bridges designed to current standard
+AS5100_HP;AS 5100 Heavy Precision;AS 5100.2 Heavy Precision loading — special purpose or industrial bridges (AS 5100.2)
+HLP400;HLP400 Heavy Load Platform;Heavy Load Platform — 400-tonne; oversize/overmass transport on approved routes (Austroads)
+CooperE;Cooper E Loading;Railway loading — Cooper E series axle pattern; ARTC freight and heritage rail bridges
+UIC60;UIC 60 Loading;International railway loading — UIC 60 axle pattern; ARTC inter-capital corridor bridges
+AS7613;AS 7613 Rail Loading;Australian standard railway loading — mainline heavy haul freight (AS 7613)

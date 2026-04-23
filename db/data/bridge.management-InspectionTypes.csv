@@ -1,8 +1,8 @@
 code,name,description
+RoutineVisual,Routine Visual,Drive-by or walk-over inspection by Level 1/2 inspector — TfNSW-BIM §4.3 annual or bi-annual cycle
 Principal,Principal Inspection,Detailed close-up inspection by accredited Level 3/4 inspector — TfNSW-BIM §4.2 max 5-year cycle
-RoutineVisual,Routine Visual,Drive-by / walk-over inspection by Level 1/2 inspector — TfNSW-BIM §4.3 annual or bi-annual
-SpecialScour,Special Scour,Post-flood or scheduled scour assessment per Austroads AP-G71.8 §5.2
-Underwater,Underwater / Dive,Submerged element inspection by qualified diver — required for scour-critical bridges
-LoadRating,Load Rating Review,Structural assessment by NER/CPEng engineer per AS 5100.7:2017
-PostEvent,Post-Event Inspection,Emergency inspection after flood event / vehicle impact / seismic activity
-NDT,NDT Inspection,Non-destructive testing — magnetic particle / ultrasonic for fatigue-sensitive steel per AS 5100.6
+PostEvent,Post-Event Inspection,Emergency inspection after flood event / vehicle impact / seismic activity — triggered immediately
+SpecialScour,Special Scour,Post-flood or scheduled scour assessment — Austroads AP-G71.8 §5.2; required for scour-critical bridges
+Underwater,Underwater / Dive,Submerged element inspection by qualified diver — required for scour-critical and high-risk foundations
+LoadRating,Load Rating Review,Structural assessment by NER/CPEng engineer per AS 5100.7:2017 — required every 10 years or after event
+NDT,NDT Inspection,Non-destructive testing — magnetic particle / ultrasonic for fatigue-sensitive steel bridges (AS 5100.6)
