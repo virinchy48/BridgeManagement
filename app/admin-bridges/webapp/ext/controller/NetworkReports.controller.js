@@ -23,10 +23,13 @@ sap.ui.define([
       });
       this.getView().setModel(model, "view");
 
-      // Support ?tab= deep-link parameter (e.g. from Dashboard KPI click)
-      const m = window.location.hash.match(/[?&]tab=([^&]+)/);
-      const startTab = m ? decodeURIComponent(m[1]) : "health";
+      // Support ?tab= and ?filter= deep-link parameters (e.g. from Dashboard KPI click)
+      const mTab    = window.location.hash.match(/[?&]tab=([^&]+)/);
+      const mFilter = window.location.hash.match(/[?&]filter=([^&]+)/);
+      const startTab    = mTab    ? decodeURIComponent(mTab[1])    : "health";
+      const startFilter = mFilter ? decodeURIComponent(mFilter[1]) : null;
       model.setProperty("/selectedTab", startTab);
+      model.setProperty("/activeFilter", startFilter);
       this._loadTab(startTab);
     },
 
@@ -37,6 +40,10 @@ sap.ui.define([
           ctrl.getDomRef().scrollIntoView({ behavior: "smooth", block: "start" });
         }
       };
+    },
+
+    onFilterBannerClose: function (oEvent) {
+      oEvent.getSource().setVisible(false);
     },
 
     onNavBack: function () {
@@ -118,6 +125,46 @@ sap.ui.define([
         quality:      () => this._renderQuality(data)
       };
       if (render[key]) render[key]();
+      // Apply drill-down filter from Dashboard deep-link (once, then clear)
+      const filter = this.getView().getModel("view").getProperty("/activeFilter");
+      if (filter) {
+        this.getView().getModel("view").setProperty("/activeFilter", null);
+        this._applyDrillFilter(key, filter);
+      }
+    },
+
+    // Scroll to the relevant section and show a filter banner based on the
+    // Dashboard KPI that triggered navigation.
+    _applyDrillFilter: function (tab, filter) {
+      const scrollMap = {
+        deficient:  { id: "topRiskTable",       label: "Showing: Structurally Deficient Bridges" },
+        scour:      { id: "topRiskTable",       label: "Showing: Scour-Critical Bridges" },
+        overdue:    { id: "overdueTable",       label: "Showing: Overdue Inspections" },
+        gazette:    { id: "urgentBridgesTable", label: "Showing: Gazette Expiry Issues" },
+        sufficiency:{ id: "worstBridgesTable",  label: "Showing: Low Sufficiency Bridges" }
+      };
+      // condition_<key> filters the worst bridges section
+      const condMatch = filter.match(/^condition_(.+)$/);
+      const target = condMatch
+        ? { id: "worstBridgesTable", label: "Showing: " + condMatch[1].charAt(0).toUpperCase() + condMatch[1].slice(1) + " Condition Bridges" }
+        : scrollMap[filter];
+      if (!target) return;
+
+      // Show a dismissable banner in the tab
+      const bannerId = tab + "FilterBanner";
+      const existing = this.byId(bannerId);
+      if (existing) {
+        existing.setText(target.label);
+        existing.setVisible(true);
+      }
+
+      // Scroll after a brief render delay
+      setTimeout(() => {
+        const ctrl = this.byId(target.id);
+        if (ctrl && ctrl.getDomRef()) {
+          ctrl.getDomRef().scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 300);
     },
 
     _renderHealth: function (d) {

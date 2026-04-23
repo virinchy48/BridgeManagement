@@ -535,6 +535,13 @@ async function loadDashboardAnalytics({ state } = {}) {
   if (ratedBridges.length > 0) {
     const sumRating = ratedBridges.reduce((s, b) => s + Number(b.structuralAdequacyRating), 0)
     sufficiencyPct  = Math.round((sumRating / ratedBridges.length / 10) * 100)
+  } else {
+    // Fall back to condition-rating proxy (0–100) when adequacy data not populated
+    const condAdequacy = { 1: 85, 2: 65, 3: 40, 4: 20, 5: 10 }
+    const hasCond = bridgeList.filter(b => b.conditionRating > 0)
+    if (hasCond.length > 0) {
+      sufficiencyPct = Math.round(hasCond.reduce((s, b) => s + (condAdequacy[b.conditionRating] || 50), 0) / hasCond.length)
+    }
   }
 
   // ── Other KPIs ────────────────────────────────────────────────────────────

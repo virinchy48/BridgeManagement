@@ -72,27 +72,29 @@ sap.ui.define([
     },
 
     onNavigateDeficient: function () {
-      window.location.href = "#Bridges-manage&/NetworkReports?tab=risk";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=risk&filter=deficient";
     },
 
     onNavigateScourCritical: function () {
-      window.location.href = "#Bridges-manage&/NetworkReports?tab=risk";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=risk&filter=scour";
     },
 
     onNavigateSufficiency: function () {
-      window.location.href = "#Bridges-manage&/NetworkReports?tab=health";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=health&filter=sufficiency";
     },
 
-    onConditionRowPress: function () {
-      window.location.href = "#Bridges-manage&/NetworkReports?tab=health";
+    onConditionRowPress: function (oEvent) {
+      var ctx = oEvent.getSource().getBindingContext("view");
+      var key = ctx ? ctx.getProperty("key") : "";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=health" + (key ? "&filter=condition_" + key : "");
     },
 
     onNavigateOverdue: function () {
-      window.location.href = "#Bridges-manage&/NetworkReports?tab=inspection";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=inspection&filter=overdue";
     },
 
     onNavigateGazette: function () {
-      window.location.href = "#Bridges-manage&/NetworkReports?tab=regulatory";
+      window.location.href = "#Bridges-manage&/NetworkReports?tab=regulatory&filter=gazette";
     },
 
     onStateFilterChange: function () {

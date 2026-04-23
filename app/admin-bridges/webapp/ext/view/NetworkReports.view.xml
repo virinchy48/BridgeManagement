@@ -31,6 +31,7 @@
           <IconTabFilter key="health" icon="sap-icon://pulse" text="Network Health" id="tabHealth">
             <content>
               <VBox class="rptTabContent">
+                <MessageStrip id="healthFilterBanner" text="" type="Information" showIcon="true" showCloseButton="true" visible="false" class="sapUiSmallMarginBottom" close=".onFilterBannerClose"/>
                 <core:HTML id="healthKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
                 <core:HTML id="healthStateChart" content=""/>
                 <VBox class="rptSection">
@@ -67,6 +68,7 @@
           <IconTabFilter key="inspection" icon="sap-icon://calendar" text="Inspections" id="tabInspection">
             <content>
               <VBox class="rptTabContent">
+                <MessageStrip id="inspectionFilterBanner" text="" type="Information" showIcon="true" showCloseButton="true" visible="false" class="sapUiSmallMarginBottom" close=".onFilterBannerClose"/>
                 <core:HTML id="inspKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
                 <core:HTML id="inspStateChart" content=""/>
                 <VBox class="rptSection">
@@ -128,6 +130,7 @@
           <IconTabFilter key="regulatory" icon="sap-icon://official-service" text="Compliance" id="tabRegulatory">
             <content>
               <VBox class="rptTabContent">
+                <MessageStrip id="regulatoryFilterBanner" text="" type="Information" showIcon="true" showCloseButton="true" visible="false" class="sapUiSmallMarginBottom" close=".onFilterBannerClose"/>
                 <core:HTML id="regulatoryKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
                 <core:HTML id="regulatoryCharts" content=""/>
                 <VBox class="rptSection">
@@ -164,6 +167,7 @@
           <IconTabFilter key="risk" icon="sap-icon://alert" text="Risk Register" id="tabRisk">
             <content>
               <VBox class="rptTabContent">
+                <MessageStrip id="riskFilterBanner" text="" type="Information" showIcon="true" showCloseButton="true" visible="false" class="sapUiSmallMarginBottom" close=".onFilterBannerClose"/>
                 <core:HTML id="riskKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
                 <core:HTML id="riskCharts" content=""/>
                 <VBox class="rptSection">
