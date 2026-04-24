@@ -1,0 +1,345 @@
+<mvc:View
+  controllerName="BridgeManagement.bridgehierarchy.controller.Main"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:layout="sap.ui.layout"
+  displayBlock="true">
+
+  <App id="app">
+    <pages>
+      <Page id="mainPage" showHeader="false" enableScrolling="false">
+        <customHeader>
+          <Bar id="appBar" class="bhAppBar">
+            <contentLeft>
+              <core:Icon src="sap-icon://org-chart" size="1.4rem" color="#1473e6"/>
+              <Title text="Bridge Hierarchy Explorer" level="H3" class="sapUiTinyMarginBegin"/>
+            </contentLeft>
+            <contentMiddle>
+              <SearchField
+                id="searchField"
+                width="320px"
+                placeholder="Search by name, ID or state…"
+                search="onSearch"
+                liveChange="onSearch"/>
+            </contentMiddle>
+            <contentRight>
+              <Select id="stateSelect" change="onStateFilterChange" width="130px">
+                <items>
+                  <core:Item key="All" text="All States"/>
+                  <core:Item key="NSW" text="NSW"/>
+                  <core:Item key="VIC" text="VIC"/>
+                  <core:Item key="QLD" text="QLD"/>
+                  <core:Item key="WA" text="WA"/>
+                  <core:Item key="SA" text="SA"/>
+                  <core:Item key="TAS" text="TAS"/>
+                  <core:Item key="NT" text="NT"/>
+                  <core:Item key="ACT" text="ACT"/>
+                </items>
+              </Select>
+              <ObjectStatus
+                id="bridgeCountBadge"
+                text="{/bridgeCount} bridges"
+                state="Information"
+                class="sapUiSmallMarginBegin"/>
+              <Button
+                icon="sap-icon://refresh"
+                type="Transparent"
+                tooltip="Reload"
+                press="onReload"
+                class="sapUiTinyMarginBegin"/>
+            </contentRight>
+          </Bar>
+        </customHeader>
+
+        <content>
+          <IconTabBar
+            id="viewTabBar"
+            selectedKey="hierarchy"
+            select="onTabSelect"
+            expandable="false"
+            stretchContentHeight="true"
+            class="bhTabBar">
+
+            <items>
+
+              <!-- ═══════════════════════════════════════════
+                   TAB 1 — LIST VIEW
+              ══════════════════════════════════════════════ -->
+              <IconTabFilter key="list" icon="sap-icon://table-view" text="List" count="{/bridgeCount}">
+                <content>
+                  <Table
+                    id="bridgesTable"
+                    items="{path: '/filteredBridges'}"
+                    growing="true"
+                    growingThreshold="50"
+                    growingScrollToLoad="true"
+                    alternateRowColors="true"
+                    sticky="ColumnHeaders,HeaderToolbar"
+                    noDataText="No bridges found"
+                    class="bhListTable">
+
+                    <headerToolbar>
+                      <Toolbar>
+                        <Title text="Asset Registry" level="H4"/>
+                        <ToolbarSpacer/>
+                        <Text text="{/bridgeCount} records" class="sapUiSmallMarginEnd"/>
+                      </Toolbar>
+                    </headerToolbar>
+
+                    <columns>
+                      <Column width="22%"><Text text="Bridge Name"/></Column>
+                      <Column width="10%"><Text text="Bridge ID"/></Column>
+                      <Column width="6%"><Text text="State"/></Column>
+                      <Column width="14%"><Text text="Structure Type"/></Column>
+                      <Column width="12%"><Text text="Managing Authority"/></Column>
+                      <Column width="7%" hAlign="Center"><Text text="Year Built"/></Column>
+                      <Column width="10%" hAlign="Center"><Text text="Condition"/></Column>
+                      <Column width="10%"><Text text="Posting Status"/></Column>
+                      <Column width="9%" hAlign="Center"><Text text="View Hierarchy"/></Column>
+                    </columns>
+
+                    <items>
+                      <ColumnListItem type="Active" press="onListRowPress">
+                        <cells>
+                          <Text text="{bridgeName}" wrapping="false"/>
+                          <Text text="{bridgeId}"/>
+                          <Text text="{state}"/>
+                          <Text text="{structureType}" wrapping="false"/>
+                          <Text text="{managingAuthority}" wrapping="false"/>
+                          <Text text="{yearBuilt}"/>
+                          <ObjectStatus
+                            text="{conditionRating}/10"
+                            state="{= ${conditionRating} >= 7 ? 'Error' : (${conditionRating} >= 5 ? 'Warning' : 'Success')}"/>
+                          <ObjectStatus
+                            text="{postingStatus}"
+                            state="{= ${postingStatus} === 'Closed' ? 'Error' : (${postingStatus} === 'Restricted' ? 'Warning' : 'Success')}"/>
+                          <Button
+                            icon="sap-icon://org-chart"
+                            type="Transparent"
+                            tooltip="Open in Hierarchy"
+                            press="onOpenInHierarchy"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </content>
+              </IconTabFilter>
+
+              <!-- ═══════════════════════════════════════════
+                   TAB 2 — HIERARCHY TREE VIEW
+              ══════════════════════════════════════════════ -->
+              <IconTabFilter key="hierarchy" icon="sap-icon://org-chart" text="Hierarchy">
+                <content>
+                  <HBox id="hierarchyBox" class="bhHierarchyBox" fitContainer="true">
+
+                    <!-- Master: Bridge picker -->
+                    <VBox id="bhMasterPanel" class="bhMasterPanel">
+                      <Toolbar class="bhMasterToolbar">
+                        <Title text="Bridges" level="H5"/>
+                        <ToolbarSpacer/>
+                        <Text text="{/bridgeCount}" class="sapUiSmallMarginEnd"/>
+                      </Toolbar>
+                      <List
+                        id="bridgePickList"
+                        mode="SingleSelectMaster"
+                        selectionChange="onBridgeSelected"
+                        noDataText="No bridges match the filter"
+                        items="{path: '/filteredBridges'}"
+                        growing="true"
+                        growingThreshold="100"
+                        class="bhPickList">
+                        <items>
+                          <StandardListItem
+                            title="{bridgeName}"
+                            info="{state}"
+                            description="{bridgeId}"
+                            infoState="{= ${conditionRating} >= 7 ? 'Error' : (${conditionRating} >= 5 ? 'Warning' : 'Success')}"
+                            type="Active"/>
+                        </items>
+                      </List>
+                    </VBox>
+
+                    <!-- Detail: Element hierarchy tree -->
+                    <VBox id="bhDetailPanel" class="bhDetailPanel">
+
+                      <!-- Empty state -->
+                      <VBox id="bhEmptyState" visible="{= !${/selectedBridge}}" class="bhEmptyState">
+                        <core:Icon src="sap-icon://org-chart" size="4rem" color="#8c8c8c"/>
+                        <Title text="Select a bridge to explore its element hierarchy" level="H4" class="sapUiMediumMarginTop"/>
+                        <Text text="Hierarchy is structured per AS 5100 Australian Bridge Design Standard" class="sapUiSmallMarginTop" textAlign="Center"/>
+                        <Text text="Spans · Superstructure · Substructure · Foundation · Approaches · Services" class="sapUiTinyMarginTop bhStandardNote" textAlign="Center"/>
+                      </VBox>
+
+                      <!-- Bridge selected: info + tree -->
+                      <VBox id="bhDetailContent" visible="{= !!${/selectedBridge}}" class="bhDetailContent">
+
+                        <!-- Asset info strip -->
+                        <Panel id="assetInfoPanel" class="bhAssetPanel" expandable="false">
+                          <content>
+                            <HBox wrap="Wrap" class="bhAssetInfoRow">
+                              <VBox class="bhInfoChip">
+                                <Label text="Bridge ID" design="Bold"/>
+                                <Text text="{/selectedBridge/bridgeId}"/>
+                              </VBox>
+                              <VBox class="bhInfoChip">
+                                <Label text="Structure Type" design="Bold"/>
+                                <Text text="{= ${/selectedBridge/structureType} || '—'}"/>
+                              </VBox>
+                              <VBox class="bhInfoChip">
+                                <Label text="State"/>
+                                <Text text="{/selectedBridge/state}"/>
+                              </VBox>
+                              <VBox class="bhInfoChip">
+                                <Label text="Year Built"/>
+                                <Text text="{= ${/selectedBridge/yearBuilt} || '—'}"/>
+                              </VBox>
+                              <VBox class="bhInfoChip">
+                                <Label text="Managing Authority"/>
+                                <Text text="{= ${/selectedBridge/managingAuthority} || '—'}"/>
+                              </VBox>
+                              <VBox class="bhInfoChip">
+                                <Label text="Condition Rating"/>
+                                <ObjectStatus
+                                  text="{= (${/selectedBridge/conditionRating} || '—') + '/10'}"
+                                  state="{= ${/selectedBridge/conditionRating} >= 7 ? 'Error' : (${/selectedBridge/conditionRating} >= 5 ? 'Warning' : 'Success')}"/>
+                              </VBox>
+                              <VBox class="bhInfoChip">
+                                <Label text="Posting Status"/>
+                                <ObjectStatus
+                                  text="{= ${/selectedBridge/postingStatus} || '—'}"
+                                  state="{= ${/selectedBridge/postingStatus} === 'Closed' ? 'Error' : (${/selectedBridge/postingStatus} === 'Restricted' ? 'Warning' : 'Success')}"/>
+                              </VBox>
+                            </HBox>
+                          </content>
+                        </Panel>
+
+                        <!-- Tree toolbar -->
+                        <Toolbar class="bhTreeToolbar">
+                          <Title id="treeTitle" text="AS 5100 Element Hierarchy" level="H5"/>
+                          <ToolbarSpacer/>
+                          <MessageStrip
+                            id="elementsLoadingStrip"
+                            text="Loading elements…"
+                            type="Information"
+                            showIcon="true"
+                            showCloseButton="false"
+                            visible="{/elementsLoading}"
+                            class="sapUiSmallMarginEnd"/>
+                          <Button text="Expand All" icon="sap-icon://expand" type="Transparent" press="onExpandAll"/>
+                          <Button text="Collapse All" icon="sap-icon://collapse-group" type="Transparent" press="onCollapseAll"/>
+                        </Toolbar>
+
+                        <!-- The hierarchy tree -->
+                        <Tree
+                          id="hierarchyTree"
+                          mode="None"
+                          noDataText="No elements recorded for this bridge"
+                          class="bhTree"/>
+
+                        <!-- Legend -->
+                        <Panel class="bhLegendPanel" expandable="true" expanded="false" headerText="Condition Rating Legend (AS 5100)">
+                          <content>
+                            <HBox wrap="Wrap" class="sapUiSmallMargin">
+                              <HBox class="bhLegendItem"><core:Icon src="sap-icon://circle-task" color="#1b5e20"/><Text text="1 — Excellent" class="sapUiTinyMarginBegin"/></HBox>
+                              <HBox class="bhLegendItem"><core:Icon src="sap-icon://circle-task" color="#388e3c"/><Text text="2 — Good" class="sapUiTinyMarginBegin"/></HBox>
+                              <HBox class="bhLegendItem"><core:Icon src="sap-icon://circle-task" color="#f57c00"/><Text text="3 — Fair" class="sapUiTinyMarginBegin"/></HBox>
+                              <HBox class="bhLegendItem"><core:Icon src="sap-icon://circle-task" color="#d32f2f"/><Text text="4 — Poor" class="sapUiTinyMarginBegin"/></HBox>
+                              <HBox class="bhLegendItem"><core:Icon src="sap-icon://circle-task" color="#7b1fa2"/><Text text="5 — Critical" class="sapUiTinyMarginBegin"/></HBox>
+                              <HBox class="bhLegendItem sapUiSmallMarginBegin"><core:Icon src="sap-icon://add-document" color="#8c8c8c"/><Text text="Template node — not yet recorded" class="sapUiTinyMarginBegin"/></HBox>
+                            </HBox>
+                          </content>
+                        </Panel>
+
+                      </VBox>
+                    </VBox>
+
+                  </HBox>
+                </content>
+              </IconTabFilter>
+
+              <!-- ═══════════════════════════════════════════
+                   TAB 3 — MAP VIEW
+              ══════════════════════════════════════════════ -->
+              <IconTabFilter key="map" icon="sap-icon://map-2" text="Map">
+                <content>
+                  <VBox class="bhMapWrapper">
+                    <Toolbar class="bhMapToolbar">
+                      <Label text="Condition:"/>
+                      <Select id="mapConditionFilter" change="onMapConditionFilter" width="140px" class="sapUiTinyMarginBegin">
+                        <items>
+                          <core:Item key="all" text="All"/>
+                          <core:Item key="good" text="Good (1–4)"/>
+                          <core:Item key="fair" text="Fair (5–6)"/>
+                          <core:Item key="poor" text="Poor (7–10)"/>
+                        </items>
+                      </Select>
+                      <ToolbarSpacer/>
+                      <HBox class="bhMapLegend" alignItems="Center">
+                        <core:Icon src="sap-icon://circle-task" color="#388e3c" size="0.8rem"/>
+                        <Text text="Good" class="sapUiTinyMarginBegin sapUiSmallMarginEnd"/>
+                        <core:Icon src="sap-icon://circle-task" color="#f57c00" size="0.8rem"/>
+                        <Text text="Fair" class="sapUiTinyMarginBegin sapUiSmallMarginEnd"/>
+                        <core:Icon src="sap-icon://circle-task" color="#d32f2f" size="0.8rem"/>
+                        <Text text="Poor / Critical" class="sapUiTinyMarginBegin"/>
+                      </HBox>
+                    </Toolbar>
+                    <core:HTML
+                      id="mapHtml"
+                      content="&lt;div id='bhMapContainer'&gt;&lt;/div&gt;"
+                      afterRendering="onMapRendered"/>
+                  </VBox>
+                </content>
+              </IconTabFilter>
+
+              <!-- ═══════════════════════════════════════════
+                   TAB 4 — 3D MODEL (FUTURE)
+              ══════════════════════════════════════════════ -->
+              <IconTabFilter key="3d" icon="sap-icon://attachment-3d-format" text="3D Model">
+                <content>
+                  <VBox class="bh3dPlaceholder" alignItems="Center" justifyContent="Center">
+                    <core:Icon src="sap-icon://attachment-3d-format" size="5rem" color="#8c8c8c"/>
+                    <Title text="3D Model Viewer" level="H3" class="sapUiMediumMarginTop"/>
+                    <Text
+                      text="IFC / glTF / CityGML viewer — planned for future release"
+                      class="sapUiSmallMarginTop"
+                      textAlign="Center"/>
+                    <VBox class="bhFutureFeatureList sapUiMediumMarginTop" alignItems="Center">
+                      <HBox class="sapUiTinyMarginBottom" alignItems="Center">
+                        <core:Icon src="sap-icon://future" color="#1473e6"/>
+                        <Text text="IFC 4.x structural model import" class="sapUiTinyMarginBegin"/>
+                      </HBox>
+                      <HBox class="sapUiTinyMarginBottom" alignItems="Center">
+                        <core:Icon src="sap-icon://future" color="#1473e6"/>
+                        <Text text="glTF / BIM 360 asset visualisation" class="sapUiTinyMarginBegin"/>
+                      </HBox>
+                      <HBox class="sapUiTinyMarginBottom" alignItems="Center">
+                        <core:Icon src="sap-icon://future" color="#1473e6"/>
+                        <Text text="Clickable element-to-element-record mapping" class="sapUiTinyMarginBegin"/>
+                      </HBox>
+                      <HBox class="sapUiTinyMarginBottom" alignItems="Center">
+                        <core:Icon src="sap-icon://future" color="#1473e6"/>
+                        <Text text="Condition heat-map overlay on 3D geometry" class="sapUiTinyMarginBegin"/>
+                      </HBox>
+                      <HBox class="sapUiTinyMarginBottom" alignItems="Center">
+                        <core:Icon src="sap-icon://future" color="#1473e6"/>
+                        <Text text="Defect pin annotation on 3D surface" class="sapUiTinyMarginBegin"/>
+                      </HBox>
+                    </VBox>
+                    <MessageStrip
+                      text="This tab is a registered placeholder. When a 3D viewer is integrated it will appear here without changes to any other app."
+                      type="Information"
+                      showIcon="true"
+                      showCloseButton="false"
+                      class="sapUiMediumMarginTop bhFutureMsgStrip"/>
+                  </VBox>
+                </content>
+              </IconTabFilter>
+
+            </items>
+          </IconTabBar>
+        </content>
+      </Page>
+    </pages>
+  </App>
+</mvc:View>
