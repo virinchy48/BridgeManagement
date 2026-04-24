@@ -1,7 +1,7 @@
 {
   "_version": "1.8.0",
   "sap.app": {
-    "id": "BridgeManagement.dashboard",
+    "id": "BridgeManagement.operationsdashboard",
     "type": "application",
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
