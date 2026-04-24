@@ -1,6 +1,6 @@
 _schema-version: 3.3.0
 ID: BridgeManagement
-version: 1.0.0
+version: 1.2.0
 description: "Bridge Management System — NSW standalone"
 parameters:
   enable-parallel-deployments: true
@@ -122,6 +122,10 @@ modules:
         - name: BridgeManagementoperationsrestrictions
           artifacts:
             - operations-restrictions.zip
+          target-path: app/
+        - name: BridgeManagementbridgehierarchy
+          artifacts:
+            - bridge-hierarchy.zip
           target-path: app/
     requires:
       - name: BridgeManagement-auth
@@ -245,6 +249,17 @@ modules:
   - name: BridgeManagementoperationsrestrictions
     type: html5
     path: app/operations/restrictions
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms: []
+
+  - name: BridgeManagementbridgehierarchy
+    type: html5
+    path: app/bridge-hierarchy
     build-parameters:
       build-result: dist
       builder: custom

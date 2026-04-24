@@ -1,6 +1,6 @@
 {
   "name": "BridgeManagement",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "dependencies": {
     "@cap-js/audit-logging": ">=0",
     "@cap-js/hana": "^2",
