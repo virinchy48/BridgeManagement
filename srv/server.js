@@ -1061,20 +1061,45 @@ cds.on('bootstrap', (app) => {
     next()
   }
 
+  app.get('/launchpad/debug', requiresAuthentication, (req, res) => {
+    const user = req.user
+    const secCtx = req.authInfo || req.tokenInfo
+    res.json({
+      userType: user ? user.constructor?.name : null,
+      userId: user?.id,
+      userRoles: user?.roles,
+      userIsAdmin: typeof user?.is === 'function' ? user.is('admin') : 'no is() method',
+      userIsManage: typeof user?.is === 'function' ? user.is('manage') : 'no is() method',
+      userIsView: typeof user?.is === 'function' ? user.is('view') : 'no is() method',
+      hasAuthInfo: !!req.authInfo,
+      hasTokenInfo: !!req.tokenInfo,
+      authInfoType: secCtx ? secCtx.constructor?.name : null,
+      checkLocalScopeAdmin: secCtx && typeof secCtx.checkLocalScope === 'function' ? secCtx.checkLocalScope('admin') : 'no checkLocalScope',
+    })
+  })
+
   // ── Launchpad config — returns role-filtered sandbox tile config ──
   app.get('/launchpad/config', requiresAuthentication, (req, res) => {
-    let scopes = []
-    const auth = req.headers?.authorization || ''
-    if (auth.startsWith('Bearer ')) {
-      try {
-        const payload = JSON.parse(Buffer.from(auth.slice(7).split('.')[1], 'base64').toString())
-        scopes = Array.isArray(payload.scope) ? payload.scope : []
-      } catch { /* ignore malformed token — scopes stay empty */ }
-    } else if (_isDummyAuth && req.user?.roles) {
-      scopes = req.user.roles.map(r => `bridge-management.${r.toLowerCase()}`)
+    let isAdmin = false
+    let hasBmsRole = false
+
+    const user = req.user
+    if (user && typeof user.is === 'function') {
+      // CAP cds.User — roles mapped from XSUAA scopes by stripping xsappname prefix
+      isAdmin    = user.is('admin')
+      hasBmsRole = user.is('admin') || user.is('manage') || user.is('view')
+    } else if (req.authInfo && typeof req.authInfo.checkLocalScope === 'function') {
+      // @sap/xssec security context (fallback)
+      isAdmin    = req.authInfo.checkLocalScope('admin')
+      hasBmsRole = req.authInfo.checkLocalScope('admin') ||
+                   req.authInfo.checkLocalScope('manage') ||
+                   req.authInfo.checkLocalScope('view')
+    } else if (_isDummyAuth && Array.isArray(user?.roles)) {
+      const roles = user.roles.map(r => r.toLowerCase())
+      isAdmin    = roles.includes('admin')
+      hasBmsRole = roles.some(r => ['admin', 'manage', 'view'].includes(r))
     }
-    const isAdmin   = scopes.some(s => s.endsWith('.admin'))
-    const hasBmsRole = scopes.some(s => s.endsWith('.admin') || s.endsWith('.manage') || s.endsWith('.view'))
+
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
     res.json(hasBmsRole ? buildSandboxConfig(isAdmin) : buildEmptySandboxConfig())
   })

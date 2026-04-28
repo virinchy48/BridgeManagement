@@ -15,6 +15,13 @@
       "csrfProtection": false
     },
     {
+      "source": "^/launchpad/debug$",
+      "target": "/launchpad/debug",
+      "destination": "srv-api",
+      "authenticationType": "xsuaa",
+      "csrfProtection": false
+    },
+    {
       "source": "^/appconfig/(.*)$",
       "localDir": ".",
       "authenticationType": "xsuaa"
