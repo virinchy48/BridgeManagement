@@ -1,19 +1,12 @@
 'use strict'
 
-function buildEmptySandboxConfig () {
-  return {
-    services: {
-      LaunchPage: {
-        adapter: { config: { catalogs: [], groups: [] } }
-      },
-      NavTargetResolution: { config: { enableClientSideTargetResolution: true } },
-      ClientSideTargetResolution: { adapter: { config: { inbounds: {} } } }
-    }
-  }
-}
-
 function buildSandboxConfig (isAdmin) {
   const operationsTiles = [
+    {
+      id: 'Dashboard',
+      tileType: 'sap.ushell.ui.tile.StaticTile',
+      properties: { title: 'Dashboard', subtitle: 'Portfolio Insights', icon: 'sap-icon://home', targetURL: '#Dashboard-display' }
+    },
     {
       id: 'Bridges',
       tileType: 'sap.ushell.ui.tile.StaticTile',
@@ -32,6 +25,11 @@ function buildSandboxConfig (isAdmin) {
   ]
 
   const adminGroupTiles = [
+    {
+      id: 'MassUpload',
+      tileType: 'sap.ushell.ui.tile.StaticTile',
+      properties: { title: 'Mass Upload', subtitle: 'CSV & Excel Import', icon: 'sap-icon://upload-to-cloud', targetURL: '#MassUpload-display' }
+    },
     {
       id: 'MassEdit',
       tileType: 'sap.ushell.ui.tile.StaticTile',
@@ -55,6 +53,11 @@ function buildSandboxConfig (isAdmin) {
   }
 
   const inbounds = {
+    'Dashboard-display': {
+      semanticObject: 'Dashboard', action: 'display', title: 'Dashboard',
+      signature: { parameters: {}, additionalParameters: 'allowed' },
+      resolutionResult: { applicationType: 'SAPUI5', additionalInformation: 'SAPUI5.Component=BridgeManagement.dashboard', url: '/BridgeManagementdashboard' }
+    },
     'Bridges-manage': {
       semanticObject: 'Bridges', action: 'manage', title: 'Bridges',
       signature: { parameters: {}, additionalParameters: 'allowed' },
@@ -69,6 +72,11 @@ function buildSandboxConfig (isAdmin) {
       semanticObject: 'Map', action: 'display', title: 'Map View',
       signature: { parameters: {}, additionalParameters: 'allowed' },
       resolutionResult: { applicationType: 'SAPUI5', additionalInformation: 'SAPUI5.Component=BridgeManagement.mapview', url: '/BridgeManagementmapview' }
+    },
+    'MassUpload-display': {
+      semanticObject: 'MassUpload', action: 'display', title: 'Mass Upload',
+      signature: { parameters: {}, additionalParameters: 'allowed' },
+      resolutionResult: { applicationType: 'SAPUI5', additionalInformation: 'SAPUI5.Component=BridgeManagement.massupload', url: '/BridgeManagementmassupload' }
     },
     'MassEdit-manage': {
       semanticObject: 'MassEdit', action: 'manage', title: 'Mass Edit',
@@ -119,4 +127,4 @@ function buildSandboxConfig (isAdmin) {
   }
 }
 
-module.exports = { buildSandboxConfig, buildEmptySandboxConfig }
+module.exports = { buildSandboxConfig }

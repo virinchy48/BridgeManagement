@@ -16,6 +16,6 @@ builder:
       afterTask: generateVersionInfo
       configuration:
         archiveName: mass-upload
-        relativePaths: true
+        relativePaths: false
         additionalFiles:
           - xs-app.json

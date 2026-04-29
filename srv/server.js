@@ -1,7 +1,7 @@
 const cds = require('@sap/cds')
 const express = require('express')
 const { recordActivity } = require('./user-activity')
-const { buildSandboxConfig, buildEmptySandboxConfig } = require('./launchpad')
+const { buildSandboxConfig } = require('./launchpad')
 
 const {
   buildCsvTemplate,
@@ -1080,27 +1080,18 @@ cds.on('bootstrap', (app) => {
   // ── Launchpad config — returns role-filtered sandbox tile config ──
   app.get('/launchpad/config', requiresAuthentication, (req, res) => {
     let isAdmin = false
-    let hasBmsRole = false
 
     const user = req.user
     if (user && typeof user.is === 'function') {
-      // CAP cds.User — roles mapped from XSUAA scopes by stripping xsappname prefix
-      isAdmin    = user.is('admin')
-      hasBmsRole = user.is('admin') || user.is('manage') || user.is('view')
+      isAdmin = user.is('admin')
     } else if (req.authInfo && typeof req.authInfo.checkLocalScope === 'function') {
-      // @sap/xssec security context (fallback)
-      isAdmin    = req.authInfo.checkLocalScope('admin')
-      hasBmsRole = req.authInfo.checkLocalScope('admin') ||
-                   req.authInfo.checkLocalScope('manage') ||
-                   req.authInfo.checkLocalScope('view')
+      isAdmin = req.authInfo.checkLocalScope('admin')
     } else if (_isDummyAuth && Array.isArray(user?.roles)) {
-      const roles = user.roles.map(r => r.toLowerCase())
-      isAdmin    = roles.includes('admin')
-      hasBmsRole = roles.some(r => ['admin', 'manage', 'view'].includes(r))
+      isAdmin = user.roles.map(r => r.toLowerCase()).includes('admin')
     }
 
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
-    res.json(hasBmsRole ? buildSandboxConfig(isAdmin) : buildEmptySandboxConfig())
+    res.json(buildSandboxConfig(isAdmin))
   })
 
   // Track user activity on every API request

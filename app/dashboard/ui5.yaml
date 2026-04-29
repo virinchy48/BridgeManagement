@@ -11,3 +11,11 @@ builder:
     excludes:
       - "/test/**"
       - "/localService/**"
+  customTasks:
+    - name: ui5-task-zipper
+      afterTask: generateVersionInfo
+      configuration:
+        archiveName: dashboard
+        relativePaths: false
+        additionalFiles:
+          - xs-app.json

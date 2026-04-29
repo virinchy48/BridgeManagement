@@ -16,6 +16,6 @@ builder:
       afterTask: generateVersionInfo
       configuration:
         archiveName: bms-admin
-        relativePaths: true
+        relativePaths: false
         additionalFiles:
           - xs-app.json
