@@ -176,8 +176,7 @@ function parseBbox(bbox) {
 
 function isHanaDb() {
   const requires = cds.env.requires || {};
-  return Object.values(requires).some(s => s && (s.kind === 'hana' || s.impl === '@cap-js/hana'))
-    || process.env.NODE_ENV === 'production';
+  return Object.values(requires).some(s => s && (s.kind === 'hana' || s.impl === '@cap-js/hana'));
 }
 
 function sanitizeAttachmentName(fileName) {
@@ -1592,7 +1591,7 @@ cds.on('bootstrap', (app) => {
       )
       return (rows || []).map(r => {
         let cfg = {}
-        try { cfg = JSON.parse(r.config || '{}') } catch (_) {}
+        try { cfg = JSON.parse(r.config || '{}') } catch (_) { /* keep default config */ }
         return { ...r, _cfg: cfg }
       })
     } catch (_) {
@@ -1813,7 +1812,7 @@ cds.on('bootstrap', (app) => {
 
   // ── Admin Bridges attachment API ─────────────────────────────────────────
   const adminBridgeRouter = express.Router()
-  adminBridgeRouter.use(express.json({ limit: '100mb' }))
+  adminBridgeRouter.use(express.json({ limit: '10mb' }))
 
   adminBridgeRouter.get('/bridges/:bridgeId/attachments', async (req, res) => {
     try {
@@ -2126,5 +2125,9 @@ cds.on('served', async () => {
       : results
   }
 })()
+
+cds.once('listening', ({ server }) => {
+  server.keepAliveTimeout = 3 * 60 * 1000
+})
 
 module.exports = cds.server

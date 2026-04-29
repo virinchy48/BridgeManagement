@@ -1,5 +1,6 @@
 const cds = require('@sap/cds')
 const { INSERT, SELECT } = cds.ql
+const LOG = cds.log('bms-audit')
 
 // Fields that carry no business meaning and should not be diff'd
 const SKIP_FIELDS = new Set([
@@ -56,7 +57,7 @@ async function writeChangeLogs(db, { objectType, objectId, objectName, source, b
     await db.run(INSERT.into('bridge.management.ChangeLog').entries(entries))
   } catch (error) {
     // Never break a business transaction because of audit logging
-    console.error('[audit-log] Failed to write change log:', error.message)
+    LOG.error('Failed to write change log:', error.message)
   }
 }
 

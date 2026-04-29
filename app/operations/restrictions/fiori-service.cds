@@ -1,17 +1,17 @@
 using { BridgeManagementService as srv } from '../../../srv/service';
 
 annotate srv.Restrictions with @(
-    UI.SelectionFields: [ status, restrictionType, bridge_ID ],
+    UI.SelectionFields: [ restrictionStatus, restrictionType, bridgeRef ],
     UI.LineItem: [
         { Value: bridgeId,        Label: 'Bridge ID' },
         { Value: bridgeName,      Label: 'Bridge Name' },
         { Value: restrictionType, Label: 'Type' },
-        { Value: value,           Label: 'Value' },
-        { Value: unit,            Label: 'Unit' },
-        { Value: status,          Label: 'Status' },
-        { Value: validFromDate,   Label: 'Valid From' },
-        { Value: validToDate,     Label: 'Valid To' },
-        { Value: isTemporary,     Label: 'Temporary' }
+        { Value: restrictionValue, Label: 'Value' },
+        { Value: restrictionUnit,  Label: 'Unit' },
+        { Value: restrictionStatus, Label: 'Status' },
+        { Value: effectiveFrom,   Label: 'Valid From' },
+        { Value: effectiveTo,     Label: 'Valid To' },
+        { Value: temporary,       Label: 'Temporary' }
     ],
     UI.HeaderInfo: {
         TypeName: 'Restriction', TypeNamePlural: 'Restrictions',
@@ -24,18 +24,18 @@ annotate srv.Restrictions with @(
         { $Type: 'UI.ReferenceFacet', Label: 'Admin',     Target: '@UI.FieldGroup#Admin' }
     ],
     UI.FieldGroup#General: { Data: [
-        { Value: bridge_ID }, { Value: bridgeId }, { Value: bridgeName },
-        { Value: restrictionType }, { Value: value }, { Value: unit },
-        { Value: status }, { Value: permitRequired }, { Value: directionApplied },
-        { Value: gazetteRef }, { Value: notes }
+        { Value: bridge }, { Value: bridgeId }, { Value: bridgeName },
+        { Value: restrictionType }, { Value: restrictionValue }, { Value: restrictionUnit },
+        { Value: restrictionStatus }, { Value: permitRequired }, { Value: direction },
+        { Value: legalReference }, { Value: remarks }
     ]},
     UI.FieldGroup#Validity: { Data: [
-        { Value: validFromDate }, { Value: validToDate },
-        { Value: approvedBy }, { Value: approvalDate }, { Value: reviewDueDate }
+        { Value: effectiveFrom }, { Value: effectiveTo },
+        { Value: approvedBy }, { Value: approvalReference }, { Value: issuingAuthority }
     ]},
     UI.FieldGroup#Temporary: { Data: [
-        { Value: isTemporary }, { Value: temporaryFromDate },
-        { Value: temporaryToDate }, { Value: temporaryReason }
+        { Value: temporary }, { Value: temporaryFrom },
+        { Value: temporaryTo }, { Value: temporaryReason }
     ]},
     UI.FieldGroup#Admin: { Data: [
         { Value: createdBy }, { Value: createdAt }, { Value: modifiedBy }, { Value: modifiedAt }

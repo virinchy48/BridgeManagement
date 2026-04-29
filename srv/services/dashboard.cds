@@ -2,10 +2,12 @@ using { BridgeManagementService } from '../service';
 
 extend service BridgeManagementService with {
     function getNetworkKPIs() returns {
-        totalBridges: Integer; activeBridges: Integer;
-        restrictedBridges: Integer; closedBridges: Integer;
-        criticalCondition: Integer; highPriority: Integer;
-        overdueInspections: Integer; activeRestrictions: Integer
+        totalBridges:       Integer;
+        restrictedBridges:  Integer;
+        closedBridges:      Integer;
+        criticalCondition:  Integer;
+        highPriority:       Integer;
+        activeRestrictions: Integer
     };
     function getConditionDistribution(state: String, region: String) returns array of {
         condition: String; count: Integer

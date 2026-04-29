@@ -1,19 +1,21 @@
 using { BridgeManagementService } from './service';
 
-annotate BridgeManagementService with @requires: ['Admin','BridgeManager','Inspector','Operator','Viewer'];
+annotate BridgeManagementService with @requires: ['view', 'manage', 'admin'];
 
 annotate BridgeManagementService.Bridges with @restrict: [
-    { grant: ['READ'],                              to: ['Admin','BridgeManager','Inspector','Operator','Viewer'] },
-    { grant: ['CREATE','UPDATE','DELETE'],          to: ['Admin','BridgeManager'] },
-    { grant: ['changeCondition','closeForTraffic','reopenForTraffic','addRestriction'], to: ['Admin','BridgeManager'] }
+    { grant: ['READ'],                                                               to: ['view','manage','admin'] },
+    { grant: ['CREATE','UPDATE'],                                                    to: ['manage','admin'] },
+    { grant: ['DELETE'],                                                             to: ['admin'] },
+    { grant: ['changeCondition','closeForTraffic','reopenForTraffic','addRestriction'], to: ['manage','admin'] }
 ];
 
 annotate BridgeManagementService.Restrictions with @restrict: [
-    { grant: ['READ'],                              to: ['Admin','BridgeManager','Inspector','Operator','Viewer'] },
-    { grant: ['CREATE','UPDATE','DELETE'],          to: ['Admin','BridgeManager','Inspector'] },
-    { grant: ['disableRestriction','enableRestriction','createTemporaryRestriction'], to: ['Admin','BridgeManager','Inspector'] }
+    { grant: ['READ'],                                                                   to: ['view','manage','admin'] },
+    { grant: ['CREATE','UPDATE'],                                                        to: ['manage','admin'] },
+    { grant: ['DELETE'],                                                                 to: ['admin'] },
+    { grant: ['disableRestriction','enableRestriction','createTemporaryRestriction'],    to: ['manage','admin'] }
 ];
 
-annotate BridgeManagementService.Lookups           with @restrict: [{ grant: '*', to: 'Admin' }];
-annotate BridgeManagementService.AttributeDefinitions with @restrict: [{ grant: '*', to: 'Admin' }];
-annotate BridgeManagementService.RoleConfigs       with @restrict: [{ grant: '*', to: 'Admin' }];
+annotate BridgeManagementService.Lookups            with @restrict: [{ grant: '*', to: 'admin' }];
+annotate BridgeManagementService.AttributeDefinitions with @restrict: [{ grant: '*', to: 'admin' }];
+annotate BridgeManagementService.RoleConfigs        with @restrict: [{ grant: '*', to: 'admin' }];

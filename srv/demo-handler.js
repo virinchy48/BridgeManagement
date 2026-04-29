@@ -1,5 +1,7 @@
 "use strict";
 
+const cds = require("@sap/cds");
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Demo Data Handler — Real NSW Bridge Dataset
 // Loads / clears a curated set of real NSW bridges for demonstration purposes.

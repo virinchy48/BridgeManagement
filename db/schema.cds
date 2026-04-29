@@ -111,14 +111,14 @@ entity Restrictions : cuid, managed {
   widthLimit          : Decimal(9,2);
   lengthLimit         : Decimal(9,2);
   speedLimit          : Integer @assert.range: [0, 130];
-  permitRequired      : Boolean;
-  escortRequired      : Boolean;
-  temporary           : Boolean;
+  permitRequired      : Boolean default false;
+  escortRequired      : Boolean default false;
+  temporary           : Boolean default false;
   active              : Boolean default true;
   effectiveFrom       : Date;
   effectiveTo         : Date;
   approvedBy          : String(111);
-  direction           : String(40);
+  direction           : String(40) default 'Both';
   enforcementAuthority : String(111);
   temporaryFrom       : Date;
   temporaryTo         : Date;
@@ -475,8 +475,17 @@ entity ReferenceLayerConfig : cuid, managed {
   maxZoom          : Integer default 19;
 }
 
-// --------------------------------------------------------------------------------
-// Temporary workaround for this situation:
-// - Fiori apps annotate Bridges with @fiori.draft.enabled.
-// - Because of that .csv data has to eagerly fill in ID_texts column.
-annotate Bridges with @fiori.draft.enabled;
+annotate Bridges with { bridgeId @assert.unique };
+
+annotate Bridges with @(cds.persistence.indexes: [
+    { name: 'idx_bms_bridge_bridgeId',      columns: ['bridgeId'] },
+    { name: 'idx_bms_bridge_state',         columns: ['state'] },
+    { name: 'idx_bms_bridge_condition',     columns: ['condition'] },
+    { name: 'idx_bms_bridge_postingStatus', columns: ['postingStatus'] }
+]);
+
+annotate Restrictions with @(cds.persistence.indexes: [
+    { name: 'idx_bms_restriction_bridge', columns: ['bridge_ID'] },
+    { name: 'idx_bms_restriction_status', columns: ['restrictionStatus'] },
+    { name: 'idx_bms_restriction_type',   columns: ['restrictionType'] }
+]);

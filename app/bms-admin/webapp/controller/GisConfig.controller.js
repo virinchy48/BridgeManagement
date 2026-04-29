@@ -77,6 +77,7 @@ sap.ui.define([
     },
 
     onSave: function () {
+      var self = this;
       var model = this.getView().getModel("config");
       var data = JSON.parse(JSON.stringify(model.getData()));
       data.customWmsLayers = JSON.stringify(data.customWmsLayers || []);

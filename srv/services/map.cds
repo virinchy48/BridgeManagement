@@ -1,12 +1,12 @@
-using nhvr from '../../db/schema';
+using { bridge.management as bms } from '../../db/schema';
 using { BridgeManagementService } from '../service';
 
 extend service BridgeManagementService with {
     @readonly
-    @restrict: [{ grant: ['READ'], to: 'authenticated-user' }]
-    entity BridgeLocations as select from nhvr.Bridge {
-        key ID, bridgeId, name, latitude, longitude,
-        condition, postingStatus, state, region, isActive
+    @restrict: [{ grant: ['READ'], to: ['view','manage','admin'] }]
+    entity BridgeLocations as select from bms.Bridges {
+        key ID, bridgeId, bridgeName, latitude, longitude,
+        condition, postingStatus, state, region
     } where latitude is not null and longitude is not null;
 
     action geocodeAddress(address: String)

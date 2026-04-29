@@ -1,5 +1,6 @@
 const cds = require('@sap/cds')
 const { INSERT, UPDATE, SELECT } = cds.ql
+const LOG = cds.log('bms-activity')
 
 async function recordActivity(userId, displayName, path) {
   if (!userId || userId === 'system' || userId === 'anonymous') return
@@ -32,7 +33,7 @@ async function recordActivity(userId, displayName, path) {
     }
   } catch (error) {
     // Never block the request
-    console.error('[user-activity]', error.message)
+    LOG.warn('user-activity', error.message)
   }
 }
 

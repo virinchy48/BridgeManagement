@@ -10,7 +10,10 @@
       "version": "1.0.0"
     },
     "dataSources": {
-      "MassUploadService": { "uri": "/mass-upload/api/", "type": "HTTP" }
+      "MassUploadService": {
+        "uri": "/mass-upload/api/",
+        "type": "HTTP"
+      }
     },
     "crossNavigation": {
       "inbounds": {
@@ -52,7 +55,13 @@
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
-        "uri": "i18n/i18n.properties"
+        "uri": "i18n/i18n.properties",
+        "settings": {
+          "supportedLocales": [
+            ""
+          ],
+          "fallbackLocale": ""
+        }
       }
     },
     "resources": {

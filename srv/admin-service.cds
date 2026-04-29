@@ -233,3 +233,6 @@ service AdminService {
   @requires: 'admin'
   action clearDemoData() returns String;
 }
+
+annotate AdminService.Bridges     with { modifiedAt @odata.etag }
+annotate AdminService.Restrictions with { modifiedAt @odata.etag }

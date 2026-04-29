@@ -1,25 +1,38 @@
 using nhvr from '../../db/schema';
+using { bridge.management as bms } from '../../db/schema';
 using { BridgeManagementService } from '../service';
 
 extend service BridgeManagementService with {
-    @restrict: [{ grant: '*', to: 'Admin' }]
+    @restrict: [{ grant: '*', to: 'admin' }]
     entity Lookups as projection on nhvr.Lookup;
 
-    @restrict: [{ grant: '*', to: 'Admin' }]
-    entity AttributeDefinitions as projection on nhvr.AttributeDefinition {
-        *, validValues: redirected to AttributeValidValues
+    @restrict: [{ grant: '*', to: 'admin' }]
+    entity AttributeDefinitions as projection on bms.AttributeDefinitions {
+        *, allowedValues: redirected to AttributeAllowedValues
     };
 
     @cds.redirection.target: true
-    @restrict: [{ grant: '*', to: 'Admin' }]
-    entity AttributeValidValues as projection on nhvr.AttributeValidValue;
+    @restrict: [{ grant: '*', to: 'admin' }]
+    entity AttributeAllowedValues as projection on bms.AttributeAllowedValues;
 
-    @restrict: [{ grant: '*', to: 'Admin' }]
+    @restrict: [{ grant: '*', to: 'admin' }]
     entity RoleConfigs as projection on nhvr.RoleConfig;
 
     @readonly
-    @restrict: [{ grant: ['READ'], to: ['Admin','BridgeManager'] }]
-    entity AuditLogs as projection on nhvr.AuditLog;
+    @restrict: [{ grant: ['READ'], to: ['manage','admin'] }]
+    entity AuditLogs as projection on bms.ChangeLog {
+        key ID,
+        changedAt  as timestamp,
+        changedBy  as userId,
+        objectType as entity,
+        objectId   as entityId,
+        objectName as entityName,
+        fieldName  as action,
+        oldValue,
+        newValue,
+        changeSource,
+        batchId
+    };
 
     action saveRoleConfig(configs: array of {
         role: String; featureKey: String; featureType: String;

@@ -669,13 +669,13 @@ sap.ui.define([
         spanLength: spanLength,
         spanLengthText: spanLength == null ? "-" : spanLength.toFixed(1) + " m",
         lastInspectionDate: bridge.lastInspectionDate || null,
-        nhvrAssessed: Boolean(bridge.nhvrAssessed),
-        nhvrAssessedLabel: Boolean(bridge.nhvrAssessed) ? this._text("statusAssessed") : this._text("statusNotAssessed"),
+        nhvrAssessed: !!bridge.nhvrAssessed,
+        nhvrAssessedLabel: bridge.nhvrAssessed ? this._text("statusAssessed") : this._text("statusNotAssessed"),
         scourRisk: bridge.scourRisk || null,
         scourRiskLabel: this._text("statusScour") + ": " + (bridge.scourRisk || "-"),
         vehicleClass: bridge.vehicleClass || null,
-        freightRoute: Boolean(bridge.freightRoute),
-        freightRouteLabel: Boolean(bridge.freightRoute) ? this._text("statusFreight") : "No Freight Route",
+        freightRoute: !!bridge.freightRoute,
+        freightRouteLabel: bridge.freightRoute ? this._text("statusFreight") : "No Freight Route",
         overMassRoute: Boolean(bridge.overMassRoute),
         hmlApproved: Boolean(bridge.hmlApproved),
         bDoubleApproved: Boolean(bridge.bDoubleApproved),
@@ -1614,7 +1614,7 @@ sap.ui.define([
     // ─── GIS Config ────────────────────────────────────────────────────────────
 
     _loadGisConfig: function () {
-      return fetch("/map/api/config")
+      fetch("/map/api/config")
         .then(function (res) { return res.ok ? res.json() : Promise.reject(res.statusText); })
         .then(function (cfg) {
           this._gisConfig = cfg;
@@ -1881,8 +1881,8 @@ sap.ui.define([
               alignItems: "Center",
               class: "nhvrHelpItemHeader",
               items: [
-                new Icon({ src: t.icon, size: "1rem", color: t.color || "#0a6ed1", class: "nhvrHelpItemIcon" }),
-                new Title({ text: t.title, level: "H6", class: "nhvrHelpItemTitle" })
+                new Icon({ src: helpTopic.icon, size: "1rem", color: helpTopic.color || "#0a6ed1", class: "nhvrHelpItemIcon" }),
+                new Title({ text: helpTopic.title, level: "H6", class: "nhvrHelpItemTitle" })
               ]
             }),
             oDetailRows

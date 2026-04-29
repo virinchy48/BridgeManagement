@@ -101,6 +101,14 @@ modules:
           artifacts:
             - bms-admin.zip
           target-path: app/
+        - name: BridgeManagementdashboard
+          artifacts:
+            - dashboard.zip
+          target-path: app/
+        - name: BridgeManagementmassupload
+          artifacts:
+            - mass-upload.zip
+          target-path: app/
     requires:
       - name: BridgeManagement-auth
       - name: srv-api
@@ -154,6 +162,28 @@ modules:
         - npm run build
       supported-platforms: []
 
+  - name: BridgeManagementdashboard
+    type: html5
+    path: app/dashboard
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms: []
+
+  - name: BridgeManagementmassupload
+    type: html5
+    path: app/mass-upload
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms: []
+
   - name: BridgeManagementbmsadmin
     type: html5
     path: app/bms-admin
@@ -193,18 +223,14 @@ resources:
           redirect-uris:
             - https://*~{app-api/app-uri}/**
         role-collections:
-          - name: "BMS Admin (${org}-${space})"
+          - name: "BMS Administrator (${org}-${space})"
             description: "Full BMS administration"
             role-template-references:
-              - "$XSAPPNAME.admin"
-          - name: "BMS Bridge Manager (${org}-${space})"
+              - "$XSAPPNAME.BMS_ADMIN"
+          - name: "BMS Manager (${org}-${space})"
             description: "Bridge register management"
             role-template-references:
-              - "$XSAPPNAME.BMS_BRIDGE_MANAGER"
-          - name: "BMS Operator (${org}-${space})"
-            description: "Bridge operations"
-            role-template-references:
-              - "$XSAPPNAME.BMS_OPERATOR"
+              - "$XSAPPNAME.BMS_MANAGER"
           - name: "BMS Viewer (${org}-${space})"
             description: "Read-only access"
             role-template-references:

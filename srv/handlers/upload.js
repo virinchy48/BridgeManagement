@@ -2,28 +2,26 @@ const cds  = require('@sap/cds')
 const path = require('path')
 const LOG  = cds.log('bms-upload')
 
-// ─── File validation constants ────────────────────────────────────────────────
 const ALLOWED_EXTENSIONS     = ['.xlsx', '.csv', '.xls']
-const MAX_FILE_SIZE_BYTES    = 50 * 1024 * 1024    // 50 MB raw file
-const MAX_DECOMPRESSED_BYTES = 200 * 1024 * 1024  // 200 MB decompressed (ZIP bomb protection)
-const MAX_ROWS               = 50000               // Max rows per upload
+const MAX_FILE_SIZE_BYTES    = 50 * 1024 * 1024
+const MAX_DECOMPRESSED_BYTES = 200 * 1024 * 1024
+const MAX_ROWS               = 50000
 
-// All bridge fields written by mass upload (maps CSV column → entity field)
 const BRIDGE_DOWNLOAD_HEADERS = [
-    'bridgeId','name','state','region','lga','suburb',
-    'latitude','longitude','structureType','material',
-    'yearBuilt','yearRebuilt','spanLengthM','totalLengthM','deckWidthM','clearanceHeightM',
-    'numberOfSpans','numberOfLanes','designLoad','designLoadCode',
-    'condition','conditionRating','conditionRatingTfnsw','conditionRatingDate',
-    'postingStatus','postingStatusReason',
-    'assetOwner','maintenanceAuthority',
-    'scourRisk','scourRiskLevel','floodImpacted','floodImmunityAri',
-    'hmlApproved','bdoubleApproved','freightRoute','overMassRoute',
-    'nhvrRouteAssessed','pbsApprovalClass','networkClassification',
-    'importanceLevel','seismicZone',
-    'aadt','heavyVehiclePercentage',
-    'highPriorityAsset','remarks','isActive',
-    'dataSource','sourceReferenceUrl','openDataReference','geoJson'
+    'bridgeId', 'bridgeName', 'state', 'region', 'lga',
+    'latitude', 'longitude', 'structureType', 'material',
+    'yearBuilt', 'spanLength', 'totalLength', 'deckWidth', 'clearanceHeight',
+    'spanCount', 'numberOfLanes', 'designLoad',
+    'condition', 'conditionRating',
+    'postingStatus',
+    'assetOwner', 'managingAuthority',
+    'scourRisk', 'floodImpacted', 'floodImmunityAriYears',
+    'hmlApproved', 'bDoubleApproved', 'freightRoute', 'overMassRoute',
+    'nhvrAssessed', 'pbsApprovalClass',
+    'importanceLevel', 'seismicZone',
+    'averageDailyTraffic', 'heavyVehiclePercent',
+    'highPriorityAsset', 'remarks',
+    'dataSource', 'sourceReferenceUrl', 'openDataReference', 'geoJson'
 ]
 
 function validateUploadFile (fileName, fileContent) {
@@ -41,337 +39,267 @@ function validateUploadFile (fileName, fileContent) {
 }
 
 function parseCSV (csv) {
-    let lines = csv.split('\n').filter(l => l.trim())
+    const lines = csv.split('\n').filter(line => line.trim())
     if (lines.length < 2) return { headers: [], rows: [] }
-    let headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
-    let rows = lines.slice(1).map(line => {
-        let cols = [], cur = '', inQ = false
-        for (let ch of line) {
-            if (ch === '"') { inQ = !inQ }
-            else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = '' }
-            else cur += ch
+    const headers = lines[0].split(',').map(header => header.trim().replace(/^"|"$/g, ''))
+    const rows = lines.slice(1).map(line => {
+        const cols = []
+        let current = '', insideQuotes = false
+        for (const ch of line) {
+            if (ch === '"') { insideQuotes = !insideQuotes }
+            else if (ch === ',' && !insideQuotes) { cols.push(current.trim()); current = '' }
+            else current += ch
         }
-        cols.push(cur.trim())
-        return Object.fromEntries(headers.map((h, i) => [h, cols[i] ?? '']))
+        cols.push(current.trim())
+        return Object.fromEntries(headers.map((header, colIndex) => [header, cols[colIndex] ?? '']))
     })
     return { headers, rows }
 }
 
-// Parse helpers — return null for empty/invalid values
-const str  = v => (v && v.trim()) ? v.trim() : null
-const int  = v => (v && v.trim()) ? parseInt(v,  10)  : null
-const dec  = v => (v && v.trim()) ? parseFloat(v)     : null
-const bool = v => v === 'true' ? true : v === 'false' ? false : null
-const date = v => (v && v.trim()) ? v.trim() : null
+const parseString  = rawValue => (rawValue && rawValue.trim()) ? rawValue.trim() : null
+const parseInteger = rawValue => (rawValue && rawValue.trim()) ? parseInt(rawValue, 10) : null
+const parseDecimal = rawValue => (rawValue && rawValue.trim()) ? parseFloat(rawValue) : null
+const parseBoolean = rawValue => rawValue === 'true' || rawValue === 'TRUE' || rawValue === 'yes' || rawValue === '1'
+    ? true
+    : rawValue === 'false' || rawValue === 'FALSE' || rawValue === 'no' || rawValue === '0'
+        ? false
+        : null
+const parseDate    = rawValue => (rawValue && rawValue.trim()) ? rawValue.trim() : null
 
 module.exports = function registerUploadHandlers (srv, { logAudit }) {
 
     // ── massUploadBridges ────────────────────────────────────────────────────
     srv.on('massUploadBridges', async req => {
         try {
-            let { csvData, fileName } = req.data
+            const { csvData, fileName } = req.data
             if (!csvData) return req.error(400, 'csvData is required')
 
             validateUploadFile(fileName || 'upload.csv', csvData)
 
-            let { rows } = parseCSV(csvData)
+            const { rows } = parseCSV(csvData)
             if (rows.length > MAX_ROWS) {
-                return req.error(400,
-                    `Too many rows: ${rows.length}. Maximum ${MAX_ROWS} rows per upload.`)
+                return req.error(400, `Too many rows: ${rows.length}. Maximum ${MAX_ROWS} rows per upload.`)
             }
 
-            let succeeded = 0, failed = 0, errors = []
-            let tx = cds.tx(req)
+            let succeeded = 0, failed = 0
+            const errors = []
+            const tx = cds.tx(req)
             try {
-                for (let [i, row] of rows.entries()) {
+                const maxIdResult = await tx.run(
+                    SELECT.one.from('bridge.management.Bridges').columns(['max(ID) as maxID'])
+                )
+                let nextBridgeID = (maxIdResult?.maxID || 0) + 1
+
+                for (const [rowIndex, row] of rows.entries()) {
                     try {
-                        if (!str(row.bridgeId) || !str(row.name)) {
-                            failed++; errors.push(`Row ${i+2}: bridgeId and name are required`); continue
+                        if (!parseString(row.bridgeId) || !parseString(row.bridgeName)) {
+                            failed++
+                            errors.push(`Row ${rowIndex + 2}: bridgeId and bridgeName are required`)
+                            continue
                         }
 
-                        let entry = {
-                            // ── Identity (mandatory)
-                            bridgeId:   str(row.bridgeId),
-                            name:       str(row.name),
-                            // ── Location
-                            state:      str(row.state)  || 'NSW',
-                            region:     str(row.region),
-                            lga:        str(row.lga),
-                            suburb:     str(row.suburb),
-                            latitude:   dec(row.latitude),
-                            longitude:  dec(row.longitude),
-                            // ── Structure
-                            structureType:    str(row.structureType),
-                            material:         str(row.material),
-                            yearBuilt:        int(row.yearBuilt),
-                            yearRebuilt:      int(row.yearRebuilt),
-                            spanLengthM:      dec(row.spanLengthM),
-                            totalLengthM:     dec(row.totalLengthM),
-                            deckWidthM:       dec(row.deckWidthM),
-                            clearanceHeightM: dec(row.clearanceHeightM),
-                            numberOfSpans:    int(row.numberOfSpans),
-                            numberOfLanes:    int(row.numberOfLanes),
-                            designLoad:       str(row.designLoad),
-                            designLoadCode:   str(row.designLoadCode),
-                            // ── Condition
-                            condition:             str(row.condition)   || 'GOOD',
-                            conditionRating:       int(row.conditionRating),
-                            conditionRatingTfnsw:  int(row.conditionRatingTfnsw),
-                            conditionRatingDate:   date(row.conditionRatingDate),
-                            conditionRatingNotes:  str(row.conditionRatingNotes),
-                            conditionTrendCurrent: str(row.conditionTrendCurrent),
-                            criticalDefectFlag:    int(row.conditionRatingTfnsw) === 5 ? true : false,
-                            // ── Status
-                            postingStatus:       str(row.postingStatus)       || 'UNRESTRICTED',
-                            postingStatusReason: str(row.postingStatusReason),
-                            // ── Ownership
-                            assetOwner:           str(row.assetOwner),
-                            maintenanceAuthority: str(row.maintenanceAuthority),
-                            // ── Scour & Flood
-                            scourRisk:          str(row.scourRisk),
-                            scourRiskLevel:     str(row.scourRiskLevel),
-                            floodImpacted:      bool(row.floodImpacted) ?? false,
-                            floodImmunityAri:   int(row.floodImmunityAri),
-                            // ── NHVR/HML flags
-                            hmlApproved:         bool(row.hmlApproved)     ?? false,
-                            bdoubleApproved:     bool(row.bdoubleApproved) ?? false,
-                            freightRoute:        bool(row.freightRoute)    ?? false,
-                            overMassRoute:       bool(row.overMassRoute)   ?? false,
-                            nhvrRouteAssessed:   bool(row.nhvrRouteAssessed) ?? false,
-                            pbsApprovalClass:    str(row.pbsApprovalClass),
-                            networkClassification: str(row.networkClassification),
-                            // ── Standards
-                            importanceLevel:  str(row.importanceLevel),
-                            seismicZone:      str(row.seismicZone),
-                            // ── Traffic
-                            aadt:                  int(row.aadt),
-                            heavyVehiclePercentage: dec(row.heavyVehiclePercentage),
-                            // ── Inspection scheduling
-                            lastInspectionDate:      date(row.lastInspectionDate),
-                            lastInspectionType:      str(row.lastInspectionType),
-                            nextInspectionDate:      date(row.nextInspectionDate),
-                            inspectionFrequencyYears: int(row.inspectionFrequencyYears),
-                            // ── Gazette
-                            gazetteNumber:          str(row.gazetteRef || row.gazetteNumber),
-                            gazetteEffectiveDate:   date(row.gazetteEffectiveDate),
-                            gazetteExpiryDate:      date(row.gazetteExpiryDate),
-                            // ── NHVR PBS approval
-                            pbsApprovalDate:   date(row.pbsApprovalDate),
-                            pbsApprovalExpiry: date(row.pbsApprovalExpiry),
-                            hmlApprovalDate:   date(row.hmlApprovalDate),
-                            hmlApprovalExpiry: date(row.hmlApprovalExpiry),
-                            // ── Data provenance
-                            remarks:            str(row.remarks),
-                            highPriorityAsset:  bool(row.highPriorityAsset) ?? false,
-                            // GeoJSON for map display — stored in remarks extension or custom field if available
-                            // ── Lifecycle
-                            isActive:  bool(row.isActive) ?? true,
-                            isDeleted: false,
-                            version:   1,
+                        const entry = {
+                            bridgeId:             parseString(row.bridgeId),
+                            bridgeName:           parseString(row.bridgeName),
+                            state:                parseString(row.state)  || 'NSW',
+                            region:               parseString(row.region),
+                            lga:                  parseString(row.lga),
+                            latitude:             parseDecimal(row.latitude),
+                            longitude:            parseDecimal(row.longitude),
+                            structureType:        parseString(row.structureType),
+                            material:             parseString(row.material),
+                            yearBuilt:            parseInteger(row.yearBuilt),
+                            spanLength:           parseDecimal(row.spanLength),
+                            totalLength:          parseDecimal(row.totalLength),
+                            deckWidth:            parseDecimal(row.deckWidth),
+                            clearanceHeight:      parseDecimal(row.clearanceHeight),
+                            spanCount:            parseInteger(row.spanCount),
+                            numberOfLanes:        parseInteger(row.numberOfLanes),
+                            designLoad:           parseString(row.designLoad),
+                            condition:            parseString(row.condition)      || 'GOOD',
+                            conditionRating:      parseInteger(row.conditionRating),
+                            postingStatus:        parseString(row.postingStatus)  || 'UNRESTRICTED',
+                            assetOwner:           parseString(row.assetOwner),
+                            managingAuthority:    parseString(row.managingAuthority),
+                            scourRisk:            parseString(row.scourRisk),
+                            floodImpacted:        parseBoolean(row.floodImpacted) ?? false,
+                            floodImmunityAriYears: parseInteger(row.floodImmunityAriYears),
+                            hmlApproved:          parseBoolean(row.hmlApproved)      ?? false,
+                            bDoubleApproved:      parseBoolean(row.bDoubleApproved)  ?? false,
+                            freightRoute:         parseBoolean(row.freightRoute)     ?? false,
+                            overMassRoute:        parseBoolean(row.overMassRoute)    ?? false,
+                            nhvrAssessed:         parseBoolean(row.nhvrAssessed)     ?? false,
+                            pbsApprovalClass:     parseString(row.pbsApprovalClass),
+                            importanceLevel:      parseInteger(row.importanceLevel),
+                            seismicZone:          parseString(row.seismicZone),
+                            averageDailyTraffic:  parseInteger(row.averageDailyTraffic),
+                            heavyVehiclePercent:  parseDecimal(row.heavyVehiclePercent),
+                            highPriorityAsset:    parseBoolean(row.highPriorityAsset) ?? false,
+                            loadRating:           parseDecimal(row.loadRating),
+                            remarks:              parseString(row.remarks),
+                            dataSource:           parseString(row.dataSource),
+                            sourceReferenceUrl:   parseString(row.sourceReferenceUrl),
+                            openDataReference:    parseString(row.openDataReference),
+                            geoJson:              parseString(row.geoJson),
+                            lastInspectionDate:   parseDate(row.lastInspectionDate),
+                            gazetteReference:     parseString(row.gazetteReference),
+                            nhvrReferenceUrl:     parseString(row.nhvrReferenceUrl),
                         }
 
-                        // Remove null values so CAP uses entity defaults where set
-                        Object.keys(entry).forEach(k => { if (entry[k] === null) delete entry[k] })
+                        Object.keys(entry).forEach(fieldName => {
+                            if (entry[fieldName] === null) delete entry[fieldName]
+                        })
 
-                        let exists = await tx.run(
-                            SELECT.one.from('nhvr.Bridge').where({ bridgeId: entry.bridgeId })
+                        const existingBridge = await tx.run(
+                            SELECT.one.from('bridge.management.Bridges').where({ bridgeId: entry.bridgeId })
                         )
-                        if (exists) {
-                            // Idempotent update — increment version for optimistic lock
-                            delete entry.version
+                        if (existingBridge) {
                             await tx.run(
-                                UPDATE('nhvr.Bridge').set({ ...entry, version: (exists.version || 1) + 1 })
-                                    .where({ bridgeId: entry.bridgeId })
+                                UPDATE('bridge.management.Bridges').set(entry).where({ bridgeId: entry.bridgeId })
                             )
                         } else {
-                            await tx.run(INSERT.into('nhvr.Bridge').entries(entry))
+                            await tx.run(
+                                INSERT.into('bridge.management.Bridges').entries({ ID: nextBridgeID++, ...entry })
+                            )
                         }
                         succeeded++
-                    } catch (e) { failed++; errors.push(`Row ${i+2} (${row.bridgeId}): ${e.message}`) }
+                    } catch (rowError) { failed++; errors.push(`Row ${rowIndex + 2} (${row.bridgeId}): ${rowError.message}`) }
                 }
                 await tx.commit()
-            } catch (e) {
+            } catch (txError) {
                 await tx.rollback()
-                return req.error(500, `Upload failed: ${e.message}`)
+                return req.error(500, `Upload failed: ${txError.message}`)
             }
             return { processed: rows.length, succeeded, failed, errors: errors.join('\n') }
-        } catch (e) {
-            if (e.code === 400) return req.error(400, e.message)
-            LOG.error('massUploadBridges unexpected error', e)
-            return req.error(500, `Upload failed: ${e.message}`)
+        } catch (uploadError) {
+            if (uploadError.code === 400) return req.error(400, uploadError.message)
+            LOG.error('massUploadBridges unexpected error', uploadError)
+            return req.error(500, `Upload failed: ${uploadError.message}`)
         }
     })
 
     // ── massUploadRestrictions ───────────────────────────────────────────────
     srv.on('massUploadRestrictions', async req => {
         try {
-            let { csvData, fileName } = req.data
+            const { csvData, fileName } = req.data
             if (!csvData) return req.error(400, 'csvData is required')
 
             validateUploadFile(fileName || 'upload.csv', csvData)
 
-            let { rows } = parseCSV(csvData)
+            const { rows } = parseCSV(csvData)
             if (rows.length > MAX_ROWS) {
-                return req.error(400,
-                    `Too many rows: ${rows.length}. Maximum ${MAX_ROWS} rows per upload.`)
+                return req.error(400, `Too many rows: ${rows.length}. Maximum ${MAX_ROWS} rows per upload.`)
             }
 
-            let succeeded = 0, failed = 0, errors = []
-            // Cache bridgeId→UUID lookups to avoid repeated DB hits
-            let bridgeIdCache = new Map()
-            let tx = cds.tx(req)
+            let succeeded = 0, failed = 0
+            const errors = []
+            const bridgeIntegerIdCache = new Map()
+            const tx = cds.tx(req)
             try {
-                for (let [i, row] of rows.entries()) {
+                for (const [rowIndex, row] of rows.entries()) {
                     try {
-                        if (!str(row.restrictionType) || !str(row.value) || !str(row.unit)) {
+                        if (!parseString(row.restrictionType) || !parseString(row.restrictionValue) || !parseString(row.restrictionUnit)) {
                             failed++
-                            errors.push(`Row ${i+2}: restrictionType, value, unit are required`)
+                            errors.push(`Row ${rowIndex + 2}: restrictionType, restrictionValue, restrictionUnit are required`)
                             continue
                         }
 
-                        // Resolve bridge FK: accept either bridge_ID (UUID) or bridgeRef (bridgeId string)
-                        let bridgeUUID = str(row.bridge_ID) || null
-                        if (!bridgeUUID && str(row.bridgeRef)) {
-                            let ref = str(row.bridgeRef)
-                            if (!bridgeIdCache.has(ref)) {
-                                let b = await tx.run(
-                                    SELECT.one('ID').from('nhvr.Bridge').where({ bridgeId: ref })
+                        let bridgeIntegerID = parseInteger(row.bridge_ID) || null
+                        if (!bridgeIntegerID && parseString(row.bridgeRef)) {
+                            const bridgeRef = parseString(row.bridgeRef)
+                            if (!bridgeIntegerIdCache.has(bridgeRef)) {
+                                const matchedBridge = await tx.run(
+                                    SELECT.one('ID').from('bridge.management.Bridges').where({ bridgeId: bridgeRef })
                                 )
-                                bridgeIdCache.set(ref, b ? b.ID : null)
+                                bridgeIntegerIdCache.set(bridgeRef, matchedBridge ? matchedBridge.ID : null)
                             }
-                            bridgeUUID = bridgeIdCache.get(ref)
-                            if (!bridgeUUID) {
+                            bridgeIntegerID = bridgeIntegerIdCache.get(bridgeRef)
+                            if (!bridgeIntegerID) {
                                 failed++
-                                errors.push(`Row ${i+2}: bridge '${ref}' not found — upload bridges first`)
+                                errors.push(`Row ${rowIndex + 2}: bridge '${bridgeRef}' not found — upload bridges first`)
                                 continue
                             }
                         }
 
-                        let entry = {
-                            restrictionType:   str(row.restrictionType),
-                            value:             dec(row.value),
-                            unit:              str(row.unit),
-                            bridge_ID:         bridgeUUID,
-                            restrictionCategory: str(row.restrictionCategory) || 'Permanent',
-                            status:            str(row.restrictionStatus || row.status) || 'Active',
-                            vehicleClassApplicable: str(row.vehicleClassApplicable),
-                            grossMassLimit:    dec(row.grossMassLimit),
-                            axleMassLimit:     dec(row.axleMassLimit),
-                            dimensionLimitHeight: dec(row.dimensionLimitHeight),
-                            dimensionLimitWidth:  dec(row.dimensionLimitWidth),
-                            dimensionLimitLength: dec(row.dimensionLimitLength),
-                            speedLimitKmh:     int(row.speedLimitKmh),
-                            permitRequired:    bool(row.permitRequired) ?? false,
-                            escortRequired:    bool(row.escortRequired) ?? false,
-                            isTemporary:       bool(row.isTemporary)    ?? false,
-                            validFromDate:     date(row.validFromDate),
-                            validToDate:       date(row.validToDate),
-                            directionApplied:  str(row.directionApplied),
-                            issuingAuthority:  str(row.issuingAuthority),
-                            legalReference:    str(row.legalReference),
-                            remarks:           str(row.remarks),
-                            isActive: true,
-                            version:  1,
+                        const entry = {
+                            ID:                      cds.utils.uuid(),
+                            bridge_ID:               bridgeIntegerID,
+                            bridgeRef:               parseString(row.bridgeRef),
+                            restrictionType:         parseString(row.restrictionType),
+                            restrictionValue:        parseString(row.restrictionValue),
+                            restrictionUnit:         parseString(row.restrictionUnit),
+                            restrictionCategory:     parseString(row.restrictionCategory) || 'Permanent',
+                            restrictionStatus:       parseString(row.restrictionStatus)   || 'Active',
+                            appliesToVehicleClass:   parseString(row.appliesToVehicleClass),
+                            grossMassLimit:          parseDecimal(row.grossMassLimit),
+                            axleMassLimit:           parseDecimal(row.axleMassLimit),
+                            heightLimit:             parseDecimal(row.heightLimit),
+                            widthLimit:              parseDecimal(row.widthLimit),
+                            lengthLimit:             parseDecimal(row.lengthLimit),
+                            speedLimit:              parseInteger(row.speedLimit),
+                            permitRequired:          parseBoolean(row.permitRequired) ?? false,
+                            escortRequired:          parseBoolean(row.escortRequired) ?? false,
+                            temporary:               parseBoolean(row.temporary)      ?? false,
+                            effectiveFrom:           parseDate(row.effectiveFrom),
+                            effectiveTo:             parseDate(row.effectiveTo),
+                            direction:               parseString(row.direction),
+                            issuingAuthority:        parseString(row.issuingAuthority),
+                            legalReference:          parseString(row.legalReference),
+                            remarks:                 parseString(row.remarks),
+                            active:                  true,
                         }
 
-                        Object.keys(entry).forEach(k => { if (entry[k] === null) delete entry[k] })
+                        Object.keys(entry).forEach(fieldName => {
+                            if (entry[fieldName] === null) delete entry[fieldName]
+                        })
 
-                        await tx.run(INSERT.into('nhvr.Restriction').entries(entry))
+                        await tx.run(INSERT.into('bridge.management.Restrictions').entries(entry))
                         succeeded++
-                    } catch (e) { failed++; errors.push(`Row ${i+2}: ${e.message}`) }
+                    } catch (rowError) { failed++; errors.push(`Row ${rowIndex + 2}: ${rowError.message}`) }
                 }
                 await tx.commit()
-            } catch (e) {
+            } catch (txError) {
                 await tx.rollback()
-                return req.error(500, `Upload failed: ${e.message}`)
+                return req.error(500, `Upload failed: ${txError.message}`)
             }
             return { processed: rows.length, succeeded, failed, errors: errors.join('\n') }
-        } catch (e) {
-            if (e.code === 400) return req.error(400, e.message)
-            LOG.error('massUploadRestrictions unexpected error', e)
-            return req.error(500, `Upload failed: ${e.message}`)
-        }
-    })
-
-    // ── massUploadRoutes ─────────────────────────────────────────────────────
-    srv.on('massUploadRoutes', async req => {
-        try {
-            let { csvData, fileName } = req.data
-            if (!csvData) return req.error(400, 'csvData is required')
-
-            validateUploadFile(fileName || 'upload.csv', csvData)
-
-            let { rows } = parseCSV(csvData)
-            if (rows.length > MAX_ROWS) {
-                return req.error(400,
-                    `Too many rows: ${rows.length}. Maximum ${MAX_ROWS} rows per upload.`)
-            }
-
-            let succeeded = 0, failed = 0, errors = []
-            let tx = cds.tx(req)
-            try {
-                for (let [i, row] of rows.entries()) {
-                    try {
-                        if (!str(row.routeCode)) {
-                            failed++; errors.push(`Row ${i+2}: routeCode required`); continue
-                        }
-                        let exists = await tx.run(
-                            SELECT.one.from('nhvr.Route').where({ routeCode: str(row.routeCode) })
-                        )
-                        let entry = {
-                            routeCode:   str(row.routeCode),
-                            description: str(row.description) || str(row.routeCode),
-                            state:       str(row.state),
-                            region:      str(row.region),
-                            isActive:    bool(row.isActive) ?? true,
-                        }
-                        if (exists) {
-                            await tx.run(UPDATE('nhvr.Route').set(entry).where({ routeCode: entry.routeCode }))
-                        } else {
-                            await tx.run(INSERT.into('nhvr.Route').entries(entry))
-                        }
-                        succeeded++
-                    } catch (e) { failed++; errors.push(`Row ${i+2}: ${e.message}`) }
-                }
-                await tx.commit()
-            } catch (e) {
-                await tx.rollback()
-                return req.error(500, `Upload failed: ${e.message}`)
-            }
-            return { processed: rows.length, succeeded, failed, errors: errors.join('\n') }
-        } catch (e) {
-            if (e.code === 400) return req.error(400, e.message)
-            LOG.error('massUploadRoutes unexpected error', e)
-            return req.error(500, `Upload failed: ${e.message}`)
+        } catch (uploadError) {
+            if (uploadError.code === 400) return req.error(400, uploadError.message)
+            LOG.error('massUploadRestrictions unexpected error', uploadError)
+            return req.error(500, `Upload failed: ${uploadError.message}`)
         }
     })
 
     // ── massDownloadBridges ──────────────────────────────────────────────────
     srv.on('massDownloadBridges', async req => {
-        let { region, state, routeCode } = req.data
-        let db = await cds.connect.to('db')
-        let where = { isDeleted: false }
-        if (state)  where.state  = state
-        if (region) where.region = region
-        let bridges = await db.run(SELECT.from('nhvr.Bridge').where(where))
+        const { region, state } = req.data
+        const db = await cds.connect.to('db')
+        const filterCriteria = {}
+        if (state)  filterCriteria.state  = state
+        if (region) filterCriteria.region = region
+        const bridges = await db.run(
+            SELECT.from('bridge.management.Bridges').where(filterCriteria)
+        )
 
-        // Quote a CSV value safely
-        const csvVal = v => {
-            if (v == null || v === '') return ''
-            let s = String(v)
-            if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-                return '"' + s.replace(/"/g, '""') + '"'
+        const quoteCsvValue = cellValue => {
+            if (cellValue == null || cellValue === '') return ''
+            const stringValue = String(cellValue)
+            if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+                return '"' + stringValue.replace(/"/g, '""') + '"'
             }
-            return s
+            return stringValue
         }
-        let csv = [
+
+        const csv = [
             BRIDGE_DOWNLOAD_HEADERS.join(','),
-            ...bridges.map(b => BRIDGE_DOWNLOAD_HEADERS.map(h => csvVal(b[h])).join(','))
+            ...bridges.map(bridge =>
+                BRIDGE_DOWNLOAD_HEADERS.map(fieldName => quoteCsvValue(bridge[fieldName])).join(',')
+            )
         ].join('\n')
 
         return {
-            csvData: csv,
-            filename: `bridges_${state || 'all'}_${new Date().toISOString().split('T')[0]}.csv`,
+            csvData:     csv,
+            filename:    `bridges_${state || 'all'}_${new Date().toISOString().split('T')[0]}.csv`,
             recordCount: bridges.length
         }
     })

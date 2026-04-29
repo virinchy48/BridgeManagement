@@ -1,129 +1,91 @@
 const cds = require('@sap/cds')
+const LOG = cds.log('bms-restrictions')
 
-// ─── Optimistic lock — before UPDATE ─────────────────────────────────────────
-const beforeUpdateRestriction = async (req) => {
-    const { ID, version } = req.data
-    if (version !== undefined) {
-        const current = await SELECT.one.from('nhvr.Restriction')
-            .columns(['version', 'status'])
-            .where({ ID })
-        if (current && current.version !== version) {
-            return req.error(409,
-                'This restriction was modified by another user. Please refresh and try again.',
-                'RESTRICTION_LOCK_CONFLICT'
-            )
-        }
-    }
-    // Increment version on every update
-    req.data.version = (version || 0) + 1
-    req.data.modifiedAt = new Date().toISOString()
-}
-
-// ─── RestrictionChangeLog writer ──────────────────────────────────────────────
-const writeRestrictionChangeLog = async (db, restrictionId, changeType, oldStatus, newStatus, reason, user) => {
-    try {
-        const uuid = cds.utils?.uuid
-            ? cds.utils.uuid()
-            : require('crypto').randomUUID()
-        await db.run(INSERT.into('bridge_management_RestrictionChangeLog').entries({
-            ID: uuid,
-            restriction_ID: restrictionId,
-            changeType,
-            oldStatus: oldStatus || null,
-            newStatus: newStatus || null,
-            reason: reason || '',
-            changedBy: user || 'System',
-            changedAt: new Date().toISOString()
-        }))
-    } catch (e) {
-        // Non-fatal — RestrictionChangeLog may not exist yet
-        LOG.warn('RestrictionChangeLog write skipped:', e.message)
+const deriveTemporaryFlag = (req) => {
+    if (req.data.restrictionCategory) {
+        req.data.temporary = req.data.restrictionCategory === 'Temporary'
     }
 }
 
-module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBridgePostingStatus, logRestrictionChange }) {
+module.exports = function registerRestrictionHandlers (srv, { updateBridgePostingStatus, logRestrictionChange }) {
 
-    // ── Optimistic lock registration ──────────────────────────────────────────
-    srv.before('UPDATE', 'Restrictions', beforeUpdateRestriction)
+    srv.before(['CREATE', 'UPDATE'], 'Restrictions', deriveTemporaryFlag)
+
+    srv.before('UPDATE', 'Restrictions', async req => {
+        const { ID } = req.params[0]
+        await SELECT.one.from('bridge.management.Restrictions').where({ ID }).forUpdate({ wait: 5 })
+    })
 
     srv.before('CREATE', 'Restrictions', async req => {
-        if (!req.data.status)          req.data.status = 'ACTIVE'
-        if (!req.data.directionApplied) req.data.directionApplied = 'BOTH'
-        if (!req.data.version)         req.data.version = 1
+        if (!req.data.restrictionStatus) req.data.restrictionStatus = 'Active'
+        if (!req.data.direction)          req.data.direction = 'Both'
         if (req.data.bridge_ID) {
-            let db = await cds.connect.to('db')
-            let bridge = await db.run(SELECT.one.from('nhvr.Bridge').where({ ID: req.data.bridge_ID }))
-            if (bridge) req.data.bridgeName = bridge.name
+            const db = await cds.connect.to('db')
+            const bridge = await db.run(SELECT.one.from('bridge.management.Bridges').where({ ID: req.data.bridge_ID }))
+            if (bridge) req.data.bridgeRef = bridge.bridgeId
         }
     })
 
     srv.after('CREATE', 'Restrictions', async (data, req) => {
         if (data?.bridge_ID) {
-            let db = await cds.connect.to('db')
+            const db = await cds.connect.to('db')
             await updateBridgePostingStatus(data.bridge_ID, db, req)
             await logRestrictionChange(db, data.ID, req.user?.id || 'system',
-                'CREATED', null, data.status, 'Restriction created')
-            // Write to RestrictionChangeLog
-            await writeRestrictionChangeLog(db, data.ID, 'CREATED', null, data.status,
-                'Restriction created', req.user?.id || 'system')
+                'CREATED', null, data.restrictionStatus, 'Restriction created')
         }
     })
 
     srv.on('disableRestriction', 'Restrictions', async req => {
-        let { ID } = req.params[0]
-        let { reason } = req.data
-        let db = await cds.connect.to('db')
-        let restriction = await db.run(SELECT.one.from('nhvr.Restriction').where({ ID }))
+        const { ID } = req.params[0]
+        const { reason } = req.data
+        const db = await cds.connect.to('db')
+        const restriction = await db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
         if (!restriction) return req.error(404, 'Restriction not found')
-        let oldStatus = restriction.status
-        await db.run(UPDATE('nhvr.Restriction').set({
-            status: 'DISABLED', disabledAt: new Date().toISOString(),
-            disabledBy: req.user?.id || 'system', disableReason: reason
+        const previousStatus = restriction.restrictionStatus
+        await db.run(UPDATE('bridge.management.Restrictions').set({
+            restrictionStatus: 'Inactive',
+            active:            false,
+            temporaryReason:   reason
         }).where({ ID }))
         if (restriction.bridge_ID) await updateBridgePostingStatus(restriction.bridge_ID, db, req)
-        await logRestrictionChange(db, ID, req.user?.id || 'system',
-            'DISABLED', oldStatus, 'DISABLED', reason)
-        // Write to RestrictionChangeLog
-        await writeRestrictionChangeLog(db, ID, 'DISABLED', oldStatus, 'DISABLED',
-            reason, req.user?.id || 'system')
-        return { status: 'DISABLED', message: 'Restriction disabled' }
+        await logRestrictionChange(db, ID, req.user?.id || 'system', 'DISABLED', previousStatus, 'Inactive', reason)
+        return { status: 'Inactive', message: 'Restriction disabled' }
     })
 
     srv.on('enableRestriction', 'Restrictions', async req => {
-        let { ID } = req.params[0]
-        let { reason } = req.data
-        let db = await cds.connect.to('db')
-        let restriction = await db.run(SELECT.one.from('nhvr.Restriction').where({ ID }))
+        const { ID } = req.params[0]
+        const { reason } = req.data
+        const db = await cds.connect.to('db')
+        const restriction = await db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
         if (!restriction) return req.error(404, 'Restriction not found')
-        let oldStatus = restriction.status
-        await db.run(UPDATE('nhvr.Restriction').set({
-            status: 'ACTIVE', disabledAt: null, disabledBy: null, disableReason: null
+        const previousStatus = restriction.restrictionStatus
+        await db.run(UPDATE('bridge.management.Restrictions').set({
+            restrictionStatus: 'Active',
+            active:            true,
+            temporaryReason:   null
         }).where({ ID }))
         if (restriction.bridge_ID) await updateBridgePostingStatus(restriction.bridge_ID, db, req)
-        await logRestrictionChange(db, ID, req.user?.id || 'system',
-            'ENABLED', oldStatus, 'ACTIVE', reason)
-        // Write to RestrictionChangeLog
-        await writeRestrictionChangeLog(db, ID, 'ENABLED', oldStatus, 'ACTIVE',
-            reason, req.user?.id || 'system')
-        return { status: 'ACTIVE', message: 'Restriction enabled' }
+        await logRestrictionChange(db, ID, req.user?.id || 'system', 'ENABLED', previousStatus, 'Active', reason)
+        return { status: 'Active', message: 'Restriction enabled' }
     })
 
     srv.on('createTemporaryRestriction', 'Restrictions', async req => {
-        let { ID } = req.params[0]
-        let { fromDate, toDate, reason } = req.data
-        let db = await cds.connect.to('db')
-        let restriction = await db.run(SELECT.one.from('nhvr.Restriction').where({ ID }))
-        let oldStatus = restriction?.status || null
-        await db.run(UPDATE('nhvr.Restriction').set({
-            isTemporary: true, temporaryFromDate: fromDate,
-            temporaryToDate: toDate, temporaryReason: reason,
-            temporaryApprovedBy: req.user?.id || 'system', status: 'ACTIVE'
+        const { ID } = req.params[0]
+        const { fromDate, toDate, reason } = req.data
+        const db = await cds.connect.to('db')
+        const restriction = await db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
+        if (!restriction) return req.error(404, 'Restriction not found')
+        await db.run(UPDATE('bridge.management.Restrictions').set({
+            restrictionCategory: 'Temporary',
+            temporary:           true,
+            temporaryFrom:       fromDate,
+            temporaryTo:         toDate,
+            temporaryReason:     reason,
+            restrictionStatus:   'Active',
+            active:              true
         }).where({ ID }))
         await logRestrictionChange(db, ID, req.user?.id || 'system',
-            'TEMP_APPLIED', null, 'ACTIVE', reason)
-        // Write to RestrictionChangeLog
-        await writeRestrictionChangeLog(db, ID, 'TEMP_APPLIED', oldStatus, 'ACTIVE',
-            reason, req.user?.id || 'system')
-        return { status: 'ACTIVE', message: 'Temporary restriction created', ID }
+            'TEMP_APPLIED', null, 'Active', reason)
+        return { status: 'Active', message: 'Temporary restriction created', ID }
     })
 }

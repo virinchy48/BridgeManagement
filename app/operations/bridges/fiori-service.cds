@@ -4,7 +4,7 @@ annotate srv.Bridges with @(
     UI.SelectionFields: [ state, region, condition, postingStatus, assetClass ],
     UI.LineItem: [
         { Value: bridgeId,        Label: 'Bridge ID' },
-        { Value: name,            Label: 'Name' },
+        { Value: bridgeName,      Label: 'Bridge Name' },
         { Value: state,           Label: 'State' },
         { Value: region,          Label: 'Region' },
         { Value: lga,             Label: 'LGA' },
@@ -14,11 +14,11 @@ annotate srv.Bridges with @(
         { Value: conditionRating, Label: 'Rating' },
         { Value: postingStatus,   Label: 'Status' },
         { Value: yearBuilt,       Label: 'Year Built' },
-        { Value: isActive,        Label: 'Active' }
+        { Value: status,          Label: 'Lifecycle Status' }
     ],
     UI.HeaderInfo: {
         TypeName: 'Bridge', TypeNamePlural: 'Bridges',
-        Title: { Value: name }, Description: { Value: bridgeId }
+        Title: { Value: bridgeName }, Description: { Value: bridgeId }
     },
     UI.Facets: [
         { $Type: 'UI.ReferenceFacet', Label: 'General',     Target: '@UI.FieldGroup#General' },
@@ -29,25 +29,25 @@ annotate srv.Bridges with @(
         { $Type: 'UI.ReferenceFacet', Label: 'Admin',       Target: '@UI.FieldGroup#Admin' }
     ],
     UI.FieldGroup#General: { Data: [
-        { Value: bridgeId }, { Value: name }, { Value: assetClass },
+        { Value: bridgeId }, { Value: bridgeName }, { Value: assetClass },
         { Value: structureType }, { Value: material }, { Value: condition },
         { Value: conditionRating }, { Value: postingStatus },
-        { Value: inspectionDate }, { Value: highPriorityAsset }
+        { Value: lastInspectionDate }, { Value: highPriorityAsset }
     ]},
     UI.FieldGroup#Location: { Data: [
-        { Value: state }, { Value: region }, { Value: lga }, { Value: suburb },
-        { Value: routeCode }, { Value: routeKm }, { Value: latitude }, { Value: longitude }
+        { Value: state }, { Value: region }, { Value: lga }, { Value: route },
+        { Value: routeNumber }, { Value: latitude }, { Value: longitude }
     ]},
     UI.FieldGroup#Dimensions: { Data: [
-        { Value: yearBuilt }, { Value: spanLengthM }, { Value: totalLengthM },
-        { Value: widthM }, { Value: deckWidthM }, { Value: clearanceHeightM },
-        { Value: numberOfSpans }, { Value: numberOfLanes }
+        { Value: yearBuilt }, { Value: spanLength }, { Value: totalLength },
+        { Value: deckWidth }, { Value: clearanceHeight },
+        { Value: spanCount }, { Value: numberOfLanes }
     ]},
     UI.FieldGroup#Engineering: { Data: [
         { Value: designLoad }, { Value: loadRating }, { Value: scourRisk },
-        { Value: floodImpacted }, { Value: nhvrRouteAssessed },
-        { Value: hmlApproved }, { Value: bdoubleApproved },
-        { Value: freightRoute }, { Value: assetOwner }, { Value: maintenanceAuthority }
+        { Value: floodImpacted }, { Value: nhvrAssessed },
+        { Value: hmlApproved }, { Value: bDoubleApproved },
+        { Value: freightRoute }, { Value: assetOwner }, { Value: managingAuthority }
     ]},
     UI.FieldGroup#Admin: { Data: [
         { Value: createdBy }, { Value: createdAt }, { Value: modifiedBy }, { Value: modifiedAt }
@@ -57,10 +57,10 @@ annotate srv.Bridges with @(
 annotate srv.Restrictions with @(
     UI.LineItem #sub: [
         { Value: restrictionType, Label: 'Type' },
-        { Value: value,           Label: 'Value' },
-        { Value: unit,            Label: 'Unit' },
-        { Value: status,          Label: 'Status' },
-        { Value: validFromDate,   Label: 'Valid From' },
-        { Value: validToDate,     Label: 'Valid To' }
+        { Value: restrictionValue, Label: 'Value' },
+        { Value: restrictionUnit,  Label: 'Unit' },
+        { Value: restrictionStatus, Label: 'Status' },
+        { Value: effectiveFrom,   Label: 'Valid From' },
+        { Value: effectiveTo,     Label: 'Valid To' }
     ]
 );

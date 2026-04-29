@@ -10,7 +10,10 @@
       "version": "1.0.0"
     },
     "dataSources": {
-      "DashboardService": { "uri": "/dashboard/api/", "type": "HTTP" }
+      "DashboardService": {
+        "uri": "/dashboard/api/",
+        "type": "HTTP"
+      }
     },
     "crossNavigation": {
       "inbounds": {
@@ -51,7 +54,13 @@
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
-        "uri": "i18n/i18n.properties"
+        "uri": "i18n/i18n.properties",
+        "settings": {
+          "supportedLocales": [
+            ""
+          ],
+          "fallbackLocale": ""
+        }
       }
     },
     "resources": {
