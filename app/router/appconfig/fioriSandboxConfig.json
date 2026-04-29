@@ -70,16 +70,6 @@
                     "icon": "sap-icon://action-settings",
                     "targetURL": "#BmsAdmin-manage"
                   }
-                },
-                {
-                  "id": "AttributesAdmin",
-                  "tileType": "sap.ushell.ui.tile.StaticTile",
-                  "properties": {
-                    "title": "Attributes Admin",
-                    "subtitle": "Custom Field Config",
-                    "icon": "sap-icon://customize",
-                    "targetURL": "#AttributesAdmin-manage"
-                  }
                 }
               ]
             }
@@ -100,7 +90,10 @@
               "semanticObject": "Bridges",
               "action": "manage",
               "title": "Bridges",
-              "signature": { "parameters": {}, "additionalParameters": "allowed" },
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
@@ -111,7 +104,10 @@
               "semanticObject": "Restrictions",
               "action": "manage",
               "title": "Restrictions",
-              "signature": { "parameters": {}, "additionalParameters": "allowed" },
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.restrictions",
@@ -122,7 +118,10 @@
               "semanticObject": "Map",
               "action": "display",
               "title": "Map View",
-              "signature": { "parameters": {}, "additionalParameters": "allowed" },
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.mapview",
@@ -133,7 +132,10 @@
               "semanticObject": "MassEdit",
               "action": "manage",
               "title": "Mass Edit",
-              "signature": { "parameters": {}, "additionalParameters": "allowed" },
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.massedit",
@@ -144,22 +146,14 @@
               "semanticObject": "BmsAdmin",
               "action": "manage",
               "title": "BMS Administration",
-              "signature": { "parameters": {}, "additionalParameters": "allowed" },
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.bmsadmin",
                 "url": "/BridgeManagementbmsadmin"
-              }
-            },
-            "AttributesAdmin-manage": {
-              "semanticObject": "AttributesAdmin",
-              "action": "manage",
-              "title": "Attributes Admin",
-              "signature": { "parameters": {}, "additionalParameters": "allowed" },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.attributesadmin",
-                "url": "/BridgeManagementattributesadmin"
               }
             }
           }

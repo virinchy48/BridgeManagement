@@ -1583,13 +1583,14 @@ sap.ui.define([
       };
 
       try {
+        add(sap.ui.require.toUrl("BridgeManagement/mapview/" + cleanPath));
+      } catch (error) {}
+
+      try {
         add(this.getOwnerComponent().getManifestObject().resolveUri(cleanPath));
-      } catch (error) {
-        // Fall back to explicit local sandbox and deployed app URLs below.
-      }
+      } catch (error) {}
 
       add("/map-view/webapp/" + cleanPath);
-      add("/map-view/" + cleanPath);
       add(cleanPath);
 
       return candidates;

@@ -43,11 +43,6 @@ function buildSandboxConfig (isAdmin) {
         id: 'BmsAdmin',
         tileType: 'sap.ushell.ui.tile.StaticTile',
         properties: { title: 'BMS Administration', subtitle: 'Audit, Config & User Access', icon: 'sap-icon://action-settings', targetURL: '#BmsAdmin-manage' }
-      },
-      {
-        id: 'AttributesAdmin',
-        tileType: 'sap.ushell.ui.tile.StaticTile',
-        properties: { title: 'Attributes Admin', subtitle: 'Custom Field Config', icon: 'sap-icon://customize', targetURL: '#AttributesAdmin-manage' }
       }
     )
   }
@@ -90,11 +85,6 @@ function buildSandboxConfig (isAdmin) {
       semanticObject: 'BmsAdmin', action: 'manage', title: 'BMS Administration',
       signature: { parameters: {}, additionalParameters: 'allowed' },
       resolutionResult: { applicationType: 'SAPUI5', additionalInformation: 'SAPUI5.Component=BridgeManagement.bmsadmin', url: '/BridgeManagementbmsadmin' }
-    }
-    inbounds['AttributesAdmin-manage'] = {
-      semanticObject: 'AttributesAdmin', action: 'manage', title: 'Attributes Admin',
-      signature: { parameters: {}, additionalParameters: 'allowed' },
-      resolutionResult: { applicationType: 'SAPUI5', additionalInformation: 'SAPUI5.Component=BridgeManagement.attributesadmin', url: '/BridgeManagementattributesadmin' }
     }
   }
 

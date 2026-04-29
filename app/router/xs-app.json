@@ -34,7 +34,7 @@
       "csrfProtection": false
     },
     {
-      "source": "^/(map|dashboard|health|mass-upload|admin-bridges|bnac|quality|system|access|attributes)(.*)",
+      "source": "^/(map|dashboard|health|mass-upload|mass-edit|admin-bridges|bnac|quality|system|access|attributes)(.*)",
       "target": "/$1$2",
       "destination": "srv-api",
       "authenticationType": "xsuaa",

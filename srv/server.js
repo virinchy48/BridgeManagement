@@ -1077,6 +1077,15 @@ cds.on('bootstrap', (app) => {
     })
   })
 
+  const _jwtHasScope = (authHeader, scopeSuffix) => {
+    try {
+      const token = (authHeader || '').replace(/^Bearer\s+/i, '')
+      if (!token) return false
+      const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64url').toString())
+      return (payload.scope || []).some(s => s === scopeSuffix || s.endsWith('.' + scopeSuffix))
+    } catch { return false }
+  }
+
   // ── Launchpad config — returns role-filtered sandbox tile config ──
   app.get('/launchpad/config', requiresAuthentication, (req, res) => {
     let isAdmin = false
@@ -1088,6 +1097,8 @@ cds.on('bootstrap', (app) => {
       isAdmin = req.authInfo.checkLocalScope('admin')
     } else if (_isDummyAuth && Array.isArray(user?.roles)) {
       isAdmin = user.roles.map(r => r.toLowerCase()).includes('admin')
+    } else {
+      isAdmin = _jwtHasScope(req.headers.authorization, 'admin')
     }
 
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
