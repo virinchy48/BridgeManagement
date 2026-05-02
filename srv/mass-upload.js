@@ -228,10 +228,10 @@ async function buildWorkbookTemplate() {
     const rows = await readDatasetRows(db, dataset)
     datasetRowsByName.set(dataset.name, rows)
     const header = buildHeaderRow(dataset)
-    const sheet = XLSX.utils.aoa_to_sheet([
-      header,
-      ...rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
-    ])
+    const dataRows = rows.length
+      ? rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
+      : [buildSampleDataRow(dataset)]
+    const sheet = XLSX.utils.aoa_to_sheet([header, ...dataRows])
     sheet['!cols'] = dataset.columns.map((columnDef) => ({ wch: Math.max(columnDef.name.length + 4, 16) }))
     XLSX.utils.book_append_sheet(workbook, sheet, dataset.name)
   }
@@ -471,7 +471,7 @@ async function validateUpload({ buffer, fileName, datasetName }) {
   }
 
   if (!totalCount) {
-    throw new Error('No supported upload rows were found in the file.')
+    throw new Error('The file contains only header rows. Please add data rows to at least one sheet before uploading.')
   }
 
   return {
@@ -1119,6 +1119,50 @@ function stripMetadata(row) {
 
 function buildHeaderRow(dataset) {
   return dataset.columns.map((columnDef) => `${columnDef.name}${columnDef.required ? '*' : ''}`)
+}
+
+const SAMPLE_ROW_BRIDGE = {
+  ID: '', descr: '', bridgeId: 'BRG-SAMPLE-001', bridgeName: 'Sample Bridge', assetClass: '',
+  route: 'Sample Highway', routeNumber: '1', state: 'NSW', region: '', lga: '',
+  latitude: -33.8688, longitude: 151.2093, location: 'Sydney NSW',
+  assetOwner: 'Department of Transport NSW', managingAuthority: '', structureType: '',
+  yearBuilt: 1975, designLoad: '', designStandard: '', clearanceHeight: 5.5,
+  spanLength: 30.0, material: '', spanCount: 3, totalLength: 95.0, deckWidth: 10.5,
+  numberOfLanes: 2, condition: 'GOOD', conditionRating: 7, structuralAdequacyRating: 7,
+  postingStatus: '', conditionStandard: '', seismicZone: '', asBuiltDrawingReference: '',
+  scourDepthLastMeasured: '', floodImmunityAriYears: 100, floodImpacted: false,
+  highPriorityAsset: false, remarks: '', status: 'Active', scourRisk: '',
+  lastInspectionDate: '2024-01-15', nhvrAssessed: false, nhvrAssessmentDate: '',
+  loadRating: '', pbsApprovalClass: '', importanceLevel: 3, averageDailyTraffic: 5000,
+  heavyVehiclePercent: 15.0, gazetteReference: '', nhvrReferenceUrl: '',
+  freightRoute: false, overMassRoute: false, hmlApproved: false, bDoubleApproved: false,
+  dataSource: '', sourceReferenceUrl: '', openDataReference: '', sourceRecordId: '',
+  restriction_ID: '', geoJson: ''
+}
+
+const SAMPLE_ROW_RESTRICTION = {
+  ID: '', parent_ID: '', restrictionRef: 'REST-SAMPLE-001', bridgeRef: 'BRG-SAMPLE-001',
+  bridge_ID: '', name: 'Sample Weight Restriction', descr: '',
+  restrictionCategory: 'Weight', restrictionType: 'GrossWeight', restrictionValue: '42.5',
+  restrictionUnit: 'tonne', restrictionStatus: 'Active', appliesToVehicleClass: '',
+  grossMassLimit: 42.5, axleMassLimit: '', heightLimit: '', widthLimit: '', lengthLimit: '',
+  speedLimit: '', permitRequired: false, escortRequired: false, temporary: false, active: true,
+  effectiveFrom: '2024-01-01', effectiveTo: '', approvedBy: '', direction: '',
+  enforcementAuthority: '', temporaryFrom: '', temporaryTo: '', temporaryReason: '',
+  approvalReference: '', issuingAuthority: '', legalReference: '', remarks: ''
+}
+
+const SAMPLE_ROW_LOOKUP = { code: 'EXAMPLE', name: 'Example Name', descr: 'Optional description — replace with actual values' }
+
+function buildSampleDataRow(dataset) {
+  let sample
+  if (dataset.name === 'Bridges') sample = SAMPLE_ROW_BRIDGE
+  else if (dataset.name === 'Restrictions') sample = SAMPLE_ROW_RESTRICTION
+  else sample = SAMPLE_ROW_LOOKUP
+  return dataset.columns.map((columnDef) => {
+    const value = sample[columnDef.name]
+    return value === undefined ? '' : value
+  })
 }
 
 function buildReferenceExamplesRows(datasetRowsByName) {
