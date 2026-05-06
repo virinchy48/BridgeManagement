@@ -229,11 +229,15 @@ sap.ui.define([
       this._clearPreview();
 
       try {
-        const contentBase64 = await this._readFileAsBase64(this._file);
+        const [contentBase64, csrfToken] = await Promise.all([
+          this._readFileAsBase64(this._file),
+          this._fetchCsrfToken()
+        ]);
         const response = await fetch(this._massUploadBase + "/validate", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken
           },
           body: JSON.stringify({
             fileName: this._file.name,
@@ -287,11 +291,15 @@ sap.ui.define([
       model.setProperty("/busy", true);
 
       try {
-        const contentBase64 = await this._readFileAsBase64(this._file);
+        const [contentBase64, csrfToken] = await Promise.all([
+          this._readFileAsBase64(this._file),
+          this._fetchCsrfToken()
+        ]);
         const response = await fetch(this._massUploadBase + "/upload", {
           method: "POST",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "X-CSRF-Token": csrfToken
           },
           body: JSON.stringify({
             fileName: this._file.name,
@@ -378,6 +386,14 @@ sap.ui.define([
       } finally {
         model.setProperty("/busy", false);
       }
+    },
+
+    _fetchCsrfToken: async function () {
+      const response = await fetch(this._massUploadBase + "/datasets", {
+        method: "GET",
+        headers: { "X-CSRF-Token": "Fetch" }
+      });
+      return response.headers.get("X-CSRF-Token") || "";
     },
 
     _readFileAsBase64: function (file) {

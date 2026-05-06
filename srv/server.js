@@ -1048,11 +1048,13 @@ cds.on('bootstrap', (app) => {
     return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' })
   }
 
-  // FIX 4: CSRF token guard for state-changing requests on non-OData Express routes.
   const validateCsrfToken = (req, res, next) => {
+    if (req.method === 'GET' && req.headers['x-csrf-token'] === 'Fetch') {
+      res.set('X-CSRF-Token', 'required')
+      return next()
+    }
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
       const csrfToken = req.headers['x-csrf-token']
-      // In production require an explicit CSRF token header
       if (process.env.NODE_ENV === 'production' && !csrfToken) {
         return res.status(403).json({ error: 'CSRF token required', code: 'CSRF_MISSING' })
       }

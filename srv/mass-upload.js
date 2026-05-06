@@ -747,7 +747,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
     return emptySummary(dataset)
   }
 
-  await enrichRestrictionsWithBridgeKeys(tx, normalized)
+  await enrichRestrictionsWithBridgeKeys(tx, normalized, warnings)
 
   const ids = normalized.map((row) => row.ID).filter(Boolean)
   const refs = normalized.map((row) => row.restrictionRef).filter(Boolean)
@@ -832,7 +832,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
   return buildSummary(dataset, normalized.length, inserts.length, updates.length)
 }
 
-async function enrichRestrictionsWithBridgeKeys(tx, rows) {
+async function enrichRestrictionsWithBridgeKeys(tx, rows, warnings) {
   const bridgeRefs = [...new Set(rows.map((row) => row.bridgeRef).filter(Boolean))]
   if (!bridgeRefs.length) return
 
@@ -845,9 +845,11 @@ async function enrichRestrictionsWithBridgeKeys(tx, rows) {
     if (!row.bridgeRef) continue
     const bridgeId = bridgeByRef.get(row.bridgeRef)
     if (!bridgeId) {
-      throw new Error(`Restrictions row ${row.__rowNumber}: unknown bridgeRef "${row.bridgeRef}".`)
+      if (warnings) warnings.push(`Restrictions row ${row.__rowNumber}: bridgeRef "${row.bridgeRef}" not found — bridge link cleared.`)
+      row.bridge_ID = null
+    } else {
+      row.bridge_ID = bridgeId
     }
-    row.bridge_ID = bridgeId
   }
 }
 
