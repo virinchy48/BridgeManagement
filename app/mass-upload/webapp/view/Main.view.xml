@@ -25,7 +25,7 @@
           <IconTabBar id="mainTabBar" select=".onTabSelect" expanded="true">
             <items>
               <IconTabFilter id="tabUpload" key="upload" text="{i18n>tabUpload}" icon="sap-icon://upload-to-cloud">
-                <Wizard id="uploadWizard" showNextButton="true" finishButtonText="{i18n>wizardFinish}">
+                <Wizard id="uploadWizard" showNextButton="true" finishButtonText="{i18n>wizardFinish}" complete=".onWizardComplete">
                   <WizardStep id="stepEntity" title="{i18n>sectionSelectTitle}" validated="{= !!${view>/selectedDataset} }">
                     <VBox class="sapUiSmallMargin">
                       <Label text="{i18n>datasetLabel}" labelFor="datasetSelect" required="true" />

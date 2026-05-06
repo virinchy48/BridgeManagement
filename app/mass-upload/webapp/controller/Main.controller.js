@@ -210,6 +210,15 @@ sap.ui.define([
       }
     },
 
+    onWizardComplete: function () {
+      var oCrossAppNav = sap.ushell && sap.ushell.Container && sap.ushell.Container.getService("CrossApplicationNavigation");
+      if (oCrossAppNav) {
+        oCrossAppNav.toExternal({ target: { semanticObject: "Dashboard", action: "display" } });
+      } else {
+        window.location.href = "/dashboard/webapp";
+      }
+    },
+
     onFileChange: function (oEvent) {
       const files = oEvent.getParameter("files") || [];
       this._setSelectedFile(files[0] || null);
