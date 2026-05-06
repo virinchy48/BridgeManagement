@@ -7,6 +7,7 @@ const {
   buildCsvTemplate,
   buildWorkbookTemplate,
   getDatasets,
+  getUploadHistory,
   importUpload,
   validateUpload
 } = require('./mass-upload')
@@ -1123,6 +1124,15 @@ cds.on('bootstrap', (app) => {
 
   router.get('/datasets', (_req, res) => {
     res.json({ datasets: getDatasets() })
+  })
+
+  router.get('/history', async (_req, res) => {
+    try {
+      const rows = await getUploadHistory()
+      res.json({ rows })
+    } catch (error) {
+      res.status(500).json({ error: { message: error.message || 'Failed to load upload history' } })
+    }
   })
 
   router.get('/template.xlsx', async (_req, res) => {

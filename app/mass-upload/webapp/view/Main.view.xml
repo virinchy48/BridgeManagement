@@ -101,7 +101,7 @@
                         </headerToolbar>
                         <columns>
                           <Column width="6rem"><Text text="{i18n>previewColRow}" /></Column>
-                          <Column visible="{view>/previewMultiSheet}" width="10rem"><Text text="Sheet" /></Column>
+                          <Column width="10rem"><Text text="Sheet" /></Column>
                           <Column><Text text="{view>/previewColHdr1}" /></Column>
                           <Column><Text text="{view>/previewColHdr2}" /></Column>
                           <Column><Text text="{view>/previewColHdr3}" /></Column>

@@ -46,7 +46,6 @@ sap.ui.define([
         previewMessageType: "Information",
         previewRows: [],
         previewTitle: "",
-        previewMultiSheet: false,
         previewColHdr1: "",
         previewColHdr2: "",
         previewColHdr3: "",
@@ -118,10 +117,10 @@ sap.ui.define([
       this._loadDatasets();
     },
 
-    onTabSelect: function (oEvent) {
+    onTabSelect: async function (oEvent) {
       const key = oEvent.getParameter("key") || oEvent.getParameter("selectedKey");
-      if (key === "history") {
-        this._applyHistoryFilter();
+      if (key === "history" || key === "adminReport") {
+        await this._loadHistory();
       }
     },
 
@@ -166,8 +165,8 @@ sap.ui.define([
       this._applyHistoryFilter();
     },
 
-    onHistoryRefresh: function () {
-      this._applyHistoryFilter();
+    onHistoryRefresh: async function () {
+      await this._loadHistory();
       MessageToast.show("Upload history refreshed");
     },
 
@@ -258,7 +257,6 @@ sap.ui.define([
         model.setProperty("/previewMessageType", payload.errorCount > 0 ? (payload.validCount > 0 ? "Warning" : "Error") : "Success");
         model.setProperty("/previewRows", payload.previewRows || []);
         model.setProperty("/previewTitle", payload.previewTitle || "");
-        model.setProperty("/previewMultiSheet", !!payload.multiSheet);
         model.setProperty("/previewColHdr1", previewColumns[0] || "");
         model.setProperty("/previewColHdr2", previewColumns[1] || "");
         model.setProperty("/previewColHdr3", previewColumns[2] || "");
@@ -347,7 +345,7 @@ sap.ui.define([
         }
 
         model.setProperty("/hasUploadResults", !!(payload.message || (payload.summaries || []).length));
-        this._appendUploadHistory(payload);
+        await this._appendUploadHistory();
         this._setSelectedFile(null);
         this.byId("fileUploader").clear();
         MessageToast.show("Mass upload completed");
@@ -383,10 +381,40 @@ sap.ui.define([
           model.setProperty("/selectedDataset", defaultDataset ? defaultDataset.name : this._ALL_DATASETS_KEY);
         }
         this._updateSelectedDatasetContext();
+        await this._loadHistory();
       } catch (error) {
         MessageBox.error(error.message || "Failed to load upload datasets.");
       } finally {
         model.setProperty("/busy", false);
+      }
+    },
+
+    _loadHistory: async function () {
+      try {
+        const response = await fetch(this._massUploadBase + "/history");
+        const payload = await response.json();
+        const model = this._getViewModel();
+        const rows = (payload.rows || []).map((row) => ({
+          id: row.ID,
+          uploadedAt: row.uploadedAt,
+          uploadedDate: row.uploadedAt ? row.uploadedAt.slice(0, 10) : "",
+          uploadedAtFmt: row.uploadedAt ? new Date(row.uploadedAt).toLocaleString([], {
+            year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit"
+          }) : "",
+          fileName: row.fileName || "",
+          dataset: row.dataset || "",
+          datasetLabel: row.datasetLabel || row.dataset || "",
+          processed: Number(row.processed || 0),
+          inserted: Number(row.inserted || 0),
+          updated: Number(row.updated || 0),
+          statusLabel: "Completed",
+          statusState: "Success"
+        }));
+        model.setProperty("/allHistoryRows", rows);
+        this._applyHistoryFilter();
+        this.onRunAdminReport();
+      } catch (_) {
+        // History load failure is non-fatal
       }
     },
 
@@ -422,32 +450,8 @@ sap.ui.define([
       return `${year}-${month}-${day}`;
     },
 
-    _appendUploadHistory: function (payload) {
-      const model = this._getViewModel();
-      const now = new Date();
-      const rows = (payload.summaries || []).map((summary) => ({
-        id: `${now.getTime()}-${summary.dataset || summary.label || Math.random()}`,
-        uploadedAt: now.toISOString(),
-        uploadedDate: this._formatDate(now),
-        uploadedAtFmt: now.toLocaleString([], {
-          year: "numeric",
-          month: "short",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit"
-        }),
-        fileName: this._file?.name || model.getProperty("/fileName") || "",
-        dataset: summary.dataset || model.getProperty("/selectedDataset"),
-        datasetLabel: summary.label || summary.dataset || model.getProperty("/selectedDatasetLabel"),
-        processed: Number(summary.processed || 0),
-        inserted: Number(summary.inserted || 0),
-        updated: Number(summary.updated || 0),
-        statusLabel: "Completed",
-        statusState: "Success"
-      }));
-      model.setProperty("/allHistoryRows", rows.concat(model.getProperty("/allHistoryRows") || []));
-      this._applyHistoryFilter();
-      this.onRunAdminReport();
+    _appendUploadHistory: async function () {
+      await this._loadHistory();
     },
 
     _applyHistoryFilter: function () {
@@ -529,7 +533,6 @@ sap.ui.define([
       model.setProperty("/previewMessageType", "Information");
       model.setProperty("/previewRows", []);
       model.setProperty("/previewTitle", "");
-      model.setProperty("/previewMultiSheet", false);
       model.setProperty("/previewColHdr1", "");
       model.setProperty("/previewColHdr2", "");
       model.setProperty("/previewColHdr3", "");

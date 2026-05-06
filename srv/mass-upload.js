@@ -393,6 +393,23 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
       }
     }
 
+    // Persist upload history
+    const now = new Date()
+    for (const summary of summaries) {
+      await db.run(INSERT.into('bridge.management.MassUploadLog').entries({
+        ID: cds.utils.uuid(),
+        uploadedAt: now.toISOString(),
+        uploadedBy: uploadedBy || 'system',
+        fileName: fileName || '',
+        dataset: summary.dataset || datasetName || '',
+        datasetLabel: summary.label || summary.dataset || datasetName || '',
+        processed: Number(summary.processed || 0),
+        inserted: Number(summary.inserted || 0),
+        updated: Number(summary.updated || 0),
+        status: 'Completed'
+      }))
+    }
+
     const processed = summaries.reduce((total, summary) => total + summary.processed, 0)
     return {
       message: `Mass upload completed. ${processed} rows processed across ${summaries.length} dataset(s).`,
@@ -404,6 +421,16 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
     await tx.rollback()
     throw error
   }
+}
+
+async function getUploadHistory() {
+  const db = await cds.connect.to('db')
+  const rows = await db.run(
+    SELECT.from('bridge.management.MassUploadLog')
+      .orderBy({ uploadedAt: 'desc' })
+      .limit(500)
+  )
+  return rows || []
 }
 
 async function validateUpload({ buffer, fileName, datasetName }) {
@@ -1253,6 +1280,7 @@ module.exports = {
   buildCsvTemplate,
   buildWorkbookTemplate,
   getDatasets,
+  getUploadHistory,
   importUpload,
   validateUpload
 }

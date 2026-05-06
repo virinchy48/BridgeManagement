@@ -442,6 +442,19 @@ entity BnacLoadHistory {
   batchId          : String(111);
 }
 
+entity MassUploadLog {
+  key ID           : UUID;
+  uploadedAt       : Timestamp;
+  uploadedBy       : String(111);
+  fileName         : String(255);
+  dataset          : String(80);
+  datasetLabel     : String(111);
+  processed        : Integer default 0;
+  inserted         : Integer default 0;
+  updated          : Integer default 0;
+  status           : String(20) default 'Completed';
+}
+
 entity DataQualityRules {
   key id        : UUID;
       name      : String(120) not null;
