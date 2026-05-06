@@ -1090,18 +1090,22 @@ cds.on('bootstrap', (app) => {
   }
 
   // ── Launchpad config — returns role-filtered sandbox tile config ──
-  app.get('/launchpad/config', requiresAuthentication, (req, res) => {
+  app.get('/launchpad/config', (req, res) => {
     let isAdmin = false
 
-    const user = req.user
-    if (user && typeof user.is === 'function') {
-      isAdmin = user.is('admin')
-    } else if (req.authInfo && typeof req.authInfo.checkLocalScope === 'function') {
-      isAdmin = req.authInfo.checkLocalScope('admin')
-    } else if (_isDummyAuth && Array.isArray(user?.roles)) {
-      isAdmin = user.roles.map(r => r.toLowerCase()).includes('admin')
-    } else {
-      isAdmin = _jwtHasScope(req.headers.authorization, 'admin')
+    try {
+      const user = req.user
+      if (user && typeof user.is === 'function') {
+        isAdmin = user.is('admin')
+      } else if (req.authInfo && typeof req.authInfo.checkLocalScope === 'function') {
+        isAdmin = req.authInfo.checkLocalScope('admin')
+      } else if (_isDummyAuth && Array.isArray(user?.roles)) {
+        isAdmin = user.roles.map(r => r.toLowerCase()).includes('admin')
+      } else {
+        isAdmin = _jwtHasScope(req.headers.authorization, 'admin')
+      }
+    } catch (_) {
+      isAdmin = false
     }
 
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
