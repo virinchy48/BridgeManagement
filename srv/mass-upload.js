@@ -228,9 +228,12 @@ async function buildWorkbookTemplate() {
     const rows = await readDatasetRows(db, dataset)
     datasetRowsByName.set(dataset.name, rows)
     const header = buildHeaderRow(dataset)
+    const fallbackRows = FALLBACK_LOOKUP_DATA.get(dataset.name)
     const dataRows = rows.length
       ? rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
-      : [buildSampleDataRow(dataset)]
+      : fallbackRows
+        ? fallbackRows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
+        : [buildSampleDataRow(dataset)]
     const sheet = XLSX.utils.aoa_to_sheet([header, ...dataRows])
     sheet['!cols'] = dataset.columns.map((columnDef) => ({ wch: Math.max(columnDef.name.length + 4, 16) }))
     XLSX.utils.book_append_sheet(workbook, sheet, dataset.name)
@@ -1152,37 +1155,156 @@ function buildHeaderRow(dataset) {
 }
 
 const SAMPLE_ROW_BRIDGE = {
-  ID: '', descr: '', bridgeId: 'BRG-SAMPLE-001', bridgeName: 'Sample Bridge', assetClass: '',
-  route: 'Sample Highway', routeNumber: '1', state: 'NSW', region: '', lga: '',
-  latitude: -33.8688, longitude: 151.2093, location: 'Sydney NSW',
-  assetOwner: 'Department of Transport NSW', managingAuthority: '', structureType: '',
-  yearBuilt: 1975, designLoad: '', designStandard: '', clearanceHeight: 5.5,
-  spanLength: 30.0, material: '', spanCount: 3, totalLength: 95.0, deckWidth: 10.5,
-  numberOfLanes: 2, condition: 'GOOD', conditionRating: 7, structuralAdequacyRating: 7,
-  postingStatus: '', conditionStandard: '', seismicZone: '', asBuiltDrawingReference: '',
-  scourDepthLastMeasured: '', floodImmunityAriYears: 100, floodImpacted: false,
-  highPriorityAsset: false, remarks: '', status: 'Active', scourRisk: '',
-  lastInspectionDate: '2024-01-15', nhvrAssessed: false, nhvrAssessmentDate: '',
-  loadRating: '', pbsApprovalClass: '', importanceLevel: 3, averageDailyTraffic: 5000,
-  heavyVehiclePercent: 15.0, gazetteReference: '', nhvrReferenceUrl: '',
-  freightRoute: false, overMassRoute: false, hmlApproved: false, bDoubleApproved: false,
-  dataSource: '', sourceReferenceUrl: '', openDataReference: '', sourceRecordId: '',
-  restriction_ID: '', geoJson: ''
+  ID: '',
+  descr: 'Iconic steel arch bridge carrying road and rail traffic across Sydney Harbour.',
+  bridgeId: 'BRG-NSW-SYD-001', bridgeName: 'Sydney Harbour Bridge', assetClass: 'Road Bridge',
+  route: 'Cahill Expressway', routeNumber: 'A8', state: 'NSW', region: 'Sydney Metro', lga: 'North Sydney',
+  latitude: -33.852306, longitude: 151.210787, location: 'Sydney NSW 2060',
+  assetOwner: 'Transport for NSW', managingAuthority: 'Transport for NSW', structureType: 'Arch Bridge',
+  yearBuilt: 1932, designLoad: 'T44', designStandard: 'AS 5100', clearanceHeight: 49.0,
+  spanLength: 503.0, material: 'Steel', spanCount: 1, totalLength: 1149.0, deckWidth: 48.8,
+  numberOfLanes: 8, condition: 'Good', conditionRating: 8, structuralAdequacyRating: 9,
+  postingStatus: 'Unrestricted', conditionStandard: 'AS 5100.7', seismicZone: 'Zone 1',
+  asBuiltDrawingReference: 'TfNSW-DRG-1932-001',
+  scourDepthLastMeasured: 1.2, floodImmunityAriYears: 100, floodImpacted: false,
+  highPriorityAsset: true,
+  remarks: 'Major strategic crossing with ongoing monitoring.',
+  status: 'Active', scourRisk: 'Low',
+  lastInspectionDate: '2024-11-14', nhvrAssessed: true, nhvrAssessmentDate: '2024-11-20',
+  loadRating: '42.5', pbsApprovalClass: 'Level 4', importanceLevel: 4, averageDailyTraffic: 160000,
+  heavyVehiclePercent: 18.5, gazetteReference: 'NSW Gazette 2024/100', nhvrReferenceUrl: '',
+  freightRoute: true, overMassRoute: true, hmlApproved: true, bDoubleApproved: true,
+  dataSource: 'TfNSW Asset Register', sourceReferenceUrl: '', openDataReference: '', sourceRecordId: 'BMS-NSW-0001',
+  restriction_ID: '', geoJson: '{"type":"LineString","coordinates":[[151.206,-33.852],[151.210,-33.852]]}'
 }
 
 const SAMPLE_ROW_RESTRICTION = {
-  ID: '', parent_ID: '', restrictionRef: 'REST-SAMPLE-001', bridgeRef: 'BRG-SAMPLE-001',
-  bridge_ID: '', name: 'Sample Weight Restriction', descr: '',
-  restrictionCategory: 'Weight', restrictionType: 'GrossWeight', restrictionValue: '42.5',
-  restrictionUnit: 'tonne', restrictionStatus: 'Active', appliesToVehicleClass: '',
-  grossMassLimit: 42.5, axleMassLimit: '', heightLimit: '', widthLimit: '', lengthLimit: '',
-  speedLimit: '', permitRequired: false, escortRequired: false, temporary: false, active: true,
-  effectiveFrom: '2024-01-01', effectiveTo: '', approvedBy: '', direction: '',
-  enforcementAuthority: '', temporaryFrom: '', temporaryTo: '', temporaryReason: '',
-  approvalReference: '', issuingAuthority: '', legalReference: '', remarks: ''
+  ID: '', parent_ID: '', restrictionRef: 'RST-NSW-SYD-001', bridgeRef: 'BRG-NSW-SYD-001',
+  bridge_ID: '', name: '42.5t Gross Mass Limit', descr: 'Gross mass limit for all heavy vehicles on both approaches.',
+  restrictionCategory: 'Permanent', restrictionType: 'Mass Limit', restrictionValue: '42.5',
+  restrictionUnit: 't', restrictionStatus: 'Active', appliesToVehicleClass: 'Heavy Vehicles',
+  grossMassLimit: 42.5, axleMassLimit: 10.5, heightLimit: '', widthLimit: '', lengthLimit: '',
+  speedLimit: '', permitRequired: true, escortRequired: false, temporary: false, active: true,
+  effectiveFrom: '2024-01-15', effectiveTo: '', approvedBy: 'Chief Bridge Engineer',
+  direction: 'Both Directions', enforcementAuthority: 'Transport for NSW',
+  temporaryFrom: '', temporaryTo: '', temporaryReason: '',
+  approvalReference: 'APR-NSW-2024-08', issuingAuthority: 'Transport for NSW',
+  legalReference: 'NSW Gazette 2024/08',
+  remarks: 'Permit required for vehicles exceeding 42.5 t GVM. Signs erected both approaches.'
 }
 
-const SAMPLE_ROW_LOOKUP = { code: 'EXAMPLE', name: 'Example Name', descr: 'Optional description — replace with actual values' }
+const SAMPLE_ROW_LOOKUP = { code: 'Suspension Bridge', name: 'Suspension Bridge', descr: 'Bridge deck supported by cables suspended from one or more towers.' }
+
+const FALLBACK_LOOKUP_DATA = new Map([
+  ['AssetClasses', [
+    { code: 'Pedestrian Bridge', name: 'Pedestrian Bridge', descr: '' },
+    { code: 'Rail Bridge', name: 'Rail Bridge', descr: '' },
+    { code: 'Road Bridge', name: 'Road Bridge', descr: '' },
+    { code: 'Shared Path Bridge', name: 'Shared Path Bridge', descr: '' },
+  ]],
+  ['States', [
+    { code: 'ACT', name: 'Australian Capital Territory', descr: '' },
+    { code: 'NSW', name: 'New South Wales', descr: '' },
+    { code: 'NT', name: 'Northern Territory', descr: '' },
+    { code: 'QLD', name: 'Queensland', descr: '' },
+    { code: 'SA', name: 'South Australia', descr: '' },
+    { code: 'TAS', name: 'Tasmania', descr: '' },
+    { code: 'VIC', name: 'Victoria', descr: '' },
+    { code: 'WA', name: 'Western Australia', descr: '' },
+  ]],
+  ['Regions', [
+    { code: 'Greater Melbourne', name: 'Greater Melbourne', descr: '' },
+    { code: 'Hobart Region', name: 'Hobart Region', descr: '' },
+    { code: 'Regional NSW', name: 'Regional NSW', descr: '' },
+    { code: 'Regional Victoria', name: 'Regional Victoria', descr: '' },
+    { code: 'South East Queensland', name: 'South East Queensland', descr: '' },
+    { code: 'Sydney Metro', name: 'Sydney Metro', descr: '' },
+  ]],
+  ['StructureTypes', [
+    { code: 'Arch Bridge', name: 'Arch Bridge', descr: 'Bridge supported by arches.' },
+    { code: 'Beam Bridge', name: 'Beam Bridge', descr: 'Bridge using simple beams as the main structural element.' },
+    { code: 'Box Girder', name: 'Box Girder', descr: 'Bridge using box girder structural sections.' },
+    { code: 'Cable-stayed', name: 'Cable-stayed', descr: 'Bridge with deck supported by cables connected to towers.' },
+    { code: 'Cantilever', name: 'Cantilever', descr: 'Bridge built using cantilevers.' },
+  ]],
+  ['DesignLoads', [
+    { code: 'A160', name: 'A160 Axle Load', descr: 'NSW axle load model — 160kN per axle. NSW-specific heavy vehicle load for bridges on gazetted routes.' },
+    { code: 'AS5100', name: 'AS5100', descr: 'Design load aligned with AS 5100.' },
+    { code: 'AS5100_GP', name: 'AS 5100 General Purpose', descr: 'AS 5100.2 General Purpose loading model for standard road bridges.' },
+    { code: 'AS5100_HP', name: 'AS 5100 Heavy Precision', descr: 'AS 5100.2 Heavy Precision loading model for special purpose bridges.' },
+    { code: 'CooperE', name: 'Cooper E Loading', descr: 'Cooper E railway loading model — standard North American/ARTC freight train axle pattern.' },
+    { code: 'HLP400', name: 'HLP400 Heavy Load Platform', descr: 'Heavy Load Platform — 400 tonne load. Used for oversize/overmass transport on approved routes.' },
+    { code: 'SM1600', name: 'SM1600', descr: 'Standard moving load model.' },
+    { code: 'T44', name: 'T44', descr: 'Traditional heavy vehicle loading standard.' },
+    { code: 'UIC60', name: 'UIC 60 Loading', descr: 'Union Internationale des Chemins de fer loading — European heavy freight standard used for ARTC bridges.' },
+    { code: 'W80', name: 'W80 Wheel Load', descr: 'NSW wheel load model — 80kN per wheel. Used for local road bridges and pedestrian bridges in NSW.' },
+  ]],
+  ['PostingStatuses', [
+    { code: 'Closed', name: 'Closed', descr: 'Bridge is closed to traffic.' },
+    { code: 'Restricted', name: 'Restricted', descr: 'Bridge has operating or access restrictions.' },
+    { code: 'Under Review', name: 'Under Review', descr: 'Bridge posting status is under review.' },
+    { code: 'Unrestricted', name: 'Unrestricted', descr: 'No posting restrictions applied.' },
+  ]],
+  ['ConditionStates', [
+    { code: '1', name: 'Good', descr: 'Minor wear and tear. No significant structural defects. Normal monitoring adequate.' },
+    { code: '2', name: 'Fair', descr: 'Moderate deterioration. Some defects present but not immediately critical. Attention required.' },
+    { code: '3', name: 'Poor', descr: 'Significant defects. Structural integrity attention required. Active management needed.' },
+    { code: '4', name: 'Very Poor', descr: 'Major defects. Urgent repairs required. Possible load restrictions warranted.' },
+    { code: '5', name: 'Critical', descr: 'Imminent failure risk or structural failure possible. Immediate action required.' },
+  ]],
+  ['ScourRiskLevels', [
+    { code: 'High', name: 'High', descr: 'High scour risk. Foundation at or near estimated critical scour depth. Significant channel mobility. Annual scour depth measurement and countermeasures required.' },
+    { code: 'Low', name: 'Low', descr: 'Some scour potential but foundation well above estimated scour depth. Minor channel mobility. Include scour check in routine inspections.' },
+    { code: 'Medium', name: 'Medium', descr: 'Moderate scour risk. Foundation close to estimated scour depth. Active channel erosion. Dedicated scour survey required every 3 years.' },
+    { code: 'VeryHigh', name: 'Very High', descr: 'Critical scour risk. Foundation may be exposed or at failure scour depth. Active undermining possible. Quarterly monitoring and emergency countermeasures required.' },
+    { code: 'VeryLow', name: 'Very Low', descr: 'Minimal scour potential. Stable channel conditions. Rock or competent material at foundation. No specific scour action required.' },
+  ]],
+  ['PbsApprovalClasses', [
+    { code: 'General Access', name: 'General Access', descr: 'Standard vehicle dimensions — access on all roads without permit. Max length 12.5m, width 2.5m, height 4.3m, GVM 42.5t.' },
+    { code: 'Level 1', name: 'PBS Level 1', descr: 'Short road trains and B-doubles — access on approved Level 1 networks. Max length 19.0m, GVM 42.5t.' },
+    { code: 'Level 2', name: 'PBS Level 2', descr: 'B-doubles and medium road trains — access on Level 2 approved networks. Max length 26.0m, GVM 42.5t.' },
+    { code: 'Level 3', name: 'PBS Level 3', descr: 'Large road trains — specific approved routes and networks. Max length 36.5m, height 4.6m, GVM 57.5t.' },
+    { code: 'Level 4', name: 'PBS Level 4', descr: 'Extra-long combinations — restricted to approved high-productivity networks. Max length 53.5m, GVM 85.5t.' },
+    { code: 'Level 5', name: 'PBS Level 5', descr: 'High mass limit combinations — strictly controlled networks and routes. Max length 53.5m, width 3.0m, GVM 100.0t.' },
+    { code: 'Not Assessed', name: 'Not Assessed', descr: 'PBS approval class has not been assessed.' },
+  ]],
+  ['RestrictionTypes', [
+    { code: 'Access Restriction', name: 'Access Restriction', descr: 'Restriction based on route or vehicle access conditions.' },
+    { code: 'Dimension Limit', name: 'Dimension Limit', descr: 'Restriction based on height, width, or length.' },
+    { code: 'Mass Limit', name: 'Mass Limit', descr: 'Restriction based on gross or axle mass.' },
+    { code: 'Speed Restriction', name: 'Speed Restriction', descr: 'Restriction based on permitted speed.' },
+  ]],
+  ['RestrictionStatuses', [
+    { code: 'Active', name: 'Active', descr: 'Restriction is currently active.' },
+    { code: 'Draft', name: 'Draft', descr: 'Restriction is being prepared.' },
+    { code: 'Retired', name: 'Retired', descr: 'Restriction is no longer in force.' },
+    { code: 'Suspended', name: 'Suspended', descr: 'Restriction is temporarily suspended.' },
+  ]],
+  ['VehicleClasses', [
+    { code: 'All Vehicles', name: 'All Vehicles', descr: 'Applies to all vehicles.' },
+    { code: 'B-Double', name: 'B-Double', descr: 'Applies to B-Double vehicles.' },
+    { code: 'Heavy Vehicles', name: 'Heavy Vehicles', descr: 'Applies to heavy vehicles.' },
+    { code: 'Oversize Overmass', name: 'Oversize Overmass', descr: 'Applies to oversize or overmass vehicles.' },
+    { code: 'PBS Vehicles', name: 'PBS Vehicles', descr: 'Applies to PBS-approved vehicles.' },
+  ]],
+  ['RestrictionCategories', [
+    { code: 'Permanent', name: 'Permanent', descr: 'Restriction is ongoing until changed or retired.' },
+    { code: 'Temporary', name: 'Temporary', descr: 'Restriction applies for a temporary period only.' },
+  ]],
+  ['RestrictionUnits', [
+    { code: 'approval', name: 'approval', descr: 'Restriction value is approval based.' },
+    { code: 'km/h', name: 'km/h', descr: 'Speed limit in kilometres per hour.' },
+    { code: 'm', name: 'metres (m)', descr: 'Dimensional limit in metres.' },
+    { code: 't', name: 'tonnes (t)', descr: 'Mass limit in tonnes.' },
+  ]],
+  ['RestrictionDirections', [
+    { code: 'Both Directions', name: 'Both Directions', descr: 'Restriction applies in both directions.' },
+    { code: 'Eastbound', name: 'Eastbound', descr: 'Restriction applies eastbound only.' },
+    { code: 'Northbound', name: 'Northbound', descr: 'Restriction applies northbound only.' },
+    { code: 'Southbound', name: 'Southbound', descr: 'Restriction applies southbound only.' },
+    { code: 'Westbound', name: 'Westbound', descr: 'Restriction applies westbound only.' },
+  ]],
+])
 
 function buildSampleDataRow(dataset) {
   let sample
