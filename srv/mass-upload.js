@@ -300,84 +300,33 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
   const db = await cds.connect.to('db')
   const tx = db.tx()
   const batchId = cds.utils.uuid()
-  const auditContext = { db, batchId, changedBy: uploadedBy || 'system' }
+  const auditContext = { db, batchId, changedBy: uploadedBy || 'system', batchBridgeCache: new Map() }
 
   try {
     let summaries
     let skipped = []
     let warnings = []
 
+    // Parse attribute sheets from the workbook BEFORE opening DB connections
+    let attrSheetData = null
     if (lowerName.endsWith('.xlsx')) {
       const result = await importWorkbook(tx, buffer, datasetName, auditContext)
       summaries = result.summaries
       skipped = result.skipped
       warnings = result.warnings
 
-      // Process attribute value sheets (BridgeAttributes, RestrictionAttributes)
+      // Collect attribute sheet rows now (pure parsing, no DB calls) so we can
+      // process them after tx.commit() and avoid holding a transaction connection
+      // open while making separate db.run() calls (would deadlock on HANA).
       const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
       const attrSheetMap = { BridgeAttributes: 'bridge', RestrictionAttributes: 'restriction' }
+      attrSheetData = []
       for (const [sheetName, objectType] of Object.entries(attrSheetMap)) {
         const attrSheet = workbook.Sheets[sheetName]
         if (!attrSheet) continue
         const attrRows = XLSX.utils.sheet_to_json(attrSheet, { header: 1, defval: null })
         if (attrRows.length < 3) continue
-        // Row 0 = required flags, Row 1 = headers
-        const headerRow = attrRows[1] || []
-        const idCol = objectType === 'bridge' ? 'bridgeId' : 'restrictionRef'
-        const idColIdx = headerRow.findIndex(h => h === idCol)
-        if (idColIdx === -1) continue
-
-        const idLookupEntity = objectType === 'bridge' ? 'bridge.management.Bridges' : 'bridge.management.Restrictions'
-        const refField = objectType === 'bridge' ? 'bridgeId' : 'restrictionRef'
-        const allObjs = await db.run(SELECT.from(idLookupEntity).columns('ID', refField))
-        const idByRef = new Map(allObjs.map(o => [o[refField], String(o['ID'])]))
-
-        const allDefs = await db.run(
-          SELECT.from('bridge.management.AttributeDefinitions').where({ objectType, status: 'Active' })
-        )
-        const defByKey = new Map(allDefs.map(d => [d.internalKey, d]))
-
-        // Map column index → attribute key
-        const colAttrMap = headerRow.map(spreadsheetHeader => {
-          const attributeKeyMatch = String(spreadsheetHeader || '').match(/\(([^)]+)\)$/)
-          return attributeKeyMatch ? defByKey.get(attributeKeyMatch[1]) || null : null
-        })
-
-        for (let ri = 2; ri < attrRows.length; ri++) {
-          const row = attrRows[ri]
-          const refVal = row[idColIdx] != null ? String(row[idColIdx]).trim() : ''
-          if (!refVal) continue
-          const objectId = idByRef.get(refVal)
-          if (!objectId) continue
-
-          for (let ci = 0; ci < colAttrMap.length; ci++) {
-            const def = colAttrMap[ci]
-            if (!def) continue
-            const rawVal = row[ci]
-            if (rawVal === null || rawVal === undefined) continue
-            try {
-              // Upsert value
-              const existing = await db.run(
-                SELECT.one.from('bridge.management.AttributeValues')
-                  .where({ objectType, objectId, attributeKey: def.internalKey })
-              )
-              const typedEntry = {
-                objectType, objectId, attributeKey: def.internalKey,
-                valueText: ['Text','SingleSelect','MultiSelect'].includes(def.dataType) ? String(rawVal) : null,
-                valueInteger: def.dataType === 'Integer' ? parseInt(rawVal, 10) : null,
-                valueDecimal: def.dataType === 'Decimal' ? parseFloat(rawVal) : null,
-                valueDate: def.dataType === 'Date' ? String(rawVal) : null,
-                valueBoolean: def.dataType === 'Boolean' ? Boolean(rawVal) : null,
-                modifiedBy: 'import', modifiedAt: new Date().toISOString()
-              }
-              if (existing) {
-                await db.run(UPDATE('bridge.management.AttributeValues').set(typedEntry).where({ ID: existing.ID }))
-              } else {
-                await db.run(INSERT.into('bridge.management.AttributeValues').entries({ ID: cds.utils.uuid(), ...typedEntry, createdBy: 'import', createdAt: new Date().toISOString() }))
-              }
-            } catch (_) { /* skip bad rows */ }
-          }
-        }
+        attrSheetData.push({ objectType, attrRows })
       }
     } else if (lowerName.endsWith('.csv')) {
       const result = await importCsv(tx, buffer, datasetName, auditContext)
@@ -411,6 +360,68 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
         updated: Number(summary.updated || 0),
         status: 'Completed'
       }))
+    }
+
+    // Process attribute sheets AFTER commit — safe to use db.run() now that tx is closed
+    if (attrSheetData?.length) {
+      for (const { objectType, attrRows } of attrSheetData) {
+        const idLookupEntity = objectType === 'bridge' ? 'bridge.management.Bridges' : 'bridge.management.Restrictions'
+        const refField = objectType === 'bridge' ? 'bridgeId' : 'restrictionRef'
+        const headerRow = attrRows[1] || []
+        const idColIdx = headerRow.findIndex(h => h === refField)
+        if (idColIdx === -1) continue
+
+        const allObjs = await db.run(SELECT.from(idLookupEntity).columns('ID', refField))
+        const idByRef = new Map(allObjs.map(o => [o[refField], String(o['ID'])]))
+
+        const allDefs = await db.run(
+          SELECT.from('bridge.management.AttributeDefinitions').where({ objectType, status: 'Active' })
+        )
+        const defByKey = new Map(allDefs.map(d => [d.internalKey, d]))
+
+        const colAttrMap = headerRow.map(spreadsheetHeader => {
+          const match = String(spreadsheetHeader || '').match(/\(([^)]+)\)$/)
+          return match ? defByKey.get(match[1]) || null : null
+        })
+
+        for (let ri = 2; ri < attrRows.length; ri++) {
+          const row = attrRows[ri]
+          const refVal = row[idColIdx] != null ? String(row[idColIdx]).trim() : ''
+          if (!refVal) continue
+          const objectId = idByRef.get(refVal)
+          if (!objectId) continue
+
+          for (let ci = 0; ci < colAttrMap.length; ci++) {
+            const def = colAttrMap[ci]
+            if (!def) continue
+            const rawVal = row[ci]
+            if (rawVal === null || rawVal === undefined) continue
+            try {
+              const existing = await db.run(
+                SELECT.one.from('bridge.management.AttributeValues')
+                  .where({ objectType, objectId, attributeKey: def.internalKey })
+              )
+              const typedEntry = {
+                objectType, objectId, attributeKey: def.internalKey,
+                valueText: ['Text','SingleSelect','MultiSelect'].includes(def.dataType) ? String(rawVal) : null,
+                valueInteger: def.dataType === 'Integer' ? parseInt(rawVal, 10) : null,
+                valueDecimal: def.dataType === 'Decimal' ? parseFloat(rawVal) : null,
+                valueDate: def.dataType === 'Date' ? String(rawVal) : null,
+                valueBoolean: def.dataType === 'Boolean' ? Boolean(rawVal) : null,
+                modifiedBy: 'import', modifiedAt: new Date().toISOString()
+              }
+              if (existing) {
+                await db.run(UPDATE('bridge.management.AttributeValues').set(typedEntry).where({ ID: existing.ID }))
+              } else {
+                await db.run(INSERT.into('bridge.management.AttributeValues').entries({
+                  ID: cds.utils.uuid(), ...typedEntry,
+                  createdBy: 'import', createdAt: new Date().toISOString()
+                }))
+              }
+            } catch (_) { /* skip bad rows */ }
+          }
+        }
+      }
     }
 
     const processed = summaries.reduce((total, summary) => total + summary.processed, 0)
@@ -724,6 +735,13 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
     if (row.bridgeId) existingByBridgeId.set(row.bridgeId, row)
   }
 
+  // Populate cache so restrictions can find bridges inserted in this batch
+  for (const row of normalized) {
+    if (row.bridgeId && auditContext?.batchBridgeCache) {
+      auditContext.batchBridgeCache.set(row.bridgeId, row.ID)
+    }
+  }
+
   if (inserts.length) {
     await tx.run(INSERT.into(dataset.entity).entries(inserts.map(stripMetadata)))
     for (const row of inserts) {
@@ -778,7 +796,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
     return emptySummary(dataset)
   }
 
-  await enrichRestrictionsWithBridgeKeys(tx, normalized, warnings)
+  await enrichRestrictionsWithBridgeKeys(tx, normalized, warnings, auditContext)
 
   const ids = normalized.map((row) => row.ID).filter(Boolean)
   const refs = normalized.map((row) => row.restrictionRef).filter(Boolean)
@@ -863,19 +881,37 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
   return buildSummary(dataset, normalized.length, inserts.length, updates.length)
 }
 
-async function enrichRestrictionsWithBridgeKeys(tx, rows, warnings) {
+async function enrichRestrictionsWithBridgeKeys(tx, rows, warnings, auditContext) {
   const bridgeRefs = [...new Set(rows.map((row) => row.bridgeRef).filter(Boolean))]
   if (!bridgeRefs.length) return
 
-  const bridges = await tx.run(
-    SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeRefs } })
-  )
-  const bridgeByRef = new Map(bridges.map((bridge) => [bridge.bridgeId, bridge.ID]))
+  // Build bridge map: first from in-memory batch cache (bridges inserted this session),
+  // then from DB for any refs not found in cache
+  const bridgeByRef = new Map()
+
+  const batchCache = auditContext?.batchBridgeCache
+  const refsNeedingDbLookup = []
+  for (const ref of bridgeRefs) {
+    if (batchCache?.has(ref)) {
+      bridgeByRef.set(ref, batchCache.get(ref))
+    } else {
+      refsNeedingDbLookup.push(ref)
+    }
+  }
+
+  if (refsNeedingDbLookup.length) {
+    const bridges = await tx.run(
+      SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: refsNeedingDbLookup } })
+    )
+    for (const bridge of bridges) {
+      bridgeByRef.set(bridge.bridgeId, bridge.ID)
+    }
+  }
 
   for (const row of rows) {
     if (!row.bridgeRef) continue
     const bridgeId = bridgeByRef.get(row.bridgeRef)
-    if (!bridgeId) {
+    if (bridgeId === undefined || bridgeId === null) {
       if (warnings) warnings.push(`Restrictions row ${row.__rowNumber}: bridgeRef "${row.bridgeRef}" not found — bridge link cleared.`)
       row.bridge_ID = null
     } else {
@@ -1305,7 +1341,6 @@ const FALLBACK_LOOKUP_DATA = new Map([
     { code: 'Westbound', name: 'Westbound', descr: 'Restriction applies westbound only.' },
   ]],
 ])
-
 function buildSampleDataRow(dataset) {
   let sample
   if (dataset.name === 'Bridges') sample = SAMPLE_ROW_BRIDGE
