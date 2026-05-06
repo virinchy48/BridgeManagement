@@ -348,7 +348,8 @@ sap.ui.define([
         await this._appendUploadHistory();
         this._setSelectedFile(null);
         this.byId("fileUploader").clear();
-        MessageToast.show("Mass upload completed");
+        this.byId("uploadWizard").nextStep();
+        MessageToast.show("Mass upload completed successfully");
       } catch (error) {
         MessageBox.error(error.message || "Upload failed");
       } finally {
