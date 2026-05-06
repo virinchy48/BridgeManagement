@@ -412,7 +412,7 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
 
     const processed = summaries.reduce((total, summary) => total + summary.processed, 0)
     return {
-      message: `Mass upload completed. ${processed} rows processed across ${summaries.length} dataset(s).`,
+      message: `Mass upload completed successfully. ${processed} rows processed across ${summaries.length} dataset(s).`,
       summaries,
       skipped,
       warnings
