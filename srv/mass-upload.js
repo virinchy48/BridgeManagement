@@ -426,15 +426,13 @@ async function validateUpload({ buffer, fileName, datasetName }) {
   let validCount = 0
   let warningCount = 0
   let errorCount = 0
-  let previewColumns = []
+  const multiSheet = datasets.length > 1
 
   for (const dataset of datasets) {
     const sheet = lowerName.endsWith('.xlsx') ? workbook.Sheets[dataset.name] : workbook.Sheets[workbook.SheetNames[0]]
     if (!sheet) continue
     const rows = parseSheetRows(sheet, dataset)
-    if (!previewColumns.length) {
-      previewColumns = getPreviewColumns(dataset)
-    }
+    const datasetColumns = getPreviewColumns(dataset)
 
     for (const row of rows) {
       const messages = []
@@ -458,11 +456,12 @@ async function validateUpload({ buffer, fileName, datasetName }) {
 
       previewRows.push({
         rowNum: row.__rowNumber,
-        _c1: formatPreviewCell(row, previewColumns[0]),
-        _c2: formatPreviewCell(row, previewColumns[1]),
-        _c3: formatPreviewCell(row, previewColumns[2]),
-        _c4: formatPreviewCell(row, previewColumns[3]),
-        _c5: formatPreviewCell(row, previewColumns[4]),
+        sheet: multiSheet ? dataset.label : '',
+        _c1: formatPreviewCell(row, datasetColumns[0]),
+        _c2: formatPreviewCell(row, datasetColumns[1]),
+        _c3: formatPreviewCell(row, datasetColumns[2]),
+        _c4: formatPreviewCell(row, datasetColumns[3]),
+        _c5: formatPreviewCell(row, datasetColumns[4]),
         validText: status === 'Error' ? 'Errors' : status === 'Warning' ? 'Warnings' : 'Valid',
         statusState: status === 'Error' ? 'Error' : status === 'Warning' ? 'Warning' : 'Success',
         message: stripDatasetRowPrefix(messages.join('; '))
@@ -474,16 +473,18 @@ async function validateUpload({ buffer, fileName, datasetName }) {
     throw new Error('The file contains only header rows. Please add data rows to at least one sheet before uploading.')
   }
 
+  const firstDatasetColumns = getPreviewColumns(datasets[0])
   return {
     fileName,
     totalCount,
     validCount,
     warningCount,
     errorCount,
-    previewTitle: `Parsed ${totalCount} row(s) - showing the first ${Math.min(totalCount, 10)}.`,
-    previewColumns: previewColumns.map((column) => column.label),
-    previewRows: previewRows.slice(0, 10),
-    previewTruncated: totalCount > 10,
+    multiSheet,
+    previewTitle: `Parsed ${totalCount} row(s).`,
+    previewColumns: firstDatasetColumns.map((column) => column.label),
+    previewRows,
+    previewTruncated: false,
     message: buildValidationMessage(totalCount, validCount, warningCount, errorCount)
   }
 }

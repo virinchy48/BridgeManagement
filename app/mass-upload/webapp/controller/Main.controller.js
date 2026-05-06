@@ -46,6 +46,7 @@ sap.ui.define([
         previewMessageType: "Information",
         previewRows: [],
         previewTitle: "",
+        previewMultiSheet: false,
         previewColHdr1: "",
         previewColHdr2: "",
         previewColHdr3: "",
@@ -257,6 +258,7 @@ sap.ui.define([
         model.setProperty("/previewMessageType", payload.errorCount > 0 ? (payload.validCount > 0 ? "Warning" : "Error") : "Success");
         model.setProperty("/previewRows", payload.previewRows || []);
         model.setProperty("/previewTitle", payload.previewTitle || "");
+        model.setProperty("/previewMultiSheet", !!payload.multiSheet);
         model.setProperty("/previewColHdr1", previewColumns[0] || "");
         model.setProperty("/previewColHdr2", previewColumns[1] || "");
         model.setProperty("/previewColHdr3", previewColumns[2] || "");
@@ -527,6 +529,7 @@ sap.ui.define([
       model.setProperty("/previewMessageType", "Information");
       model.setProperty("/previewRows", []);
       model.setProperty("/previewTitle", "");
+      model.setProperty("/previewMultiSheet", false);
       model.setProperty("/previewColHdr1", "");
       model.setProperty("/previewColHdr2", "");
       model.setProperty("/previewColHdr3", "");

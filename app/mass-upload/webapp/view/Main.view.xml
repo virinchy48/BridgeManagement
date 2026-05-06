@@ -90,7 +90,8 @@
                       <Table
                         id="previewTable"
                         items="{view>/previewRows}"
-                        growing="false"
+                        growing="true"
+                        growingThreshold="25"
                         mode="None"
                         noDataText="{i18n>previewNoData}">
                         <headerToolbar>
@@ -100,6 +101,7 @@
                         </headerToolbar>
                         <columns>
                           <Column width="6rem"><Text text="{i18n>previewColRow}" /></Column>
+                          <Column visible="{view>/previewMultiSheet}" width="10rem"><Text text="Sheet" /></Column>
                           <Column><Text text="{view>/previewColHdr1}" /></Column>
                           <Column><Text text="{view>/previewColHdr2}" /></Column>
                           <Column><Text text="{view>/previewColHdr3}" /></Column>
@@ -112,6 +114,7 @@
                           <ColumnListItem>
                             <cells>
                               <Text text="{view>rowNum}" />
+                              <Text text="{view>sheet}" wrapping="false" />
                               <Text text="{view>_c1}" wrapping="false" />
                               <Text text="{view>_c2}" wrapping="false" />
                               <Text text="{view>_c3}" wrapping="false" />
