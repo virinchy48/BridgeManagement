@@ -303,13 +303,37 @@ annotate AdminService.Bridges with {
   ) @title: 'Bridge Status';
   // GeoJSON is maintained on the object page, not in the create dialog
   geoJson    @Common.FieldControl: #Optional  @UI.MultiLineText  @title: 'Bridge Geometry (GeoJSON)';
-  // Bridge ID auto-generated on create; never user-entered
-  bridgeId   @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Bridge ID (auto-generated)';
+  // Bridge ID auto-generated on create; never user-entered.
+  // The ValueList on Bridges itself powers the search-help in the filter bar.
+  bridgeId @(
+    Core.Computed,
+    Common.FieldControl: #ReadOnly,
+    Common.ValueList: {
+      SearchSupported : true,
+      CollectionPath  : 'Bridges',
+      Parameters      : [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridgeId,   ValueListProperty: 'bridgeId'   },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'state'      }
+      ]
+    }
+  ) @title: 'Bridge ID (auto-generated)';
 };
 
 annotate AdminService.Bridges with {
   // Mandatory fields
-  bridgeName   @Common.FieldControl: #Mandatory  @title: 'Bridge Name';
+  bridgeName @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueList: {
+      SearchSupported : true,
+      CollectionPath  : 'Bridges',
+      Parameters      : [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridgeName, ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId'  },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'state'     }
+      ]
+    }
+  ) @title: 'Bridge Name';
   state @(
     Common.FieldControl: #Mandatory,
     Common.ValueListWithFixedValues,
