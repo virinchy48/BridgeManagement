@@ -4,6 +4,7 @@ using {bridge.management as my} from '../db/schema';
 service AdminService {
 
   // ── Bridges ── viewer: read | manager: create/update/actions | admin: delete
+  @cds.redirection.target  // canonical projection — resolves ambiguity vs BridgeNameValues / BridgeIdValues
   @restrict: [
     { grant: 'READ',                                         to: 'view'   },
     { grant: ['CREATE','UPDATE','deactivate','reactivate'],  to: 'manage' },
@@ -240,6 +241,17 @@ service AdminService {
     key code : String(20);
         name : String(30);
   }
+
+  // Value-help projections with String keys so that Fiori Elements generates a
+  // properly quoted $filter=bridgeName eq 'value' / $filter=bridgeId eq 'value'
+  // rather than $filter=ID eq value (integer PK, unquoted → OData parse error).
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'view' }]
+  entity BridgeNameValues as SELECT from my.Bridges { key bridgeName, bridgeId, state };
+
+  @readonly
+  @restrict: [{ grant: 'READ', to: 'view' }]
+  entity BridgeIdValues as SELECT from my.Bridges { key bridgeId, bridgeName, state };
 }
 
 annotate AdminService.Bridges     with { modifiedAt @odata.etag }

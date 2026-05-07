@@ -308,9 +308,10 @@ annotate AdminService.Bridges with {
   bridgeId @(
     Core.Computed,
     Common.FieldControl: #ReadOnly,
+    Common.ValueListWithFixedValues: false,
     Common.ValueList: {
       SearchSupported : true,
-      CollectionPath  : 'Bridges',
+      CollectionPath  : 'BridgeIdValues',
       Parameters      : [
         { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridgeId,   ValueListProperty: 'bridgeId'   },
         { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
@@ -324,9 +325,10 @@ annotate AdminService.Bridges with {
   // Mandatory fields
   bridgeName @(
     Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues: false,
     Common.ValueList: {
       SearchSupported : true,
-      CollectionPath  : 'Bridges',
+      CollectionPath  : 'BridgeNameValues',
       Parameters      : [
         { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridgeName, ValueListProperty: 'bridgeName' },
         { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId'  },

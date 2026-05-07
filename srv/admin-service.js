@@ -375,8 +375,15 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
    */
   this.before ('NEW', Bridges.drafts, async (req) => {
     if (req.data.ID) return
-    const { ID:id1 } = await SELECT.one.from(Bridges).columns('max(ID) as ID')
-    const { ID:id2 } = await SELECT.one.from(Bridges.drafts).columns('max(ID) as ID')
+    // Use direct DB queries to get the true max ID across ALL bridges (Active + Inactive),
+    // bypassing the service layer's before('READ') Active-filter injection.
+    const db = await cds.connect.to('db')
+    const { maxID: id1 } = await db.run(
+      SELECT.one.from('bridge.management.Bridges').columns('max(ID) as maxID')
+    )
+    const { maxID: id2 } = await db.run(
+      SELECT.one.from('bridge.management.Bridges_drafts').columns('max(ID) as maxID')
+    )
     req.data.ID = Math.max(id1||0, id2||0) + 1
     if (!req.data.bridgeId) req.data.bridgeId = bridgeIdFor(req.data.ID, req.data.state)
   })
@@ -400,12 +407,29 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   this.before('NEW', BridgeCapacities.drafts, ensureSingleCapacityPerBridge)
   this.before('CREATE', BridgeCapacities, ensureSingleCapacityPerBridge)
 
-  this.after('READ', Bridges, async results => {
+  this.after('READ', Bridges, async (results, req) => {
     if (!results) return
+
+    // Only compute hasCapacity when the OData client explicitly selects it.
+    // Internal service reads (validateRequiredFieldsWithExisting, audit lookups, etc.)
+    // do not request hasCapacity — skipping the BridgeCapacities DB round-trip for
+    // those keeps draftActivate and draft-PATCH latency low.
+    const cols = req.query?.SELECT?.columns
+    const hasCapacityRequested = !cols || cols.some(
+      col => col === '*' || col?.ref?.[0] === 'hasCapacity'
+    )
+    if (!hasCapacityRequested) return
+
     const list = Array.isArray(results) ? results : [results]
     const ids = list.map(b => b.ID).filter(Boolean)
     if (!ids.length) return
-    const caps = await SELECT.from(BridgeCapacities).columns('bridge_ID').where({ bridge_ID: { in: ids } })
+
+    // Use direct DB connection to bypass service layer and avoid potential
+    // re-entrant draft processing on BridgeCapacities.
+    const db = await cds.connect.to('db')
+    const caps = await db.run(
+      SELECT.from('bridge.management.BridgeCapacities').columns('bridge_ID').where({ bridge_ID: { in: ids } })
+    )
     const withCap = new Set(caps.map(c => c.bridge_ID))
     for (const b of list) b.hasCapacity = withCap.has(b.ID)
   })
@@ -420,6 +444,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
 
   this.before('SAVE', Bridges, req => {
     const data = req.data
+    if (!data.status) data.status = 'Active'
     if (data.ID && (!data.bridgeId || /^BRG-AUS-/.test(data.bridgeId))) {
       data.bridgeId = bridgeIdFor(data.ID, data.state)
     }
@@ -466,10 +491,18 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   // • No status filter present → inject status = 'Active'
   // • Explicit status filter (Active, Inactive, or both) → pass through unchanged
   this.before('READ', Bridges, (req) => {
-    if (req.params?.length > 0) return  // single-entity fetch by key — skip
+    if (req.params?.length > 0) return  // OData single-entity GET by key — skip
 
-    const whereStr = JSON.stringify(req.query.SELECT?.where ?? [])
-    if (whereStr.includes('"status"')) return  // explicit status filter — leave it alone
+    const where = req.query.SELECT?.where ?? []
+
+    // Internal framework reads (draftEdit entity lookup, value-help validation, etc.)
+    // include the integer PK 'ID' in the WHERE clause.  Injecting a status filter on
+    // those would make Inactive bridges invisible to draftEdit → 404.  Safe to skip
+    // because these are always single-record lookups, not broad list queries.
+    if (where.some(part => part?.ref?.[0] === 'ID')) return
+
+    const whereStr = JSON.stringify(where)
+    if (whereStr.includes('"status"')) return  // explicit status filter from OData client — leave it alone
 
     // No status condition — append AND status = 'Active' directly to the CQN array.
     // Direct array mutation avoids req.query.where() re-validation, which trips on
@@ -498,13 +531,19 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   this.on('deactivate', Bridges, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
+    const bridge = await SELECT.one.from('bridge.management.Bridges').columns('bridgeName','status').where({ ID })
+    if (bridge?.status === 'Inactive') return req.error(409, `Bridge "${bridge.bridgeName}" is already inactive.`)
     await db.run(UPDATE('bridge.management.Bridges').set({ status: 'Inactive' }).where({ ID }))
+    req.notify(200, `Bridge "${bridge?.bridgeName}" has been deactivated.`)
     return db.run(SELECT.one.from('bridge.management.Bridges').where({ ID }))
   })
   this.on('reactivate', Bridges, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
+    const bridge = await SELECT.one.from('bridge.management.Bridges').columns('bridgeName','status').where({ ID })
+    if (bridge?.status === 'Active') return req.error(409, `Bridge "${bridge.bridgeName}" is already active.`)
     await db.run(UPDATE('bridge.management.Bridges').set({ status: 'Active' }).where({ ID }))
+    req.notify(200, `Bridge "${bridge?.bridgeName}" has been reactivated.`)
     return db.run(SELECT.one.from('bridge.management.Bridges').where({ ID }))
   })
 
@@ -516,13 +555,19 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   this.on('deactivate', Restrictions, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
+    const restriction = await SELECT.one.from('bridge.management.Restrictions').columns('restrictionRef','restrictionStatus').where({ ID })
+    if (restriction?.restrictionStatus === 'Retired') return req.error(409, `Restriction "${restriction.restrictionRef}" is already inactive.`)
     await db.run(UPDATE('bridge.management.Restrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ ID }))
+    req.notify(200, `Restriction "${restriction?.restrictionRef}" has been deactivated.`)
     return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
   })
   this.on('reactivate', Restrictions, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
+    const restriction = await SELECT.one.from('bridge.management.Restrictions').columns('restrictionRef','restrictionStatus').where({ ID })
+    if (restriction?.restrictionStatus === 'Active') return req.error(409, `Restriction "${restriction.restrictionRef}" is already active.`)
     await db.run(UPDATE('bridge.management.Restrictions').set({ active: true, restrictionStatus: 'Active' }).where({ ID }))
+    req.notify(200, `Restriction "${restriction?.restrictionRef}" has been reactivated.`)
     return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
   })
 
@@ -560,6 +605,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
     const old = await fetchCurrentRecord(db, 'bridge.management.BridgeRestrictions', { ID })
+    if (old?.restrictionStatus === 'Retired') return req.error(409, `Restriction "${old.restrictionRef}" is already inactive.`)
     await db.run(UPDATE('bridge.management.BridgeRestrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ ID }))
     await writeChangeLogs(db, {
       objectType: 'BridgeRestriction',
@@ -573,6 +619,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
         { fieldName: 'restrictionStatus', oldValue: old?.restrictionStatus || '',              newValue: 'Retired' }
       ]
     })
+    req.notify(200, `Restriction "${old?.restrictionRef}" has been deactivated.`)
     return db.run(SELECT.one.from('bridge.management.BridgeRestrictions').where({ ID }))
   })
 
@@ -580,6 +627,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
     const old = await fetchCurrentRecord(db, 'bridge.management.BridgeRestrictions', { ID })
+    if (old?.restrictionStatus === 'Active') return req.error(409, `Restriction "${old.restrictionRef}" is already active.`)
     await db.run(UPDATE('bridge.management.BridgeRestrictions').set({ active: true, restrictionStatus: 'Active' }).where({ ID }))
     await writeChangeLogs(db, {
       objectType: 'BridgeRestriction',
@@ -593,6 +641,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
         { fieldName: 'restrictionStatus', oldValue: old?.restrictionStatus || 'Retired',       newValue: 'Active' }
       ]
     })
+    req.notify(200, `Restriction "${old?.restrictionRef}" has been reactivated.`)
     return db.run(SELECT.one.from('bridge.management.BridgeRestrictions').where({ ID }))
   })
 
