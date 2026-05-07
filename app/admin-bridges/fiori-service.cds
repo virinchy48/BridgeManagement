@@ -289,7 +289,18 @@ annotate AdminService.Bridges with {
   modifiedBy @Core.Computed  @title: 'Last Modified By';
   modifiedAt @Core.Computed  @title: 'Last Modified At';
   // Bridge status is managed exclusively by Deactivate / Reactivate actions
-  status     @Common.FieldControl: #ReadOnly  @title: 'Bridge Status';
+  status @(
+    Common.FieldControl: #ReadOnly,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: {
+      SearchSupported: false,
+      CollectionPath : 'BridgeStatusValues',
+      Parameters     : [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: status, ValueListProperty: 'code' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+      ]
+    }
+  ) @title: 'Bridge Status';
   // GeoJSON is maintained on the object page, not in the create dialog
   geoJson    @Common.FieldControl: #Optional  @UI.MultiLineText  @title: 'Bridge Geometry (GeoJSON)';
   // Bridge ID auto-generated on create; never user-entered

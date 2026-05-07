@@ -114,6 +114,9 @@
             "settings": {
               "entitySet": "Bridges",
               "liveMode": true,
+              "filterDefaultValues": {
+                "status": "Active"
+              },
               "navigation": {
                 "Bridges": {
                   "detail": {

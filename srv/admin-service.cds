@@ -232,6 +232,14 @@ service AdminService {
 
   @requires: 'admin'
   action clearDemoData() returns String;
+
+  // Synthetic value list for the Bridge status filter — served inline, no DB table.
+  @readonly
+  @cds.persistence.skip
+  entity BridgeStatusValues {
+    key code : String(20);
+        name : String(30);
+  }
 }
 
 annotate AdminService.Bridges     with { modifiedAt @odata.etag }

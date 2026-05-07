@@ -1,4 +1,5 @@
 const cds = require('@sap/cds')
+
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 const {
   getBridgeIdFromCapacityRequest,
@@ -8,7 +9,7 @@ const {
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
-  const { Bridges, Restrictions, BridgeRestrictions, BridgeCapacities, BridgeScourAssessments } = this.entities
+  const { Bridges, Restrictions, BridgeRestrictions, BridgeCapacities, BridgeScourAssessments, BridgeStatusValues } = this.entities
 
   const bridgeIdFor = (ID, state) => {
     const stateMap = { NSW:'NSW', VIC:'VIC', QLD:'QLD', WA:'WA', SA:'SA', TAS:'TAS', ACT:'ACT', NT:'NT' }
@@ -440,6 +441,30 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (!existing) {
       await INSERT.into(GISConfig).entries({ id: 'default' })
     }
+  })
+
+  // Serve the two-value status filter list inline — no DB table needed.
+  // Active + Inactive together covers all bridges; no 'All' sentinel is needed.
+  this.on('READ', BridgeStatusValues, () => [
+    { code: 'Active',   name: 'Active' },
+    { code: 'Inactive', name: 'Inactive' }
+  ])
+
+  // Default to Active-only on collection reads.
+  // • No status filter present → inject status = 'Active'
+  // • Explicit status filter (Active, Inactive, or both) → pass through unchanged
+  this.before('READ', Bridges, (req) => {
+    if (req.params?.length > 0) return  // single-entity fetch by key — skip
+
+    const whereStr = JSON.stringify(req.query.SELECT?.where ?? [])
+    if (whereStr.includes('"status"')) return  // explicit status filter — leave it alone
+
+    // No status condition — append AND status = 'Active' directly to the CQN array.
+    // Direct array mutation avoids req.query.where() re-validation, which trips on
+    // the virtual hasCapacity element defined on the service projection.
+    if (!req.query.SELECT.where) req.query.SELECT.where = []
+    if (req.query.SELECT.where.length > 0) req.query.SELECT.where.push('and')
+    req.query.SELECT.where.push({ ref: ['status'] }, '=', { val: 'Active' })
   })
 
   // Block hard deletes on active entities — drafts may still be discarded normally
