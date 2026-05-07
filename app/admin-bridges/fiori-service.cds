@@ -1107,3 +1107,23 @@ annotate AdminService.BridgeScourAssessments with {
 
 annotate bridge.management.Bridges with @fiori.draft.enabled;
 annotate AdminService.Bridges with @odata.draft.enabled;
+
+////////////////////////////////////////////////////////////////////////////
+//  Action side-effects — force FE to re-read status after deactivate/reactivate
+//  so the button visibility toggling (@UI.Hidden based on status) updates immediately
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.Bridges with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['status'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['status'] };
+};
+
+annotate AdminService.Restrictions with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+};
+
+annotate AdminService.BridgeRestrictions with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+};
