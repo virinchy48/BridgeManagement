@@ -104,7 +104,7 @@
                           <Column width="10rem"><Text text="Sheet" /></Column>
                           <Column><Text text="{view>/previewColHdr1}" /></Column>
                           <Column><Text text="{view>/previewColHdr2}" /></Column>
-                          <Column><Text text="{view>/previewColHdr3}" /></Column>
+                          <Column width="30rem"><Text text="{view>/previewColHdr3}" /></Column>
                           <Column><Text text="{view>/previewColHdr4}" /></Column>
                           <Column><Text text="{view>/previewColHdr5}" /></Column>
                           <Column width="10rem"><Text text="{i18n>previewColValid}" /></Column>
@@ -117,7 +117,7 @@
                               <Text text="{view>sheet}" wrapping="false" />
                               <Text text="{view>_c1}" wrapping="false" />
                               <Text text="{view>_c2}" wrapping="false" />
-                              <Text text="{view>_c3}" wrapping="false" />
+                              <Text text="{view>_c3}" wrapping="true" />
                               <Text text="{view>_c4}" wrapping="false" />
                               <Text text="{view>_c5}" wrapping="false" />
                               <ObjectStatus text="{view>validText}" state="{view>statusState}" />
