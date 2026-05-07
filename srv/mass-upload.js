@@ -1282,11 +1282,11 @@ const FALLBACK_LOOKUP_DATA = new Map([
     { code: 'Unrestricted', name: 'Unrestricted', descr: 'No posting restrictions applied.' },
   ]],
   ['ConditionStates', [
-    { code: '1', name: 'Good', descr: 'Minor wear and tear. No significant structural defects. Normal monitoring adequate.' },
-    { code: '2', name: 'Fair', descr: 'Moderate deterioration. Some defects present but not immediately critical. Attention required.' },
-    { code: '3', name: 'Poor', descr: 'Significant defects. Structural integrity attention required. Active management needed.' },
-    { code: '4', name: 'Very Poor', descr: 'Major defects. Urgent repairs required. Possible load restrictions warranted.' },
-    { code: '5', name: 'Critical', descr: 'Imminent failure risk or structural failure possible. Immediate action required.' },
+    { code: 'Good',      name: 'Good',      descr: 'Minor wear and tear. No significant structural defects. Normal monitoring adequate.' },
+    { code: 'Fair',      name: 'Fair',      descr: 'Moderate deterioration. Some defects present but not immediately critical. Attention required.' },
+    { code: 'Poor',      name: 'Poor',      descr: 'Significant defects. Structural integrity attention required. Active management needed.' },
+    { code: 'Very Poor', name: 'Very Poor', descr: 'Major defects. Urgent repairs required. Possible load restrictions warranted.' },
+    { code: 'Critical',  name: 'Critical',  descr: 'Imminent failure risk or structural failure possible. Immediate action required.' },
   ]],
   ['ScourRiskLevels', [
     { code: 'High', name: 'High', descr: 'High scour risk. Foundation at or near estimated critical scour depth. Significant channel mobility. Annual scour depth measurement and countermeasures required.' },

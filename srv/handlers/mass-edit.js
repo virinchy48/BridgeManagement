@@ -13,11 +13,11 @@ const LEGACY_RATING_TO_TFNSW = {
 }
 
 const CONDITION_LABELS = {
-    1: 'GOOD',
-    2: 'FAIR',
-    3: 'POOR',
-    4: 'VERY_POOR',
-    5: 'CRITICAL'
+    1: 'Good',
+    2: 'Fair',
+    3: 'Poor',
+    4: 'Very Poor',
+    5: 'Critical'
 }
 
 module.exports = function registerMassEditHandlers (srv, { logAudit, validateEnum }) {

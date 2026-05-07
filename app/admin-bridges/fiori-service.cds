@@ -387,9 +387,8 @@ annotate AdminService.Bridges with {
   ) @title: 'Design Load';
   condition @(
     Common.ValueListWithFixedValues,
-    Common.ValueList: { SearchSupported: true, CollectionPath: 'ConditionStates', Parameters: [
-      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: condition, ValueListProperty: 'code' },
-      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    Common.ValueList: { SearchSupported: false, CollectionPath: 'ConditionStates', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: condition, ValueListProperty: 'code' }
     ]}
   ) @title: 'Condition State';
   scourRisk @(

@@ -2118,6 +2118,28 @@ cds.on('served', async () => {
   const adminSrv = cds.services['AdminService'];
   if (adminSrv) demoHandler(adminSrv);
 
+  // ── Migrate ConditionStates: ensure code = name (title-case) ───────────────
+  // Historic imports used numeric codes (1=Good, 2=Fair …).  Bridges store the
+  // name text directly in condition, so code must equal the name for filters to
+  // match.  This idempotent UPDATE runs on every boot and is a no-op once
+  // already migrated.
+  try {
+    const db = await cds.connect.to('db');
+    const numeric = await db.run(
+      SELECT.from('bridge.management.ConditionStates').where({ code: { in: ['1','2','3','4','5'] } })
+    );
+    if (numeric.length) {
+      for (const row of numeric) {
+        await db.run(
+          UPDATE('bridge.management.ConditionStates').set({ code: row.name }).where({ code: row.code })
+        );
+      }
+      cds.log('bms').info(`Migrated ${numeric.length} ConditionStates rows: code → name`);
+    }
+  } catch (migrationError) {
+    cds.log('bms').warn('ConditionStates migration skipped:', migrationError.message);
+  }
+
   // ── HANA: back-fill spatial geoLocation column after first boot ─────────────
   if (!isHanaDb()) return;
   try {

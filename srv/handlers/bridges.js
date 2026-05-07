@@ -2,11 +2,11 @@ const cds = require('@sap/cds')
 const LOG = cds.log('bms-bridges')
 
 const CONDITION_LABELS = {
-    1: 'GOOD',
-    2: 'FAIR',
-    3: 'POOR',
-    4: 'VERY_POOR',
-    5: 'CRITICAL'
+    1: 'Good',
+    2: 'Fair',
+    3: 'Poor',
+    4: 'Very Poor',
+    5: 'Critical'
 }
 
 const LEGACY_RATING_TO_TFNSW = {
@@ -47,7 +47,7 @@ function registerBridgeHandlers (srv, { logAudit }) {
         await UPDATE('bridge.management.Bridges').set({
             condition:         conditionValue,
             conditionRating,
-            highPriorityAsset: ['CRITICAL', 'VERY_POOR'].includes(conditionValue)
+            highPriorityAsset: ['Critical', 'Very Poor'].includes(conditionValue)
         }).where({ ID })
         const bridge = await SELECT.one.from('bridge.management.Bridges').where({ ID })
         await logAudit(null, req, 'ACTION', 'Bridge', ID, bridge?.bridgeName,

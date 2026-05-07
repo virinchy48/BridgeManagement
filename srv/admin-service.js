@@ -9,7 +9,7 @@ const {
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
-  const { Bridges, Restrictions, BridgeRestrictions, BridgeCapacities, BridgeScourAssessments, BridgeStatusValues } = this.entities
+  const { Bridges, Restrictions, BridgeRestrictions, BridgeCapacities, BridgeScourAssessments, BridgeStatusValues, ConditionStates } = this.entities
 
   const bridgeIdFor = (ID, state) => {
     const stateMap = { NSW:'NSW', VIC:'VIC', QLD:'QLD', WA:'WA', SA:'SA', TAS:'TAS', ACT:'ACT', NT:'NT' }
@@ -415,7 +415,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   // active entity. The before-CREATE handler fires on the draft entity but computed values
   // are lost through activation — SAVE is the reliable hook for draft-enabled entities.
   // Reference: TfNSW Bridge Inspection Manual 1-5 scale (mapped from legacy 1-10 BMS scale).
-  const CONDITION_LABELS_ADMIN = { 1:'GOOD', 2:'FAIR', 3:'POOR', 4:'VERY_POOR', 5:'CRITICAL' }
+  const CONDITION_LABELS_ADMIN = { 1:'Good', 2:'Fair', 3:'Poor', 4:'Very Poor', 5:'Critical' }
   const LEGACY_TO_TFNSW_ADMIN  = { 10:1,9:1, 8:2,7:2, 6:3,5:3, 4:4,3:4, 2:5,1:5 }
 
   this.before('SAVE', Bridges, req => {
@@ -442,6 +442,18 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       await INSERT.into(GISConfig).entries({ id: 'default' })
     }
   })
+
+  // Serve ConditionStates from memory so the filter dropdown always shows
+  // title-case names regardless of what numeric codes were imported historically.
+  // The localized DB view uses session_context (HANA-only) which is unreliable
+  // in SQLite dev — serving inline is the safest cross-environment approach.
+  this.on('READ', ConditionStates, () => [
+    { code: 'Good',      name: 'Good',      descr: 'Minor wear and tear. No significant structural defects.' },
+    { code: 'Fair',      name: 'Fair',      descr: 'Moderate deterioration. Some defects present but not immediately critical.' },
+    { code: 'Poor',      name: 'Poor',      descr: 'Significant defects. Structural integrity attention required.' },
+    { code: 'Very Poor', name: 'Very Poor', descr: 'Major defects. Urgent repairs required.' },
+    { code: 'Critical',  name: 'Critical',  descr: 'Imminent failure risk or structural failure possible.' }
+  ])
 
   // Serve the two-value status filter list inline — no DB table needed.
   // Active + Inactive together covers all bridges; no 'All' sentinel is needed.
