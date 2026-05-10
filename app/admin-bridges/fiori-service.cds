@@ -105,25 +105,6 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Ownership',           Target: '@UI.FieldGroup#Ownership'},
         ]
       },
-      // ── S2: Sub-domain Navigation Hub ───────────────────────────────────
-      // Each tile is an independent Fiori Object Page — click row to drill in
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Sub-domains',
-        ID    : 'BridgeSubdomains',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Condition Surveys',       Target: 'conditionSurveys/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Inspections',             Target: 'inspections/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Defects',                 Target: 'inspections/defects/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Capacity',                Target: 'capacities/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Load Ratings',            Target: 'loadRatings/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Compliance',       Target: 'riskAssessments/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Route Assessments',  Target: 'nhvrRouteAssessments/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Load Rating Certificates',Target: 'loadRatingCertificates/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Permits',                 Target: 'permits/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Active Restrictions',     Target: 'restrictions/@UI.LineItem'},
-        ]
-      },
       // ── S3: Documents & Map (custom fragments anchored via manifest.json) ─
       {
         $Type : 'UI.CollectionFacet',
@@ -586,7 +567,20 @@ annotate AdminService.Restrictions with {
 
 annotate AdminService.BridgeRestrictions with {
   ID    @UI.Hidden;
-  bridge @UI.Hidden;
+  bridge @(
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Bridge',
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',      LocalDataProperty: bridge_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
   createdAt @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
   // Auto-generated (BR-NNNN); never user-entered
   restrictionRef        @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Reference (auto-generated)';
@@ -712,6 +706,8 @@ annotate AdminService.BridgeRestrictions with @(
       }
     ],
     LineItem: [
+      {Value: bridge.bridgeId,       Label: 'Bridge ID'},
+      {Value: bridge.bridgeName,     Label: 'Bridge'},
       {Value: restrictionRef,        Label: 'Reference'},
       {Value: restrictionCategory,   Label: 'Category'},
       {Value: restrictionType,       Label: 'Type'},
@@ -782,6 +778,7 @@ annotate AdminService.BridgeRestrictions with @(
     ],
     FieldGroup#BRDetails: {
       Data: [
+        {Value: bridge_ID,          Label: 'Bridge'},
         {Value: restrictionRef},    // auto-generated BR-NNNN
         {Value: restrictionCategory},
         {Value: restrictionType},
@@ -881,7 +878,21 @@ annotate AdminService.BridgeRestrictions with @(
 
 annotate AdminService.BridgeCapacities with {
   ID         @UI.Hidden;
-  bridge     @UI.Hidden;
+  bridge @(
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Bridge',
+    Common.FieldControl    : #Mandatory,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',      LocalDataProperty: bridge_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
   createdAt  @UI.Hidden;  createdBy  @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
   capacityType          @Common.FieldControl: #Mandatory  @title: 'Capacity Type';
   grossMassLimit        @Common.FieldControl: #Mandatory  @title: 'Gross Mass Limit (t)';
@@ -943,6 +954,8 @@ annotate AdminService.BridgeCapacities with @(
       Description   : { $Type: 'UI.DataField', Value: capacityStatus }
     },
     LineItem: [
+      {Value: bridge.bridgeId,    Label: 'Bridge ID'},
+      {Value: bridge.bridgeName,  Label: 'Bridge'},
       {Value: capacityType,       Label: 'Capacity Type'},
       {Value: grossMassLimit,     Label: 'GVM (t)'},
       {Value: grossCombined,      Label: 'GCM (t)'},
@@ -971,6 +984,7 @@ annotate AdminService.BridgeCapacities with @(
     ],
     FieldGroup#CapacityGeneral: {
       Data: [
+        {Value: bridge_ID,   Label: 'Bridge'},
         {Value: capacityType},
       ]
     },
@@ -1293,9 +1307,29 @@ annotate AdminService.Bridges with {
 //  Bridge Detail Redesign — New Entity UI Annotations (7-Section Architecture)
 ////////////////////////////////////////////////////////////////////////////
 
-// ── BridgeInspections — Section 3: Condition & Inspections ──────────────
+// ── BridgeInspections — standalone + Bridge Details Inspections tab ─────
+annotate AdminService.BridgeInspections with {
+  bridge @(
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Bridge',
+    Common.FieldControl    : #Mandatory,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridge_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
+};
+
 annotate AdminService.BridgeInspections with @(
   UI.LineItem: [
+    {Value: bridge.bridgeId,        Label: 'Bridge ID'},
+    {Value: bridge.bridgeName,      Label: 'Bridge'},
     {Value: inspectionDate,         Label: 'Date'},
     {Value: inspectionType,         Label: 'Type'},
     {Value: inspector,              Label: 'Inspector'},
@@ -1326,6 +1360,7 @@ annotate AdminService.BridgeInspections with @(
   UI.FieldGroup#InspGeneral: {
     Label: 'General',
     Data: [
+      {Value: bridge_ID,       Label: 'Bridge'},
       {Value: inspectionDate},
       {Value: inspectionType},
       {Value: inspectionStandard},
@@ -1396,9 +1431,29 @@ annotate AdminService.BridgeElements with @(
   },
 );
 
-// ── BridgeRiskAssessments — Section 6: Risk, Compliance & Alerts ────────
+// ── BridgeRiskAssessments — standalone + Bridge Details ─────────────────
+annotate AdminService.BridgeRiskAssessments with {
+  bridge @(
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Bridge',
+    Common.FieldControl    : #Mandatory,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridge_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
+};
+
 annotate AdminService.BridgeRiskAssessments with @(
   UI.LineItem: [
+    {Value: bridge.bridgeId,    Label: 'Bridge ID'},
+    {Value: bridge.bridgeName,  Label: 'Bridge'},
     {Value: assessmentDate,      Label: 'Date'},
     {Value: riskType,            Label: 'Risk Type'},
     {Value: riskDescription,     Label: 'Description'},
@@ -1416,9 +1471,29 @@ annotate AdminService.BridgeRiskAssessments with @(
   },
 );
 
-// ── LoadRatingCertificates — Section 4: Restrictions & Permits ──────────
+// ── LoadRatingCertificates — standalone + Bridge Details ────────────────
+annotate AdminService.LoadRatingCertificates with {
+  bridge @(
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Bridge',
+    Common.FieldControl    : #Mandatory,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridge_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
+};
+
 annotate AdminService.LoadRatingCertificates with @(
   UI.LineItem: [
+    {Value: bridge.bridgeId,       Label: 'Bridge ID'},
+    {Value: bridge.bridgeName,     Label: 'Bridge'},
     {Value: certificateNumber,     Label: 'Certificate #'},
     {Value: status,                Label: 'Status'},
     {Value: ratingStandard,        Label: 'Standard'},
@@ -1450,6 +1525,7 @@ annotate AdminService.LoadRatingCertificates with @(
   UI.FieldGroup#LRCCertificate: {
     Label: 'Certificate',
     Data: [
+      {Value: bridge_ID,          Label: 'Bridge'},
       {Value: certificateNumber},
       {Value: certificateVersion},
       {Value: status},
@@ -1496,9 +1572,29 @@ annotate AdminService.LoadRatingCertificates with @(
   },
 );
 
-// ── NhvrRouteAssessments — Section 4: Restrictions & Permits ────────────
+// ── NhvrRouteAssessments — standalone + Bridge Details ──────────────────
+annotate AdminService.NhvrRouteAssessments with {
+  bridge @(
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Bridge',
+    Common.FieldControl    : #Mandatory,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridge_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
+};
+
 annotate AdminService.NhvrRouteAssessments with @(
   UI.LineItem: [
+    {Value: bridge.bridgeId,   Label: 'Bridge ID'},
+    {Value: bridge.bridgeName, Label: 'Bridge'},
     {Value: assessmentId,      Label: 'Assessment ID'},
     {Value: assessmentDate,    Label: 'Date'},
     {Value: assessmentStatus,  Label: 'Status'},
@@ -1513,7 +1609,24 @@ annotate AdminService.NhvrRouteAssessments with @(
     TypeName      : 'NHVR Route Assessment',
     TypeNamePlural: 'NHVR Route Assessments',
     Title         : {Value: assessmentId},
-    Description   : {Value: assessmentStatus},
+    Description   : {Value: bridge.bridgeName},
+  },
+  UI.Facets: [
+    { $Type: 'UI.ReferenceFacet', Label: 'Assessment Details', Target: '@UI.FieldGroup#NhvrDetails' }
+  ],
+  UI.FieldGroup#NhvrDetails: {
+    Data: [
+      { Value: bridge_ID,         Label: 'Bridge' },
+      { Value: assessmentId },
+      { Value: assessmentDate },
+      { Value: assessmentStatus },
+      { Value: assessorName },
+      { Value: assessmentVersion },
+      { Value: validFrom },
+      { Value: validTo },
+      { Value: nhvrApprovalDate },
+      { Value: nextReviewDate },
+    ]
   },
 );
 
@@ -1673,8 +1786,10 @@ annotate AdminService.BridgeConditionSurveys with @(
     Title         : { Value: surveyRef },
     Description   : { Value: surveyDate }
   },
-  UI.SelectionFields: [ surveyRef, surveyType, overallGrade, status, active ],
+  UI.SelectionFields: [ bridgeRef, surveyRef, surveyType, overallGrade, status, active ],
   UI.LineItem: [
+    { Value: bridge.bridgeId,  Label: 'Bridge ID' },
+    { Value: bridge.bridgeName, Label: 'Bridge' },
     { Value: surveyRef,        Label: 'Survey Ref' },
     { Value: surveyDate,       Label: 'Survey Date' },
     { Value: surveyType,       Label: 'Type' },
@@ -1694,6 +1809,7 @@ annotate AdminService.BridgeConditionSurveys with @(
   UI.FieldGroup#ConSurveyGeneral: {
     Label: 'General',
     Data: [
+      { Value: bridgeRef },
       { Value: surveyRef },
       { Value: surveyDate },
       { Value: surveyType },
@@ -1736,8 +1852,21 @@ annotate AdminService.BridgeConditionSurveys with {
   ID         @Core.Computed;
   createdBy  @UI.Hidden;  createdAt  @UI.Hidden;
   modifiedBy @UI.Hidden;  modifiedAt @UI.Hidden;
-  bridge     @UI.Hidden;
+  bridge     @UI.Hidden;   // FK resolved via bridgeRef; navigation used for display text only
   surveyRef  @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Survey Ref (auto-generated)';
+  bridgeRef @(
+    Common.FieldControl    : #Mandatory,
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterInOut',       ValueListProperty: 'bridgeId',   LocalDataProperty: bridgeRef },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' }
+      ]
+    }
+  ) @title: 'Bridge';
   surveyDate @Common.FieldControl: #Mandatory  @title: 'Survey Date';
   surveyType @title: 'Survey Type';
   surveyedBy @title: 'Surveyed By';
@@ -1769,8 +1898,10 @@ annotate AdminService.BridgeLoadRatings with @(
     Title         : { Value: ratingRef },
     Description   : { Value: vehicleClass }
   },
-  UI.SelectionFields: [ ratingRef, vehicleClass, ratingMethod, status, active ],
+  UI.SelectionFields: [ bridgeRef, ratingRef, vehicleClass, ratingMethod, status, active ],
   UI.LineItem: [
+    { Value: bridge.bridgeId,  Label: 'Bridge ID' },
+    { Value: bridge.bridgeName, Label: 'Bridge' },
     { Value: ratingRef,       Label: 'Rating Ref' },
     { Value: vehicleClass,    Label: 'Vehicle Class' },
     { Value: ratingMethod,    Label: 'Method' },
@@ -1792,6 +1923,7 @@ annotate AdminService.BridgeLoadRatings with @(
   UI.FieldGroup#LrtClass: {
     Label: 'Classification',
     Data: [
+      { Value: bridgeRef },
       { Value: ratingRef },
       { Value: vehicleClass },
       { Value: ratingMethod },
@@ -1837,8 +1969,21 @@ annotate AdminService.BridgeLoadRatings with {
   ID            @Core.Computed;
   createdBy     @UI.Hidden;  createdAt     @UI.Hidden;
   modifiedBy    @UI.Hidden;  modifiedAt    @UI.Hidden;
-  bridge        @UI.Hidden;
+  bridge        @UI.Hidden;   // FK resolved via bridgeRef; navigation used for display text only
   ratingRef     @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Rating Ref (auto-generated)';
+  bridgeRef @(
+    Common.FieldControl    : #Mandatory,
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterInOut',       ValueListProperty: 'bridgeId',   LocalDataProperty: bridgeRef },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' }
+      ]
+    }
+  ) @title: 'Bridge';
   vehicleClass  @Common.FieldControl: #Mandatory  @title: 'Vehicle Class';
   ratingMethod  @title: 'Rating Method';
   ratingFactor  @title: 'Rating Factor'  @Common.QuickInfo: 'Valid range: 0.0 – 2.0';
@@ -1870,8 +2015,10 @@ annotate AdminService.BridgePermits with @(
     Title         : { Value: permitRef },
     Description   : { Value: permitType }
   },
-  UI.SelectionFields: [ permitRef, permitType, vehicleClass, status, active ],
+  UI.SelectionFields: [ bridgeRef, permitRef, permitType, vehicleClass, status, active ],
   UI.LineItem: [
+    { Value: bridge.bridgeId,  Label: 'Bridge ID' },
+    { Value: bridge.bridgeName, Label: 'Bridge' },
     { Value: permitRef,      Label: 'Permit Ref' },
     { Value: permitType,     Label: 'Type' },
     { Value: applicantName,  Label: 'Applicant' },
@@ -1893,6 +2040,7 @@ annotate AdminService.BridgePermits with @(
   UI.FieldGroup#PrmApplication: {
     Label: 'Application',
     Data: [
+      { Value: bridgeRef },
       { Value: permitRef },
       { Value: permitType },
       { Value: applicantName },
@@ -1958,8 +2106,21 @@ annotate AdminService.BridgePermits with {
   ID            @Core.Computed;
   createdBy     @UI.Hidden;  createdAt     @UI.Hidden;
   modifiedBy    @UI.Hidden;  modifiedAt    @UI.Hidden;
-  bridge        @UI.Hidden;
+  bridge        @UI.Hidden;   // FK resolved via bridgeRef; navigation used for display text only
   permitRef     @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Permit Ref (auto-generated)';
+  bridgeRef @(
+    Common.FieldControl    : #Mandatory,
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterInOut',       ValueListProperty: 'bridgeId',   LocalDataProperty: bridgeRef },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' }
+      ]
+    }
+  ) @title: 'Bridge';
   permitType    @Common.FieldControl: #Mandatory  @title: 'Permit Type';
   applicantName @Common.FieldControl: #Mandatory  @title: 'Applicant Name';
   vehicleClass  @title: 'Vehicle Class';

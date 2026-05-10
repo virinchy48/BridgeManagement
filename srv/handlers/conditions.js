@@ -1,0 +1,67 @@
+'use strict'
+const cds = require('@sap/cds')
+
+module.exports = function registerConditionHandlers (srv, { logAudit }) {
+
+    srv.before('CREATE', 'BridgeConditionSurveys', async req => {
+        const db = await cds.connect.to('db')
+        // Auto-generate surveyRef (CS-NNNN)
+        const [last] = await db.run(
+            SELECT.from('bridge.management.BridgeConditionSurveys')
+                .columns('surveyRef').orderBy('surveyRef desc').limit(1)
+        )
+        const seq = last?.surveyRef ? parseInt(last.surveyRef.replace('CS-', ''), 10) + 1 : 1
+        req.data.surveyRef = `CS-${String(seq).padStart(4, '0')}`
+
+        // Resolve bridge_ID from bridgeRef (bridge's bridgeId)
+        if (req.data.bridgeRef && !req.data.bridge_ID) {
+            const bridge = await db.run(
+                SELECT.one.from('bridge.management.Bridges')
+                    .columns('ID').where({ bridgeId: req.data.bridgeRef })
+            )
+            if (bridge) req.data.bridge_ID = bridge.ID
+        }
+
+        if (!req.data.status) req.data.status = 'Draft'
+        if (req.data.active === undefined) req.data.active = true
+    })
+
+    srv.after(['CREATE', 'UPDATE'], 'BridgeConditionSurveys', async (data, req) => {
+        if (!data?.ID) return
+        const db = await cds.connect.to('db')
+        await logAudit(db, req, req.event, 'BridgeConditionSurvey',
+            data.ID, data.surveyRef, data, `Condition survey ${req.event.toLowerCase()}d`)
+    })
+
+    srv.on('deactivate', 'BridgeConditionSurveys', async req => {
+        const { ID } = req.params[0]
+        const db = await cds.connect.to('db')
+        const survey = await db.run(
+            SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID })
+        )
+        if (!survey) return req.error(404, 'Condition survey not found')
+        await db.run(
+            UPDATE('bridge.management.BridgeConditionSurveys')
+                .set({ active: false }).where({ ID })
+        )
+        await logAudit(db, req, 'ACTION', 'BridgeConditionSurvey',
+            ID, survey.surveyRef, { active: false }, 'Deactivated')
+        return Object.assign({}, survey, { active: false })
+    })
+
+    srv.on('reactivate', 'BridgeConditionSurveys', async req => {
+        const { ID } = req.params[0]
+        const db = await cds.connect.to('db')
+        const survey = await db.run(
+            SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID })
+        )
+        if (!survey) return req.error(404, 'Condition survey not found')
+        await db.run(
+            UPDATE('bridge.management.BridgeConditionSurveys')
+                .set({ active: true }).where({ ID })
+        )
+        await logAudit(db, req, 'ACTION', 'BridgeConditionSurvey',
+            ID, survey.surveyRef, { active: true }, 'Reactivated')
+        return Object.assign({}, survey, { active: true })
+    })
+}

@@ -13,6 +13,9 @@ const registerNhvrComplianceHandlers = require('./handlers/nhvr-compliance')
 const registerElementHandlers      = require('./handlers/elements')
 const registerDefectHandlers       = require('./handlers/defects')
 const registerAlertHandlers        = require('./handlers/alerts')
+const registerConditionHandlers    = require('./handlers/conditions')
+const registerLoadRatingsNewHandlers = require('./handlers/load-ratings-new')
+const registerPermitHandlers       = require('./handlers/permits')
 
 module.exports = class BridgeManagementService extends cds.ApplicationService { init() {
 
@@ -30,6 +33,9 @@ module.exports = class BridgeManagementService extends cds.ApplicationService { 
     registerElementHandlers(this)
     registerDefectHandlers(this)
     registerAlertHandlers(this)
+    registerConditionHandlers(this, helpers)
+    registerLoadRatingsNewHandlers(this, helpers)
+    registerPermitHandlers(this, helpers)
 
     // Map View — inline (no external state needed)
     this.on('geocodeAddress',  req => ({ latitude: null, longitude: null, formattedAddress: req.data.address }))
