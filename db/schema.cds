@@ -133,6 +133,25 @@ entity BridgeRestrictions : cuid, managed {
   loadLimitOrderExpiry : Date;
   // ── NHVR Escort requirements ─────────────────────────────────────────────
   pilotVehicleCount   : Integer;       // Number of pilot/escort vehicles required (NHVR-HVNL)
+  // ── Provisions (1:N — each restriction can carry multiple permit conditions)
+  provisions          : Composition of many BridgeRestrictionProvisions
+                          on provisions.restriction = $self;
+}
+
+// Permit/legal provisions attached to a bridge posting restriction (1 restriction : N provisions)
+entity BridgeRestrictionProvisions : cuid, managed {
+  restriction     : Association to BridgeRestrictions @mandatory;
+  provisionNumber : Integer;         // Sequence number within the restriction (1, 2, 3…)
+  provisionType   : String(50);      // Condition | Exclusion | Requirement | Schedule | Permit Condition | Time-Based
+  provisionText   : LargeString @mandatory; // Full text of the provision clause
+  vehicleClasses  : String(255);     // Comma-separated applicable vehicle classes (if clause-specific)
+  timeOfDay       : String(100);     // e.g. "06:00–22:00 weekdays only"
+  seasonalPeriod  : String(100);     // e.g. "October–April"
+  effectiveFrom   : Date;
+  effectiveTo     : Date;
+  approvedBy      : String(111);
+  legalReference  : String(111);     // Gazette or LLO clause reference
+  active          : Boolean default true;
 }
 
 entity BridgeCapacities : cuid, managed {

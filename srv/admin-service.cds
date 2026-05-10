@@ -13,6 +13,7 @@ service AdminService {
     action deactivate() returns BridgeRestrictions;
     action reactivate() returns BridgeRestrictions;
   };
+  entity BridgeRestrictionProvisions as projection on my.BridgeRestrictionProvisions;
   entity BridgeCapacities as projection on my.BridgeCapacities;
   entity BridgeAttributes as projection on my.BridgeAttributes;
   entity BridgeScourAssessments as projection on my.BridgeScourAssessments;

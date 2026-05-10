@@ -92,7 +92,17 @@ const BRIDGE_COLUMNS = [
   column('postingStatusReason', 'string'),
   column('closureDate', 'date'),
   column('closureEndDate', 'date'),
-  column('closureReason', 'string')
+  column('closureReason', 'string'),
+  // ── Interstate/WA dataset gap fields (May 2026) ───────────────────────────
+  column('precinct', 'string'),
+  column('spansOver', 'string'),
+  column('locality', 'string'),
+  column('facilityTypeCode', 'string'),
+  column('operationalStatusCode', 'string'),
+  column('structuralDeficiencyCode', 'string'),
+  column('deficiencyComments', 'string'),
+  column('loadLimitTruck', 'decimal'),
+  column('loadLimitSemitrailer', 'decimal')
 ]
 
 const RESTRICTION_COLUMNS = [
@@ -207,6 +217,22 @@ const BRIDGE_RESTRICTION_COLUMNS = [
   column('direction',                 'string')
 ]
 
+const PROVISION_COLUMNS = [
+  column('ID',              'string'),
+  column('restrictionRef', 'string',  { required: true }),  // natural FK — resolved to restriction_ID
+  column('provisionNumber', 'integer'),
+  column('provisionType',  'string'),
+  column('provisionText',  'string',  { required: true }),
+  column('vehicleClasses', 'string'),
+  column('timeOfDay',      'string'),
+  column('seasonalPeriod', 'string'),
+  column('effectiveFrom',  'date'),
+  column('effectiveTo',    'date'),
+  column('approvedBy',     'string'),
+  column('legalReference', 'string'),
+  column('active',         'boolean')
+]
+
 const LRC_COLUMNS = [
   column('ID',                        'string'),
   column('bridgeRef',                 'string',  { required: true }),
@@ -307,6 +333,15 @@ const DATASETS = Object.freeze([
     columns: LRC_COLUMNS,
     orderBy: 'certificateNumber',
     importer: importLrcRows
+  },
+  {
+    name: 'BridgeRestrictionProvisions',
+    label: 'Restriction Provisions',
+    description: 'Legal/permit provisions attached to bridge restrictions — one restriction can have many provisions',
+    entity: 'bridge.management.BridgeRestrictionProvisions',
+    columns: PROVISION_COLUMNS,
+    orderBy: 'provisionNumber',
+    importer: importProvisionRows
   }
 ])
 
@@ -710,6 +745,15 @@ function getPreviewColumns(dataset) {
       { name: 'ratingLevel',          label: 'Rating Level' },
       { name: 'certificateExpiryDate', label: 'Expiry' },
       { name: 'status',               label: 'Status' }
+    ]
+  }
+  if (dataset.name === 'BridgeRestrictionProvisions') {
+    return [
+      { name: 'restrictionRef',  label: 'Restriction Ref' },
+      { name: 'provisionNumber', label: '#' },
+      { name: 'provisionType',   label: 'Type' },
+      { name: 'provisionText',   label: 'Provision Text' },
+      { name: 'active',          label: 'Active' }
     ]
   }
   return [
@@ -1190,6 +1234,36 @@ async function importLrcRows(tx, dataset, rows, warnings, auditContext) {
   })
 }
 
+async function importProvisionRows(tx, dataset, rows, warnings, auditContext) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+
+  // Resolve restrictionRef → restriction_ID
+  const restrictionRefs = [...new Set(normalized.map(r => r.restrictionRef).filter(Boolean))]
+  if (restrictionRefs.length) {
+    const restrictions = await tx.run(
+      SELECT.from('bridge.management.BridgeRestrictions').columns('ID', 'restrictionRef').where({ restrictionRef: { in: restrictionRefs } })
+    )
+    const restrictionMap = new Map(restrictions.map(r => [r.restrictionRef, r.ID]))
+    for (const row of normalized) {
+      if (!row.restrictionRef) continue
+      const id = restrictionMap.get(row.restrictionRef)
+      if (!id) throw new Error(`BridgeRestrictionProvisions row ${row.__rowNumber}: unknown restrictionRef "${row.restrictionRef}" — no matching BridgeRestriction exists.`)
+      row.restriction_ID = id
+    }
+  }
+
+  for (const row of normalized) {
+    if (row.active === null || row.active === undefined) row.active = true
+  }
+
+  return importCuidEntityRows(tx, dataset, normalized.map(r => ({ ...r, __alreadyNormalized: true })), warnings, auditContext, {
+    naturalKey: 'provisionNumber',
+    objectType: 'BridgeRestrictionProvision',
+    getName: r => `${r.restrictionRef} / Provision ${r.provisionNumber}`
+  })
+}
+
 function normalizeRows(dataset, rows, warnings) {
   if (rows.length && rows[0].__alreadyNormalized) return rows
   const deduped = new Map()
@@ -1410,6 +1484,7 @@ function getDedupeKey(dataset, row) {
   if (dataset.name === 'BridgeElements') return row.ID ?? `${row.bridgeRef}|${row.elementId}`
   if (dataset.name === 'BridgeRestrictions') return row.ID ?? `${row.bridgeRef}|${row.restrictionRef}`
   if (dataset.name === 'LoadRatingCertificates') return row.ID ?? `${row.bridgeRef}|${row.certificateNumber}`
+  if (dataset.name === 'BridgeRestrictionProvisions') return row.ID ?? `${row.restrictionRef}|${row.provisionNumber}`
   return JSON.stringify(row)
 }
 

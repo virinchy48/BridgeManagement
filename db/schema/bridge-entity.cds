@@ -86,6 +86,16 @@ entity Bridges : managed {
       closureReason           : String(500);
       isActive                : Boolean default true;
       isDeleted               : Boolean default false;
+      // ── WA/Interstate dataset fields (gaps identified May 2026) ──────────────
+      precinct                : String(80);    // Zone/Precinct subdivision within region (WA: ZONE/PRECINCT)
+      spansOver               : String(255);   // What the bridge crosses: river name, road, railway (WA: DESCRIPTION_OVER)
+      locality                : String(111);   // Suburb/locality of bridge location (WA: DESCRIPTION_AT)
+      facilityTypeCode        : String(40);    // Facility type code — road bridge, rail, pedestrian (WA: FACI_TYPE_CODE)
+      operationalStatusCode   : String(40);    // Operational status code from source system (WA: OPER_STAT_CODE)
+      structuralDeficiencyCode : String(40);   // Structural deficiency classification code (WA: STRUCT_DEFIC_CODE)
+      deficiencyComments      : LargeString;   // Deficiency-specific notes, separate from general remarks (WA: DEFICIENCY COMMENTS)
+      loadLimitTruck          : Decimal(9,2);  // Denormalised truck load limit t — also in BridgeRestrictions (WA: LOAD_LMT_TRUCK)
+      loadLimitSemitrailer    : Decimal(9,2);  // Denormalised semi-trailer load limit t (WA: LOAD_LMT_SEMITRL)
       // Virtual fields populated server-side for UI KPI chips — never persisted
       virtual postingStatusCriticality : Integer;
       virtual activeRestrictionCount   : Integer default 0;
