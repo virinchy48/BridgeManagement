@@ -144,15 +144,15 @@ annotate AdminService.Bridges with @(
       },
       // ── S5: Documents & Map ──────────────────────────────────────────────
       // Personas: Manager (RW), Inspector (RW — upload rights for photos)
-      // S/4HANA: Document Management (DIR) via DMS integration
-      // Note: Attachments and Map custom sections are anchored to this section in manifest.json
+      // The custom Attachments fragment (anchored here via manifest.json) is the single
+      // entry point for file uploads. The OData documents table has been removed to
+      // eliminate the duplicate "Attachments" panel that appeared above this section.
+      // The Map fragment (GisMapTab) is also anchored here via manifest.json.
       {
         $Type : 'UI.CollectionFacet',
         Label : 'Documents & Map',
         ID    : 'DocumentsMap',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Documents', Target: 'documents/@UI.LineItem'},
-        ]
+        Facets: []
       },
       // ── S6: Risk, Compliance & Alerts ───────────────────────────────────
       // Personas: Manager (RW), Admin; hidden from Inspector, External, Executive

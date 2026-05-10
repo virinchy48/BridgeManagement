@@ -328,7 +328,7 @@
                   "sections": {
                     "attachmentsSection": {
                       "template": "BridgeManagement.adminbridges.ext.fragment.Attachments",
-                      "title": "Attachments",
+                      "title": "Documents & Attachments",
                       "position": {
                         "placement": "Before",
                         "anchor": "DocumentsMap"

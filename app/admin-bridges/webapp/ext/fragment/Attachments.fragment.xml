@@ -9,7 +9,7 @@
     modelContextChange="Attachments.onContextChange"
     class="sapUiSmallMargin">
     <OverflowToolbar>
-      <Title text="Attachments" level="H3"/>
+      <Title text="Documents &amp; Attachments" level="H3"/>
       <ToolbarSpacer/>
       <Button
         icon="sap-icon://refresh"
