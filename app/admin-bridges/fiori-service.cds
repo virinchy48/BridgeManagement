@@ -1687,3 +1687,23 @@ annotate AdminService.BridgeMehComponents with @(
     { $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#General', Label: 'Component Detail' }
   ]
 );
+
+////////////////////////////////////////////////////////////////////////////
+//  Action side-effects — force FE to re-read fields after deactivate/reactivate
+//  so button visibility toggling (@UI.Hidden based on status) updates immediately
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.Bridges with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['status'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['status'] };
+};
+
+annotate AdminService.Restrictions with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+};
+
+annotate AdminService.BridgeRestrictions with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+};

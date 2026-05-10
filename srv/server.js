@@ -1,5 +1,6 @@
 const cds = require('@sap/cds')
 const express = require('express')
+const helmet = require('helmet')
 const { recordActivity } = require('./user-activity')
 
 const {
@@ -1078,6 +1079,9 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
+  // ── Helmet security headers ───────────────────────────────────────────────
+  app.use(helmet())
+
   // ── Health probe (no auth — used by BTP health checks and load balancers) ──
   app.get('/health', (_req, res) => {
     res.json({

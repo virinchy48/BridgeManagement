@@ -190,6 +190,23 @@ sap.ui.define([
       this._downloadRowsAsCsv(this._getViewModel().getProperty("/adminReport/rows") || [], "mass-upload-admin-report.csv");
     },
 
+    onWizardComplete: function () {
+      // Navigate back to the launchpad/home shell after finishing the upload wizard.
+      // Works both in SAP BTP Launchpad (hash-based routing) and standalone (falls back to '#').
+      try {
+        const oCrossNav = sap.ushell &&
+          sap.ushell.Container &&
+          sap.ushell.Container.getService("CrossApplicationNavigation");
+        if (oCrossNav) {
+          oCrossNav.toExternal({ target: { shellHash: "#" } });
+          return;
+        }
+      } catch (_) {
+        // ushell not available outside BTP launchpad — fall through
+      }
+      window.location.href = "#";
+    },
+
     onUploadAnother: function () {
       const uploader = this.byId("fileUploader");
       if (uploader) {
