@@ -342,6 +342,171 @@ const DATASETS = Object.freeze([
     columns: PROVISION_COLUMNS,
     orderBy: 'provisionNumber',
     importer: importProvisionRows
+  },
+  {
+    name: 'BridgeInspectionElements',
+    label: 'Bridge Inspection Elements',
+    description: 'Element-level condition state quantities per inspection',
+    columns: [
+      { header: 'Inspection ID *',      field: 'inspectionId',       required: true },
+      { header: 'Bridge ID *',          field: 'bridgeId',           required: true },
+      { header: 'Element Type *',       field: 'elementType',        required: true },
+      { header: 'Condition State 1 Qty',field: 'conditionState1Qty', type: 'decimal' },
+      { header: 'Condition State 2 Qty',field: 'conditionState2Qty', type: 'decimal' },
+      { header: 'Condition State 3 Qty',field: 'conditionState3Qty', type: 'decimal' },
+      { header: 'Condition State 4 Qty',field: 'conditionState4Qty', type: 'decimal' },
+      { header: 'CS1 %',               field: 'conditionState1Pct', type: 'decimal' },
+      { header: 'CS2 %',               field: 'conditionState2Pct', type: 'decimal' },
+      { header: 'CS3 %',               field: 'conditionState3Pct', type: 'decimal' },
+      { header: 'CS4 %',               field: 'conditionState4Pct', type: 'decimal' },
+      { header: 'Health Rating',       field: 'elementHealthRating', type: 'decimal' },
+      { header: 'Unit',                field: 'unit' },
+      { header: 'Comments',            field: 'comments' }
+    ],
+    async importRows(rows, tx) {
+      let inserted = 0, updated = 0
+      for (const row of rows) {
+        if (!row.bridgeId || !row.elementType) continue
+        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
+        if (!bridge) continue
+        const data = {
+          bridge_ID: bridge.ID,
+          elementType: row.elementType,
+          conditionState1Qty: row.conditionState1Qty ? parseFloat(row.conditionState1Qty) : null,
+          conditionState2Qty: row.conditionState2Qty ? parseFloat(row.conditionState2Qty) : null,
+          conditionState3Qty: row.conditionState3Qty ? parseFloat(row.conditionState3Qty) : null,
+          conditionState4Qty: row.conditionState4Qty ? parseFloat(row.conditionState4Qty) : null,
+          conditionState1Pct: row.conditionState1Pct ? parseFloat(row.conditionState1Pct) : null,
+          conditionState2Pct: row.conditionState2Pct ? parseFloat(row.conditionState2Pct) : null,
+          conditionState3Pct: row.conditionState3Pct ? parseFloat(row.conditionState3Pct) : null,
+          conditionState4Pct: row.conditionState4Pct ? parseFloat(row.conditionState4Pct) : null,
+          elementHealthRating: row.elementHealthRating ? parseFloat(row.elementHealthRating) : null,
+          unit: row.unit,
+          comments: row.comments
+        }
+        await tx.run(INSERT.into('bridge.management.BridgeInspectionElements').entries(data))
+        inserted++
+      }
+      return { inserted, updated, processed: rows.length }
+    }
+  },
+  {
+    name: 'BridgeCarriageways',
+    label: 'Bridge Carriageways',
+    description: 'Carriageway geometry per bridge',
+    columns: [
+      { header: 'Bridge ID *',           field: 'bridgeId',            required: true },
+      { header: 'Road Number',           field: 'roadNumber' },
+      { header: 'Road Rank Code',        field: 'roadRankCode' },
+      { header: 'Road Class Code',       field: 'roadClassCode' },
+      { header: 'Carriage Code',         field: 'carriageCode' },
+      { header: 'Min Width (m)',         field: 'minWidthM',           type: 'decimal' },
+      { header: 'Max Width (m)',         field: 'maxWidthM',           type: 'decimal' },
+      { header: 'Lane Count',            field: 'laneCount',           type: 'integer' },
+      { header: 'Vertical Clearance (m)',field: 'verticalClearanceM',  type: 'decimal' },
+      { header: 'Prescribed Dir From',   field: 'prescribedDirFrom' },
+      { header: 'Prescribed Dir To',     field: 'prescribedDirTo' },
+      { header: 'Distance From Start km',field: 'distanceFromStartKm', type: 'decimal' },
+      { header: 'Link For Inspection',   field: 'linkForInspection' },
+      { header: 'Comments',              field: 'comments' }
+    ],
+    async importRows(rows, tx) {
+      let inserted = 0, updated = 0
+      for (const row of rows) {
+        if (!row.bridgeId) continue
+        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
+        if (!bridge) continue
+        await tx.run(INSERT.into('bridge.management.BridgeCarriageways').entries({
+          bridge_ID: bridge.ID,
+          roadNumber: row.roadNumber, roadRankCode: row.roadRankCode, roadClassCode: row.roadClassCode,
+          carriageCode: row.carriageCode,
+          minWidthM: row.minWidthM ? parseFloat(row.minWidthM) : null,
+          maxWidthM: row.maxWidthM ? parseFloat(row.maxWidthM) : null,
+          laneCount: row.laneCount ? parseInt(row.laneCount, 10) : null,
+          verticalClearanceM: row.verticalClearanceM ? parseFloat(row.verticalClearanceM) : null,
+          prescribedDirFrom: row.prescribedDirFrom, prescribedDirTo: row.prescribedDirTo,
+          distanceFromStartKm: row.distanceFromStartKm ? parseFloat(row.distanceFromStartKm) : null,
+          linkForInspection: row.linkForInspection, comments: row.comments
+        }))
+        inserted++
+      }
+      return { inserted, updated, processed: rows.length }
+    }
+  },
+  {
+    name: 'BridgeContacts',
+    label: 'Bridge Contacts',
+    description: 'Contact persons per bridge',
+    columns: [
+      { header: 'Bridge ID *',   field: 'bridgeId',      required: true },
+      { header: 'Contact Group', field: 'contactGroup' },
+      { header: 'Primary Contact',field: 'primaryContact' },
+      { header: 'Organisation',  field: 'organisation' },
+      { header: 'Position',      field: 'position' },
+      { header: 'Phone',         field: 'phone' },
+      { header: 'Mobile',        field: 'mobile' },
+      { header: 'Address',       field: 'address' },
+      { header: 'Email',         field: 'email' },
+      { header: 'Comments',      field: 'comments' }
+    ],
+    async importRows(rows, tx) {
+      let inserted = 0, updated = 0
+      for (const row of rows) {
+        if (!row.bridgeId) continue
+        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
+        if (!bridge) continue
+        await tx.run(INSERT.into('bridge.management.BridgeContacts').entries({
+          bridge_ID: bridge.ID,
+          contactGroup: row.contactGroup, primaryContact: row.primaryContact,
+          organisation: row.organisation, position: row.position,
+          phone: row.phone, mobile: row.mobile, address: row.address,
+          email: row.email, comments: row.comments
+        }))
+        inserted++
+      }
+      return { inserted, updated, processed: rows.length }
+    }
+  },
+  {
+    name: 'BridgeMehComponents',
+    label: 'MEH Components',
+    description: 'Mechanical/Electrical/Hydraulic bridge components',
+    columns: [
+      { header: 'Bridge ID *',      field: 'bridgeId',       required: true },
+      { header: 'Component Type',   field: 'componentType' },
+      { header: 'Name',             field: 'name' },
+      { header: 'Make',             field: 'make' },
+      { header: 'Model',            field: 'model' },
+      { header: 'Serial Number',    field: 'serialNumber' },
+      { header: 'Is Electrical',    field: 'isElectrical',   type: 'boolean' },
+      { header: 'Is Mechanical',    field: 'isMechanical',   type: 'boolean' },
+      { header: 'Is Hydraulic',     field: 'isHydraulic',    type: 'boolean' },
+      { header: 'Insp Frequency',   field: 'inspFrequency' },
+      { header: 'Location Stored',  field: 'locationStored' },
+      { header: 'Shelf Life (yrs)', field: 'shelfLifeYears', type: 'integer' },
+      { header: 'Comments',         field: 'comments' }
+    ],
+    async importRows(rows, tx) {
+      let inserted = 0, updated = 0
+      for (const row of rows) {
+        if (!row.bridgeId) continue
+        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
+        if (!bridge) continue
+        await tx.run(INSERT.into('bridge.management.BridgeMehComponents').entries({
+          bridge_ID: bridge.ID,
+          componentType: row.componentType, name: row.name, make: row.make,
+          model: row.model, serialNumber: row.serialNumber,
+          isElectrical: row.isElectrical === true || row.isElectrical === 'true' || row.isElectrical === '1',
+          isMechanical: row.isMechanical === true || row.isMechanical === 'true' || row.isMechanical === '1',
+          isHydraulic:  row.isHydraulic  === true || row.isHydraulic  === 'true' || row.isHydraulic  === '1',
+          inspFrequency: row.inspFrequency, locationStored: row.locationStored,
+          shelfLifeYears: row.shelfLifeYears ? parseInt(row.shelfLifeYears, 10) : null,
+          comments: row.comments
+        }))
+        inserted++
+      }
+      return { inserted, updated, processed: rows.length }
+    }
   }
 ])
 

@@ -119,6 +119,26 @@
           "name": "AlertsAndNotificationsDetails",
           "pattern": "Bridges({key})/alerts({key2}):?query:",
           "target": "AlertsAndNotificationsDetails"
+        },
+        {
+          "name": "BridgeInspectionElementsDetails",
+          "pattern": "Bridges({key})/inspectionElements({key2}):?query:",
+          "target": "BridgeInspectionElementsDetails"
+        },
+        {
+          "name": "BridgeCarriagewaysDetails",
+          "pattern": "Bridges({key})/carriageways({key2}):?query:",
+          "target": "BridgeCarriagewaysDetails"
+        },
+        {
+          "name": "BridgeContactsDetails",
+          "pattern": "Bridges({key})/contacts({key2}):?query:",
+          "target": "BridgeContactsDetails"
+        },
+        {
+          "name": "BridgeMehComponentsDetails",
+          "pattern": "Bridges({key})/mehComponents({key2}):?query:",
+          "target": "BridgeMehComponentsDetails"
         }
       ],
       "targets": {
@@ -218,7 +238,11 @@
                   "detail": {
                     "route": "AlertsAndNotificationsDetails"
                   }
-                }
+                },
+                "inspectionElements": { "detail": { "route": "BridgeInspectionElementsDetails" } },
+                "carriageways": { "detail": { "route": "BridgeCarriagewaysDetails" } },
+                "contacts": { "detail": { "route": "BridgeContactsDetails" } },
+                "mehComponents": { "detail": { "route": "BridgeMehComponentsDetails" } }
               },
               "controlConfiguration": {
                 "capacities/@com.sap.vocabularies.UI.v1.LineItem": {
@@ -291,6 +315,18 @@
                   "tableSettings": {
                     "enablePaste": false
                   }
+                },
+                "inspectionElements/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": { "enablePaste": false, "creationMode": { "name": "NewPage" } }
+                },
+                "carriageways/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": { "enablePaste": false, "creationMode": { "name": "NewPage" } }
+                },
+                "contacts/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": { "enablePaste": false, "creationMode": { "name": "NewPage" } }
+                },
+                "mehComponents/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": { "enablePaste": false, "creationMode": { "name": "NewPage" } }
                 }
               },
               "content": {
@@ -460,6 +496,30 @@
               "editableHeaderContent": false
             }
           }
+        },
+        "BridgeInspectionElementsDetails": {
+          "type": "Component",
+          "id": "BridgeInspectionElementsDetails",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "entitySet": "BridgeInspectionElements", "editableHeaderContent": false } }
+        },
+        "BridgeCarriagewaysDetails": {
+          "type": "Component",
+          "id": "BridgeCarriagewaysDetails",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "entitySet": "BridgeCarriageways", "editableHeaderContent": false } }
+        },
+        "BridgeContactsDetails": {
+          "type": "Component",
+          "id": "BridgeContactsDetails",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "entitySet": "BridgeContacts", "editableHeaderContent": false } }
+        },
+        "BridgeMehComponentsDetails": {
+          "type": "Component",
+          "id": "BridgeMehComponentsDetails",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "entitySet": "BridgeMehComponents", "editableHeaderContent": false } }
         }
       }
     },

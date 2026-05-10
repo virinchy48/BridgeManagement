@@ -99,4 +99,8 @@ entity Bridges : managed {
       // Virtual fields populated server-side for UI KPI chips — never persisted
       virtual postingStatusCriticality : Integer;
       virtual activeRestrictionCount   : Integer default 0;
+      virtual bsiScore                 : Decimal(5,2);
+      virtual bsiWidthRating           : Integer;
+      virtual bsiBarrierRating         : Integer;
+      virtual bsiRouteAltRating        : Integer;
 }

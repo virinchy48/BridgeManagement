@@ -420,6 +420,21 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       const countMap = Object.fromEntries(counts.map(r => [r.bridge_ID, Number(r.cnt)]))
       for (const b of list) b.activeRestrictionCount = countMap[b.ID] ?? 0
     }
+    // BSI composite score (simplified)
+    for (const b of list) {
+      if (b.deckWidth != null) {
+        b.bsiWidthRating = b.deckWidth >= 7.3 ? 9 : b.deckWidth >= 4.5 ? 5 : 2
+      }
+      b.bsiBarrierRating  = b.bsiBarrierRating  ?? 5
+      b.bsiRouteAltRating = b.bsiRouteAltRating ?? 5
+      if (b.conditionRating != null) {
+        const structural = (b.conditionRating / 10) * 55
+        const width      = ((b.bsiWidthRating  ?? 5) / 10) * 15
+        const barrier    = ((b.bsiBarrierRating ?? 5) / 10) * 15
+        const route      = ((b.bsiRouteAltRating ?? 5) / 10) * 15
+        b.bsiScore = Math.min(100, Math.round((structural + width + barrier + route) * 10) / 10)
+      }
+    }
   })
 
   const { GISConfig } = this.entities

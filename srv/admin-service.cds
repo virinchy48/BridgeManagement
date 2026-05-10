@@ -31,6 +31,10 @@ service AdminService {
   entity NhvrRouteAssessments  as projection on my.NhvrRouteAssessments;
   // Alerts: Manager+Admin write; all read
   entity AlertsAndNotifications as projection on my.AlertsAndNotifications;
+  entity BridgeInspectionElements as projection on my.BridgeInspectionElements;
+  entity BridgeCarriageways        as projection on my.BridgeCarriageways;
+  entity BridgeContacts            as projection on my.BridgeContacts;
+  entity BridgeMehComponents       as projection on my.BridgeMehComponents;
   entity AssetClasses as projection on my.AssetClasses;
   entity States as projection on my.States;
   entity Regions as projection on my.Regions;

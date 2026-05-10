@@ -54,6 +54,15 @@ annotate AdminService.Bridges with @(
         DeviationRangeLowValue:  5
       }
     },
+    DataPoint#BSI: {
+      Value: bsiScore,
+      Title: 'Bridge Sufficiency Index',
+      CriticalityCalculation: {
+        ImprovementDirection: #Maximize,
+        ToleranceRangeLowValue:  50,
+        DeviationRangeLowValue:  25
+      }
+    },
     DataPoint#PostingStatus: {
       Value: postingStatus,
       Title: 'Posting Status',
@@ -70,6 +79,7 @@ annotate AdminService.Bridges with @(
     },
     HeaderFacets: [
       { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#ConditionRating',   Label: 'Condition' },
+      { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#BSI', Label: 'BSI Score' },
       { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#PostingStatus',      Label: 'Status' },
       { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#ActiveRestrictions', Label: 'Restrictions' },
       { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#LastInspection',     Label: 'Last Inspected' },
@@ -1321,6 +1331,13 @@ annotate AdminService.Bridges with {
   activeRestrictionCount   @UI.Hidden;
 };
 
+annotate AdminService.Bridges with {
+  bsiScore         @UI.Hidden;
+  bsiWidthRating   @UI.Hidden;
+  bsiBarrierRating @UI.Hidden;
+  bsiRouteAltRating @UI.Hidden;
+};
+
 ////////////////////////////////////////////////////////////////////////////
 //  Bridge Detail Redesign — New Entity UI Annotations (7-Section Architecture)
 ////////////////////////////////////////////////////////////////////////////
@@ -1567,4 +1584,106 @@ annotate AdminService.AlertsAndNotifications with @(
     Title         : {Value: alertTitle},
     Description   : {Value: alertType},
   },
+);
+
+// ── BridgeInspectionElements ──────────────────────────────────────────────
+annotate AdminService.BridgeInspectionElements with @(
+  UI.LineItem: [
+    { Value: elementType,         Label: 'Element' },
+    { Value: elementHealthRating, Label: 'Health Rating' },
+    { Value: conditionState1Pct,  Label: 'CS1 %' },
+    { Value: conditionState2Pct,  Label: 'CS2 %' },
+    { Value: conditionState3Pct,  Label: 'CS3 %' },
+    { Value: conditionState4Pct,  Label: 'CS4 %' },
+    { Value: unit,                Label: 'Unit' }
+  ],
+  UI.FieldGroup#General: {
+    Data: [
+      { Value: elementType },
+      { Value: unit },
+      { Value: elementHealthRating, Label: 'Health Rating' },
+      { Value: conditionState1Qty, Label: 'CS1 Qty' },
+      { Value: conditionState2Qty, Label: 'CS2 Qty' },
+      { Value: conditionState3Qty, Label: 'CS3 Qty' },
+      { Value: conditionState4Qty, Label: 'CS4 Qty' },
+      { Value: conditionState1Pct, Label: 'CS1 %' },
+      { Value: conditionState2Pct, Label: 'CS2 %' },
+      { Value: conditionState3Pct, Label: 'CS3 %' },
+      { Value: conditionState4Pct, Label: 'CS4 %' },
+      { Value: comments }
+    ]
+  },
+  UI.Facets: [
+    { $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#General', Label: 'Element Detail' }
+  ]
+);
+
+// ── BridgeCarriageways ────────────────────────────────────────────────────
+annotate AdminService.BridgeCarriageways with @(
+  UI.LineItem: [
+    { Value: roadNumber },
+    { Value: carriageCode,        Label: 'Carriage Code' },
+    { Value: laneCount,           Label: 'Lanes' },
+    { Value: minWidthM,           Label: 'Min Width (m)' },
+    { Value: maxWidthM,           Label: 'Max Width (m)' },
+    { Value: verticalClearanceM,  Label: 'Vert. Clearance (m)' }
+  ],
+  UI.FieldGroup#General: {
+    Data: [
+      { Value: roadNumber }, { Value: roadRankCode }, { Value: roadClassCode },
+      { Value: carriageCode }, { Value: laneCount },
+      { Value: minWidthM }, { Value: maxWidthM }, { Value: verticalClearanceM },
+      { Value: prescribedDirFrom }, { Value: prescribedDirTo },
+      { Value: distanceFromStartKm }, { Value: linkForInspection }, { Value: comments }
+    ]
+  },
+  UI.Facets: [
+    { $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#General', Label: 'Carriageway Detail' }
+  ]
+);
+
+// ── BridgeContacts ────────────────────────────────────────────────────────
+annotate AdminService.BridgeContacts with @(
+  UI.LineItem: [
+    { Value: contactGroup },
+    { Value: primaryContact },
+    { Value: organisation },
+    { Value: position },
+    { Value: phone },
+    { Value: email }
+  ],
+  UI.FieldGroup#General: {
+    Data: [
+      { Value: contactGroup }, { Value: primaryContact }, { Value: organisation },
+      { Value: position }, { Value: phone }, { Value: mobile },
+      { Value: address }, { Value: email }, { Value: comments }
+    ]
+  },
+  UI.Facets: [
+    { $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#General', Label: 'Contact Detail' }
+  ]
+);
+
+// ── BridgeMehComponents ───────────────────────────────────────────────────
+annotate AdminService.BridgeMehComponents with @(
+  UI.LineItem: [
+    { Value: componentType },
+    { Value: name },
+    { Value: make },
+    { Value: model },
+    { Value: isElectrical },
+    { Value: isMechanical },
+    { Value: isHydraulic },
+    { Value: inspFrequency }
+  ],
+  UI.FieldGroup#General: {
+    Data: [
+      { Value: componentType }, { Value: name }, { Value: make }, { Value: model },
+      { Value: serialNumber }, { Value: isElectrical }, { Value: isMechanical }, { Value: isHydraulic },
+      { Value: inspFrequency }, { Value: locationStored }, { Value: shelfLifeYears }, { Value: comments }
+    ]
+  },
+  UI.Facets: [
+    { $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#General', Label: 'Component Detail' }
+  ]
 );
