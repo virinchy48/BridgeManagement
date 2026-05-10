@@ -569,7 +569,7 @@ annotate AdminService.Bridges with {
       { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
     ]}
   ) @title: 'Inspection Type';
-  inspectionFrequencyYears @title: 'Inspection Frequency (years)'  @Common.QuickInfo: 'TfNSW-BIM: 1 yr (poor/critical), 2 yr (road), 5 yr (rail)';
+  inspectionFrequencyYears @title: 'Inspection Frequency (years)';
   nextInspectionDue        @title: 'Next Inspection Due'           @Common.QuickInfo: 'TfNSW-BIM §4.2 — maximum 5-year interval';
   conditionTrend @(
     Common.ValueListWithFixedValues,
@@ -722,7 +722,7 @@ annotate AdminService.BridgeRestrictions with {
   loadLimitOrderDate    @title: 'LLO Issued Date';
   loadLimitOrderExpiry  @title: 'LLO Expiry Date';
   // ── NHVR Escort requirements ──────────────────────────────────────────────
-  pilotVehicleCount     @title: 'Pilot Vehicle Count'   @Common.QuickInfo: 'Number of pilot/escort vehicles required (NHVR-HVNL)';
+  pilotVehicleCount     @title: 'Pilot Vehicle Count';
 };
 
 annotate AdminService.BridgeRestrictions with @(
