@@ -7,8 +7,8 @@ extend service BridgeManagementService with {
     @cds.query.limit: { max: 5000, default: 200 }
     @restrict: [
         { grant: ['READ'],            to: 'authenticated-user' },
-        { grant: ['CREATE','UPDATE'], to: ['BridgeManager','Admin'] },
-        { grant: ['DELETE'],          to: ['Admin'] }
+        { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+        { grant: ['DELETE'],          to: ['admin'] }
     ]
     entity Restrictions as projection on nhvr.Restriction {
         *,
@@ -47,8 +47,8 @@ extend service BridgeManagementService with {
     @cds.redirection.target: true
     @restrict: [
         { grant: ['READ'],            to: 'authenticated-user' },
-        { grant: ['CREATE','UPDATE'], to: ['BridgeManager','Admin'] },
-        { grant: ['DELETE'],          to: ['Admin'] }
+        { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+        { grant: ['DELETE'],          to: ['admin'] }
     ]
     entity PostingSigns as projection on nhvr.PostingSigns {
         *,

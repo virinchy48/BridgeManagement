@@ -2,26 +2,26 @@ using nhvr from '../../db/schema';
 using { BridgeManagementService } from '../service';
 
 extend service BridgeManagementService with {
-    @restrict: [{ grant: '*', to: 'Admin' }]
+    @restrict: [{ grant: '*', to: 'admin' }]
     entity Lookups as projection on nhvr.Lookup;
 
-    @restrict: [{ grant: '*', to: 'Admin' }]
+    @restrict: [{ grant: '*', to: 'admin' }]
     entity AttributeDefinitions as projection on nhvr.AttributeDefinition {
         *, validValues: redirected to AttributeValidValues
     };
 
     @cds.redirection.target: true
-    @restrict: [{ grant: '*', to: 'Admin' }]
+    @restrict: [{ grant: '*', to: 'admin' }]
     entity AttributeValidValues as projection on nhvr.AttributeValidValue;
 
-    @restrict: [{ grant: '*', to: 'Admin' }]
+    @restrict: [{ grant: '*', to: 'admin' }]
     entity RoleConfigs as projection on nhvr.RoleConfig;
 
     @readonly
-    @restrict: [{ grant: ['READ'], to: ['Admin','BridgeManager'] }]
+    @restrict: [{ grant: ['READ'], to: ['admin','manage'] }]
     entity AuditLogs as projection on nhvr.AuditLog;
 
-    @requires: ['Admin']
+    @requires: ['admin']
     action saveRoleConfig(configs: array of {
         role: String; featureKey: String; featureType: String;
         label: String; visible: Boolean; editable: Boolean; featureEnabled: Boolean

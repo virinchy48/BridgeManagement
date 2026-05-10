@@ -5,7 +5,7 @@ extend service BridgeManagementService with {
     @cds.query.limit: { max: 5000, default: 500 }
     @restrict: [
         { grant: ['READ'],   to: 'authenticated-user' },
-        { grant: ['UPDATE'], to: ['BridgeManager','Admin'] }
+        { grant: ['UPDATE'], to: ['manage','admin'] }
     ]
     entity BridgeGrid as projection on nhvr.Bridge {
         key ID, bridgeId, name, state, region, lga,
@@ -14,7 +14,7 @@ extend service BridgeManagementService with {
         freightRoute, isActive, version
     };
 
-    @requires: ['BridgeManager', 'Admin']
+    @requires: ['manage', 'admin']
     action massEditBridges(rows: array of {
         ID: UUID; condition: String; conditionRating: Integer;
         postingStatus: String; loadRating: Decimal;

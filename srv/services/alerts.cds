@@ -4,15 +4,15 @@ using { BridgeManagementService } from '../service';
 extend service BridgeManagementService with {
     @restrict: [
         { grant: ['READ'],   to: 'authenticated-user' },
-        { grant: ['CREATE','UPDATE','DELETE'], to: ['BridgeManager','Admin'] }
+        { grant: ['CREATE','UPDATE','DELETE'], to: ['manage','admin'] }
     ]
     entity AlertsAndNotifications as projection on bridge.management.AlertsAndNotifications
         actions {
-            @requires: ['BridgeManager','Admin']
+            @requires: ['manage','admin']
             action acknowledge(note: String) returns AlertsAndNotifications;
-            @requires: ['BridgeManager','Admin']
+            @requires: ['manage','admin']
             action resolveAlert(note: String, proofRef: String) returns AlertsAndNotifications;
-            @requires: ['BridgeManager','Admin']
+            @requires: ['manage','admin']
             action suppress(reason: String, suppressUntil: Date) returns AlertsAndNotifications;
         };
 

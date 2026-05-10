@@ -8,8 +8,8 @@ extend service BridgeManagementService with {
     @odata.draft.enabled
     @restrict: [
         { grant: ['READ'],            to: 'authenticated-user' },
-        { grant: ['CREATE','UPDATE'], to: ['BridgeManager','Admin'] },
-        { grant: ['DELETE'],          to: ['Admin'] }
+        { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+        { grant: ['DELETE'],          to: ['admin'] }
     ]
     entity Bridges as projection on nhvr.Bridge {
         *,
@@ -18,20 +18,20 @@ extend service BridgeManagementService with {
         attributes        : redirected to BridgeAttributes
     } actions {
         // Legacy action — kept for backward compatibility
-        @requires: ['BridgeManager','Admin']
+        @requires: ['manage','admin']
         action changeCondition(conditionValue: String, score: Integer)
                returns { ID: UUID; bridgeId: String; name: String; condition: String; conditionScore: Integer };
         // TfNSW condition rating action — records to ConditionHistory
-        @requires: ['BridgeManager','Admin']
+        @requires: ['manage','admin']
         action changeConditionTfnsw(conditionRatingTfnsw: Integer, notes: String, assessmentDate: Date)
                returns Bridges;
-        @requires: ['BridgeManager','Admin']
+        @requires: ['manage','admin']
         action closeForTraffic()
                returns { ID: UUID; bridgeId: String; name: String; postingStatus: String };
-        @requires: ['BridgeManager','Admin']
+        @requires: ['manage','admin']
         action reopenForTraffic()
                returns { ID: UUID; bridgeId: String; name: String; postingStatus: String };
-        @requires: ['BridgeManager','Admin']
+        @requires: ['manage','admin']
         action addRestriction(
             restrictionType: String, value: Decimal, unit: String,
             validFromDate: Date, validToDate: Date, status: String,
@@ -42,8 +42,8 @@ extend service BridgeManagementService with {
 
     @restrict: [
         { grant: ['READ'],            to: 'authenticated-user' },
-        { grant: ['CREATE','UPDATE'], to: ['BridgeManager','Admin'] },
-        { grant: ['DELETE'],          to: ['Admin'] }
+        { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+        { grant: ['DELETE'],          to: ['admin'] }
     ]
     entity ConditionHistory as projection on nhvr.ConditionHistory;
 
@@ -58,7 +58,7 @@ extend service BridgeManagementService with {
     @cds.redirection.target: true
     @restrict: [
         { grant: ['READ'],                    to: 'authenticated-user' },
-        { grant: ['CREATE','UPDATE','DELETE'], to: ['BridgeManager','Admin'] }
+        { grant: ['CREATE','UPDATE','DELETE'], to: ['manage','admin'] }
     ]
     entity BridgeAttributes as projection on nhvr.BridgeAttribute;
 }

@@ -70,9 +70,9 @@ sap.ui.define([
       var url  = (data.baseUrl || "").trim();
       if (!env || !url) { MessageToast.show("Environment and Base URL are required."); return; }
       var body = { environment: env, baseUrl: url, description: (data.description || "").trim(), active: data.active };
-      var req  = this._envDialogIsEdit
-        ? fetch("/bnac/api/environments/" + encodeURIComponent(this._envDialogEnvKey), { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) })
-        : fetch("/bnac/api/environments",                                               { method: "POST",  headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body) });
+      var req = this._fetchCsrfToken().then(token => this._envDialogIsEdit
+        ? fetch("/bnac/api/environments/" + encodeURIComponent(this._envDialogEnvKey), { method: "PATCH", headers: { "Content-Type": "application/json", "X-CSRF-Token": token }, credentials: "same-origin", body: JSON.stringify(body) })
+        : fetch("/bnac/api/environments",                                               { method: "POST",  headers: { "Content-Type": "application/json", "X-CSRF-Token": token }, credentials: "same-origin", body: JSON.stringify(body) }));
       req.then(r => r.json()).then(d => {
         if (d.error) { MessageBox.error(d.error.message); return; }
         MessageToast.show("Saved.");
@@ -105,10 +105,10 @@ sap.ui.define([
       reader.onload = e => {
         const base64 = btoa(e.target.result);
         this.getView().setBusy(true);
-        fetch("/bnac/api/upload", {
-          method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin",
+        this._fetchCsrfToken().then(token => fetch("/bnac/api/upload", {
+          method: "POST", headers: { "Content-Type": "application/json", "X-CSRF-Token": token }, credentials: "same-origin",
           body: JSON.stringify({ fileName: file.name, contentBase64: base64, environment: env })
-        })
+        }))
         .then(r => r.json())
         .then(d => {
           this.getView().setBusy(false);
@@ -126,6 +126,12 @@ sap.ui.define([
         .catch(e => { this.getView().setBusy(false); MessageBox.error(e.message); });
       };
       reader.readAsBinaryString(file);
+    },
+
+    _fetchCsrfToken: function () {
+      if (this._csrfToken) return Promise.resolve(this._csrfToken);
+      return fetch("/bnac/api/environments", { method: "HEAD", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
+        .then(r => { this._csrfToken = r.headers.get("X-CSRF-Token") || "required"; return this._csrfToken; });
     },
 
     _loadHistory: function () {

@@ -10,3 +10,11 @@ builder:
   resources:
     excludes:
       - /test/**
+  customTasks:
+    - name: ui5-task-zipper
+      afterTask: generateVersionInfo
+      configuration:
+        archiveName: bridges-public
+        relativePaths: true
+        additionalFiles:
+          - xs-app.json

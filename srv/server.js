@@ -1121,15 +1121,25 @@ cds.on('bootstrap', (app) => {
     return res.status(401).json({ error: 'Authentication required', code: 'UNAUTHENTICATED' })
   }
 
-  // FIX 4: CSRF token guard for state-changing requests on non-OData Express routes.
+  // CSRF guard for state-changing requests on non-OData Express routes.
+  // Requires a non-empty X-CSRF-Token header on all mutations (any env).
+  // Clients must first GET/HEAD with X-CSRF-Token: Fetch to obtain the token.
   const validateCsrfToken = (req, res, next) => {
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
       const csrfToken = req.headers['x-csrf-token']
-      // In production require an explicit CSRF token header
-      if (process.env.NODE_ENV === 'production' && !csrfToken) {
+      if (!csrfToken || csrfToken.length < 4 || csrfToken.toLowerCase() === 'fetch') {
         return res.status(403).json({ error: 'CSRF token required', code: 'CSRF_MISSING' })
       }
     }
+    next()
+  }
+
+  // Scope enforcement middleware — verify user has at least one of the required roles/scopes.
+  const requireScope = (...scopes) => (req, res, next) => {
+    if (_isDummyAuth) return next() // dev mode: skip scope check
+    const userRoles = req.user?.roles || req.authInfo?.getGrantedScopes?.() || []
+    const hasScope = scopes.some(s => userRoles.includes(s))
+    if (!hasScope) return res.status(403).json({ error: 'Insufficient scope', code: 'FORBIDDEN', required: scopes })
     next()
   }
 
@@ -1237,7 +1247,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/mass-upload/api', requiresAuthentication, validateCsrfToken, router)
+  app.use('/mass-upload/api', requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, router)
 
   // Dashboard analytics API
   const dashboardRouter = express.Router()
@@ -1482,7 +1492,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/mass-edit/api', requiresAuthentication, validateCsrfToken, massEditRouter)
+  app.use('/mass-edit/api', requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, massEditRouter)
   mountAttributesApi(app, requiresAuthentication, validateCsrfToken)
 
   // ── Audit Report API ─────────────────────────────────────────────────────
@@ -1547,7 +1557,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/audit/api', requiresAuthentication, auditRouter)
+  app.use('/audit/api', requiresAuthentication, requireScope('admin', 'manage'), auditRouter)
 
   // ── User Access API ───────────────────────────────────────────────────────
   const accessRouter = express.Router()
@@ -1952,7 +1962,7 @@ cds.on('bootstrap', (app) => {
     } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
-  app.use('/system/api', requiresAuthentication, validateCsrfToken, sysRouter)
+  app.use('/system/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, sysRouter)
 
   // ── Admin Bridges attachment API ─────────────────────────────────────────
   const adminBridgeRouter = express.Router()
@@ -2231,7 +2241,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/admin-bridges/api', requiresAuthentication, validateCsrfToken, adminBridgeRouter)
+  app.use('/admin-bridges/api', requiresAuthentication, requireScope('admin', 'manage', 'inspect'), validateCsrfToken, adminBridgeRouter)
 
   // ── BNAC Integration Config ─────────────────────────────────────────────
   const bnacRouter = express.Router()
@@ -2378,7 +2388,7 @@ cds.on('bootstrap', (app) => {
 
   mountReportsApi(app, requiresAuthentication)
 
-  app.use('/bnac/api', requiresAuthentication, validateCsrfToken, bnacRouter)
+  app.use('/bnac/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
 })
 
 cds.on('served', async () => {

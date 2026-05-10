@@ -11,3 +11,12 @@ framework:
     - name: sap.ui.layout
     - name: sap.f
     - name: themelib_sap_horizon
+builder:
+  customTasks:
+    - name: ui5-task-zipper
+      afterTask: generateVersionInfo
+      configuration:
+        archiveName: bridge-hierarchy
+        relativePaths: true
+        additionalFiles:
+          - xs-app.json

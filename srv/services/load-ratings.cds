@@ -4,11 +4,11 @@ using { BridgeManagementService } from '../service';
 extend service BridgeManagementService with {
     @restrict: [
         { grant: ['READ'],   to: 'authenticated-user' },
-        { grant: ['CREATE','UPDATE','DELETE'], to: ['BridgeManager','Admin'] }
+        { grant: ['CREATE','UPDATE','DELETE'], to: ['manage','admin'] }
     ]
     entity LoadRatingCertificates as projection on bridge.management.LoadRatingCertificates
         actions {
-            @requires: ['BridgeManager','Admin']
+            @requires: ['manage','admin']
             action supersede(newCertificateNumber: String, reason: String)
                 returns LoadRatingCertificates;
         };
