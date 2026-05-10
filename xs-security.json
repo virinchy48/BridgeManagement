@@ -7,7 +7,9 @@
     { "name": "$XSAPPNAME.manage", "description": "Create, edit, delete bridges and restrictions" },
     { "name": "$XSAPPNAME.operate", "description": "Manage restrictions in assigned state" },
     { "name": "$XSAPPNAME.inspect", "description": "Record inspection findings and condition ratings" },
-    { "name": "$XSAPPNAME.view", "description": "Read-only access to bridges and restrictions" }
+    { "name": "$XSAPPNAME.view", "description": "Read-only access to bridges and restrictions" },
+    { "name": "$XSAPPNAME.executive_view", "description": "Executive KPI summary — header only, no editable tabs" },
+    { "name": "$XSAPPNAME.external_view", "description": "External/public card view — curated read-only fields, unauthenticated route" }
   ],
   "attributes": [],
   "role-templates": [
@@ -43,6 +45,16 @@
       "name": "BMS_VIEWER",
       "description": "Read-only access — view bridges, restrictions, maps and reports",
       "scope-references": ["$XSAPPNAME.view"]
+    },
+    {
+      "name": "BMS_EXECUTIVE_VIEWER",
+      "description": "Senior leadership — sees header KPIs and bridge status summary, no editable sections",
+      "scope-references": ["$XSAPPNAME.executive_view", "$XSAPPNAME.view"]
+    },
+    {
+      "name": "BMS_EXTERNAL_VIEWER",
+      "description": "External stakeholders (councils, carriers) — public card view with restrictions and permit status only",
+      "scope-references": ["$XSAPPNAME.external_view"]
     }
   ],
   "role-collections": [
@@ -70,6 +82,16 @@
       "name": "BMS Viewer",
       "description": "Read-only bridge network visibility",
       "role-template-references": ["$XSAPPNAME.BMS_VIEWER"]
+    },
+    {
+      "name": "BMS Executive Viewer",
+      "description": "Executive-level KPI visibility — condition scores, risk level, open defects, cost YTD",
+      "role-template-references": ["$XSAPPNAME.BMS_EXECUTIVE_VIEWER"]
+    },
+    {
+      "name": "BMS External Viewer",
+      "description": "External public card access — active restrictions and permit status only",
+      "role-template-references": ["$XSAPPNAME.BMS_EXTERNAL_VIEWER"]
     }
   ]
 }

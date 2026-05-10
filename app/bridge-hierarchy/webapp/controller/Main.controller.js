@@ -6,7 +6,8 @@ sap.ui.define([
 ], function (Controller, JSONModel, StandardTreeItem, MessageToast) {
   "use strict";
 
-  const BASE_ODATA = "/odata/v4/admin";
+  const BASE_ODATA   = "/odata/v4/admin";
+  const BASE_SERVICE = "/bridge-management";
 
   // AS 5100 / NAASRA element group taxonomy
   const ELEMENT_GROUPS = {
@@ -141,7 +142,7 @@ sap.ui.define([
       this._model.setProperty("/elementsLoading", true);
       this._model.setProperty("/elements", []);
 
-      fetch(`${BASE_ODATA}/Bridges(${bridge.ID})/elements?$orderby=spanNumber,pierNumber,elementType`)
+      fetch(`${BASE_SERVICE}/BridgeElements?$filter=bridge_ID eq ${bridge.ID}&$orderby=spanNumber,pierNumber,elementType&$top=200`)
         .then(r => r.json())
         .then(data => {
           const elems = data.value || [];

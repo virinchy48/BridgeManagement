@@ -12,5 +12,6 @@ using from './services/nhvr-compliance';
 using from './services/elements';
 using from './services/defects';
 using from './services/alerts';
+using from './services/public-bridge';
 
 service BridgeManagementService @(path: '/bridge-management') {}

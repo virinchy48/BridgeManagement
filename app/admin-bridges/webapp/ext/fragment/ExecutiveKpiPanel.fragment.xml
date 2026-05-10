@@ -1,0 +1,178 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:f="sap.f"
+  core:require="{ExecutiveKpiPanel: 'BridgeManagement/adminbridges/ext/controller/ExecutiveKpiPanel'}">
+
+  <!-- Entire panel hidden unless userScopes>/isExecutiveViewer is true -->
+  <!-- Visibility is set programmatically by BridgeDetailExt.js to avoid CSS hiding -->
+  <VBox
+    id="executiveKpiHost"
+    busy="{executiveKpi>/busy}"
+    modelContextChange="ExecutiveKpiPanel.onContextChange"
+    class="sapUiMediumMargin">
+
+    <!-- Section header -->
+    <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+      <Title text="Executive Summary" level="H2" class="sapUiSmallMarginEnd"/>
+      <ObjectStatus
+        text="{executiveKpi>/riskLevel}"
+        state="{executiveKpi>/riskState}"
+        inverted="true"/>
+      <ToolbarSpacer/>
+      <Link
+        text="Open full bridge record"
+        press="ExecutiveKpiPanel.onOpenFullRecord"
+        class="sapUiSmallMarginBegin"/>
+    </HBox>
+
+    <!-- 5 KPI tiles in a responsive grid -->
+    <f:GridContainer
+      id="kpiGrid"
+      snapToRow="true">
+      <f:layout>
+        <f:GridContainerSettings rowSize="5rem" columnSize="12rem" gap="0.5rem"/>
+      </f:layout>
+      <f:layoutS>
+        <f:GridContainerSettings rowSize="5rem" columnSize="100%" gap="0.5rem"/>
+      </f:layoutS>
+
+      <!-- KPI 1: Condition Score -->
+      <GenericTile
+        id="conditionTile"
+        header="Condition Score"
+        subheader="{executiveKpi>/conditionTrend}"
+        frameType="TwoByOne"
+        press="ExecutiveKpiPanel.onConditionTilePress"
+        state="Loaded">
+        <tileContent>
+          <TileContent unit="/10">
+            <content>
+              <NumericContent
+                value="{executiveKpi>/conditionRating}"
+                scale=""
+                valueColor="{executiveKpi>/conditionColor}"
+                indicator="{executiveKpi>/conditionIndicator}"
+                withMargin="false"/>
+            </content>
+          </TileContent>
+        </tileContent>
+      </GenericTile>
+
+      <!-- KPI 2: Open Defects -->
+      <GenericTile
+        id="defectsTile"
+        header="Open Defects"
+        subheader="{executiveKpi>/criticalDefectsText}"
+        frameType="TwoByOne"
+        press="ExecutiveKpiPanel.onDefectsTilePress"
+        state="Loaded">
+        <tileContent>
+          <TileContent>
+            <content>
+              <NumericContent
+                value="{executiveKpi>/openDefects}"
+                scale=""
+                valueColor="{executiveKpi>/defectsColor}"
+                withMargin="false"/>
+            </content>
+          </TileContent>
+        </tileContent>
+      </GenericTile>
+
+      <!-- KPI 3: Days Since Last Inspection -->
+      <GenericTile
+        id="inspectionTile"
+        header="Last Inspection"
+        subheader="{executiveKpi>/lastInspectionDateFormatted}"
+        frameType="TwoByOne"
+        press="ExecutiveKpiPanel.onInspectionTilePress"
+        state="Loaded">
+        <tileContent>
+          <TileContent unit="days ago">
+            <content>
+              <NumericContent
+                value="{executiveKpi>/daysSinceInspection}"
+                scale=""
+                valueColor="{executiveKpi>/inspectionColor}"
+                withMargin="false"/>
+            </content>
+          </TileContent>
+        </tileContent>
+      </GenericTile>
+
+      <!-- KPI 4: Active Restrictions -->
+      <GenericTile
+        id="restrictionsTile"
+        header="Active Restrictions"
+        subheader="Click to view"
+        frameType="TwoByOne"
+        press="ExecutiveKpiPanel.onRestrictionsTilePress"
+        state="Loaded">
+        <tileContent>
+          <TileContent>
+            <content>
+              <NumericContent
+                value="{executiveKpi>/activeRestrictions}"
+                scale=""
+                valueColor="{= ${executiveKpi>/activeRestrictions} > 0 ? 'Critical' : 'Neutral'}"
+                withMargin="false"/>
+            </content>
+          </TileContent>
+        </tileContent>
+      </GenericTile>
+
+      <!-- KPI 5: Load Rating Status -->
+      <GenericTile
+        id="lrcTile"
+        header="Load Rating"
+        subheader="{executiveKpi>/lrcStatusText}"
+        frameType="TwoByOne"
+        state="Loaded">
+        <tileContent>
+          <TileContent>
+            <content>
+              <NumericContent
+                value="{executiveKpi>/lrcExpiryDays}"
+                scale="days"
+                valueColor="{executiveKpi>/lrcColor}"
+                withMargin="false"/>
+            </content>
+          </TileContent>
+        </tileContent>
+      </GenericTile>
+    </f:GridContainer>
+
+    <!-- Condition trend sparkline (last 5 inspections summary) -->
+    <Panel headerText="Condition History" class="sapUiSmallMarginTop" expandable="true" expanded="false">
+      <List
+        id="conditionHistoryList"
+        items="{executiveKpi>/conditionHistory}"
+        noDataText="No condition history available">
+        <StandardListItem
+          title="{executiveKpi>inspectionDateFormatted}"
+          description="{executiveKpi>inspector}"
+          info="{executiveKpi>conditionLabel}"
+          infoState="{executiveKpi>conditionState}"/>
+      </List>
+    </Panel>
+
+    <!-- Active restrictions summary (max 3, then "View all") -->
+    <Panel headerText="Active Restrictions" class="sapUiSmallMarginTop" expandable="true" expanded="true">
+      <List
+        id="restrictionsSummaryList"
+        items="{executiveKpi>/restrictionsSummary}"
+        noDataText="No active restrictions">
+        <StandardListItem
+          title="{executiveKpi>restrictionType}"
+          description="{= ${executiveKpi>restrictionValue} + ' ' + ${executiveKpi>restrictionUnit}}"
+          info="{executiveKpi>vehicleClassLabel}"
+          infoState="Warning"/>
+      </List>
+      <HBox visible="{executiveKpi>/hasMoreRestrictions}" class="sapUiSmallMarginTop">
+        <Link text="View all restrictions" press="ExecutiveKpiPanel.onRestrictionsTilePress"/>
+      </HBox>
+    </Panel>
+
+  </VBox>
+</core:FragmentDefinition>
