@@ -144,6 +144,93 @@ const RESTRICTION_COLUMNS = [
   column('pilotVehicleCount', 'integer')
 ]
 
+const INSPECTION_COLUMNS = [
+  column('ID',                           'string'),
+  column('bridgeRef',                    'string',  { required: true }),
+  column('inspectionDate',               'date',    { required: true }),
+  column('inspectionType',               'string',  { required: true }),
+  column('inspector',                    'string',  { required: true }),
+  column('inspectorAccreditationNumber', 'string'),
+  column('inspectorAccreditationLevel',  'string'),
+  column('inspectorCompany',             'string'),
+  column('inspectionScope',              'string'),
+  column('inspectionStandard',           'string'),
+  column('s4InspectionOrderRef',         'string'),
+  column('s4NotificationRef',            'string'),
+  column('inspectionNotes',              'string')
+]
+
+const ELEMENT_COLUMNS = [
+  column('ID',                        'string'),
+  column('bridgeRef',                 'string',  { required: true }),
+  column('elementId',                 'string',  { required: true }),
+  column('elementType',               'string',  { required: true }),
+  column('elementName',               'string',  { required: true }),
+  column('spanNumber',                'integer'),
+  column('pierNumber',                'integer'),
+  column('position',                  'string'),
+  column('currentConditionRating',    'integer'),
+  column('conditionRatingDate',       'date'),
+  column('conditionTrend',            'string'),
+  column('material',                  'string'),
+  column('yearConstructed',           'integer'),
+  column('yearLastRehabbed',          'integer'),
+  column('maintenanceRequired',       'boolean'),
+  column('urgencyLevel',              'string'),
+  column('estimatedRepairCost',       'decimal'),
+  column('s4EquipmentNumber',         'string'),
+  column('notes',                     'string')
+]
+
+const BRIDGE_RESTRICTION_COLUMNS = [
+  column('ID',                        'string'),
+  column('bridgeRef',                 'string',  { required: true }),
+  column('restrictionRef',            'string',  { required: true }),
+  column('name',                      'string',  { required: true }),
+  column('descr',                     'string'),
+  column('restrictionCategory',       'string'),
+  column('restrictionType',           'string'),
+  column('restrictionValue',          'string'),
+  column('restrictionUnit',           'string'),
+  column('appliesToVehicleClass',     'string'),
+  column('grossMassLimit',            'decimal'),
+  column('axleMassLimit',             'decimal'),
+  column('heightLimit',               'decimal'),
+  column('widthLimit',                'decimal'),
+  column('lengthLimit',               'decimal'),
+  column('speedLimit',                'integer'),
+  column('permitRequired',            'boolean'),
+  column('active',                    'boolean'),
+  column('effectiveFrom',             'date'),
+  column('effectiveTo',               'date'),
+  column('approvedBy',                'string'),
+  column('direction',                 'string')
+]
+
+const LRC_COLUMNS = [
+  column('ID',                        'string'),
+  column('bridgeRef',                 'string',  { required: true }),
+  column('certificateNumber',         'string',  { required: true }),
+  column('certificateVersion',        'integer'),
+  column('status',                    'string'),
+  column('ratingStandard',            'string',  { required: true }),
+  column('ratingLevel',               'string',  { required: true }),
+  column('certifyingEngineer',        'string',  { required: true }),
+  column('engineerQualification',     'string',  { required: true }),
+  column('engineerLicenseNumber',     'string'),
+  column('engineerOrganisation',      'string'),
+  column('rfT44',                     'decimal'),
+  column('rfSM1600',                  'decimal'),
+  column('rfHML',                     'decimal'),
+  column('rfHLP400',                  'decimal'),
+  column('dynamicLoadAllowance',      'decimal'),
+  column('fatigueSensitive',          'boolean'),
+  column('certificateIssueDate',      'date',    { required: true }),
+  column('certificateExpiryDate',     'date',    { required: true }),
+  column('nextReviewDate',            'date'),
+  column('notes',                     'string')
+]
+
 const DATASETS = Object.freeze([
   lookupDataset('AssetClasses', 'Asset Classes', 'Bridge asset class dropdown values'),
   lookupDataset('States', 'States', 'Bridge state dropdown values'),
@@ -184,6 +271,42 @@ const DATASETS = Object.freeze([
     columns: RESTRICTION_COLUMNS,
     orderBy: 'restrictionRef',
     importer: importRestrictionRows
+  },
+  {
+    name: 'BridgeInspections',
+    label: 'Bridge Inspections',
+    description: 'Inspection event records — date, type, inspector, and scope per bridge',
+    entity: 'bridge.management.BridgeInspections',
+    columns: INSPECTION_COLUMNS,
+    orderBy: 'inspectionDate',
+    importer: importInspectionRows
+  },
+  {
+    name: 'BridgeElements',
+    label: 'Bridge Elements',
+    description: 'Structural element inventory — element type, condition rating, and S/4 equipment number',
+    entity: 'bridge.management.BridgeElements',
+    columns: ELEMENT_COLUMNS,
+    orderBy: 'elementId',
+    importer: importElementRows
+  },
+  {
+    name: 'BridgeRestrictions',
+    label: 'Bridge Restrictions',
+    description: 'Bridge-level posting restrictions — mass, height, width, and speed limits',
+    entity: 'bridge.management.BridgeRestrictions',
+    columns: BRIDGE_RESTRICTION_COLUMNS,
+    orderBy: 'restrictionRef',
+    importer: importBridgeRestrictionRows
+  },
+  {
+    name: 'LoadRatingCertificates',
+    label: 'Load Rating Certificates',
+    description: 'AS 5100.7 load rating certificates — rating factors, certifying engineer, and expiry dates',
+    entity: 'bridge.management.LoadRatingCertificates',
+    columns: LRC_COLUMNS,
+    orderBy: 'certificateNumber',
+    importer: importLrcRows
   }
 ])
 
@@ -553,6 +676,42 @@ function getPreviewColumns(dataset) {
       { name: 'restrictionValue', label: 'Value' }
     ]
   }
+  if (dataset.name === 'BridgeInspections') {
+    return [
+      { name: 'bridgeRef',      label: 'Bridge ID' },
+      { name: 'inspectionDate', label: 'Date' },
+      { name: 'inspectionType', label: 'Type' },
+      { name: 'inspector',      label: 'Inspector' },
+      { name: 'inspectionStandard', label: 'Standard' }
+    ]
+  }
+  if (dataset.name === 'BridgeElements') {
+    return [
+      { name: 'bridgeRef',             label: 'Bridge ID' },
+      { name: 'elementId',             label: 'Element ID' },
+      { name: 'elementType',           label: 'Type' },
+      { name: 'elementName',           label: 'Name' },
+      { name: 'currentConditionRating', label: 'Condition' }
+    ]
+  }
+  if (dataset.name === 'BridgeRestrictions') {
+    return [
+      { name: 'bridgeRef',        label: 'Bridge ID' },
+      { name: 'restrictionRef',   label: 'Ref' },
+      { name: 'restrictionType',  label: 'Type' },
+      { name: 'restrictionValue', label: 'Value' },
+      { name: 'active',           label: 'Active' }
+    ]
+  }
+  if (dataset.name === 'LoadRatingCertificates') {
+    return [
+      { name: 'bridgeRef',            label: 'Bridge ID' },
+      { name: 'certificateNumber',    label: 'Certificate #' },
+      { name: 'ratingLevel',          label: 'Rating Level' },
+      { name: 'certificateExpiryDate', label: 'Expiry' },
+      { name: 'status',               label: 'Status' }
+    ]
+  }
   return [
     { name: 'code', label: 'Code' },
     { name: 'name', label: 'Name' },
@@ -897,7 +1056,142 @@ async function enrichRestrictionsWithBridgeKeys(tx, rows) {
   }
 }
 
+async function enrichRowsWithBridgeId(tx, rows, datasetName) {
+  const bridgeRefs = [...new Set(rows.map(r => r.bridgeRef).filter(Boolean))]
+  if (!bridgeRefs.length) return
+  const bridges = await tx.run(
+    SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeRefs } })
+  )
+  const bridgeMap = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+  for (const row of rows) {
+    if (!row.bridgeRef) continue
+    const id = bridgeMap.get(row.bridgeRef)
+    if (!id) throw new Error(`${datasetName} row ${row.__rowNumber}: unknown bridgeRef "${row.bridgeRef}" — no bridge with that Bridge ID exists.`)
+    row.bridge_ID = id
+  }
+}
+
+async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, { naturalKey, objectType, getName }) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+
+  await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+
+  const ids = normalized.map(r => r.ID).filter(Boolean)
+  const existingById = new Map()
+  if (ids.length) {
+    const existing = await tx.run(SELECT.from(dataset.entity).columns('ID', naturalKey).where({ ID: { in: ids } }))
+    existing.forEach(r => existingById.set(r.ID, r))
+  }
+
+  const naturalKeys = normalized.map(r => r[naturalKey]).filter(Boolean)
+  const existingByNaturalKey = new Map()
+  if (naturalKeys.length) {
+    const existing = await tx.run(SELECT.from(dataset.entity).columns('ID', naturalKey).where({ [naturalKey]: { in: naturalKeys } }))
+    existing.forEach(r => existingByNaturalKey.set(r[naturalKey], r))
+  }
+
+  const inserts = []
+  const updates = []
+
+  for (const row of normalized) {
+    let existing = (row.ID && existingById.get(row.ID)) || (row[naturalKey] && existingByNaturalKey.get(row[naturalKey]))
+    if (existing) {
+      row.ID = existing.ID
+      updates.push(row)
+      continue
+    }
+    if (!row.ID) row.ID = cds.utils.uuid()
+    inserts.push(row)
+    existingById.set(row.ID, row)
+    if (row[naturalKey]) existingByNaturalKey.set(row[naturalKey], row)
+  }
+
+  if (inserts.length) {
+    await tx.run(INSERT.into(dataset.entity).entries(inserts.map(stripMetadata)))
+    for (const row of inserts) {
+      queueAudit(auditContext, {
+        objectType, objectId: row.ID, objectName: getName(row),
+        source: 'MassUpload', batchId: auditContext?.batchId, changedBy: auditContext?.changedBy || 'system',
+        changes: Object.entries(stripMetadata(row))
+          .filter(([k, v]) => !['__rowNumber'].includes(k) && v != null && v !== '')
+          .map(([k, v]) => ({ fieldName: k, oldValue: '', newValue: String(v) }))
+      })
+    }
+  }
+
+  for (const row of updates) {
+    const oldRecord = await fetchCurrentRecord(tx, dataset.entity, { ID: row.ID })
+    const patch = stripPrimaryKey(row, ['ID'])
+    await tx.run(UPDATE(dataset.entity).set(patch).where({ ID: row.ID }))
+    if (oldRecord) {
+      const changes = diffRecords(Object.fromEntries(Object.keys(patch).map(k => [k, oldRecord[k]])), patch)
+      if (changes.length) {
+        queueAudit(auditContext, {
+          objectType, objectId: row.ID, objectName: getName(oldRecord) || getName(row),
+          source: 'MassUpload', batchId: auditContext?.batchId, changedBy: auditContext?.changedBy || 'system',
+          changes
+        })
+      }
+    }
+  }
+
+  return buildSummary(dataset, normalized.length, inserts.length, updates.length)
+}
+
+async function importInspectionRows(tx, dataset, rows, warnings, auditContext) {
+  return importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
+    naturalKey: 'inspectionDate',
+    objectType: 'BridgeInspection',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.inspectionDate}`
+  })
+}
+
+async function importElementRows(tx, dataset, rows, warnings, auditContext) {
+  return importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
+    naturalKey: 'elementId',
+    objectType: 'BridgeElement',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.elementId}`
+  })
+}
+
+async function importBridgeRestrictionRows(tx, dataset, rows, warnings, auditContext) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+
+  await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+
+  for (const row of normalized) {
+    if (row.active === null || row.active === undefined) row.active = true
+  }
+
+  return importCuidEntityRows(tx, dataset, normalized.map(r => ({ ...r, __alreadyNormalized: true })), warnings, auditContext, {
+    naturalKey: 'restrictionRef',
+    objectType: 'BridgeRestriction',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.restrictionRef}`
+  })
+}
+
+async function importLrcRows(tx, dataset, rows, warnings, auditContext) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+
+  await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+
+  for (const row of normalized) {
+    if (!row.status) row.status = 'Current'
+    if (row.certificateVersion === null || row.certificateVersion === undefined) row.certificateVersion = 1
+  }
+
+  return importCuidEntityRows(tx, dataset, normalized.map(r => ({ ...r, __alreadyNormalized: true })), warnings, auditContext, {
+    naturalKey: 'certificateNumber',
+    objectType: 'LoadRatingCertificate',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.certificateNumber}`
+  })
+}
+
 function normalizeRows(dataset, rows, warnings) {
+  if (rows.length && rows[0].__alreadyNormalized) return rows
   const deduped = new Map()
 
   for (const row of rows) {
@@ -956,6 +1250,20 @@ function normalizeRow(dataset, row, warnings) {
       warnings.push(
         `Restrictions row ${row.__rowNumber}: skipped — provide either "ID" or "restrictionRef" so the row can be matched or inserted.`
       )
+    }
+    return null
+  }
+
+  if (dataset.name === 'BridgeRestrictions' && !hasValue(normalized.restrictionRef)) {
+    if (warnings) {
+      warnings.push(`BridgeRestrictions row ${row.__rowNumber}: skipped — "restrictionRef" is required as a natural key.`)
+    }
+    return null
+  }
+
+  if (dataset.name === 'LoadRatingCertificates' && !hasValue(normalized.certificateNumber)) {
+    if (warnings) {
+      warnings.push(`LoadRatingCertificates row ${row.__rowNumber}: skipped — "certificateNumber" is required as a natural key.`)
     }
     return null
   }
@@ -1098,6 +1406,10 @@ function getDedupeKey(dataset, row) {
   if (dataset.columns === LOOKUP_COLUMNS) return parsePrimaryLookupRowKey(row)
   if (dataset.name === 'Bridges') return row.ID ?? `bridgeId:${row.bridgeId}`
   if (dataset.name === 'Restrictions') return row.ID ?? `restrictionRef:${row.restrictionRef}`
+  if (dataset.name === 'BridgeInspections') return row.ID ?? `${row.bridgeRef}|${row.inspectionDate}|${row.inspectionType}`
+  if (dataset.name === 'BridgeElements') return row.ID ?? `${row.bridgeRef}|${row.elementId}`
+  if (dataset.name === 'BridgeRestrictions') return row.ID ?? `${row.bridgeRef}|${row.restrictionRef}`
+  if (dataset.name === 'LoadRatingCertificates') return row.ID ?? `${row.bridgeRef}|${row.certificateNumber}`
   return JSON.stringify(row)
 }
 
@@ -1157,7 +1469,7 @@ function stripPrimaryKey(row, keyNames) {
 function stripMetadata(row) {
   const cleaned = {}
   for (const [key, value] of Object.entries(row)) {
-    if (key === '__rowNumber') continue
+    if (key === '__rowNumber' || key === '__alreadyNormalized') continue
     cleaned[key] = value
   }
   return cleaned
