@@ -42,6 +42,22 @@
                   ]
                 },
                 {
+                  id: "bms.group.subdomains",
+                  title: "BRIDGE SUB-DOMAINS",
+                  isPreset: true, isVisible: true, isGroupLocked: false,
+                  tiles: [
+                    { id: "Inspections",         tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Inspections",            subtitle: "All Bridge Inspections",       icon: "sap-icon://inspection",           targetURL: "#Inspections-manage" } },
+                    { id: "Defects",             tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Defects",                subtitle: "All Bridge Defects",           icon: "sap-icon://error",                targetURL: "#Defects-manage" } },
+                    { id: "Capacity",            tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Capacity",               subtitle: "Load & Geometric Capacity",    icon: "sap-icon://weight",               targetURL: "#Capacity-manage" } },
+                    { id: "ConditionSurveys",    tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Condition Surveys",      subtitle: "Physical Condition Ratings",   icon: "sap-icon://survey",               targetURL: "#ConditionSurveys-manage" } },
+                    { id: "LoadRatings",         tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Load Ratings",           subtitle: "Per-Vehicle Class Ratings",    icon: "sap-icon://vehicle-repair",       targetURL: "#LoadRatings-manage" } },
+                    { id: "RiskAssessments",     tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Risk & Compliance",      subtitle: "Risk Assessments",             icon: "sap-icon://business-objects-experience", targetURL: "#RiskAssessments-manage" } },
+                    { id: "NhvrRouteAssessments",tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "NHVR Route Assessments", subtitle: "Route-Level Assessments",      icon: "sap-icon://map",                  targetURL: "#NhvrRouteAssessments-manage" } },
+                    { id: "LoadRatingCerts",     tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Load Rating Certs",      subtitle: "Issued Certificates",          icon: "sap-icon://document-text",        targetURL: "#LoadRatingCerts-manage" } },
+                    { id: "Permits",             tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Permits",                subtitle: "Permit Applications",          icon: "sap-icon://to-be-reviewed",       targetURL: "#Permits-manage" } }
+                  ]
+                },
+                {
                   id: "bms.group.admin",
                   title: "BMS BUSINESS ADMIN",
                   isPreset: true, isVisible: true, isGroupLocked: false,
@@ -71,7 +87,16 @@
                 "BmsAdmin-manage":        { semanticObject: "BmsAdmin",       action: "manage",  title: "BMS Administration",      signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.bmsadmin",     url: "/bms-admin/webapp" } },
                 "MassEdit-manage":        { semanticObject: "MassEdit",       action: "manage",  title: "Mass Edit",               signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.massedit",     url: "/mass-edit/webapp" } },
                 "Reports-display":        { semanticObject: "Reports",        action: "display", title: "Reports",                 signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.reports",      url: "/reports/webapp" } },
-                "BridgeHierarchy-display":{ semanticObject: "BridgeHierarchy",action: "display", title: "Bridge Hierarchy Explorer",signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.bridgehierarchy", url: "/bridge-hierarchy/webapp" } }
+                "BridgeHierarchy-display":{ semanticObject: "BridgeHierarchy",action: "display", title: "Bridge Hierarchy Explorer",signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.bridgehierarchy", url: "/bridge-hierarchy/webapp" } },
+                "Inspections-manage":         { semanticObject: "Inspections",         action: "manage", title: "Inspections",            signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeInspections" } },
+                "Defects-manage":             { semanticObject: "Defects",             action: "manage", title: "Defects",                signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeDefects" } },
+                "Capacity-manage":            { semanticObject: "Capacity",            action: "manage", title: "Capacity",               signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeCapacities" } },
+                "ConditionSurveys-manage":    { semanticObject: "ConditionSurveys",    action: "manage", title: "Condition Surveys",      signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeConditionSurveys" } },
+                "LoadRatings-manage":         { semanticObject: "LoadRatings",         action: "manage", title: "Load Ratings",           signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeLoadRatings" } },
+                "RiskAssessments-manage":     { semanticObject: "RiskAssessments",     action: "manage", title: "Risk & Compliance",      signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeRiskAssessments" } },
+                "NhvrRouteAssessments-manage":{ semanticObject: "NhvrRouteAssessments",action: "manage", title: "NHVR Route Assessments", signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "NhvrRouteAssessments" } },
+                "LoadRatingCerts-manage":     { semanticObject: "LoadRatingCerts",     action: "manage", title: "Load Rating Certs",      signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "LoadRatingCertificates" } },
+                "Permits-manage":             { semanticObject: "Permits",             action: "manage", title: "Permits",                signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgePermits" } }
               }
             }
           }
@@ -82,15 +107,19 @@
 
   <script
     id="sap-ushell-bootstrap"
-    src="https://ui5.sap.com/test-resources/sap/ushell/bootstrap/sandbox.js">
+    src="https://sapui5.hana.ondemand.com/1.145.0/test-resources/sap/ushell/bootstrap/sandbox.js">
   </script>
 
   <script
     id="sap-ui-bootstrap"
-    src="https://ui5.sap.com/resources/sap-ui-core.js"
-    data-sap-ui-libs="sap.m,sap.ushell,sap.collaboration,sap.ui.layout,sap.fe.templates"
+    src="https://sapui5.hana.ondemand.com/1.145.0/resources/sap-ui-core.js"
+    data-sap-ui-libs="sap.ui.core,sap.ui.generic.app,sap.ushell,sap.fe.templates"
+    data-sap-ui-flexibilityServices='[{"connector": "LocalStorageConnector"}]'
     data-sap-ui-compatVersion="edge"
-    data-sap-ui-theme="sap_horizon">
+    data-sap-ui-theme="sap_horizon"
+    data-sap-ui-async="true"
+    data-sap-ui-frameOptions="allow"
+    data-sap-ui-preload="async">
   </script>
 
   <script>

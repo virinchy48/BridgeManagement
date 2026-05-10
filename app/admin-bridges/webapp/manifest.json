@@ -154,7 +154,16 @@
           "name": "BridgePermitsDetails",
           "pattern": "Bridges({key})/permits({key2}):?query:",
           "target": "BridgePermitsDetails"
-        }
+        },
+        { "pattern": "BridgeCapacities:?query:",       "name": "BridgeCapacitiesList",       "target": "BridgeCapacitiesList" },
+        { "pattern": "BridgeConditionSurveys:?query:", "name": "BridgeConditionSurveysList", "target": "BridgeConditionSurveysList" },
+        { "pattern": "BridgeInspections:?query:",      "name": "BridgeInspectionsList",      "target": "BridgeInspectionsList" },
+        { "pattern": "BridgeDefects:?query:",          "name": "BridgeDefectsList",          "target": "BridgeDefectsList" },
+        { "pattern": "BridgeLoadRatings:?query:",      "name": "BridgeLoadRatingsList",      "target": "BridgeLoadRatingsList" },
+        { "pattern": "BridgeRiskAssessments:?query:",  "name": "BridgeRiskAssessmentsList",  "target": "BridgeRiskAssessmentsList" },
+        { "pattern": "NhvrRouteAssessments:?query:",   "name": "NhvrRouteAssessmentsList",   "target": "NhvrRouteAssessmentsList" },
+        { "pattern": "LoadRatingCertificates:?query:", "name": "LoadRatingCertificatesList", "target": "LoadRatingCertificatesList" },
+        { "pattern": "BridgePermits:?query:",          "name": "BridgePermitsList",          "target": "BridgePermitsList" }
       ],
       "targets": {
         "GISConfig": {
@@ -556,6 +565,42 @@
           "id": "BridgePermitsDetails",
           "name": "sap.fe.templates.ObjectPage",
           "options": { "settings": { "entitySet": "BridgePermits", "editableHeaderContent": false } }
+        },
+        "BridgeCapacitiesList": {
+          "type": "Component", "id": "BridgeCapacitiesList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "BridgeCapacities", "navigation": { "BridgeCapacities": { "detail": { "route": "BridgeCapacitiesDetails" } } } } }
+        },
+        "BridgeConditionSurveysList": {
+          "type": "Component", "id": "BridgeConditionSurveysList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "BridgeConditionSurveys", "navigation": { "BridgeConditionSurveys": { "detail": { "route": "BridgeConditionSurveysDetails" } } } } }
+        },
+        "BridgeInspectionsList": {
+          "type": "Component", "id": "BridgeInspectionsList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "BridgeInspections", "navigation": { "BridgeInspections": { "detail": { "route": "BridgeInspectionsDetails" } } } } }
+        },
+        "BridgeDefectsList": {
+          "type": "Component", "id": "BridgeDefectsList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "BridgeDefects", "navigation": { "BridgeDefects": { "detail": { "route": "BridgeInspectionsDetails" } } } } }
+        },
+        "BridgeLoadRatingsList": {
+          "type": "Component", "id": "BridgeLoadRatingsList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "BridgeLoadRatings", "navigation": { "BridgeLoadRatings": { "detail": { "route": "BridgeLoadRatingsDetails" } } } } }
+        },
+        "BridgeRiskAssessmentsList": {
+          "type": "Component", "id": "BridgeRiskAssessmentsList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "BridgeRiskAssessments", "navigation": { "BridgeRiskAssessments": { "detail": { "route": "BridgeRiskAssessmentsDetails" } } } } }
+        },
+        "NhvrRouteAssessmentsList": {
+          "type": "Component", "id": "NhvrRouteAssessmentsList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "NhvrRouteAssessments", "navigation": { "NhvrRouteAssessments": { "detail": { "route": "NhvrRouteAssessmentsDetails" } } } } }
+        },
+        "LoadRatingCertificatesList": {
+          "type": "Component", "id": "LoadRatingCertificatesList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "LoadRatingCertificates", "navigation": { "LoadRatingCertificates": { "detail": { "route": "LoadRatingCertificatesDetails" } } } } }
+        },
+        "BridgePermitsList": {
+          "type": "Component", "id": "BridgePermitsList", "name": "sap.fe.templates.ListReport",
+          "options": { "settings": { "entitySet": "BridgePermits", "navigation": { "BridgePermits": { "detail": { "route": "BridgePermitsDetails" } } } } }
         }
       }
     },
