@@ -93,94 +93,45 @@ annotate AdminService.Bridges with @(
     },
 
     Facets: [
-      // ── S1: Overview & Identity ──────────────────────────────────────────
-      // Personas: All (read-only for Inspector/External)
-      // S/4HANA: Equipment master (EQUI) + Functional Location (IFLOT)
+      // ── S1: Bridge Identity Hub ──────────────────────────────────────────
+      // Core identification only — everything else is in sub-domain tiles
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Overview & Identity',
-        ID    : 'OverviewIdentity',
+        Label : 'Bridge Identity',
+        ID    : 'BridgeIdentity',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Asset Identity',      Target: '@UI.FieldGroup#AssetIdentity'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Geographic Location',  Target: '@UI.FieldGroup#GeoLocation'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Ownership',            Target: '@UI.FieldGroup#Ownership'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Asset Identity',     Target: '@UI.FieldGroup#AssetIdentity'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Geographic Location', Target: '@UI.FieldGroup#GeoLocation'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Ownership',           Target: '@UI.FieldGroup#Ownership'},
         ]
       },
-      // ── S2: Physical & Structural ────────────────────────────────────────
-      // Personas: Manager (RW), Inspector (R), Executive/External (hidden)
-      // S/4HANA: Equipment characteristics (CABN/CAWN), classification (KLAH)
+      // ── S2: Sub-domain Navigation Hub ───────────────────────────────────
+      // Each tile is an independent Fiori Object Page — click row to drill in
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Physical & Structural',
-        ID    : 'PhysicalStructural',
+        Label : 'Sub-domains',
+        ID    : 'BridgeSubdomains',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Structure',         Target: '@UI.FieldGroup#Structure'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Dimensions',        Target: '@UI.FieldGroup#Dimensions'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Site Context',      Target: '@UI.FieldGroup#SiteContext'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Bridge Elements',   Target: 'elements/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Capacity Ratings',  Target: 'capacities/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Condition Surveys',       Target: 'conditionSurveys/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Inspections',             Target: 'inspections/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Defects',                 Target: 'inspections/defects/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Capacity',                Target: 'capacities/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Load Ratings',            Target: 'loadRatings/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Compliance',       Target: 'riskAssessments/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Route Assessments',  Target: 'nhvrRouteAssessments/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Load Rating Certificates',Target: 'loadRatingCertificates/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Permits',                 Target: 'permits/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Active Restrictions',     Target: 'restrictions/@UI.LineItem'},
         ]
       },
-      // ── S3: Condition & Inspections ──────────────────────────────────────
-      // Personas: Inspector (RW — P0 section), Manager (R), Executive (summary only)
-      // S/4HANA: PM Notifications (QMEL), Measuring Points (PMCO)
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Condition & Inspections',
-        ID    : 'ConditionInspections',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Condition Assessment',  Target: '@UI.FieldGroup#ConditionAssessment'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Schedule',   Target: '@UI.FieldGroup#InspectionScheduling'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Records',    Target: 'inspections/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Field Notes',           Target: '@UI.FieldGroup#FieldNotes'},
-        ]
-      },
-      // ── S4: Restrictions & Permits ───────────────────────────────────────
-      // Personas: All (External — cards only); Operator (RW on restrictions)
-      // S/4HANA: PM Functional Location + BIS-owned permit objects
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Restrictions & Permits',
-        ID    : 'RestrictionsPermits',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Traffic Data',             Target: '@UI.FieldGroup#TrafficData'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Route Classification',      Target: '@UI.FieldGroup#RouteClass'},
-          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Approvals',            Target: '@UI.FieldGroup#NHVRApprovals'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Gazette & Legal',           Target: '@UI.FieldGroup#GazetteLegal'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Active Restrictions',       Target: 'restrictions/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Route Assessments',    Target: 'nhvrRouteAssessments/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Load Rating Certificates',  Target: 'loadRatingCertificates/@UI.LineItem'},
-        ]
-      },
-      // ── S5: Documents & Map ──────────────────────────────────────────────
-      // Personas: Manager (RW), Inspector (RW — upload rights for photos)
-      // The custom Attachments fragment (anchored here via manifest.json) is the single
-      // entry point for file uploads. The OData documents table has been removed to
-      // eliminate the duplicate "Attachments" panel that appeared above this section.
-      // The Map fragment (GisMapTab) is also anchored here via manifest.json.
+      // ── S3: Documents & Map (custom fragments anchored via manifest.json) ─
       {
         $Type : 'UI.CollectionFacet',
         Label : 'Documents & Map',
         ID    : 'DocumentsMap',
         Facets: []
       },
-      // ── S6: Risk, Compliance & Alerts ───────────────────────────────────
-      // Personas: Manager (RW), Admin; hidden from Inspector, External, Executive
-      // S/4HANA: PM Risk Assessment + BIS-owned compliance data
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Risk, Compliance & Alerts',
-        ID    : 'RiskComplianceAlerts',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Resilience',    Target: '@UI.FieldGroup#RiskResilience'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessments',    Target: 'scourAssessments/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Risk Assessments',     Target: 'riskAssessments/@UI.LineItem'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Active Alerts',        Target: 'alerts/@UI.LineItem'},
-        ]
-      },
-      // ── S7: Administration ───────────────────────────────────────────────
-      // Personas: Admin (RW), Manager (R); hidden from Inspector, External, Executive
-      // Contains: data quality, audit trail, system metadata
+      // ── S4: Administration ───────────────────────────────────────────────
       {
         $Type : 'UI.CollectionFacet',
         Label : 'Administration',
@@ -1706,4 +1657,330 @@ annotate AdminService.Restrictions with actions {
 annotate AdminService.BridgeRestrictions with actions {
   deactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
   reactivate @Common.SideEffects: { TargetProperties: ['restrictionStatus', 'active'] };
+};
+
+////////////////////////////////////////////////////////////////////////////
+//  BridgeConditionSurveys (CON tile) — standalone condition survey records
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.BridgeConditionSurveys with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.HeaderInfo: {
+    TypeName      : 'Condition Survey',
+    TypeNamePlural: 'Condition Surveys',
+    Title         : { Value: surveyRef },
+    Description   : { Value: surveyDate }
+  },
+  UI.SelectionFields: [ surveyRef, surveyType, overallGrade, status, active ],
+  UI.LineItem: [
+    { Value: surveyRef,        Label: 'Survey Ref' },
+    { Value: surveyDate,       Label: 'Survey Date' },
+    { Value: surveyType,       Label: 'Type' },
+    { Value: surveyedBy,       Label: 'Surveyed By' },
+    { Value: conditionRating,  Label: 'Condition Rating' },
+    { Value: overallGrade,     Label: 'Grade' },
+    { Value: status,           Label: 'Status' },
+    { Value: active,           Label: 'Active' },
+  ],
+  UI.Facets: [
+    { $Type: 'UI.CollectionFacet', Label: 'Survey Details', ID: 'SurveyDetails', Facets: [
+      { $Type: 'UI.ReferenceFacet', Label: 'General',     Target: '@UI.FieldGroup#ConSurveyGeneral' },
+      { $Type: 'UI.ReferenceFacet', Label: 'Ratings',     Target: '@UI.FieldGroup#ConSurveyRatings' },
+      { $Type: 'UI.ReferenceFacet', Label: 'Notes',       Target: '@UI.FieldGroup#ConSurveyNotes' },
+    ]},
+  ],
+  UI.FieldGroup#ConSurveyGeneral: {
+    Label: 'General',
+    Data: [
+      { Value: surveyRef },
+      { Value: surveyDate },
+      { Value: surveyType },
+      { Value: surveyedBy },
+      { Value: status },
+      { Value: active },
+    ]
+  },
+  UI.FieldGroup#ConSurveyRatings: {
+    Label: 'Ratings',
+    Data: [
+      { Value: conditionRating },
+      { Value: structuralRating },
+      { Value: overallGrade },
+    ]
+  },
+  UI.FieldGroup#ConSurveyNotes: {
+    Label: 'Notes',
+    Data: [ { Value: notes }, { Value: remarks } ]
+  },
+  UI.Identification: [
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.deactivate',
+      Label      : 'Deactivate',
+      Criticality: #Negative,
+      ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.reactivate',
+      Label      : 'Reactivate',
+      Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } }
+    }
+  ]
+);
+
+annotate AdminService.BridgeConditionSurveys with {
+  ID         @Core.Computed;
+  createdBy  @UI.Hidden;  createdAt  @UI.Hidden;
+  modifiedBy @UI.Hidden;  modifiedAt @UI.Hidden;
+  bridge     @UI.Hidden;
+  surveyRef  @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Survey Ref (auto-generated)';
+  surveyDate @Common.FieldControl: #Mandatory  @title: 'Survey Date';
+  surveyType @title: 'Survey Type';
+  surveyedBy @title: 'Surveyed By';
+  conditionRating @title: 'Condition Rating (1–10)'  @Common.QuickInfo: 'Valid range: 1 – 10';
+  structuralRating @title: 'Structural Rating (1–10)' @Common.QuickInfo: 'Valid range: 1 – 10';
+  overallGrade @title: 'Overall Grade';
+  notes    @UI.MultiLineText  @title: 'Notes';
+  remarks  @UI.MultiLineText  @title: 'Remarks';
+  status   @title: 'Status'  @Common.FieldControl: #ReadOnly;
+  active   @Common.FieldControl: #ReadOnly  @title: 'Active';
+};
+
+annotate AdminService.BridgeConditionSurveys with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['active'] };
+};
+
+////////////////////////////////////////////////////////////////////////////
+//  BridgeLoadRatings (LRT tile) — per-vehicle-class load rating assessments
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.BridgeLoadRatings with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.HeaderInfo: {
+    TypeName      : 'Load Rating',
+    TypeNamePlural: 'Load Ratings',
+    Title         : { Value: ratingRef },
+    Description   : { Value: vehicleClass }
+  },
+  UI.SelectionFields: [ ratingRef, vehicleClass, ratingMethod, status, active ],
+  UI.LineItem: [
+    { Value: ratingRef,       Label: 'Rating Ref' },
+    { Value: vehicleClass,    Label: 'Vehicle Class' },
+    { Value: ratingMethod,    Label: 'Method' },
+    { Value: ratingFactor,    Label: 'Rating Factor' },
+    { Value: grossMassLimit,  Label: 'Mass Limit (t)' },
+    { Value: assessedBy,      Label: 'Assessed By' },
+    { Value: assessmentDate,  Label: 'Assessment Date' },
+    { Value: validTo,         Label: 'Valid To' },
+    { Value: status,          Label: 'Status' },
+    { Value: active,          Label: 'Active' },
+  ],
+  UI.Facets: [
+    { $Type: 'UI.CollectionFacet', Label: 'Rating Details', ID: 'RatingDetails', Facets: [
+      { $Type: 'UI.ReferenceFacet', Label: 'Classification', Target: '@UI.FieldGroup#LrtClass' },
+      { $Type: 'UI.ReferenceFacet', Label: 'Limits',         Target: '@UI.FieldGroup#LrtLimits' },
+      { $Type: 'UI.ReferenceFacet', Label: 'Assessment',     Target: '@UI.FieldGroup#LrtAssessment' },
+    ]},
+  ],
+  UI.FieldGroup#LrtClass: {
+    Label: 'Classification',
+    Data: [
+      { Value: ratingRef },
+      { Value: vehicleClass },
+      { Value: ratingMethod },
+      { Value: status },
+      { Value: active },
+    ]
+  },
+  UI.FieldGroup#LrtLimits: {
+    Label: 'Limits',
+    Data: [
+      { Value: ratingFactor },
+      { Value: grossMassLimit },
+    ]
+  },
+  UI.FieldGroup#LrtAssessment: {
+    Label: 'Assessment',
+    Data: [
+      { Value: assessedBy },
+      { Value: assessmentDate },
+      { Value: validTo },
+      { Value: remarks },
+    ]
+  },
+  UI.Identification: [
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.deactivate',
+      Label      : 'Deactivate',
+      Criticality: #Negative,
+      ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.reactivate',
+      Label      : 'Reactivate',
+      Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } }
+    }
+  ]
+);
+
+annotate AdminService.BridgeLoadRatings with {
+  ID            @Core.Computed;
+  createdBy     @UI.Hidden;  createdAt     @UI.Hidden;
+  modifiedBy    @UI.Hidden;  modifiedAt    @UI.Hidden;
+  bridge        @UI.Hidden;
+  ratingRef     @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Rating Ref (auto-generated)';
+  vehicleClass  @Common.FieldControl: #Mandatory  @title: 'Vehicle Class';
+  ratingMethod  @title: 'Rating Method';
+  ratingFactor  @title: 'Rating Factor'  @Common.QuickInfo: 'Valid range: 0.0 – 2.0';
+  grossMassLimit @title: 'Gross Mass Limit (t)'  @Common.QuickInfo: 'Valid range: 0 – 1,000 t';
+  assessedBy    @title: 'Assessed By';
+  assessmentDate @title: 'Assessment Date';
+  validTo       @title: 'Valid To';
+  remarks  @UI.MultiLineText  @title: 'Remarks';
+  status   @title: 'Status'  @Common.FieldControl: #ReadOnly;
+  active   @Common.FieldControl: #ReadOnly  @title: 'Active';
+};
+
+annotate AdminService.BridgeLoadRatings with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['active', 'status'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['active', 'status'] };
+};
+
+////////////////////////////////////////////////////////////////////////////
+//  BridgePermits (PRM tile) — permit applications and approvals
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.BridgePermits with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.HeaderInfo: {
+    TypeName      : 'Permit',
+    TypeNamePlural: 'Permits',
+    Title         : { Value: permitRef },
+    Description   : { Value: permitType }
+  },
+  UI.SelectionFields: [ permitRef, permitType, vehicleClass, status, active ],
+  UI.LineItem: [
+    { Value: permitRef,      Label: 'Permit Ref' },
+    { Value: permitType,     Label: 'Type' },
+    { Value: applicantName,  Label: 'Applicant' },
+    { Value: vehicleClass,   Label: 'Vehicle Class' },
+    { Value: grossMass,      Label: 'Gross Mass (t)' },
+    { Value: appliedDate,    Label: 'Applied' },
+    { Value: validFrom,      Label: 'Valid From' },
+    { Value: validTo,        Label: 'Valid To' },
+    { Value: status,         Label: 'Status' },
+    { Value: active,         Label: 'Active' },
+  ],
+  UI.Facets: [
+    { $Type: 'UI.CollectionFacet', Label: 'Permit Details', ID: 'PermitDetails', Facets: [
+      { $Type: 'UI.ReferenceFacet', Label: 'Application',  Target: '@UI.FieldGroup#PrmApplication' },
+      { $Type: 'UI.ReferenceFacet', Label: 'Vehicle',      Target: '@UI.FieldGroup#PrmVehicle' },
+      { $Type: 'UI.ReferenceFacet', Label: 'Decision',     Target: '@UI.FieldGroup#PrmDecision' },
+    ]},
+  ],
+  UI.FieldGroup#PrmApplication: {
+    Label: 'Application',
+    Data: [
+      { Value: permitRef },
+      { Value: permitType },
+      { Value: applicantName },
+      { Value: appliedDate },
+      { Value: validFrom },
+      { Value: validTo },
+      { Value: status },
+      { Value: active },
+    ]
+  },
+  UI.FieldGroup#PrmVehicle: {
+    Label: 'Vehicle Dimensions',
+    Data: [
+      { Value: vehicleClass },
+      { Value: grossMass },
+      { Value: height },
+      { Value: width },
+      { Value: length },
+    ]
+  },
+  UI.FieldGroup#PrmDecision: {
+    Label: 'Decision',
+    Data: [
+      { Value: decisionBy },
+      { Value: decisionDate },
+      { Value: conditionsOfApproval },
+      { Value: remarks },
+    ]
+  },
+  UI.Identification: [
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.approve',
+      Label      : 'Approve',
+      Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Pending'] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.rejectPermit',
+      Label      : 'Reject',
+      Criticality: #Negative,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Pending'] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.deactivate',
+      Label      : 'Deactivate',
+      Criticality: #Negative,
+      ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.reactivate',
+      Label      : 'Reactivate',
+      Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } }
+    }
+  ]
+);
+
+annotate AdminService.BridgePermits with {
+  ID            @Core.Computed;
+  createdBy     @UI.Hidden;  createdAt     @UI.Hidden;
+  modifiedBy    @UI.Hidden;  modifiedAt    @UI.Hidden;
+  bridge        @UI.Hidden;
+  permitRef     @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Permit Ref (auto-generated)';
+  permitType    @Common.FieldControl: #Mandatory  @title: 'Permit Type';
+  applicantName @Common.FieldControl: #Mandatory  @title: 'Applicant Name';
+  vehicleClass  @title: 'Vehicle Class';
+  grossMass     @title: 'Gross Mass (t)'   @Common.QuickInfo: 'Valid range: 0 – 1,000 t';
+  height        @title: 'Height (m)'       @Common.QuickInfo: 'Valid range: 0 – 30 m';
+  width         @title: 'Width (m)'        @Common.QuickInfo: 'Valid range: 0 – 100 m';
+  length        @title: 'Length (m)'       @Common.QuickInfo: 'Valid range: 0 – 1,000 m';
+  appliedDate   @title: 'Applied Date';
+  validFrom     @title: 'Valid From';
+  validTo       @title: 'Valid To';
+  decisionBy    @title: 'Decision By'  @Common.FieldControl: #ReadOnly;
+  decisionDate  @title: 'Decision Date' @Common.FieldControl: #ReadOnly;
+  conditionsOfApproval @UI.MultiLineText  @title: 'Conditions of Approval';
+  remarks  @UI.MultiLineText  @title: 'Remarks';
+  status   @title: 'Status'  @Common.FieldControl: #ReadOnly;
+  active   @Common.FieldControl: #ReadOnly  @title: 'Active';
+};
+
+annotate AdminService.BridgePermits with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['active'] };
+  approve      @Common.SideEffects: { TargetProperties: ['status', 'decisionBy', 'decisionDate'] };
+  rejectPermit @Common.SideEffects: { TargetProperties: ['status', 'decisionBy', 'decisionDate'] };
 };

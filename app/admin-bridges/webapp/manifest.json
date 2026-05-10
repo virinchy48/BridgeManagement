@@ -139,6 +139,21 @@
           "name": "BridgeMehComponentsDetails",
           "pattern": "Bridges({key})/mehComponents({key2}):?query:",
           "target": "BridgeMehComponentsDetails"
+        },
+        {
+          "name": "BridgeConditionSurveysDetails",
+          "pattern": "Bridges({key})/conditionSurveys({key2}):?query:",
+          "target": "BridgeConditionSurveysDetails"
+        },
+        {
+          "name": "BridgeLoadRatingsDetails",
+          "pattern": "Bridges({key})/loadRatings({key2}):?query:",
+          "target": "BridgeLoadRatingsDetails"
+        },
+        {
+          "name": "BridgePermitsDetails",
+          "pattern": "Bridges({key})/permits({key2}):?query:",
+          "target": "BridgePermitsDetails"
         }
       ],
       "targets": {
@@ -242,7 +257,10 @@
                 "inspectionElements": { "detail": { "route": "BridgeInspectionElementsDetails" } },
                 "carriageways": { "detail": { "route": "BridgeCarriagewaysDetails" } },
                 "contacts": { "detail": { "route": "BridgeContactsDetails" } },
-                "mehComponents": { "detail": { "route": "BridgeMehComponentsDetails" } }
+                "mehComponents": { "detail": { "route": "BridgeMehComponentsDetails" } },
+                "conditionSurveys": { "detail": { "route": "BridgeConditionSurveysDetails" } },
+                "loadRatings": { "detail": { "route": "BridgeLoadRatingsDetails" } },
+                "permits": { "detail": { "route": "BridgePermitsDetails" } }
               },
               "controlConfiguration": {
                 "capacities/@com.sap.vocabularies.UI.v1.LineItem": {
@@ -375,7 +393,7 @@
                       "title": "Map",
                       "position": {
                         "placement": "After",
-                        "anchor": "OverviewIdentity"
+                        "anchor": "BridgeIdentity"
                       }
                     },
                     "customAttributesSection": {
@@ -391,7 +409,7 @@
                       "title": "Executive Summary",
                       "position": {
                         "placement": "Before",
-                        "anchor": "OverviewIdentity"
+                        "anchor": "BridgeIdentity"
                       }
                     },
                     "inspectionRegisterSection": {
@@ -520,6 +538,24 @@
           "id": "BridgeMehComponentsDetails",
           "name": "sap.fe.templates.ObjectPage",
           "options": { "settings": { "entitySet": "BridgeMehComponents", "editableHeaderContent": false } }
+        },
+        "BridgeConditionSurveysDetails": {
+          "type": "Component",
+          "id": "BridgeConditionSurveysDetails",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "entitySet": "BridgeConditionSurveys", "editableHeaderContent": false } }
+        },
+        "BridgeLoadRatingsDetails": {
+          "type": "Component",
+          "id": "BridgeLoadRatingsDetails",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "entitySet": "BridgeLoadRatings", "editableHeaderContent": false } }
+        },
+        "BridgePermitsDetails": {
+          "type": "Component",
+          "id": "BridgePermitsDetails",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": { "settings": { "entitySet": "BridgePermits", "editableHeaderContent": false } }
         }
       }
     },

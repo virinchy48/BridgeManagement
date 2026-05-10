@@ -9,7 +9,8 @@
     { "name": "$XSAPPNAME.inspect", "description": "Record inspection findings and condition ratings" },
     { "name": "$XSAPPNAME.view", "description": "Read-only access to bridges and restrictions" },
     { "name": "$XSAPPNAME.executive_view", "description": "Executive KPI summary — header only, no editable tabs" },
-    { "name": "$XSAPPNAME.external_view", "description": "External/public card view — curated read-only fields, unauthenticated route" }
+    { "name": "$XSAPPNAME.external_view", "description": "External/public card view — curated read-only fields, unauthenticated route" },
+    { "name": "$XSAPPNAME.certify", "description": "Approve or reject load rating certificates and permits" }
   ],
   "attributes": [],
   "role-templates": [
@@ -28,8 +29,8 @@
     },
     {
       "name": "BMS_BRIDGE_MANAGER",
-      "description": "Create, edit and manage bridges and load restrictions",
-      "scope-references": ["$XSAPPNAME.manage", "$XSAPPNAME.inspect", "$XSAPPNAME.view"]
+      "description": "Create, edit and manage bridges, load restrictions, and permit approvals",
+      "scope-references": ["$XSAPPNAME.manage", "$XSAPPNAME.inspect", "$XSAPPNAME.view", "$XSAPPNAME.certify"]
     },
     {
       "name": "BMS_OPERATOR",
