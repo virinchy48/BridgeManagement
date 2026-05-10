@@ -1079,6 +1079,23 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
+  // ── FE4 draft-protocol UUID guard ─────────────────────────────────────────
+  // FE4 (UI5 1.145.x) passes the parent Bridge's integer ID as the key for
+  // UUID-keyed composition child entities when checking for draft/sibling entities
+  // (e.g. BridgeConditionSurveys(ID=2,IsActiveEntity=true)).  CAP rejects non-UUID
+  // values for cds.UUID-typed keys with 400; FE4 shows that as an error dialog.
+  // FE4 treats a 404 as "entity not found" and silently moves on.
+  // This middleware converts those invalid integer-keyed requests to 404.
+  // Safe: Bridges itself has key ID:Integer (not UUID) so it is excluded by name.
+  // Bridge[A-Z] requires an uppercase letter after "Bridge", excluding "Bridges" itself
+  const UUID_CHILD_WITH_INT_KEY = /^\/odata\/v4\/admin\/(Bridge[A-Z][A-Za-z]*|LoadRating[A-Za-z]*|NhvrRoute[A-Za-z]+|AlertsAnd[A-Za-z]+)\(ID=\d+(,|\))/
+  app.use((req, res, next) => {
+    if (UUID_CHILD_WITH_INT_KEY.test(req.path)) {
+      return res.status(404).json({ error: { message: 'Not found', code: '404' } })
+    }
+    next()
+  })
+
   // ── Helmet security headers ───────────────────────────────────────────────
   app.use(helmet({
     contentSecurityPolicy: {
