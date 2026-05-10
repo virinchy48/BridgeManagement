@@ -1,6 +1,6 @@
 specVersion: '4.0'
 metadata:
-  name: BridgeManagement.bridgespublic
+  name: bridges-public
 type: application
 resources:
   configuration:
