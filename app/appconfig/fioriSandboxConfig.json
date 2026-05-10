@@ -70,6 +70,16 @@
                     "icon": "sap-icon://org-chart",
                     "targetURL": "#BridgeHierarchy-display"
                   }
+                },
+                {
+                  "id": "BridgePublicCard",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Bridge Public Info",
+                    "subtitle": "External — Restrictions & Permits",
+                    "icon": "sap-icon://share",
+                    "targetURL": "/bridges-public/index.html"
+                  }
                 }
               ]
             },

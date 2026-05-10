@@ -398,6 +398,28 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     }
   })
 
+  // ── Virtual fields for ObjectPage header KPI chips ───────────────────────
+  // postingStatusCriticality: Integer (1=Error/red, 2=Warning/amber, 3=Success/green)
+  // activeRestrictionCount: count of active BridgeRestrictions (detail page only)
+  const POSTING_CRITICALITY = { 'Unrestricted': 3, 'Under Review': 2, 'Restricted': 2, 'Closed': 1 }
+
+  this.after('READ', Bridges, async (results) => {
+    const list = Array.isArray(results) ? results : (results ? [results] : [])
+    for (const b of list) {
+      if (!b) continue
+      b.postingStatusCriticality = POSTING_CRITICALITY[b.postingStatus] ?? 2
+      b.activeRestrictionCount   = 0
+    }
+    // Count active restrictions only for single-record reads (avoids N+1 on list report)
+    if (list.length === 1 && list[0]?.ID) {
+      const b = list[0]
+      const row = await SELECT.one.from('bridge.management.BridgeRestrictions')
+        .columns('count(1) as cnt')
+        .where({ bridge_ID: b.ID, active: true })
+      b.activeRestrictionCount = Number(row?.cnt ?? 0)
+    }
+  })
+
   const { GISConfig } = this.entities
 
   // Auto-seed the singleton GIS config record on first access

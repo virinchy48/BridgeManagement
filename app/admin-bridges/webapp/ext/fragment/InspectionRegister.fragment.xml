@@ -1,0 +1,182 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:f="sap.f"
+  core:require="{InspectionRegister: 'BridgeManagement/adminbridges/ext/controller/InspectionRegister'}">
+  <VBox
+    id="inspectionRegisterHost"
+    busy="{inspectionRegister>/busy}"
+    modelContextChange="InspectionRegister.onContextChange"
+    class="sapUiSmallMargin">
+
+    <!-- Inspection Records toolbar -->
+    <OverflowToolbar>
+      <Title text="Inspection Records" level="H3"/>
+      <ToolbarSpacer/>
+      <Button
+        icon="sap-icon://refresh"
+        type="Transparent"
+        tooltip="Refresh"
+        press="InspectionRegister.onRefresh"/>
+      <Button
+        id="addInspectionBtn"
+        text="Add Inspection"
+        icon="sap-icon://add"
+        type="Emphasized"
+        visible="{inspectionRegister>/canEdit}"
+        press="InspectionRegister.onAddInspection"/>
+    </OverflowToolbar>
+
+    <!-- Offline banner — shown when BIS is in standalone mode -->
+    <MessageStrip
+      id="offlineBanner"
+      text="{inspectionRegister>/offlineText}"
+      type="Warning"
+      showIcon="true"
+      visible="{inspectionRegister>/isOffline}"
+      class="sapUiTinyMarginBottom"/>
+
+    <!-- Inspection table -->
+    <Table
+      id="inspectionsTable"
+      items="{inspectionRegister>/inspections}"
+      noDataText="No inspection records found for this bridge"
+      growing="true"
+      growingThreshold="10"
+      selectionChange="InspectionRegister.onInspectionSelect"
+      mode="SingleSelectLeft">
+      <columns>
+        <Column>
+          <Text text="Date"/>
+        </Column>
+        <Column width="10rem">
+          <Text text="Type"/>
+        </Column>
+        <Column>
+          <Text text="Inspector"/>
+        </Column>
+        <Column width="10rem">
+          <Text text="Standard"/>
+        </Column>
+        <Column width="7rem" hAlign="Center">
+          <Text text="Defects"/>
+        </Column>
+        <Column width="10rem">
+          <Text text="S/4 Order"/>
+        </Column>
+        <Column width="7rem" hAlign="End">
+          <Text text="Actions"/>
+        </Column>
+      </columns>
+      <items>
+        <ColumnListItem>
+          <cells>
+            <Text text="{inspectionRegister>inspectionDateFormatted}" wrapping="false"/>
+            <ObjectStatus
+              text="{inspectionRegister>inspectionType}"
+              state="{= ${inspectionRegister>inspectionType} === 'Principal' ? 'Information' : 'None'}"/>
+            <ObjectIdentifier
+              title="{inspectionRegister>inspector}"
+              text="{inspectionRegister>inspectorCompany}"/>
+            <Text text="{inspectionRegister>inspectionStandard}" wrapping="false"/>
+            <ObjectNumber
+              number="{inspectionRegister>defectCount}"
+              state="{= ${inspectionRegister>criticalDefects} > 0 ? 'Error' : (${inspectionRegister>defectCount} > 0 ? 'Warning' : 'None')}"/>
+            <Link
+              text="{inspectionRegister>s4InspectionOrderRef}"
+              href="{inspectionRegister>s4OrderDeepLink}"
+              target="_blank"
+              visible="{= !!${inspectionRegister>s4InspectionOrderRef}}"/>
+            <Text text="" visible="{= !${inspectionRegister>s4InspectionOrderRef}}"/>
+            <Button
+              icon="sap-icon://detail-view"
+              type="Transparent"
+              tooltip="View details"
+              press="InspectionRegister.onViewInspection"/>
+          </cells>
+        </ColumnListItem>
+      </items>
+    </Table>
+
+    <!-- Defect register — shown when an inspection row is selected -->
+    <Panel
+      id="defectPanel"
+      headerText="Defects for Selected Inspection"
+      visible="{inspectionRegister>/showDefects}"
+      expandable="false"
+      class="sapUiSmallMarginTop">
+      <OverflowToolbar>
+        <ToolbarSpacer/>
+        <Button
+          text="Capture Photo"
+          icon="sap-icon://camera"
+          type="Ghost"
+          visible="{inspectionRegister>/canEdit}"
+          press="InspectionRegister.onCapturePhoto"/>
+        <Button
+          text="Record Defect"
+          icon="sap-icon://add"
+          type="Ghost"
+          visible="{inspectionRegister>/canEdit}"
+          press="InspectionRegister.onAddDefect"/>
+      </OverflowToolbar>
+      <Table
+        id="defectsTable"
+        items="{inspectionRegister>/selectedDefects}"
+        noDataText="No defects recorded for this inspection"
+        growing="false">
+        <columns>
+          <Column width="8rem">
+            <Text text="Defect ID"/>
+          </Column>
+          <Column>
+            <Text text="Type"/>
+          </Column>
+          <Column>
+            <Text text="Element"/>
+          </Column>
+          <Column width="8rem" hAlign="Center">
+            <Text text="Severity"/>
+          </Column>
+          <Column width="8rem" hAlign="Center">
+            <Text text="Urgency"/>
+          </Column>
+          <Column>
+            <Text text="Status"/>
+          </Column>
+          <Column width="9rem" hAlign="End">
+            <Text text="Est. Cost"/>
+          </Column>
+          <Column width="8rem">
+            <Text text="S/4 Sync"/>
+          </Column>
+        </columns>
+        <items>
+          <ColumnListItem>
+            <cells>
+              <Text text="{inspectionRegister>defectId}" wrapping="false"/>
+              <Text text="{inspectionRegister>defectType}"/>
+              <Text text="{inspectionRegister>bridgeElement}"/>
+              <ObjectNumber
+                number="{inspectionRegister>severity}"
+                unit=""
+                state="{= ${inspectionRegister>severity} >= 3 ? 'Error' : (${inspectionRegister>severity} === 2 ? 'Warning' : 'None')}"/>
+              <ObjectNumber
+                number="{inspectionRegister>urgency}"
+                unit=""
+                state="{= ${inspectionRegister>urgency} >= 3 ? 'Error' : (${inspectionRegister>urgency} === 2 ? 'Warning' : 'None')}"/>
+              <ObjectStatus text="{inspectionRegister>remediationStatus}"/>
+              <Text
+                text="{inspectionRegister>estimatedRepairCostFormatted}"
+                textAlign="End"/>
+              <ObjectStatus
+                text="{inspectionRegister>s4SyncStatus}"
+                state="{= ${inspectionRegister>s4SyncStatus} === 'SYNCED' ? 'Success' : (${inspectionRegister>s4SyncStatus} === 'FAILED' ? 'Error' : 'None')}"/>
+            </cells>
+          </ColumnListItem>
+        </items>
+      </Table>
+    </Panel>
+
+  </VBox>
+</core:FragmentDefinition>

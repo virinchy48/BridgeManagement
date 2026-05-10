@@ -1,0 +1,6 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core">
+  <!-- Placeholder — loaded by SAPUI5 FE optional extension probing -->
+  <VBox/>
+</core:FragmentDefinition>

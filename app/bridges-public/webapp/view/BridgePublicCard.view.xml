@@ -1,0 +1,205 @@
+<mvc:View
+  controllerName="BridgeManagement.bridgespublic.controller.BridgePublicCard"
+  xmlns="sap.m"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns:f="sap.f"
+  xmlns:card="sap.f.cards"
+  xmlns:core="sap.ui.core"
+  xmlns:layout="sap.ui.layout"
+  displayBlock="true">
+
+  <App id="app" backgroundColor="#f5f6f7">
+    <pages>
+      <Page
+        id="bridgePublicPage"
+        showHeader="false"
+        backgroundDesign="Standard">
+
+        <!-- Page-level busy overlay while data loads -->
+        <customHeader>
+          <Bar>
+            <contentLeft>
+              <Image
+                src="sap-icon://building"
+                width="2rem"
+                height="2rem"/>
+              <Title text="Bridge Information" level="H4" class="sapUiSmallMarginBegin"/>
+            </contentLeft>
+            <contentRight>
+              <Button
+                id="printBtn"
+                icon="sap-icon://print"
+                type="Transparent"
+                tooltip="Print this page"
+                press=".onPrint"/>
+            </contentRight>
+          </Bar>
+        </customHeader>
+
+        <content>
+          <VBox
+            id="pageContent"
+            busy="{publicCard>/busy}"
+            class="sapUiMediumMargin">
+
+            <!-- Error / not-found state -->
+            <IllustratedMessage
+              id="notFoundMessage"
+              illustrationType="sapIllus-PageNotFound"
+              title="Bridge Not Found"
+              description="The bridge ID you requested could not be found, or the bridge is not currently active."
+              visible="{publicCard>/notFound}"/>
+
+            <!-- Main card layout — hidden until data loaded -->
+            <VBox visible="{publicCard>/dataLoaded}">
+
+              <!-- Bridge Identity Card -->
+              <f:Card class="sapUiSmallMarginBottom">
+                <f:header>
+                  <card:NumericHeader
+                    title="{publicCard>/bridgeName}"
+                    subtitle="{publicCard>/bridgeId}"
+                    number="{publicCard>/postingStatus}"
+                    numberUnit=""
+                    sideIndicators="true"
+                    state="{publicCard>/postingStatusState}">
+                    <card:sideIndicators>
+                      <card:NumericSideIndicator
+                        title="Region"
+                        number="{publicCard>/region}"
+                        unit=""/>
+                      <card:NumericSideIndicator
+                        title="Last Inspected"
+                        number="{publicCard>/lastInspectionDateShort}"
+                        unit=""/>
+                    </card:sideIndicators>
+                  </card:NumericHeader>
+                </f:header>
+                <f:content>
+                  <layout:Grid
+                    defaultSpan="XL3 L4 M6 S12"
+                    class="sapUiSmallMarginTop sapUiSmallMarginBottom">
+
+                    <!-- Column 1: Structure -->
+                    <VBox class="sapUiSmallMarginBegin">
+                      <Label text="Structure Type" design="Bold"/>
+                      <Text text="{publicCard>/structureType}" class="sapUiSmallMarginBottom"/>
+                      <Label text="Material" design="Bold"/>
+                      <Text text="{publicCard>/material}" class="sapUiSmallMarginBottom"/>
+                      <Label text="Year Built" design="Bold"/>
+                      <Text text="{publicCard>/yearBuilt}" class="sapUiSmallMarginBottom"/>
+                    </VBox>
+
+                    <!-- Column 2: Dimensions -->
+                    <VBox>
+                      <Label text="Total Length" design="Bold"/>
+                      <Text text="{publicCard>/totalLengthFormatted}" class="sapUiSmallMarginBottom"/>
+                      <Label text="Deck Width" design="Bold"/>
+                      <Text text="{publicCard>/deckWidthFormatted}" class="sapUiSmallMarginBottom"/>
+                      <Label text="Lanes" design="Bold"/>
+                      <Text text="{publicCard>/numberOfLanes}" class="sapUiSmallMarginBottom"/>
+                    </VBox>
+
+                    <!-- Column 3: Approvals -->
+                    <VBox>
+                      <Label text="HML Approved" design="Bold"/>
+                      <ObjectStatus
+                        text="{publicCard>/hmlApprovedText}"
+                        state="{publicCard>/hmlApprovedState}"
+                        class="sapUiSmallMarginBottom"/>
+                      <Label text="B-Double Approved" design="Bold"/>
+                      <ObjectStatus
+                        text="{publicCard>/bDoubleApprovedText}"
+                        state="{publicCard>/bDoubleApprovedState}"
+                        class="sapUiSmallMarginBottom"/>
+                      <Label text="PBS Class" design="Bold"/>
+                      <Text text="{publicCard>/pbsApprovalClass}" class="sapUiSmallMarginBottom"/>
+                    </VBox>
+
+                    <!-- Column 4: Location -->
+                    <VBox>
+                      <Label text="Route" design="Bold"/>
+                      <Text text="{publicCard>/route}" class="sapUiSmallMarginBottom"/>
+                      <Label text="Location" design="Bold"/>
+                      <Text text="{publicCard>/location}" class="sapUiSmallMarginBottom"/>
+                      <Label text="LGA" design="Bold"/>
+                      <Text text="{publicCard>/lga}" class="sapUiSmallMarginBottom"/>
+                    </VBox>
+                  </layout:Grid>
+                </f:content>
+              </f:Card>
+
+              <!-- Posting Status Banner -->
+              <MessageStrip
+                id="postingStatusStrip"
+                text="{publicCard>/postingStatusMessage}"
+                type="{publicCard>/postingStatusMessageType}"
+                showIcon="true"
+                visible="{publicCard>/showPostingBanner}"
+                class="sapUiSmallMarginBottom"/>
+
+              <!-- Active Restrictions Card -->
+              <f:Card class="sapUiSmallMarginBottom">
+                <f:header>
+                  <card:Header
+                    title="Active Restrictions"
+                    subtitle="{publicCard>/restrictionsSubtitle}"/>
+                </f:header>
+                <f:content>
+                  <List
+                    id="restrictionsList"
+                    items="{publicCard>/restrictions}"
+                    noDataText="No active restrictions apply to this bridge"
+                    showSeparators="Inner">
+                    <StandardListItem
+                      title="{publicCard>restrictionType}"
+                      description="{= ${publicCard>restrictionValue} + ' ' + ${publicCard>restrictionUnit} + (${publicCard>appliesToVehicleClass} ? ' — ' + ${publicCard>appliesToVehicleClass} : '')}"
+                      info="{= ${publicCard>permitRequired} ? 'Permit Required' : 'No Permit'}"
+                      infoState="{= ${publicCard>permitRequired} ? 'Warning' : 'Success'}"
+                      icon="sap-icon://alert"/>
+                  </List>
+                </f:content>
+              </f:Card>
+
+              <!-- Next Inspection Card -->
+              <f:Card class="sapUiSmallMarginBottom">
+                <f:header>
+                  <card:Header title="Inspection Status"/>
+                </f:header>
+                <f:content>
+                  <HBox class="sapUiSmallMargin" wrap="Wrap">
+                    <VBox class="sapUiSmallMarginEnd" width="12rem">
+                      <Label text="Last Inspected" design="Bold"/>
+                      <Text text="{publicCard>/lastInspectionDate}"/>
+                    </VBox>
+                    <VBox class="sapUiSmallMarginEnd" width="12rem">
+                      <Label text="Next Inspection Due" design="Bold"/>
+                      <Text text="{publicCard>/nextInspectionDue}"/>
+                    </VBox>
+                    <VBox width="12rem">
+                      <Label text="Inspection Frequency" design="Bold"/>
+                      <Text text="{publicCard>/inspectionFrequency}"/>
+                    </VBox>
+                  </HBox>
+                </f:content>
+              </f:Card>
+
+              <!-- Footer: data disclaimer -->
+              <VBox class="sapUiSmallMarginTop sapUiMediumMarginBottom" id="printFooter">
+                <Text
+                  text="This information is maintained by the Bridge Management System (BMS). For queries contact the relevant transport authority. Data is current as of the date displayed."
+                  wrapping="true"
+                  class="sapUiTinyMarginBottom"
+                  style="color: #6a6d70; font-size: 0.75rem;"/>
+                <Text
+                  text="{publicCard>/footerTimestamp}"
+                  style="color: #6a6d70; font-size: 0.75rem;"/>
+              </VBox>
+
+            </VBox>
+          </VBox>
+        </content>
+      </Page>
+    </pages>
+  </App>
+</mvc:View>

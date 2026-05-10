@@ -86,4 +86,7 @@ entity Bridges : managed {
       closureReason           : String(500);
       isActive                : Boolean default true;
       isDeleted               : Boolean default false;
+      // Virtual fields populated server-side for UI KPI chips — never persisted
+      virtual postingStatusCriticality : Integer;
+      virtual activeRestrictionCount   : Integer default 0;
 }

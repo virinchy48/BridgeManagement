@@ -1,0 +1,12 @@
+specVersion: '4.0'
+metadata:
+  name: BridgeManagement.bridgespublic
+type: application
+resources:
+  configuration:
+    paths:
+      webapp: webapp
+builder:
+  resources:
+    excludes:
+      - /test/**

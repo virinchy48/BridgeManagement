@@ -23,7 +23,7 @@ annotate AdminService.Bridges with @(
     { Value: state,              Label: 'State' },
     { Value: region,             Label: 'Region' },
     { Value: condition,          Label: 'Condition' },
-    { Value: conditionRating,    Label: 'Rating' },
+    { $Type: 'UI.DataFieldForAnnotation', Target: '@UI.DataPoint#ConditionRating', Label: 'Condition Rating' },
     { Value: postingStatus,      Label: 'Posting Status' },
     { Value: status,             Label: 'Status' },
     { Value: lastInspectionDate, Label: 'Last Inspected' },
@@ -44,70 +44,143 @@ annotate AdminService.Bridges with @(
     UpdateHidden: false,
     DeleteHidden: true,
 
+    // ── ObjectPage Dynamic Header — KPI chips ───────────────────────────────
+    DataPoint#ConditionRating: {
+      Value: conditionRating,
+      Title: 'Condition Rating',
+      CriticalityCalculation: {
+        ImprovementDirection: #Maximize,
+        ToleranceRangeLowValue:  8,
+        DeviationRangeLowValue:  5
+      }
+    },
+    DataPoint#PostingStatus: {
+      Value: postingStatus,
+      Title: 'Posting Status',
+      Criticality: postingStatusCriticality
+    },
+    DataPoint#LastInspection: {
+      Value: lastInspectionDate,
+      Title: 'Last Inspected'
+    },
+    DataPoint#ActiveRestrictions: {
+      Value: activeRestrictionCount,
+      Title: 'Active Restrictions',
+      Criticality: { $edmJson: { $If: [{ $Gt: [{ $Path: 'activeRestrictionCount' }, 0] }, 2, 3] } }
+    },
+    HeaderFacets: [
+      { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#ConditionRating',   Label: 'Condition' },
+      { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#PostingStatus',      Label: 'Status' },
+      { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#ActiveRestrictions', Label: 'Restrictions' },
+      { $Type: 'UI.ReferenceFacet', Target: '@UI.DataPoint#LastInspection',     Label: 'Last Inspected' },
+      { $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#HeaderAssessor',    Label: 'Assessor' },
+    ],
+    FieldGroup#HeaderAssessor: {
+      Data: [
+        { $Type: 'UI.DataField', Value: conditionAssessor, Label: 'Last Inspector' },
+        { $Type: 'UI.DataField', Value: conditionTrend,    Label: 'Trend' }
+      ]
+    },
+
     Facets: [
-      // ── Tab 1: Core Identity & Location (3 sub-sections) ─────────────────
+      // ── S1: Overview & Identity ──────────────────────────────────────────
+      // Personas: All (read-only for Inspector/External)
+      // S/4HANA: Equipment master (EQUI) + Functional Location (IFLOT)
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Core Identity & Location',
-        ID    : 'IdentityLocation',
+        Label : 'Overview & Identity',
+        ID    : 'OverviewIdentity',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Asset Identity',     Target: '@UI.FieldGroup#AssetIdentity'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Geographic Location', Target: '@UI.FieldGroup#GeoLocation'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Ownership',           Target: '@UI.FieldGroup#Ownership'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Asset Identity',      Target: '@UI.FieldGroup#AssetIdentity'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Geographic Location',  Target: '@UI.FieldGroup#GeoLocation'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Ownership',            Target: '@UI.FieldGroup#Ownership'},
         ]
       },
-      // ── Tab 2: Physical Characteristics — removed; merged into Tab 5 below ─
-      // ── Tab 3: Condition & Inspection (4 sub-sections) ───────────────────
+      // ── S2: Physical & Structural ────────────────────────────────────────
+      // Personas: Manager (RW), Inspector (R), Executive/External (hidden)
+      // S/4HANA: Equipment characteristics (CABN/CAWN), classification (KLAH)
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Condition & Inspection',
-        ID    : 'ConditionInspection',
+        Label : 'Physical & Structural',
+        ID    : 'PhysicalStructural',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Condition Assessment',    Target: '@UI.FieldGroup#ConditionAssessment'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Scheduling',   Target: '@UI.FieldGroup#InspectionScheduling'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Resilience',       Target: '@UI.FieldGroup#RiskResilience'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Field Notes',             Target: '@UI.FieldGroup#FieldNotes'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Structure',         Target: '@UI.FieldGroup#Structure'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Dimensions',        Target: '@UI.FieldGroup#Dimensions'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Site Context',      Target: '@UI.FieldGroup#SiteContext'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Bridge Elements',   Target: 'elements/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Capacity Ratings',  Target: 'capacities/@UI.LineItem'},
         ]
       },
-      // ── Tab 4: NHVR & Traffic Approvals (4 sub-sections) ─────────────────
+      // ── S3: Condition & Inspections ──────────────────────────────────────
+      // Personas: Inspector (RW — P0 section), Manager (R), Executive (summary only)
+      // S/4HANA: PM Notifications (QMEL), Measuring Points (PMCO)
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'NHVR & Traffic Approvals',
-        ID    : 'NHVRTraffic',
+        Label : 'Condition & Inspections',
+        ID    : 'ConditionInspections',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Traffic Data',          Target: '@UI.FieldGroup#TrafficData'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Route Classification',   Target: '@UI.FieldGroup#RouteClass'},
-          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Approvals',         Target: '@UI.FieldGroup#NHVRApprovals'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Gazette & Legal',        Target: '@UI.FieldGroup#GazetteLegal'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Condition Assessment',  Target: '@UI.FieldGroup#ConditionAssessment'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Schedule',   Target: '@UI.FieldGroup#InspectionScheduling'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Records',    Target: 'inspections/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Field Notes',           Target: '@UI.FieldGroup#FieldNotes'},
         ]
       },
-      // ── Tab 5: Physical Characteristics extended (2 sub-sections) ───────────
+      // ── S4: Restrictions & Permits ───────────────────────────────────────
+      // Personas: All (External — cards only); Operator (RW on restrictions)
+      // S/4HANA: PM Functional Location + BIS-owned permit objects
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Physical Characteristics',
-        ID    : 'PhysicalCharacteristics',
+        Label : 'Restrictions & Permits',
+        ID    : 'RestrictionsPermits',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Structure',    Target: '@UI.FieldGroup#Structure'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Dimensions',   Target: '@UI.FieldGroup#Dimensions'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Site Context', Target: '@UI.FieldGroup#SiteContext'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Traffic Data',             Target: '@UI.FieldGroup#TrafficData'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Route Classification',      Target: '@UI.FieldGroup#RouteClass'},
+          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Approvals',            Target: '@UI.FieldGroup#NHVRApprovals'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Gazette & Legal',           Target: '@UI.FieldGroup#GazetteLegal'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Active Restrictions',       Target: 'restrictions/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Route Assessments',    Target: 'nhvrRouteAssessments/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Load Rating Certificates',  Target: 'loadRatingCertificates/@UI.LineItem'},
         ]
       },
-      // ── Sub-entity tables ────────────────────────────────────────────────
-      {$Type: 'UI.ReferenceFacet', Label: 'Capacity',         Target: 'capacities/@UI.LineItem'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Restrictions',     Target: 'restrictions/@UI.LineItem'},
-      {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessment', Target: 'scourAssessments/@UI.LineItem'},
-      // ── Tab 8: Data Provenance (source + audit sub-sections) ─────────────
+      // ── S5: Documents & Map ──────────────────────────────────────────────
+      // Personas: Manager (RW), Inspector (RW — upload rights for photos)
+      // S/4HANA: Document Management (DIR) via DMS integration
+      // Note: Attachments and Map custom sections are anchored to this section in manifest.json
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Data Provenance',
-        ID    : 'DataProvenance',
+        Label : 'Documents & Map',
+        ID    : 'DocumentsMap',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Documents', Target: 'documents/@UI.LineItem'},
+        ]
+      },
+      // ── S6: Risk, Compliance & Alerts ───────────────────────────────────
+      // Personas: Manager (RW), Admin; hidden from Inspector, External, Executive
+      // S/4HANA: PM Risk Assessment + BIS-owned compliance data
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Risk, Compliance & Alerts',
+        ID    : 'RiskComplianceAlerts',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Resilience',    Target: '@UI.FieldGroup#RiskResilience'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessments',    Target: 'scourAssessments/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Risk Assessments',     Target: 'riskAssessments/@UI.LineItem'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Active Alerts',        Target: 'alerts/@UI.LineItem'},
+        ]
+      },
+      // ── S7: Administration ───────────────────────────────────────────────
+      // Personas: Admin (RW), Manager (R); hidden from Inspector, External, Executive
+      // Contains: data quality, audit trail, system metadata
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Administration',
+        ID    : 'Administration',
         Facets: [
           {$Type: 'UI.ReferenceFacet', Label: 'Source Information', Target: '@UI.FieldGroup#SourceInfo'},
           {$Type: 'UI.ReferenceFacet', Label: 'Audit Trail',        Target: '@UI.FieldGroup#AuditTrail'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Bridge Geometry',    Target: '@UI.FieldGroup#BridgeGeometry'},
         ]
       },
-      // ── Tab 9: Bridge Geometry (read-only) ────────────────────────────────
-      {$Type: 'UI.ReferenceFacet', Label: 'Bridge Geometry', Target: '@UI.FieldGroup#BridgeGeometry'},
     ],
 
     // ── FieldGroups ─────────────────────────────────────────────────────────
@@ -1241,3 +1314,257 @@ annotate AdminService.BridgeScourAssessments with {
 
 annotate bridge.management.Bridges with @fiori.draft.enabled;
 annotate AdminService.Bridges with @odata.draft.enabled;
+
+// Virtual fields are internal — hide from all form layouts
+annotate AdminService.Bridges with {
+  postingStatusCriticality @UI.Hidden;
+  activeRestrictionCount   @UI.Hidden;
+};
+
+////////////////////////////////////////////////////////////////////////////
+//  Bridge Detail Redesign — New Entity UI Annotations (7-Section Architecture)
+////////////////////////////////////////////////////////////////////////////
+
+// ── BridgeInspections — Section 3: Condition & Inspections ──────────────
+annotate AdminService.BridgeInspections with @(
+  UI.LineItem: [
+    {Value: inspectionDate,         Label: 'Date'},
+    {Value: inspectionType,         Label: 'Type'},
+    {Value: inspector,              Label: 'Inspector'},
+    {Value: inspectionStandard,     Label: 'Standard'},
+    {Value: inspectionScope,        Label: 'Scope'},
+    {Value: s4InspectionOrderRef,   Label: 'S/4 Order'},
+    {Value: s4NotificationRef,      Label: 'S/4 Notification'},
+  ],
+  UI.HeaderInfo: {
+    TypeName      : 'Inspection',
+    TypeNamePlural: 'Inspections',
+    Title         : {Value: inspectionDate},
+    Description   : {Value: inspector},
+  },
+  UI.Facets: [
+    {
+      $Type : 'UI.CollectionFacet',
+      Label : 'Inspection Details',
+      ID    : 'InspectionDetails',
+      Facets: [
+        {$Type: 'UI.ReferenceFacet', Label: 'General',    Target: '@UI.FieldGroup#InspGeneral'},
+        {$Type: 'UI.ReferenceFacet', Label: 'Inspector',  Target: '@UI.FieldGroup#InspInspector'},
+        {$Type: 'UI.ReferenceFacet', Label: 'S/4HANA',    Target: '@UI.FieldGroup#InspS4Links'},
+      ]
+    },
+    {$Type: 'UI.ReferenceFacet', Label: 'Defects', Target: 'defects/@UI.LineItem'},
+  ],
+  UI.FieldGroup#InspGeneral: {
+    Label: 'General',
+    Data: [
+      {Value: inspectionDate},
+      {Value: inspectionType},
+      {Value: inspectionStandard},
+      {Value: inspectionScope},
+      {Value: weatherConditions},
+      {Value: accessibilityIssues},
+      {Value: inspectionNotes},
+    ]
+  },
+  UI.FieldGroup#InspInspector: {
+    Label: 'Inspector',
+    Data: [
+      {Value: inspector},
+      {Value: inspectorAccreditationNumber},
+      {Value: inspectorAccreditationLevel},
+      {Value: inspectorCompany},
+      {Value: qualificationExpiry},
+    ]
+  },
+  UI.FieldGroup#InspS4Links: {
+    Label: 'S/4HANA Links',
+    Data: [
+      {Value: s4InspectionOrderRef},
+      {Value: s4NotificationRef},
+      {Value: reportStorageRef},
+    ]
+  },
+);
+
+// ── BridgeDefects — shown inside BridgeInspections ObjectPage ───────────
+annotate AdminService.BridgeDefects with @(
+  UI.LineItem: [
+    {Value: defectId,              Label: 'Defect ID'},
+    {Value: defectType,            Label: 'Type'},
+    {Value: bridgeElement,         Label: 'Element'},
+    {Value: severity,              Label: 'Severity (1–4)'},
+    {Value: urgency,               Label: 'Urgency (1–4)'},
+    {Value: remediationStatus,     Label: 'Status'},
+    {Value: estimatedRepairCost,   Label: 'Est. Cost ($)'},
+    {Value: s4SyncStatus,          Label: 'S/4 Sync'},
+  ],
+  UI.HeaderInfo: {
+    TypeName      : 'Defect',
+    TypeNamePlural: 'Defects',
+    Title         : {Value: defectId},
+    Description   : {Value: defectType},
+  },
+);
+
+// ── BridgeElements — Section 2: Physical & Structural ───────────────────
+annotate AdminService.BridgeElements with @(
+  UI.LineItem: [
+    {Value: elementId,              Label: 'Element ID'},
+    {Value: elementType,            Label: 'Type'},
+    {Value: elementName,            Label: 'Name'},
+    {Value: currentConditionRating, Label: 'Condition (1–5)'},
+    {Value: conditionTrend,         Label: 'Trend'},
+    {Value: maintenanceRequired,    Label: 'Maint. Req.'},
+    {Value: urgencyLevel,           Label: 'Urgency'},
+    {Value: nextDueDate,            Label: 'Next Rating Due'},
+    {Value: s4EquipmentNumber,      Label: 'S/4 Equipment'},
+  ],
+  UI.HeaderInfo: {
+    TypeName      : 'Bridge Element',
+    TypeNamePlural: 'Bridge Elements',
+    Title         : {Value: elementName},
+    Description   : {Value: elementType},
+  },
+);
+
+// ── BridgeRiskAssessments — Section 6: Risk, Compliance & Alerts ────────
+annotate AdminService.BridgeRiskAssessments with @(
+  UI.LineItem: [
+    {Value: assessmentDate,      Label: 'Date'},
+    {Value: riskType,            Label: 'Risk Type'},
+    {Value: riskDescription,     Label: 'Description'},
+    {Value: inherentRiskLevel,   Label: 'Inherent Level'},
+    {Value: residualRiskLevel,   Label: 'Residual Level'},
+    {Value: residualRiskScore,   Label: 'Score'},
+    {Value: treatmentDeadline,   Label: 'Treatment Due'},
+    {Value: assessor,            Label: 'Assessor'},
+  ],
+  UI.HeaderInfo: {
+    TypeName      : 'Risk Assessment',
+    TypeNamePlural: 'Risk Assessments',
+    Title         : {Value: riskType},
+    Description   : {Value: residualRiskLevel},
+  },
+);
+
+// ── LoadRatingCertificates — Section 4: Restrictions & Permits ──────────
+annotate AdminService.LoadRatingCertificates with @(
+  UI.LineItem: [
+    {Value: certificateNumber,     Label: 'Certificate #'},
+    {Value: status,                Label: 'Status'},
+    {Value: ratingStandard,        Label: 'Standard'},
+    {Value: ratingLevel,           Label: 'Rating Level'},
+    {Value: certifyingEngineer,    Label: 'Engineer'},
+    {Value: engineerOrganisation,  Label: 'Organisation'},
+    {Value: certificateIssueDate,  Label: 'Issued'},
+    {Value: certificateExpiryDate, Label: 'Expires'},
+    {Value: ratingFactor,          Label: 'RF (T44)'},
+  ],
+  UI.HeaderInfo: {
+    TypeName      : 'Load Rating Certificate',
+    TypeNamePlural: 'Load Rating Certificates',
+    Title         : {Value: certificateNumber},
+    Description   : {Value: status},
+  },
+  UI.Facets: [
+    {
+      $Type : 'UI.CollectionFacet',
+      Label : 'Certificate Details',
+      ID    : 'LRCDetails',
+      Facets: [
+        {$Type: 'UI.ReferenceFacet', Label: 'Certificate',  Target: '@UI.FieldGroup#LRCCertificate'},
+        {$Type: 'UI.ReferenceFacet', Label: 'Load Factors', Target: '@UI.FieldGroup#LRCLoadFactors'},
+        {$Type: 'UI.ReferenceFacet', Label: 'Fatigue Life', Target: '@UI.FieldGroup#LRCFatigue'},
+      ]
+    },
+  ],
+  UI.FieldGroup#LRCCertificate: {
+    Label: 'Certificate',
+    Data: [
+      {Value: certificateNumber},
+      {Value: certificateVersion},
+      {Value: status},
+      {Value: ratingStandard},
+      {Value: ratingLevel},
+      {Value: certifyingEngineer},
+      {Value: engineerQualification},
+      {Value: engineerLicenseNumber},
+      {Value: engineerOrganisation},
+      {Value: certificateIssueDate},
+      {Value: certificateExpiryDate},
+      {Value: nextReviewDate},
+      {Value: governingMember},
+      {Value: governingFailureMode},
+    ]
+  },
+  UI.FieldGroup#LRCLoadFactors: {
+    Label: 'Load Rating Factors (AS 5100.7)',
+    Data: [
+      {Value: rfT44,    Label: 'T44'},
+      {Value: rfSM1600, Label: 'SM1600'},
+      {Value: rfHLP400, Label: 'HLP400'},
+      {Value: rfW80,    Label: 'W80'},
+      {Value: rfA160,   Label: 'A160'},
+      {Value: rfPBS1,   Label: 'PBS 1'},
+      {Value: rfPBS2,   Label: 'PBS 2'},
+      {Value: rfPBS3,   Label: 'PBS 3'},
+      {Value: rfPBS4,   Label: 'PBS 4'},
+      {Value: rfPBS5,   Label: 'PBS 5'},
+      {Value: rfHML,    Label: 'HML'},
+      {Value: rfCML,    Label: 'CML'},
+      {Value: dynamicLoadAllowance, Label: 'DLA'},
+    ]
+  },
+  UI.FieldGroup#LRCFatigue: {
+    Label: 'Fatigue Life (AS 5100.6 §13.5)',
+    Data: [
+      {Value: fatigueSensitive},
+      {Value: consumedLifePercent,  Label: 'Consumed Life (%)'},
+      {Value: remainingLifeYears,   Label: 'Remaining Life (years)'},
+      {Value: detailCategory},
+      {Value: trafficSpectrumRef},
+    ]
+  },
+);
+
+// ── NhvrRouteAssessments — Section 4: Restrictions & Permits ────────────
+annotate AdminService.NhvrRouteAssessments with @(
+  UI.LineItem: [
+    {Value: assessmentId,      Label: 'Assessment ID'},
+    {Value: assessmentDate,    Label: 'Date'},
+    {Value: assessmentStatus,  Label: 'Status'},
+    {Value: assessorName,      Label: 'Assessor'},
+    {Value: assessmentVersion, Label: 'Version'},
+    {Value: validFrom,         Label: 'Valid From'},
+    {Value: validTo,           Label: 'Valid To'},
+    {Value: nhvrApprovalDate,  Label: 'NHVR Approval'},
+    {Value: nextReviewDate,    Label: 'Next Review'},
+  ],
+  UI.HeaderInfo: {
+    TypeName      : 'NHVR Route Assessment',
+    TypeNamePlural: 'NHVR Route Assessments',
+    Title         : {Value: assessmentId},
+    Description   : {Value: assessmentStatus},
+  },
+);
+
+// ── AlertsAndNotifications — Section 6: Risk, Compliance & Alerts ───────
+annotate AdminService.AlertsAndNotifications with @(
+  UI.LineItem: [
+    {Value: alertTitle,     Label: 'Alert'},
+    {Value: alertType,      Label: 'Type'},
+    {Value: severity,       Label: 'Severity'},
+    {Value: priority,       Label: 'Priority'},
+    {Value: status,         Label: 'Status'},
+    {Value: triggeredDate,  Label: 'Triggered'},
+    {Value: dueDate,        Label: 'Due'},
+    {Value: entityType,     Label: 'Related To'},
+  ],
+  UI.HeaderInfo: {
+    TypeName      : 'Alert',
+    TypeNamePlural: 'Alerts',
+    Title         : {Value: alertTitle},
+    Description   : {Value: alertType},
+  },
+);

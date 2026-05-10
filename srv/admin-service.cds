@@ -17,6 +17,19 @@ service AdminService {
   entity BridgeAttributes as projection on my.BridgeAttributes;
   entity BridgeScourAssessments as projection on my.BridgeScourAssessments;
   entity BridgeDocuments as projection on my.BridgeDocuments;
+
+  // ── Bridge Detail Sections — schema entities surfaced for ObjectPage ──────────
+  // Inspections + Defects: Inspector+Manager+Admin can write; all authenticated can read
+  entity BridgeInspections     as projection on my.BridgeInspections;
+  entity BridgeDefects         as projection on my.BridgeDefects;
+  // Structural elements: Manager+Admin write; all read
+  entity BridgeElements        as projection on my.BridgeElements;
+  // Risk + compliance: Manager+Admin write; all read
+  entity BridgeRiskAssessments as projection on my.BridgeRiskAssessments;
+  entity LoadRatingCertificates as projection on my.LoadRatingCertificates;
+  entity NhvrRouteAssessments  as projection on my.NhvrRouteAssessments;
+  // Alerts: Manager+Admin write; all read
+  entity AlertsAndNotifications as projection on my.AlertsAndNotifications;
   entity AssetClasses as projection on my.AssetClasses;
   entity States as projection on my.States;
   entity Regions as projection on my.Regions;

@@ -1,0 +1,11 @@
+{
+  "name": "bridges-public",
+  "version": "1.0.0",
+  "description": "Bridge public information card — external stakeholder view",
+  "scripts": {
+    "build": "ui5 build --clean-dest"
+  },
+  "devDependencies": {
+    "@ui5/cli": "^4"
+  }
+}
