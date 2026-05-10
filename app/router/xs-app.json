@@ -20,7 +20,7 @@
       "csrfProtection": false
     },
     {
-      "source": "^/(map|dashboard|health|mass-upload)(.*)",
+      "source": "^/(map|dashboard|health|mass-upload|mass-edit|audit|access|quality|system|admin-bridges|bnac)(.*)",
       "target": "/$1$2",
       "destination": "srv-api",
       "authenticationType": "xsuaa",

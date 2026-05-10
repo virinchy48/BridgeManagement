@@ -129,23 +129,23 @@ sap.ui.define([
         // Bridge header fields
         fetch(SERVICE + "/Bridges(ID=" + bridgeId + ",IsActiveEntity=true)"
           + "?$select=conditionRating,conditionTrend,lastInspectionDate,nextInspectionDue"),
-        // Last 5 inspections for condition trend list
-        fetch(SERVICE + "/Bridges(ID=" + bridgeId + ",IsActiveEntity=true)/inspections"
-          + "?$select=inspectionDate,inspector,inspectionType"
-          + "&$orderby=inspectionDate desc&$top=5"
-          + "&$expand=defects($select=severity,remediationStatus)"),
-        // Open defect count across all inspections
+        // Last 5 inspections for condition trend list (direct entity query — no navigation)
+        fetch(SERVICE + "/BridgeInspections"
+          + "?$filter=bridge_ID eq " + bridgeId
+          + "&$select=inspectionDate,inspector,inspectionType"
+          + "&$orderby=inspectionDate desc&$top=5"),
+        // Open defect count
         fetch(SERVICE + "/BridgeDefects"
           + "?$filter=bridge_ID eq " + bridgeId + " and remediationStatus eq 'Open'"
           + "&$count=true&$top=0"),
         // Active restrictions count + top 3 for summary list
-        fetch(SERVICE + "/Bridges(ID=" + bridgeId + ",IsActiveEntity=true)/restrictions"
-          + "?$filter=active eq true"
-          + "&$select=restrictionType,restrictionValue,restrictionUnit,vehicleClassLabel"
+        fetch(SERVICE + "/BridgeRestrictions"
+          + "?$filter=bridge_ID eq " + bridgeId + " and active eq true"
+          + "&$select=restrictionType,restrictionValue,restrictionUnit,appliesToVehicleClass"
           + "&$orderby=restrictionType&$top=4"),
         // Current load rating certificate
-        fetch(SERVICE + "/Bridges(ID=" + bridgeId + ",IsActiveEntity=true)/loadRatingCertificates"
-          + "?$filter=status eq 'Current'"
+        fetch(SERVICE + "/LoadRatingCertificates"
+          + "?$filter=bridge_ID eq " + bridgeId + " and status eq 'Current'"
           + "&$select=certificateExpiryDate,ratingLevel,status&$top=1")
       ]);
 

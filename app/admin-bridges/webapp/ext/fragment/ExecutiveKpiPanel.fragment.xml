@@ -166,7 +166,7 @@
         <StandardListItem
           title="{executiveKpi>restrictionType}"
           description="{= ${executiveKpi>restrictionValue} + ' ' + ${executiveKpi>restrictionUnit}}"
-          info="{executiveKpi>vehicleClassLabel}"
+          info="{executiveKpi>appliesToVehicleClass}"
           infoState="Warning"/>
       </List>
       <HBox visible="{executiveKpi>/hasMoreRestrictions}" class="sapUiSmallMarginTop">
