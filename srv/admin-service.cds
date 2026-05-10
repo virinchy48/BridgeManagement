@@ -35,6 +35,41 @@ service AdminService {
   entity BridgeCarriageways        as projection on my.BridgeCarriageways;
   entity BridgeContacts            as projection on my.BridgeContacts;
   entity BridgeMehComponents       as projection on my.BridgeMehComponents;
+
+  // ── Hub tiles — Phase A new entities ─────────────────────────────────────
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
+  entity BridgeConditionSurveys as projection on my.BridgeConditionSurveys actions {
+    action deactivate() returns BridgeConditionSurveys;
+    action reactivate() returns BridgeConditionSurveys;
+  };
+
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
+  entity BridgeLoadRatings as projection on my.BridgeLoadRatings actions {
+    action deactivate() returns BridgeLoadRatings;
+    action reactivate() returns BridgeLoadRatings;
+  };
+
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
+  entity BridgePermits as projection on my.BridgePermits actions {
+    action deactivate() returns BridgePermits;
+    action reactivate() returns BridgePermits;
+    @requires: ['certify','admin']
+    action approve() returns BridgePermits;
+    @requires: ['certify','admin']
+    action rejectPermit() returns BridgePermits;
+  };
   entity AssetClasses as projection on my.AssetClasses;
   entity States as projection on my.States;
   entity Regions as projection on my.Regions;

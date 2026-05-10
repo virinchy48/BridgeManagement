@@ -501,6 +501,69 @@ entity ReferenceLayerConfig : cuid, managed {
   maxZoom          : Integer default 19;
 }
 
+// ── Reusable aspect: active soft-delete flag + remarks ───────────────────────
+aspect ChangeTracked {
+  active  : Boolean default true;
+  remarks : LargeString;
+}
+
+// ── CON tile — standalone condition survey records ───────────────────────────
+entity BridgeConditionSurveys : cuid, managed, ChangeTracked {
+  surveyRef        : String(40);                             // auto-generated CS-NNNN
+  bridge           : Association to Bridges;
+  bridgeRef        : String(40);
+  surveyDate       : Date @mandatory;
+  surveyType       : String(40);                             // Routine | Detailed | Principal | Special
+  surveyedBy       : String(111);
+  conditionRating  : Integer @assert.range: [1,10];
+  structuralRating : Integer @assert.range: [1,10];
+  overallGrade     : String(20);                             // Good | Satisfactory | Poor | Critical
+  notes            : LargeString;
+  status           : String(20) default 'Draft';             // Draft | Submitted | Approved
+}
+
+// ── LRT tile — per-vehicle-class load rating assessments ─────────────────────
+entity BridgeLoadRatings : cuid, managed, ChangeTracked {
+  ratingRef        : String(40);                             // auto-generated LR-NNNN
+  bridge           : Association to Bridges;
+  bridgeRef        : String(40);
+  vehicleClass     : String(60);                             // T44 | SM1600 | HLP400 | PBS1-5 | HML | CML
+  ratingMethod     : String(60);                             // AS 5100 | NAASRA | Load Testing
+  ratingFactor     : Decimal(9,4) @assert.range: [0, 2];    // 0.0–2.0 typical
+  grossMassLimit   : Decimal(9,2) @assert.range: [0, 1000]; // tonnes
+  assessedBy       : String(111);
+  assessmentDate   : Date;
+  validTo          : Date;
+  status           : String(20) default 'Active';            // Active | Superseded | Revoked
+}
+
+// ── PRM tile — permit applications and approvals ─────────────────────────────
+entity BridgePermits : cuid, managed, ChangeTracked {
+  permitRef        : String(40);                             // auto-generated PM-NNNN
+  bridge           : Association to Bridges;
+  bridgeRef        : String(40);
+  permitType       : String(60);                             // Oversize | Overmass | PBS | HML | Special
+  applicantName    : String(255);
+  vehicleClass     : String(60);
+  grossMass        : Decimal(9,2) @assert.range: [0, 1000]; // tonnes
+  height           : Decimal(9,2) @assert.range: [0, 30];   // metres
+  width            : Decimal(9,2) @assert.range: [0, 100];  // metres
+  length           : Decimal(9,2) @assert.range: [0, 1000]; // metres
+  appliedDate      : Date;
+  validFrom        : Date;
+  validTo          : Date;
+  status           : String(20) default 'Pending';           // Pending | Approved | Rejected | Expired
+  decisionBy       : String(111);
+  decisionDate     : Date;
+  conditionsOfApproval : LargeString;
+}
+
+extend entity Bridges with {
+  conditionSurveys : Composition of many BridgeConditionSurveys on conditionSurveys.bridge = $self;
+  loadRatings      : Composition of many BridgeLoadRatings      on loadRatings.bridge = $self;
+  permits          : Composition of many BridgePermits          on permits.bridge = $self;
+}
+
 // --------------------------------------------------------------------------------
 // Temporary workaround for this situation:
 // - Fiori apps annotate Bridges with @fiori.draft.enabled.

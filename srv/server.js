@@ -1080,7 +1080,19 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 
 cds.on('bootstrap', (app) => {
   // ── Helmet security headers ───────────────────────────────────────────────
-  app.use(helmet())
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        'script-src':  ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', "'unsafe-inline'"],
+        'style-src':   ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https:', "'unsafe-inline'"],
+        'font-src':    ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https:', 'data:'],
+        'img-src':     ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'data:', 'blob:'],
+        'connect-src': ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com'],
+        'worker-src':  ["'self'", 'blob:'],
+      }
+    }
+  }))
 
   // ── Health probe (no auth — used by BTP health checks and load balancers) ──
   app.get('/health', (_req, res) => {
