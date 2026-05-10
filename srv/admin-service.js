@@ -902,6 +902,16 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   // ── BridgeConditionSurveys (CON tile) ───────────────────────────────────
   const { BridgeConditionSurveys, BridgeLoadRatings, BridgePermits } = this.entities
 
+  // Draft guards — block deactivate/reactivate/approve/rejectPermit on unsaved drafts
+  this.on('deactivate',   BridgeConditionSurveys.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',   BridgeConditionSurveys.drafts, req => req.error(409, 'Save or discard your changes before reactivating.'))
+  this.on('deactivate',   BridgeLoadRatings.drafts,      req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',   BridgeLoadRatings.drafts,      req => req.error(409, 'Save or discard your changes before reactivating.'))
+  this.on('deactivate',   BridgePermits.drafts,          req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',   BridgePermits.drafts,          req => req.error(409, 'Save or discard your changes before reactivating.'))
+  this.on('approve',      BridgePermits.drafts,          req => req.error(409, 'Save or discard your changes before approving.'))
+  this.on('rejectPermit', BridgePermits.drafts,          req => req.error(409, 'Save or discard your changes before rejecting.'))
+
   this.before('NEW', BridgeConditionSurveys.drafts, async (req) => {
     if (!req.data.surveyRef) {
       const { cnt } = await SELECT.one.from(BridgeConditionSurveys).columns('count(1) as cnt')
