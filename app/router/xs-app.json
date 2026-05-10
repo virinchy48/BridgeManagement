@@ -27,6 +27,13 @@
       "csrfProtection": false
     },
     {
+      "source": "^/public-bridge/(.*)$",
+      "target": "/public-bridge/$1",
+      "destination": "srv-api",
+      "authenticationType": "none",
+      "csrfProtection": false
+    },
+    {
       "source": "^/(.*)$",
       "target": "$1",
       "service": "html5-apps-repo-rt",

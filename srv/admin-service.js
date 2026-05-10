@@ -410,13 +410,15 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       b.postingStatusCriticality = POSTING_CRITICALITY[b.postingStatus] ?? 2
       b.activeRestrictionCount   = 0
     }
-    // Count active restrictions only for single-record reads (avoids N+1 on list report)
-    if (list.length === 1 && list[0]?.ID) {
-      const b = list[0]
-      const row = await SELECT.one.from('bridge.management.BridgeRestrictions')
-        .columns('count(1) as cnt')
-        .where({ bridge_ID: b.ID, active: true })
-      b.activeRestrictionCount = Number(row?.cnt ?? 0)
+    // Batch COUNT active restrictions for all records in one query
+    const ids = list.map(b => b.ID).filter(Boolean)
+    if (ids.length > 0) {
+      const counts = await SELECT.from('bridge.management.BridgeRestrictions')
+        .columns('bridge_ID', 'count(1) as cnt')
+        .where({ bridge_ID: { in: ids }, active: true })
+        .groupBy('bridge_ID')
+      const countMap = Object.fromEntries(counts.map(r => [r.bridge_ID, Number(r.cnt)]))
+      for (const b of list) b.activeRestrictionCount = countMap[b.ID] ?? 0
     }
   })
 
