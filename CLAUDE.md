@@ -294,6 +294,21 @@ Only `app/admin-bridges` uses standard Fiori Elements + CAP annotations (`@odata
 - **`action resolve()` conflicts with ApplicationService base class** — CDS CAP `ApplicationService` has a built-in `resolve()` method. Naming an OData bound action `resolve` on any entity generates a warning and shadows the base method. Use a domain-specific name like `resolveAlert` instead.
 - **`npx cds deploy` tolerates circular imports at deploy-time; `cds-serve` does not** — a deploy that shows no errors does not guarantee the runtime server will start. Always test `npm start` (or `node -e "cds.load(...)"`) after schema changes, not just deploy.
 
+### BSI and composite score virtual fields
+- **BSI (Bridge Sufficiency Index) is computed in `after('READ', Bridges)` handler, not stored.** Formula: structural component = `(conditionRating/10) × 55`, width component = `(bsiWidthRating/10) × 15` (bsiWidthRating derived from deckWidth: ≥7.3→9, ≥4.5→5, else 2), barrier and route alt default to 5/10 each × 15. Sum capped at 100. Store as `virtual bsiScore : Decimal(5,2)` annotated `@UI.Hidden`.
+- **Virtual fields for composite scores require `@UI.Hidden` annotation plus a `DataPoint` with `CriticalityCalculation`.** The hidden virtual holds the raw number; the DataPoint renders it as a colour-coded chip. Pattern used for `bsiScore` (threshold 50/25) and `conditionRating` (threshold 8/5). Do not expose raw virtual fields directly in `LineItem` or `FieldGroup`.
+
+### New schema entities added in gap-closure (May 2026)
+- **`BridgeInspectionElements`** — nested element-level condition ratings on inspections. Fields: `conditionState1Qty/2/3/4Qty` (Decimal), matching `Pct` fields, `elementHealthRating`, `unit`, `elementType`. Linked via `inspection : Association to BridgeInspections` + `bridge : Association to Bridges` for direct bridge lookup.
+- **`BridgeCarriageways`** — carriageway-level geometry per bridge. Fields: `roadNumber`, `roadRankCode`, `carriageCode`, `minWidthM/maxWidthM`, `laneCount`, `verticalClearanceM`, `prescribedDirFrom/To`, `distanceFromStartKm`.
+- **`BridgeContacts`** — bridge-specific contact persons. Fields: `contactGroup`, `primaryContact`, `organisation`, `position`, `phone`, `mobile`, `address`, `email`.
+- **`BridgeMehComponents`** — Mechanical/Electrical/Hydraulic components. Fields: `componentType`, `name`, `make`, `model`, `serialNumber`, `isElectrical/isMechanical/isHydraulic` (Boolean), `inspFrequency`, `locationStored`, `shelfLifeYears`, `attributes` (LargeString for flexible JSON).
+
+### Multi-agent parallel execution pattern
+- **Split file ownership strictly — zero overlap is the only safe contract.** When dispatching 4 parallel worktree agents: Agent 1 owns `db/schema.cds` only, Agent 2 owns `srv/*.cds` (service definitions), Agent 3 owns `srv/*.js` (handlers + mass-upload), Agent 4 owns `app/**` (annotations + manifest). Any overlap on a shared file will produce last-writer-wins content loss with no merge conflict warning (worktrees share the same working directory).
+- **After parallel agents complete, always run `npx cds compile db/ srv/` before committing.** Agents working on partial models (schema changes not yet reflected in service definitions) may each exit 0 locally, but the combined compile can still fail. The compile check is the merge gate.
+- **Agent prompts must name exact files and exact CDS/JS patterns.** Vague prompts like "add the BSI fields" result in agents creating duplicate entities or using wrong field types. Always include the CDS snippet verbatim in the prompt, the exact file path, and whether the agent should read the file first to understand existing structure.
+
 ---
 
 ## Contributing to this file
