@@ -1084,11 +1084,11 @@ cds.on('bootstrap', (app) => {
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        'script-src':  ["'self'", 'https://ui5.sap.com', "'unsafe-inline'"],
-        'style-src':   ["'self'", 'https://ui5.sap.com', 'https:', "'unsafe-inline'"],
-        'font-src':    ["'self'", 'https://ui5.sap.com', 'https:', 'data:'],
-        'img-src':     ["'self'", 'https://ui5.sap.com', 'data:', 'blob:'],
-        'connect-src': ["'self'", 'https://ui5.sap.com'],
+        'script-src':  ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', "'unsafe-inline'"],
+        'style-src':   ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https:', "'unsafe-inline'"],
+        'font-src':    ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https:', 'data:'],
+        'img-src':     ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'data:', 'blob:'],
+        'connect-src': ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com'],
         'worker-src':  ["'self'", 'blob:'],
       }
     }
