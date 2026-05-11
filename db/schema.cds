@@ -553,11 +553,16 @@ entity BridgeLoadRatings : cuid, managed, ChangeTracked {
   bridgeRef        : String(40);
   vehicleClass     : LoadRatingVehicleClass;
   ratingMethod     : LoadRatingMethod;
-  ratingFactor     : Decimal(9,4) @assert.range: [0, 2];    // 0.0–2.0 typical
+  ratingFactor     : Decimal(9,4) @assert.range: [0, 5];    // 0.0–5.0 typical
   grossMassLimit   : Decimal(9,2) @assert.range: [0, 1000]; // tonnes
   assessedBy       : String(111);
   assessmentDate   : Date;
-  validTo          : Date;
+  validTo              : Date @mandatory;
+  ratingEngineerNer    : String(20);
+  governingMember      : String(100);
+  governingFailureMode : String(60);
+  dynamicLoadAllowance : Decimal(5,3);
+  reportRef            : String(255);
   status           : String(20) default 'Active';            // Active | Superseded | Revoked
 }
 
@@ -566,13 +571,19 @@ entity BridgePermits : cuid, managed, ChangeTracked {
   permitRef        : String(40);                             // auto-generated PM-NNNN
   bridge           : Association to Bridges;
   bridgeRef        : String(40);
-  permitType       : String(60);                             // Oversize | Overmass | PBS | HML | Special
+  permitType           : String(60);                         // Oversize | Overmass | PBS | HML | Special
+  nhvrPermitNumber     : String(50);
+  nhvrApplicationNumber: String(50);
+  tripCount            : Integer default 1;
+  axleConfiguration    : String(60);
+  escortRequired       : Boolean default false;
+  pilotVehicleCount    : Integer;
   applicantName    : String(255);
   vehicleClass     : String(60);
   grossMass        : Decimal(9,2) @assert.range: [0, 1000]; // tonnes
-  height           : Decimal(9,2) @assert.range: [0, 30];   // metres
-  width            : Decimal(9,2) @assert.range: [0, 100];  // metres
-  length           : Decimal(9,2) @assert.range: [0, 1000]; // metres
+  height           : Decimal(9,2) @assert.range: [0, 8];    // metres
+  width            : Decimal(9,2) @assert.range: [0, 8];    // metres
+  length           : Decimal(9,2) @assert.range: [0, 60];   // metres
   appliedDate      : Date;
   validFrom        : Date;
   validTo          : Date;

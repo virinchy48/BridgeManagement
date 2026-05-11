@@ -1,12 +1,15 @@
 namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
-using { bridge.management.Bridges } from './bridge-entity';
+using { bridge.management.Bridges }         from './bridge-entity';
+using { bridge.management.BridgeInspections } from './defects';
+using { bridge.management.BridgeDefects }     from './defects';
 
 entity BridgeRiskAssessments : cuid, managed {
     bridge               : Association to Bridges @mandatory;
     assessmentId         : String(40);
     assessmentDate       : Date        @mandatory;
     assessmentCycle      : String(20);
+    riskCategory         : String(40);
 
     riskType             : String(40)  @mandatory;
     riskDescription      : String(500) @mandatory;
@@ -37,9 +40,10 @@ entity BridgeRiskAssessments : cuid, managed {
     reviewDueDate        : Date;
     lastReviewDate       : Date;
 
-    linkedInspectionId   : String(40);
-    linkedDefectId       : String(40);
+    linkedInspection     : Association to BridgeInspections;
+    linkedDefect         : Association to BridgeDefects;
     notes                : LargeString;
+    active               : Boolean default true;
 }
 
 annotate BridgeRiskAssessments with @(cds.persistence.indexes: [

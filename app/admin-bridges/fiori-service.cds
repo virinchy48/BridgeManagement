@@ -27,7 +27,9 @@ annotate AdminService.Bridges with @(
     { Value: postingStatus,      Label: 'Posting Status' },
     { Value: status,             Label: 'Status' },
     { Value: lastInspectionDate, Label: 'Last Inspected' },
-    { Value: highPriorityAsset,  Label: 'High Priority' }
+    { Value: highPriorityAsset,  Label: 'High Priority' },
+    { Value: nextInspectionDue,  Label: 'Next Inspection Due' },
+    { Value: managingAuthority,  Label: 'Managing Authority' }
   ]
 );
 
@@ -1606,13 +1608,18 @@ annotate AdminService.BridgeInspections with {
   s4NotificationRef            @title: 'S/4 Notification';
   reportStorageRef             @title: 'Report Storage Reference';
   inspectionNotes              @title: 'Inspection Notes'  @UI.MultiLineText;
+  overallConditionRating       @title: 'Overall Condition Rating (1-10)';
+  criticalFindings             @title: 'Critical Findings';
+  recommendedActions           @title: 'Recommended Actions'            @UI.MultiLineText;
+  nextInspectionRecommended    @title: 'Next Inspection (Recommended)';
+  active                       @title: 'Active'                         @UI.Hidden;
 };
 
 annotate AdminService.BridgeInspections with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : false,
-  UI.SelectionFields: [bridge_ID, inspectionType, inspectionDate, inspectionRef],
+  UI.SelectionFields: [bridge_ID, inspectionType, inspectionDate, inspectionRef, criticalFindings],
   UI.LineItem: [
     {Value: inspectionRef,          Label: 'Ref'},
     {Value: bridge.bridgeId,        Label: 'Bridge ID'},
@@ -1620,6 +1627,9 @@ annotate AdminService.BridgeInspections with @(
     {Value: inspectionDate,         Label: 'Date'},
     {Value: inspectionType,         Label: 'Type'},
     {Value: inspector,              Label: 'Inspector'},
+    {Value: overallConditionRating, Label: 'Condition Rating'},
+    { Value: criticalFindings, Label: 'Critical Findings',
+      Criticality: { $edmJson: { $If: [{ $Path: 'criticalFindings' }, 1, 3] } } },
     {Value: inspectionStandard,     Label: 'Standard'},
     {Value: inspectionScope,        Label: 'Scope'},
     {Value: s4InspectionOrderRef,   Label: 'S/4 Order'},
@@ -1646,15 +1656,19 @@ annotate AdminService.BridgeInspections with @(
   UI.FieldGroup#InspGeneral: {
     Label: 'General',
     Data: [
-      {Value: bridge_ID,            Label: 'Bridge'},
-      {Value: inspectionRef,        Label: 'Inspection Ref'},
-      {Value: inspectionDate,       Label: 'Inspection Date'},
-      {Value: inspectionType,       Label: 'Inspection Type'},
-      {Value: inspectionStandard,   Label: 'Inspection Standard'},
-      {Value: inspectionScope,      Label: 'Scope'},
-      {Value: weatherConditions,    Label: 'Weather Conditions'},
-      {Value: accessibilityIssues,  Label: 'Accessibility Issues'},
-      {Value: inspectionNotes,      Label: 'Inspection Notes'},
+      {Value: bridge_ID,                  Label: 'Bridge'},
+      {Value: inspectionRef,              Label: 'Inspection Ref'},
+      {Value: inspectionDate,             Label: 'Inspection Date'},
+      {Value: inspectionType,             Label: 'Inspection Type'},
+      {Value: overallConditionRating,     Label: 'Overall Condition Rating (1-10)'},
+      {Value: criticalFindings,           Label: 'Critical Findings'},
+      {Value: recommendedActions,         Label: 'Recommended Actions'},
+      {Value: nextInspectionRecommended,  Label: 'Next Inspection (Recommended)'},
+      {Value: inspectionStandard,         Label: 'Inspection Standard'},
+      {Value: inspectionScope,            Label: 'Scope'},
+      {Value: weatherConditions,          Label: 'Weather Conditions'},
+      {Value: accessibilityIssues,        Label: 'Accessibility Issues'},
+      {Value: inspectionNotes,            Label: 'Inspection Notes'},
     ]
   },
   UI.FieldGroup#InspInspector: {
@@ -1675,7 +1689,28 @@ annotate AdminService.BridgeInspections with @(
       {Value: reportStorageRef,     Label: 'Report Storage Reference'},
     ]
   },
+  UI.Identification: [
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.deactivate',
+      Label      : 'Deactivate',
+      Criticality: #Negative,
+      ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.reactivate',
+      Label      : 'Reactivate',
+      Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } }
+    }
+  ],
 );
+
+annotate AdminService.BridgeInspections with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['active'] };
+};
 
 // ── BridgeDefects — fully standalone; inspection link is optional ─────────
 annotate AdminService.BridgeDefects with {
@@ -1732,6 +1767,7 @@ annotate AdminService.BridgeDefects with {
   s4OrderId               @title: 'S/4 Order ID';
   s4SyncStatus            @title: 'S/4 Sync Status';
   notes                   @title: 'Notes'                    @UI.MultiLineText;
+  active                  @title: 'Active'                   @UI.Hidden;
 };
 annotate AdminService.BridgeDefects with @(
   Capabilities.InsertRestrictions.Insertable : true,
@@ -1804,7 +1840,28 @@ annotate AdminService.BridgeDefects with @(
       {Value: s4SyncStatus,           Label: 'S/4 Sync Status'},
     ]
   },
+  UI.Identification: [
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.deactivate',
+      Label      : 'Deactivate',
+      Criticality: #Negative,
+      ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.reactivate',
+      Label      : 'Reactivate',
+      Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } }
+    }
+  ],
 );
+
+annotate AdminService.BridgeDefects with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['active'] };
+};
 
 // ── BridgeElements — expert council full treatment ────────────────────────
 // Inspector priority: condition rating + trend first; maintenance flag prominent
@@ -1976,21 +2033,26 @@ annotate AdminService.BridgeRiskAssessments with {
   assessorTitle             @title: 'Assessor Title';
   reviewDueDate             @title: 'Review Due Date';
   lastReviewDate            @title: 'Last Review Date';
-  linkedInspectionId        @title: 'Linked Inspection';
-  linkedDefectId            @title: 'Linked Defect';
+  linkedInspection          @title: 'Linked Inspection'
+    @Common.Text: linkedInspection.inspectionRef  @Common.TextArrangement: #TextOnly;
+  linkedDefect              @title: 'Linked Defect'
+    @Common.Text: linkedDefect.defectId  @Common.TextArrangement: #TextOnly;
   notes                     @title: 'Notes'                            @UI.MultiLineText;
+  riskCategory              @title: 'Risk Category';
+  active                    @title: 'Active'                           @UI.Hidden;
 };
 
 annotate AdminService.BridgeRiskAssessments with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : false,
-  UI.SelectionFields: [bridge_ID, riskType, residualRiskLevel, treatmentDeadline],
+  UI.SelectionFields: [bridge_ID, riskType, riskCategory, residualRiskLevel, treatmentDeadline],
   UI.LineItem: [
     {Value: bridge.bridgeId,    Label: 'Bridge ID'},
     {Value: bridge.bridgeName,  Label: 'Bridge'},
     {Value: assessmentDate,      Label: 'Date'},
     {Value: riskType,            Label: 'Risk Type'},
+    {Value: riskCategory,        Label: 'Category'},
     {Value: riskDescription,     Label: 'Description'},
     {Value: inherentRiskLevel,   Label: 'Inherent Level'},
     {Value: residualRiskLevel,   Label: 'Residual Level'},
@@ -2019,6 +2081,7 @@ annotate AdminService.BridgeRiskAssessments with @(
       {Value: assessmentDate,   Label: 'Assessment Date'},
       {Value: assessmentCycle,  Label: 'Assessment Cycle'},
       {Value: riskType,         Label: 'Risk Type'},
+      {Value: riskCategory,     Label: 'Risk Category'},
       {Value: assessor,         Label: 'Assessor'},
       {Value: assessorTitle,    Label: 'Assessor Title / Qualification'},
       {Value: lastReviewDate,   Label: 'Last Reviewed'},
@@ -2051,12 +2114,33 @@ annotate AdminService.BridgeRiskAssessments with @(
       {Value: treatmentResponsible,  Label: 'Responsible Officer'},
       {Value: treatmentDeadline,     Label: 'Treatment Deadline'},
       {Value: treatmentBudget,       Label: 'Treatment Budget ($)'},
-      {Value: linkedInspectionId,    Label: 'Linked Inspection ID'},
-      {Value: linkedDefectId,        Label: 'Linked Defect ID'},
+      {Value: linkedInspection.inspectionRef,  Label: 'Linked Inspection'},
+      {Value: linkedDefect.defectId,          Label: 'Linked Defect'},
       {Value: notes,                 Label: 'Notes'},
     ]
   },
+  UI.Identification: [
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.deactivate',
+      Label      : 'Deactivate',
+      Criticality: #Negative,
+      ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.reactivate',
+      Label      : 'Reactivate',
+      Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } }
+    }
+  ],
 );
+
+annotate AdminService.BridgeRiskAssessments with actions {
+  deactivate @Common.SideEffects: { TargetProperties: ['active'] };
+  reactivate @Common.SideEffects: { TargetProperties: ['active'] };
+};
 
 // ── LoadRatingCertificates — standalone + Bridge Details ────────────────
 annotate AdminService.LoadRatingCertificates with {
@@ -3053,6 +3137,11 @@ annotate AdminService.BridgeLoadRatings with {
   remarks  @UI.MultiLineText  @title: 'Remarks';
   status   @title: 'Status'  @Common.FieldControl: #ReadOnly;
   active   @Common.FieldControl: #ReadOnly  @title: 'Active';
+  ratingEngineerNer    @title: 'Rating Engineer NER/CPEng No.';
+  governingMember      @title: 'Governing Structural Member';
+  governingFailureMode @title: 'Governing Failure Mode';
+  dynamicLoadAllowance @title: 'Dynamic Load Allowance (DLA)';
+  reportRef            @title: 'Structural Report Reference';
 };
 
 annotate AdminService.BridgeLoadRatings with actions {
@@ -3196,6 +3285,12 @@ annotate AdminService.BridgePermits with {
   remarks  @UI.MultiLineText  @title: 'Remarks';
   status   @title: 'Status'  @Common.FieldControl: #ReadOnly;
   active   @Common.FieldControl: #ReadOnly  @title: 'Active';
+  nhvrPermitNumber      @title: 'NHVR Permit Number';
+  nhvrApplicationNumber @title: 'NHVR Application Number';
+  tripCount             @title: 'Trips Approved';
+  axleConfiguration     @title: 'Axle Configuration';
+  escortRequired        @title: 'Escort Required';
+  pilotVehicleCount     @title: 'Pilot Vehicle Count';
 };
 
 annotate AdminService.BridgePermits with actions {

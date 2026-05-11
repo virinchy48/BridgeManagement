@@ -1,6 +1,7 @@
+'use strict'
 const cds = require('@sap/cds')
 
-module.exports = function registerRiskAssessmentHandlers (srv) {
+module.exports = function registerRiskAssessmentHandlers (srv, { logAudit }) {
 
     srv.before(['CREATE', 'UPDATE'], 'BridgeRiskAssessments', async req => {
         const db = await cds.connect.to('db')
@@ -15,18 +16,23 @@ module.exports = function registerRiskAssessmentHandlers (srv) {
             d.assessmentId = `RSK-${String(seq).padStart(4, '0')}`
         }
 
+        if (req.event === 'CREATE' && d.active === undefined) d.active = true
+
         if (d.likelihood && d.consequence) {
             d.inherentRiskScore = d.likelihood * d.consequence
             d.inherentRiskLevel = scoreToLevel(d.inherentRiskScore)
         }
-        if (d.residualRiskScore === undefined && d.inherentRiskScore) {
-            d.residualRiskScore = d.inherentRiskScore
-            d.residualRiskLevel = d.inherentRiskLevel
-        }
+        // Do NOT auto-set residualRiskScore — it must be an explicit engineering input
+    })
+
+    srv.after(['CREATE', 'UPDATE'], 'BridgeRiskAssessments', async (data, req) => {
+        if (!data?.ID) return
+        const db = await cds.connect.to('db')
+        await logAudit(db, req, req.event, 'BridgeRiskAssessment',
+            data.ID, data.assessmentId, data, `Risk assessment ${req.event.toLowerCase()}d`)
     })
 
     srv.on('getNetworkRiskSummary', async req => {
-        const { state, region } = req.data
         const db = await cds.connect.to('db')
         const risks = await db.run(
             SELECT.from('bridge.management.BridgeRiskAssessments')
@@ -60,11 +66,43 @@ module.exports = function registerRiskAssessmentHandlers (srv) {
             assessor: r.assessor
         }))
     })
+
+    srv.on('deactivate', 'BridgeRiskAssessments', async req => {
+        const { ID } = req.params[0]
+        const db = await cds.connect.to('db')
+        const assessment = await db.run(
+            SELECT.one.from('bridge.management.BridgeRiskAssessments').where({ ID })
+        )
+        if (!assessment) return req.error(404, 'Risk assessment not found')
+        await db.run(
+            UPDATE('bridge.management.BridgeRiskAssessments')
+                .set({ active: false }).where({ ID })
+        )
+        await logAudit(db, req, 'ACTION', 'BridgeRiskAssessment',
+            ID, assessment.assessmentId, { active: false }, 'Deactivated')
+        return Object.assign({}, assessment, { active: false })
+    })
+
+    srv.on('reactivate', 'BridgeRiskAssessments', async req => {
+        const { ID } = req.params[0]
+        const db = await cds.connect.to('db')
+        const assessment = await db.run(
+            SELECT.one.from('bridge.management.BridgeRiskAssessments').where({ ID })
+        )
+        if (!assessment) return req.error(404, 'Risk assessment not found')
+        await db.run(
+            UPDATE('bridge.management.BridgeRiskAssessments')
+                .set({ active: true }).where({ ID })
+        )
+        await logAudit(db, req, 'ACTION', 'BridgeRiskAssessment',
+            ID, assessment.assessmentId, { active: true }, 'Reactivated')
+        return Object.assign({}, assessment, { active: true })
+    })
 }
 
 function scoreToLevel(score) {
-    if (score >= 20) return 'Critical'
-    if (score >= 12) return 'High'
-    if (score >= 6)  return 'Medium'
+    if (score >= 15) return 'Extreme'
+    if (score >= 10) return 'High'
+    if (score >= 5)  return 'Medium'
     return 'Low'
 }

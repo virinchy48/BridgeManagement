@@ -26,13 +26,20 @@ entity BridgeInspections : cuid, managed {
 
     reportStorageRef             : String(500);
     inspectionNotes              : LargeString;
+
+    overallConditionRating       : Integer @assert.range: [1, 10];
+    criticalFindings             : Boolean default false;
+    recommendedActions           : LargeString;
+    nextInspectionRecommended    : Date;
+
+    active                       : Boolean default true;
 }
 
 // Defect capture — inspection link is optional (standalone defects allowed)
 entity BridgeDefects : cuid, managed {
     bridge       : Association to Bridges      @mandatory;
     inspection   : Association to BridgeInspections;
-    defectId     : String(30)  @mandatory;
+    defectId     : String(30);
 
     defectType   : String(40)  @mandatory;
     defectDescription : String(500) @mandatory;
@@ -62,7 +69,8 @@ entity BridgeDefects : cuid, managed {
     s4OrderId        : String(40);
     s4SyncStatus     : String(20) default 'NOT_SYNCED';
 
-    notes : LargeString;
+    notes   : LargeString;
+    active  : Boolean default true;
 }
 
 annotate BridgeInspections with @(cds.persistence.indexes: [
