@@ -154,7 +154,17 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Closure',              Target: '@UI.FieldGroup#Closure'},
         ]
       },
-      // ── T6: Custom Attributes ─────────────────────────────────────────────
+      // ── T6: External System References ───────────────────────────────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'External Systems',
+        ID    : 'ExternalSystems',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Portal',       Target: '@UI.FieldGroup#ExtNHVR'},
+          {$Type: 'UI.ReferenceFacet', Label: 'BNAC Integration',  Target: '@UI.FieldGroup#ExtBNAC'},
+        ]
+      },
+      // ── T7: Custom Attributes ─────────────────────────────────────────────
       {
         $Type : 'UI.CollectionFacet',
         Label : 'Custom Attributes',
@@ -335,7 +345,6 @@ annotate AdminService.Bridges with @(
         {Value: hmlApproved,        Label: 'HML Approved (Higher Mass Limits)'},
         {Value: hmlApprovalDate,    Label: 'HML Approval Date'},
         {Value: hmlApprovalExpiry,  Label: 'HML Approval Expiry'},
-        {Value: nhvrReferenceUrl,   Label: 'NHVR Reference URL'},
       ]
     },
     // Split from GazetteLegal — Posting + gazette publication details
@@ -359,7 +368,25 @@ annotate AdminService.Bridges with @(
       ]
     },
 
-    // ── T7: Administration ────────────────────────────────────────────────────
+    // ── T6: External System References ───────────────────────────────────────
+    FieldGroup#ExtNHVR: {
+      Label: 'NHVR Portal',
+      Data: [
+        {Value: nhvrReferenceUrl,   Label: 'NHVR Portal Reference URL'},
+        {Value: nhvrAssessed,       Label: 'NHVR Assessed'},
+        {Value: nhvrAssessmentDate, Label: 'NHVR Assessment Date'},
+      ]
+    },
+    FieldGroup#ExtBNAC: {
+      Label: 'BNAC Integration',
+      Data: [
+        {Value: bnacMapping.bnacObjectId, Label: 'BNAC Object ID'},
+        {$Type: 'UI.DataFieldWithUrl',    Label: 'BNAC Deep Link',
+         Value: bnacMapping.bnacObjectId, Url: bnacMapping.bnacUrl},
+      ]
+    },
+
+    // ── T8: Administration ────────────────────────────────────────────────────
     FieldGroup#SourceInfo: {
       Label: 'Source & Reference',
       Data: [
