@@ -37,8 +37,8 @@
             <ToolbarSpacer/>
             <Button icon="sap-icon://add" text="Add Group" press=".onAddGroup"/>
           </Toolbar>
-          <List id="groupList" items="{/}" mode="SingleSelectMaster" selectionChange=".onGroupSelect" noDataText="No groups defined">
-            <StandardListItem title="{name}" description="{internalKey}" info="{status}" infoState="{= ${status} === 'Active' ? 'Success' : 'None'}"/>
+          <List id="groupList" items="{groups>/}" mode="SingleSelectMaster" selectionChange=".onGroupSelect" noDataText="No groups defined">
+            <StandardListItem title="{groups>name}" description="{groups>internalKey}" info="{groups>status}" infoState="{= ${groups>status} === 'Active' ? 'Success' : 'None'}"/>
           </List>
         </Panel>
 
@@ -50,8 +50,8 @@
             <ToolbarSpacer/>
             <Button icon="sap-icon://add" text="Add Attribute" press=".onAddAttribute"/>
           </Toolbar>
-          <List id="attrList" items="{/}" mode="SingleSelectMaster" selectionChange=".onAttrSelect" noDataText="No attributes in this group">
-            <StandardListItem title="{name}" description="{= ${dataType} + (${unit} ? ' (' + ${unit} + ')' : '')}" info="{status}" infoState="{= ${status} === 'Active' ? 'Success' : 'None'}"/>
+          <List id="attrList" items="{attrs>/}" mode="SingleSelectMaster" selectionChange=".onAttrSelect" noDataText="No attributes in this group">
+            <StandardListItem title="{attrs>name}" description="{= ${attrs>dataType} + (${attrs>unit} ? ' (' + ${attrs>unit} + ')' : '')}" info="{attrs>status}" infoState="{= ${attrs>status} === 'Active' ? 'Success' : 'None'}"/>
           </List>
         </Panel>
 
@@ -76,7 +76,7 @@
           </form:SimpleForm>
 
           <Title text="Object Type Configuration" level="H5" class="sapUiSmallMarginBegin sapUiTinyMarginTop"/>
-          <Table id="configTable" items="{/}" noDataText="No object type configs">
+          <Table id="configTable" items="{configs>/}" noDataText="No object type configs">
             <columns>
               <Column><Text text="Object Type"/></Column>
               <Column><Text text="Enabled"/></Column>
@@ -87,11 +87,11 @@
             <items>
               <ColumnListItem>
                 <cells>
-                  <Text text="{objectType}"/>
-                  <Switch state="{enabled}" change=".onConfigChange"/>
-                  <Switch state="{required}" change=".onConfigChange"/>
-                  <Input value="{displayOrder}" width="80px" change=".onConfigChange"/>
-                  <Button icon="sap-icon://add" text="Add" visible="{= !${ID}}" press=".onAddConfig"/>
+                  <Text text="{configs>objectType}"/>
+                  <Switch state="{configs>enabled}" change=".onConfigChange"/>
+                  <Switch state="{configs>required}" change=".onConfigChange"/>
+                  <Input value="{configs>displayOrder}" width="80px" change=".onConfigChange"/>
+                  <Button icon="sap-icon://add" text="Add" visible="{= !${configs>ID}}" press=".onAddConfig"/>
                 </cells>
               </ColumnListItem>
             </items>
@@ -102,7 +102,7 @@
             <ToolbarSpacer/>
             <Button icon="sap-icon://add" text="Add Value" press=".onAddAllowedValue"/>
           </Toolbar>
-          <Table id="allowedValuesTable" items="{/}" noDataText="Not applicable for this data type">
+          <Table id="allowedValuesTable" items="{allowedValues>/}" noDataText="Not applicable for this data type">
             <columns>
               <Column><Text text="Value"/></Column>
               <Column><Text text="Label"/></Column>
@@ -113,10 +113,10 @@
             <items>
               <ColumnListItem>
                 <cells>
-                  <Text text="{value}"/>
-                  <Text text="{label}"/>
-                  <Text text="{displayOrder}"/>
-                  <Text text="{status}"/>
+                  <Text text="{allowedValues>value}"/>
+                  <Text text="{allowedValues>label}"/>
+                  <Text text="{allowedValues>displayOrder}"/>
+                  <Text text="{allowedValues>status}"/>
                   <Button icon="sap-icon://delete" type="Reject" press=".onDeleteAllowedValue"/>
                 </cells>
               </ColumnListItem>

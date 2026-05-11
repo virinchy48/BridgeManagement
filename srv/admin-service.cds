@@ -175,10 +175,6 @@ service AdminService {
   @requires: ['admin', 'manage']
   action scoreAllBridges() returns { scored: Integer; skipped: Integer; message: String };
 
-  // ── Demo Mode ────────────────────────────────────────────────────────────────
-  action loadDemoData()  returns String;
-  action clearDemoData() returns String;
-
   @requires: ['admin', 'manage']
   action refreshKPISnapshots() returns { snapshotDate: Date; statesProcessed: Integer; message: String };
 }

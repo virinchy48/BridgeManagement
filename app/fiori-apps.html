@@ -18,10 +18,15 @@
               enablePersonalization: false,
               enableAppFinder: false,
               enableSetTheme: false,
-              enableUserDefaultParameters: false
+              enableUserDefaultParameters: false,
+              movePersonalizedAppsSection: false,
+              preloadLibrariesForRootIntent: false
             }
           }
         }
+      },
+      bootstrapConfig: {
+        "mergeApplications": false
       },
       services: {
         LaunchPage: {
@@ -105,6 +110,18 @@
         }
       }
     }
+  </script>
+
+  <script>
+    (function() {
+      var cfg = window['sap-ushell-config'];
+      var myGroups = cfg.services.LaunchPage.adapter.config.groups;
+      Object.defineProperty(cfg.services.LaunchPage.adapter.config, 'groups', {
+        get: function() { return myGroups; },
+        set: function() { /* ignore sandbox.js overwrite attempts */ },
+        configurable: false
+      });
+    })();
   </script>
 
   <script

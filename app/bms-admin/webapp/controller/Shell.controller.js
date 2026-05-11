@@ -15,7 +15,6 @@ sap.ui.define([
     attributeConfig:  "attributeConfig",
     attributeReport:  "attributeReport",
     apiDocs:          "apiDocs",
-    demoMode:         "demoMode",
     featureFlags:     "featureFlags"
   };
 

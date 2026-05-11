@@ -18,7 +18,6 @@ const mountBhiBsiApi = require('./bhi-bsi-api')
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 
 const { getConfigInt } = require('./system-config')
-const demoHandler = require('./demo-handler')
 
 const { SELECT, INSERT, UPDATE, DELETE } = cds.ql
 
@@ -2549,11 +2548,6 @@ cds.on('bootstrap', (app) => {
 })
 
 cds.on('served', async () => {
-  // ── Register demo mode action handlers on AdminService ──────────────────────
-  // cds.services is populated once all OData services are fully served.
-  // Using 'served' (not 'connect') ensures the service object exists.
-  const adminSrv = cds.services['AdminService'];
-  if (adminSrv) demoHandler(adminSrv);
 
   // ── HANA: back-fill spatial geoLocation column after first boot ─────────────
   if (!isHanaDb()) return;

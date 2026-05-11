@@ -13,7 +13,6 @@ appMaintenanceMode,Display,Maintenance Mode,false,false,boolean,When true a main
 appMaintenanceMessage,Display,Maintenance Banner Message,,Bridge Management System is currently undergoing maintenance. Some features may be unavailable.,string,Message shown in the maintenance banner when maintenance mode is enabled.,false,120
 sessionTimeoutMinutes,Security,Session Timeout (minutes),60,60,integer,Idle session timeout in minutes. Changes take effect on next login.,false,130
 auditLogRetentionDays,Security,Audit Log Retention (days),365,365,integer,Number of days to retain change document records. Older records are not automatically purged — this is a reference value for a scheduled job.,false,140
-demoModeActive,Display,Demo Mode Active,false,false,boolean,When true the system is running with NSW demo bridge data. Use Demo Mode in BMS Admin to load or clear demo data.,false,105
 eamConnected,Integration,SAP EAM Connected,false,false,boolean,When true BMS integrates with SAP S/4HANA EAM for notifications and work orders. When false standalone mode is active.,false,150
 eamBaseUrl,Integration,SAP S/4 EAM Base URL,,https://s4-host:44300,string,Base URL for SAP S/4HANA OData endpoints. Required when eamConnected is true.,false,151
 gazetteExpiryWarningDays,Compliance,Gazette Expiry Warning (days),60,60,integer,Number of days before gazette expiry to trigger a warning alert.,false,160
