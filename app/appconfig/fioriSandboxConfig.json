@@ -61,26 +61,6 @@
                     "targetURL": "#Bridges-manage&/NetworkReports"
                   }
                 },
-                {
-                  "id": "BridgeHierarchy",
-                  "tileType": "sap.ushell.ui.tile.StaticTile",
-                  "properties": {
-                    "title": "Bridge Hierarchy",
-                    "subtitle": "List · Tree · Map · 3D",
-                    "icon": "sap-icon://org-chart",
-                    "targetURL": "#BridgeHierarchy-display"
-                  }
-                },
-                {
-                  "id": "BridgePublicCard",
-                  "tileType": "sap.ushell.ui.tile.StaticTile",
-                  "properties": {
-                    "title": "Bridge Public Info",
-                    "subtitle": "External — Restrictions & Permits",
-                    "icon": "sap-icon://share",
-                    "targetURL": "/bridges-public/index.html"
-                  }
-                }
               ]
             },
             {
@@ -299,20 +279,6 @@
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.reports",
                 "url": "/reports/webapp"
-              }
-            },
-            "BridgeHierarchy-display": {
-              "semanticObject": "BridgeHierarchy",
-              "action": "display",
-              "title": "Bridge Hierarchy Explorer",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.bridgehierarchy",
-                "url": "/bridge-hierarchy/webapp"
               }
             },
             "Inspections-manage":          { "semanticObject": "Inspections",          "action": "manage", "title": "Inspections",            "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgeInspections" } },

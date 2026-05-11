@@ -16,17 +16,9 @@
   "attributes": [],
   "role-templates": [
     {
-      "name": "admin",
-      "description": "generated",
-      "scope-references": [
-        "$XSAPPNAME.admin"
-      ],
-      "attribute-references": []
-    },
-    {
       "name": "BMS_ADMIN",
       "description": "Full system access including administration and configuration",
-      "scope-references": ["$XSAPPNAME.admin", "$XSAPPNAME.manage", "$XSAPPNAME.operate", "$XSAPPNAME.inspect", "$XSAPPNAME.view", "$XSAPPNAME.certify", "$XSAPPNAME.config_manager"]
+      "scope-references": ["$XSAPPNAME.admin", "$XSAPPNAME.manage", "$XSAPPNAME.operate", "$XSAPPNAME.inspect", "$XSAPPNAME.view", "$XSAPPNAME.certify", "$XSAPPNAME.config_manager", "$XSAPPNAME.executive_view", "$XSAPPNAME.external_view"]
     },
     {
       "name": "BMS_BRIDGE_MANAGER",

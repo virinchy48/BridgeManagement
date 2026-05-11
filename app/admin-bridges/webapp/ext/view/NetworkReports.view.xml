@@ -91,7 +91,7 @@
                           <Text text="{view>state}"/>
                           <ObjectStatus text="{view>daysOverdue}" state="Error"/>
                           <Text text="{path:'view>lastInspectionDate', formatter:'.fmtDate'}"/>
-                          <Text text="{path:'view>nextInspectionDueDate', formatter:'.fmtDate'}"/>
+                          <Text text="{path:'view>nextInspectionDue', formatter:'.fmtDate'}"/>
                           <ObjectStatus text="{view>condition}" state="{path:'view>condition', formatter:'.fmtConditionState'}"/>
                         </cells>
                       </ColumnListItem>
@@ -116,7 +116,7 @@
                           <Text text="{view>bridgeName}"/>
                           <Text text="{view>state}"/>
                           <ObjectStatus text="{view>daysUntilDue}" state="{path:'view>daysUntilDue', formatter:'.fmtDueState'}"/>
-                          <Text text="{path:'view>nextInspectionDueDate', formatter:'.fmtDate'}"/>
+                          <Text text="{path:'view>nextInspectionDue', formatter:'.fmtDate'}"/>
                           <Text text="{path:'view>lastInspectionDate', formatter:'.fmtDate'}"/>
                         </cells>
                       </ColumnListItem>

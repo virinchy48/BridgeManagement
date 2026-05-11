@@ -15,16 +15,16 @@ function gazetteUrgency(expiryDate, today) {
 function conditionKey(c) {
   const n = Number(c)
   if (!isNaN(n) && n > 0) {
+    // TfNSW 1–5 scale: 5=Critical, 4=Poor, 3=Fair, 2=Satisfactory, 1=Good
     if (n >= 5) return 'critical'
     if (n >= 4) return 'poor'
-    if (n >= 3) return 'poor'
-    if (n >= 2) return 'fair'
+    if (n >= 3) return 'fair'
     return 'good'
   }
   const s = (c || '').toLowerCase()
   if (s === 'critical' || s === 'very poor' || s === 'verypoor') return 'critical'
   if (s === 'poor') return 'poor'
-  if (s === 'fair') return 'fair'
+  if (s === 'fair' || s === 'satisfactory') return 'fair'
   return 'good'
 }
 
@@ -32,16 +32,18 @@ function mountReportsApi(app, requiresAuthentication) {
   const router = express.Router()
   router.use(express.json())
 
-  router.get('/network-health', async (_req, res) => {
+  router.get('/network-health', async (req, res) => {
     try {
+      const { state } = req.query
       const db = await cds.connect.to('db')
-      const bridges = await db.run(
+      let bridges = await db.run(
         SELECT.from('bridge.management.Bridges').columns(
           'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'condition',
           'conditionRating', 'structuralAdequacyRating', 'postingStatus',
           'importanceLevel', 'yearBuilt', 'structureType'
         )
       )
+      if (state) bridges = bridges.filter(b => b.state === state)
 
       const total = bridges.length
       const dist = { good: 0, fair: 0, poor: 0, critical: 0 }
@@ -99,15 +101,17 @@ function mountReportsApi(app, requiresAuthentication) {
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 
-  router.get('/inspection-compliance', async (_req, res) => {
+  router.get('/inspection-compliance', async (req, res) => {
     try {
+      const { state } = req.query
       const db = await cds.connect.to('db')
-      const bridges = await db.run(
+      let bridges = await db.run(
         SELECT.from('bridge.management.Bridges').columns(
           'ID', 'bridgeId', 'bridgeName', 'state', 'region',
           'lastInspectionDate', 'nextInspectionDue', 'condition', 'postingStatus'
         )
       )
+      if (state) bridges = bridges.filter(b => b.state === state)
 
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -160,10 +164,11 @@ function mountReportsApi(app, requiresAuthentication) {
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 
-  router.get('/regulatory-compliance', async (_req, res) => {
+  router.get('/regulatory-compliance', async (req, res) => {
     try {
+      const { state } = req.query
       const db = await cds.connect.to('db')
-      const [bridges, restrictions] = await Promise.all([
+      let [bridges, restrictions] = await Promise.all([
         db.run(
           SELECT.from('bridge.management.Bridges').columns(
             'ID', 'bridgeId', 'bridgeName', 'state', 'region',
@@ -177,6 +182,7 @@ function mountReportsApi(app, requiresAuthentication) {
             .where({ active: true })
         )
       ])
+      if (state) bridges = bridges.filter(b => b.state === state)
 
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -249,19 +255,21 @@ function mountReportsApi(app, requiresAuthentication) {
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 
-  router.get('/risk-register', async (_req, res) => {
+  router.get('/risk-register', async (req, res) => {
     try {
+      const { state } = req.query
       const db = await cds.connect.to('db')
-      const raw = await db.run(
+      let bridges = await db.run(
         SELECT.from('bridge.management.Bridges').columns(
           'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'condition',
           'conditionRating', 'scourRisk', 'highPriorityAsset',
           'importanceLevel', 'postingStatus', 'yearBuilt'
         )
       )
-      const bridges = raw
+      if (state) bridges = bridges.filter(b => b.state === state)
 
       let criticalCondition = 0, highScour = 0, criticalDefects = 0, highPriority = 0
+      // criticalDefects: proxy using conditionRating >= 4 (no criticalDefectFlag on bridge.management.Bridges)
       const riskByStateMap = {}
       const scourMap = {}
 
@@ -280,6 +288,7 @@ function mountReportsApi(app, requiresAuthentication) {
         const scourNorm = (b.scourRisk || '').replace(/\s/g, '')
         if (scourNorm === 'High' || scourNorm === 'VeryHigh') highScour++
         if (b.highPriorityAsset) highPriority++
+        if (b.conditionRating != null && b.conditionRating >= 4) criticalDefects++
 
         const scourKey = b.scourRisk || 'Unknown'
         scourMap[scourKey] = (scourMap[scourKey] || 0) + 1
@@ -315,20 +324,39 @@ function mountReportsApi(app, requiresAuthentication) {
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 
-  router.get('/data-quality', async (_req, res) => {
+  router.get('/data-quality', async (req, res) => {
     try {
+      const { state } = req.query
       const db = await cds.connect.to('db')
-      const rawBridges = await db.run(
+      let rawBridges = await db.run(
         SELECT.from('bridge.management.Bridges').columns(
-          'ID', 'bridgeId', 'bridgeName', 'state', 'region'
+          'ID', 'bridgeId', 'bridgeName', 'state', 'region',
+          'condition', 'conditionRating', 'latitude', 'longitude',
+          'yearBuilt', 'structureType', 'postingStatus',
+          'lastInspectionDate', 'managingAuthority'
         )
       )
-      const bridges = rawBridges
 
-      const total = bridges.length
-      const withScore = bridges.filter(b => b.dataQualityScore != null)
-      const avgScore = withScore.length > 0
-        ? Math.round(withScore.reduce((s, b) => s + b.dataQualityScore, 0) / withScore.length)
+      if (state) rawBridges = rawBridges.filter(b => b.state === state)
+
+      const QUALITY_FIELDS = [
+        'bridgeName', 'state', 'condition', 'conditionRating',
+        'latitude', 'longitude', 'yearBuilt', 'structureType',
+        'postingStatus', 'lastInspectionDate', 'managingAuthority'
+      ]
+      const MAX_SCORE = QUALITY_FIELDS.length
+
+      const scored = rawBridges.map(b => {
+        const filled = QUALITY_FIELDS.filter(f => b[f] != null && b[f] !== '').length
+        const dqScore = Math.round((filled / MAX_SCORE) * 100)
+        return { ...b, dataQualityScore: dqScore }
+      })
+
+      const total = scored.length
+      const withScore = scored
+
+      const avgScore = total > 0
+        ? Math.round(withScore.reduce((s, b) => s + b.dataQualityScore, 0) / total)
         : 0
 
       let complete100 = 0, partial75 = 0, incomplete50 = 0
@@ -357,17 +385,18 @@ function mountReportsApi(app, requiresAuthentication) {
         }))
 
       res.json({
-        kpis: { avgScore, complete100, partial75, incomplete50, total, withScore: withScore.length },
+        kpis: { avgScore, complete100, partial75, incomplete50, total, withScore: total },
         scoreDistribution,
         lowestBridges
       })
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 
-  router.get('/bridges-restrictions', async (_req, res) => {
+  router.get('/bridges-restrictions', async (req, res) => {
     try {
+      const { state } = req.query
       const db = await cds.connect.to('db')
-      const bridges = await db.run(
+      let bridges = await db.run(
         SELECT.from('bridge.management.Bridges').columns(
           'ID', 'bridgeId', 'bridgeName', 'state', 'region',
           'postingStatus', 'condition', 'conditionRating',
@@ -375,6 +404,7 @@ function mountReportsApi(app, requiresAuthentication) {
           'bDoubleApproved', 'freightRoute', 'overMassRoute', 'nhvrAssessed'
         )
       )
+      if (state) bridges = bridges.filter(b => b.state === state)
 
       const statusCount = {}
       let withHeightLimit = 0, hmlCount = 0, bDoubleCount = 0, freightCount = 0

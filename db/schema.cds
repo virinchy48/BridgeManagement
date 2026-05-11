@@ -178,6 +178,7 @@ entity BridgeCapacities : cuid, managed {
   singleAxleLimit       : Decimal(9,2);   // Single Axle (t)
   tandemGroupLimit      : Decimal(9,2);   // Tandem Axle Group (t)
   triAxleGroupLimit     : Decimal(9,2);   // Tri-Axle Group (t)
+  axleSpacingMinimumM   : Decimal(6,2);   // NHVR HVNL §§94–95 — minimum axle spacing governs dynamic impact on thin decks
 
   // ── Vertical Clearance (metres) ──────────────────────────────────────────
   minClearancePosted    : Decimal(9,2);   // Min Clearance posted (m)
@@ -542,6 +543,8 @@ entity BridgeConditionSurveys : cuid, managed, ChangeTracked {
   overallGrade     : String(20);                             // Good | Satisfactory | Poor | Critical
   notes            : LargeString;
   status           : String(20) default 'Draft';             // Draft | Submitted | Approved
+  linkedInspectionRef : String(40);                          // TfNSW-BIM §3.2 — ref to underpinning Principal inspection record
+  programmeYear    : Integer;                                // AGAM §5.2 — maintenance programme year (e.g. 2026)
 }
 
 // ── LRT tile — per-vehicle-class load rating assessments ─────────────────────
@@ -595,6 +598,8 @@ entity BridgePermits : cuid, managed, ChangeTracked {
   applicantPhone       : String(20);
   vehicleDescription   : LargeString;
   routeDescription     : LargeString;
+  vehicleRegistration  : String(20);                          // HVNL §156 — permit is vehicle-specific, registration required
+  rejectionReason      : String(300);                        // HVNL §162 — mandatory written reason for permit refusal
 }
 
 extend entity Bridges with {

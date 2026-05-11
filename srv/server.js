@@ -1104,8 +1104,8 @@ cds.on('bootstrap', (app) => {
         'script-src':  ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', "'unsafe-inline'"],
         'style-src':   ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https:', "'unsafe-inline'"],
         'font-src':    ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https:', 'data:'],
-        'img-src':     ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'data:', 'blob:'],
-        'connect-src': ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com'],
+        'img-src':     ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https://*.tile.openstreetmap.org', 'https://unpkg.com', 'https://cdnjs.cloudflare.com', 'data:', 'blob:'],
+        'connect-src': ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https://*.tile.openstreetmap.org', 'https://unpkg.com', 'https://cdnjs.cloudflare.com'],
         'worker-src':  ["'self'", 'blob:'],
       }
     }

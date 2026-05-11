@@ -18,5 +18,7 @@ entity BridgeScourAssessments : cuid, managed {
   foundationType              : String(40);
   scourCountermeasureType     : String(50);
   scourCountermeasureCondition : String(20);
+  criticalScourDepthM         : Decimal(9,2);    // AP-G71.8 §5.1 — depth at which structural failure risk becomes critical
+  postFloodInspectionRequired : Boolean default false;  // AP-G71.8 §4.2 — mandatory post-flood inspection flag
   remarks                     : LargeString;
 }

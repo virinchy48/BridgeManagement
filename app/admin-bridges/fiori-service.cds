@@ -1028,6 +1028,8 @@ annotate AdminService.BridgeCapacities with {
   singleAxleLimit       @title: 'Single Axle (t)';
   tandemGroupLimit      @title: 'Tandem Axle Group (t)';
   triAxleGroupLimit     @title: 'Tri-Axle Group (t)';
+  // ── HIGH priority addition (NHVR HVNL §§94–95) ───────────────────────────
+  axleSpacingMinimumM   @title: 'Minimum Axle Spacing (m)'  @Common.QuickInfo: 'NHVR HVNL §§94–95 — minimum axle spacing governing dynamic impact; required for OSOM permit evaluation';
   minClearancePosted    @Common.FieldControl: #Mandatory  @title: 'Min Clearance (posted)';
   lane1Clearance        @title: 'Lane 1 Clearance (m)';
   lane2Clearance        @title: 'Lane 2 Clearance (m)';
@@ -1134,6 +1136,7 @@ annotate AdminService.BridgeCapacities with @(
         {Value: singleAxleLimit},
         {Value: tandemGroupLimit},
         {Value: triAxleGroupLimit},
+        {Value: axleSpacingMinimumM, Label: 'Minimum Axle Spacing (m)'},
       ]
     },
     FieldGroup#CapacityVerticalClearance: {
@@ -1260,8 +1263,11 @@ annotate AdminService.BridgeScourAssessments with {
       { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
     ]}
   ) @title: 'Foundation Type'  @Common.QuickInfo: 'AS 5100.7 §6.2.5 — critical for scour vulnerability';
-  scourCountermeasureType      @title: 'Countermeasure Type'       @Common.QuickInfo: 'Austroads AP-G71.8 §7.3 — e.g. rock riprap, concrete apron';
-  scourCountermeasureCondition @title: 'Countermeasure Condition'  @Common.QuickInfo: 'Good / Fair / Poor / Failed';
+  scourCountermeasureType      @title: 'Countermeasure Type'         @Common.QuickInfo: 'Austroads AP-G71.8 §7.3 — e.g. rock riprap, concrete apron';
+  scourCountermeasureCondition @title: 'Countermeasure Condition'    @Common.QuickInfo: 'Good / Fair / Poor / Failed';
+  // ── HIGH priority additions (AP-G71.8 §4.2, §5.1) ────────────────────────
+  criticalScourDepthM          @title: 'Critical Scour Depth (m)'    @Common.QuickInfo: 'AP-G71.8 §5.1 — depth at which structural failure risk becomes critical; safety margin = critical - measured';
+  postFloodInspectionRequired  @title: 'Post-Flood Inspection Required' @Common.QuickInfo: 'AP-G71.8 §4.2 — when true, mandatory inspection is required after each flood event exceeding the trigger level';
   remarks                      @title: 'Remarks'  @UI.MultiLineText;
 };
 
@@ -1319,9 +1325,11 @@ annotate AdminService.BridgeScourAssessments with @(
     FieldGroup#ScourMeasurements: {
       Label: 'Measurements',
       Data: [
-        {Value: measuredDepth,         Label: 'Measured Scour Depth (m)'},
-        {Value: floodImmunityAriYears, Label: 'Flood Immunity (ARI years)'},
-        {Value: mitigationStatus,      Label: 'Mitigation Status'},
+        {Value: measuredDepth,              Label: 'Measured Scour Depth (m)'},
+        {Value: criticalScourDepthM,        Label: 'Critical Scour Depth (m)'},
+        {Value: floodImmunityAriYears,      Label: 'Flood Immunity (ARI years)'},
+        {Value: postFloodInspectionRequired, Label: 'Post-Flood Inspection Required'},
+        {Value: mitigationStatus,           Label: 'Mitigation Status'},
       ]
     },
     FieldGroup#ScourCountermeasures: {
@@ -1706,6 +1714,12 @@ annotate AdminService.BridgeInspections with {
   recommendedActions           @title: 'Recommended Actions'            @UI.MultiLineText;
   nextInspectionRecommended    @title: 'Next Inspection (Recommended)';
   active                       @title: 'Active'                         @UI.Hidden;
+  // ── HIGH priority additions (AS 5100-7, TfNSW-BIM §3.3, AGAM §4.2) ──────
+  inspectionMethodology        @title: 'Inspection Methodology'         @Common.QuickInfo: 'AGAM §4.2 — how the bridge was accessed for inspection';
+  overallStructuralAdequacy    @title: 'Structural Adequacy Verdict'    @Common.QuickInfo: 'TfNSW-BIM §3.3 — inspector verdict on structural adequacy';
+  loadCarryingCapacityConfirmed @title: 'Load Capacity Confirmed'       @Common.QuickInfo: 'AS 5100-7 §3.2 — confirm posted capacity is still valid';
+  followUpRequired             @title: 'Follow-Up Required'             @Common.QuickInfo: 'Set to true to create a manager follow-up task/alert';
+  reportIssueDate              @title: 'Report Issue Date'              @Common.QuickInfo: 'TfNSW-BIM §3.4 — formal date report was issued (may differ from inspection date)';
 };
 
 annotate AdminService.BridgeInspections with @(
@@ -1768,9 +1782,14 @@ annotate AdminService.BridgeInspections with @(
       {Value: bridge_ID,                  Label: 'Bridge'},
       {Value: inspectionRef,              Label: 'Inspection Ref'},
       {Value: inspectionDate,             Label: 'Inspection Date'},
+      {Value: reportIssueDate,            Label: 'Report Issue Date'},
       {Value: inspectionType,             Label: 'Inspection Type'},
+      {Value: inspectionMethodology,      Label: 'Inspection Methodology'},
       {Value: overallConditionRating,     Label: 'Overall Condition Rating (1-10)'},
+      {Value: overallStructuralAdequacy,  Label: 'Structural Adequacy Verdict'},
+      {Value: loadCarryingCapacityConfirmed, Label: 'Load Capacity Confirmed'},
       {Value: criticalFindings,           Label: 'Critical Findings'},
+      {Value: followUpRequired,           Label: 'Follow-Up Required'},
       {Value: recommendedActions,         Label: 'Recommended Actions'},
       {Value: nextInspectionRecommended,  Label: 'Next Inspection (Recommended)'},
       {Value: inspectionStandard,         Label: 'Inspection Standard'},
@@ -1888,6 +1907,10 @@ annotate AdminService.BridgeDefects with {
   plannedRemediationDate  @title: 'Planned Remediation Date';
   actualRemediationDate   @title: 'Actual Remediation Date';
   remediationNotes        @title: 'Remediation Notes'        @UI.MultiLineText;
+  // ── HIGH priority additions (SIMS §4.3, AGAM §5.3, TfNSW-BIM §4.4) ──────
+  repairMethod            @title: 'Repair Method'                       @Common.QuickInfo: 'SIMS §4.3 — required field for work order generation';
+  requiresLoadRestriction @title: 'Requires Load Restriction Review'    @Common.QuickInfo: 'TfNSW-BIM §4.4 — when true, triggers review of BridgeCapacities and LoadRatingCertificates';
+  maintenancePriority     @title: 'Maintenance Priority'                @Common.QuickInfo: 'AGAM §5.3 — P1 Emergency (immediate) to P4 Planned (>12 months)';
   s4NotificationId        @title: 'S/4 Notification ID';
   s4OrderId               @title: 'S/4 Order ID';
   s4SyncStatus            @title: 'S/4 Sync Status';
@@ -1960,6 +1983,9 @@ annotate AdminService.BridgeDefects with @(
   UI.FieldGroup#DefectRemediation: {
     Label: 'Remediation',
     Data: [
+      {Value: maintenancePriority,    Label: 'Maintenance Priority (AGAM §5.3)'},
+      {Value: requiresLoadRestriction, Label: 'Requires Load Restriction Review'},
+      {Value: repairMethod,           Label: 'Repair Method'},
       {Value: estimatedRepairCost,    Label: 'Estimated Repair Cost'},
       {Value: plannedRemediationDate, Label: 'Planned Remediation Date'},
       {Value: actualRemediationDate,  Label: 'Actual Remediation Date'},
@@ -2042,6 +2068,9 @@ annotate AdminService.BridgeElements with {
   elementId              @Common.FieldControl: #Mandatory  @title: 'Element ID'  @Common.QuickInfo: 'Unique element identifier (e.g. E001, SPAN-1-DECK)';
   elementType            @Common.FieldControl: #Mandatory  @title: 'Element Type'  @Common.QuickInfo: 'Structural class — e.g. Deck, Beam, Abutment, Pier';
   elementName            @Common.FieldControl: #Mandatory  @title: 'Element Name';
+  // ── HIGH priority additions (SIMS §3.2, AS 5100-7 §4.3) ─────────────────
+  simsElementCode        @title: 'SIMS Element Code'        @Common.QuickInfo: 'SIMS §3.2 national element code — DEK (Deck), ABT (Abutment), PRM (Primary Member), BRG (Bearing), EXP (Expansion Joint), DRN (Drainage), GRD (Guardrail), FON (Foundation), PRA (Approach Pavement)';
+  designWorkingLifeYears @title: 'Design Working Life (years)'  @Common.QuickInfo: 'AS 5100-7 §4.3 — element-level design working life; used for fatigue-sensitive member monitoring';
   spanNumber             @title: 'Span Number';
   pierNumber             @title: 'Pier Number';
   position               @title: 'Position / Location Description';
@@ -2101,16 +2130,18 @@ annotate AdminService.BridgeElements with @(
   UI.FieldGroup#ElemIdentity: {
     Label: 'Identity & Location',
     Data: [
-      {Value: bridge_ID,         Label: 'Bridge'},
-      {Value: elementId,         Label: 'Element ID'},
-      {Value: elementType,       Label: 'Element Type'},
-      {Value: elementName,       Label: 'Element Name'},
-      {Value: material,          Label: 'Construction Material'},
-      {Value: yearConstructed,   Label: 'Year Constructed'},
-      {Value: yearLastRehabbed,  Label: 'Year Last Rehabilitated'},
-      {Value: spanNumber,        Label: 'Span Number'},
-      {Value: pierNumber,        Label: 'Pier Number'},
-      {Value: position,          Label: 'Position / Location'},
+      {Value: bridge_ID,              Label: 'Bridge'},
+      {Value: elementId,              Label: 'Element ID'},
+      {Value: simsElementCode,        Label: 'SIMS Element Code'},
+      {Value: elementType,            Label: 'Element Type'},
+      {Value: elementName,            Label: 'Element Name'},
+      {Value: material,               Label: 'Construction Material'},
+      {Value: designWorkingLifeYears, Label: 'Design Working Life (years)'},
+      {Value: yearConstructed,        Label: 'Year Constructed'},
+      {Value: yearLastRehabbed,       Label: 'Year Last Rehabilitated'},
+      {Value: spanNumber,             Label: 'Span Number'},
+      {Value: pierNumber,             Label: 'Pier Number'},
+      {Value: position,               Label: 'Position / Location'},
     ]
   },
   UI.FieldGroup#ElemCondition: {
@@ -2148,6 +2179,11 @@ annotate AdminService.BridgeRiskAssessments with {
   s4MaintenancePlan    @title: 'S/4 Maintenance Plan'    @UI.Hidden;
   s4FunctionalLocation @title: 'S/4 Functional Location' @UI.Hidden;
   monitoringFrequency  @title: 'Monitoring Frequency';
+  // ── HIGH priority additions (ISO 31000 §6.5–6.7) ─────────────────────────
+  residualLikelihood   @title: 'Residual Likelihood (1–5)'   @Common.QuickInfo: 'ISO 31000 §6.6 — post-control likelihood score; used to compute residualRiskScore with transparency';
+  residualConsequence  @title: 'Residual Consequence (1–5)'  @Common.QuickInfo: 'ISO 31000 §6.6 — post-control consequence score; input to residualRiskScore calculation';
+  riskRegisterStatus   @title: 'Risk Register Status'        @Common.QuickInfo: 'ISO 31000 §6.7 — lifecycle status: Open / Escalated / Accepted / Treated / Closed';
+  treatmentStatus      @title: 'Treatment Status'            @Common.QuickInfo: 'ISO 31000 §6.5 — progress of treatment programme: Not Started / In Progress / Completed / Deferred / Cancelled';
 };
 
 annotate AdminService.BridgeRiskAssessments with {
@@ -2260,6 +2296,8 @@ annotate AdminService.BridgeRiskAssessments with @(
       {Value: inherentRiskLevel,        Label: 'Inherent Risk Level'},
       {Value: existingControls,         Label: 'Existing Controls'},
       {Value: controlEffectiveness,     Label: 'Control Effectiveness'},
+      {Value: residualLikelihood,       Label: 'Residual Likelihood (1–5)'},
+      {Value: residualConsequence,      Label: 'Residual Consequence (1–5)'},
       {Value: residualRiskScore,        Label: 'Residual Risk Score'},
       {Value: residualRiskLevel,        Label: 'Residual Risk Level'},
       {Value: residualRiskAcceptable,   Label: 'Residual Risk Acceptable'},
@@ -2268,16 +2306,18 @@ annotate AdminService.BridgeRiskAssessments with @(
   UI.FieldGroup#RiskTreatment: {
     Label: 'Treatment Plan',
     Data: [
-      {Value: riskTreatmentStrategy, Label: 'Treatment Strategy'},
-      {Value: treatmentActions,      Label: 'Treatment Actions'},
-      {Value: treatmentResponsible,  Label: 'Responsible Officer'},
-      {Value: riskOwner,             Label: 'Risk Owner'},
-      {Value: monitoringFrequency,   Label: 'Monitoring Frequency'},
-      {Value: treatmentDeadline,     Label: 'Treatment Deadline'},
-      {Value: treatmentBudget,       Label: 'Treatment Budget ($)'},
+      {Value: riskRegisterStatus,     Label: 'Risk Register Status'},
+      {Value: riskTreatmentStrategy,  Label: 'Treatment Strategy'},
+      {Value: treatmentStatus,        Label: 'Treatment Status'},
+      {Value: treatmentActions,       Label: 'Treatment Actions'},
+      {Value: treatmentResponsible,   Label: 'Responsible Officer'},
+      {Value: riskOwner,              Label: 'Risk Owner'},
+      {Value: monitoringFrequency,    Label: 'Monitoring Frequency'},
+      {Value: treatmentDeadline,      Label: 'Treatment Deadline'},
+      {Value: treatmentBudget,        Label: 'Treatment Budget ($)'},
       {Value: linkedInspection.inspectionRef, Label: 'Linked Inspection'},
       {Value: linkedDefect.defectId,          Label: 'Linked Defect'},
-      {Value: notes,                 Label: 'Notes'},
+      {Value: notes,                  Label: 'Notes'},
     ]
   },
   UI.Identification: [
@@ -2437,6 +2477,8 @@ annotate AdminService.NhvrRouteAssessments with {
   concessionalMass           @title: 'Concessional Mass Scheme';
   lastReviewDate             @title: 'Last Review Date';
   reviewFrequencyMonths      @title: 'Review Frequency (months)';
+  // ── HIGH priority addition (NHVR RA Scheme §3) ────────────────────────────
+  assessmentMethodology      @title: 'Assessment Methodology'  @Common.QuickInfo: 'NHVR Route Assessment Scheme §3 — required for NHVR submission: Desktop / Field / Load Testing / Combined';
 };
 
 annotate AdminService.NhvrRouteAssessments with {
@@ -2505,6 +2547,7 @@ annotate AdminService.NhvrRouteAssessments with @(
       { Value: assessmentDate,         Label: 'Assessment Date' },
       { Value: assessmentStatus,       Label: 'Status' },
       { Value: assessmentVersion,      Label: 'Version' },
+      { Value: assessmentMethodology,  Label: 'Assessment Methodology' },
       { Value: assessorName,           Label: 'Assessor' },
       { Value: assessorAccreditationNo, Label: 'Assessor Accreditation No.' },
       { Value: validFrom,              Label: 'Valid From' },
@@ -3168,10 +3211,12 @@ annotate AdminService.BridgeConditionSurveys with @(
       { Value: bridgeRef,                  Label: 'Bridge' },
       { Value: surveyRef,                  Label: 'Survey Ref' },
       { Value: surveyDate,                 Label: 'Survey Date' },
+      { Value: programmeYear,              Label: 'Programme Year' },
       { Value: surveyType,                 Label: 'Survey Type' },
       { Value: surveyedBy,                 Label: 'Surveyed By' },
       { Value: inspectorAccreditationLevel, Label: 'Inspector Accreditation Level' },
       { Value: accessMethod,               Label: 'Access Method' },
+      { Value: linkedInspectionRef,        Label: 'Linked Inspection Ref' },
       { Value: nextSurveyRecommended,      Label: 'Next Survey Recommended' },
       { Value: estimatedRehabCost,         Label: 'Estimated Rehab Cost (AUD)' },
       { Value: actionPlan,                 Label: 'Action Plan' },
@@ -3236,6 +3281,9 @@ annotate AdminService.BridgeConditionSurveys with {
   modifiedBy @UI.Hidden;  modifiedAt @UI.Hidden;
   bridge     @UI.Hidden;   // FK resolved via bridgeRef; navigation used for display text only
   surveyRef  @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Survey Ref (auto-generated)';
+  // ── HIGH priority additions (TfNSW-BIM §3.2, AGAM §5.2) ─────────────────
+  linkedInspectionRef @title: 'Linked Inspection Ref'  @Common.QuickInfo: 'TfNSW-BIM §3.2 — reference to the Principal inspection record that underpins this survey';
+  programmeYear       @title: 'Programme Year'         @Common.QuickInfo: 'AGAM §5.2 — maintenance programme year this survey is scheduled against (e.g. 2026)';
   bridgeRef @(
     Common.FieldControl    : #Mandatory,
     Common.Text            : bridge.bridgeName,
@@ -3451,15 +3499,17 @@ annotate AdminService.BridgePermits with @(
     ]
   },
   UI.FieldGroup#PrmVehicle: {
-    Label: 'Vehicle Dimensions',
+    Label: 'Vehicle Details',
     Data: [
-      { Value: vehicleClass,      Label: 'Vehicle Class' },
+      { Value: vehicleClass,       Label: 'Vehicle Class' },
+      { Value: vehicleRegistration, Label: 'Vehicle Registration' },
       { Value: vehicleDescription, Label: 'Vehicle Description' },
-      { Value: grossMass,         Label: 'Gross Mass (t)' },
-      { Value: height,            Label: 'Height (m)' },
-      { Value: width,             Label: 'Width (m)' },
-      { Value: length,            Label: 'Length (m)' },
-      { Value: routeDescription,  Label: 'Route Description' },
+      { Value: axleConfiguration,  Label: 'Axle Configuration' },
+      { Value: grossMass,          Label: 'Gross Mass (t)' },
+      { Value: height,             Label: 'Height (m)' },
+      { Value: width,              Label: 'Width (m)' },
+      { Value: length,             Label: 'Length (m)' },
+      { Value: routeDescription,   Label: 'Route Description' },
     ]
   },
   UI.FieldGroup#PrmDecision: {
@@ -3468,6 +3518,7 @@ annotate AdminService.BridgePermits with @(
       { Value: decisionBy,           Label: 'Decision By' },
       { Value: decisionDate,         Label: 'Decision Date' },
       { Value: conditionsOfApproval, Label: 'Conditions of Approval' },
+      { Value: rejectionReason,      Label: 'Rejection Reason (HVNL §162)' },
       { Value: remarks,              Label: 'Remarks' },
     ]
   },
@@ -3556,6 +3607,9 @@ annotate AdminService.BridgePermits with {
   applicantPhone        @title: 'Applicant Phone';
   vehicleDescription    @title: 'Vehicle Description'  @UI.MultiLineText;
   routeDescription      @title: 'Route Description'    @UI.MultiLineText;
+  // ── HIGH priority additions (HVNL §156, HVNL §162) ───────────────────────
+  vehicleRegistration   @title: 'Vehicle Registration'  @Common.QuickInfo: 'HVNL §156 — permit is vehicle-specific; registration number is legally required for enforcement';
+  rejectionReason       @title: 'Rejection Reason'      @Common.QuickInfo: 'HVNL §162 — mandatory written statement of reason for permit refusal'  @UI.MultiLineText;
 };
 
 annotate AdminService.BridgePermits with actions {

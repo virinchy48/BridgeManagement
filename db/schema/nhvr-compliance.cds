@@ -1,7 +1,8 @@
 namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
 using { bridge.management.Bridges } from './bridge-entity';
-using { bridge.management.LoadRatingVehicleClass } from './enum-types';
+using { bridge.management.LoadRatingVehicleClass }      from './enum-types';
+using { bridge.management.NhvrAssessmentMethodology }   from './enum-types';
 using { bridge.management.BridgeScourAssessments } from './scour-assessments';
 
 entity NhvrRouteAssessments : cuid, managed {
@@ -23,6 +24,7 @@ entity NhvrRouteAssessments : cuid, managed {
     lastReviewDate             : Date;
     reviewFrequencyMonths      : Integer;              // How often the assessment must be reviewed
 
+    assessmentMethodology      : NhvrAssessmentMethodology;  // NHVR RA Scheme §3 — Desktop / Field / Load Testing / Combined
     iapRequired                : Boolean default false;
     iapRouteId                 : String(50);
 
