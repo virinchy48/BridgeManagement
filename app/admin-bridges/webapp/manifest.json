@@ -765,7 +765,8 @@
                     "route": "BridgeCapacitiesObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
@@ -783,7 +784,8 @@
                     "route": "BridgeConditionSurveysObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
@@ -801,7 +803,8 @@
                     "route": "BridgeInspectionsObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
@@ -819,7 +822,8 @@
                     "route": "BridgeDefectsObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
@@ -837,7 +841,8 @@
                     "route": "BridgeLoadRatingsObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
@@ -855,7 +860,8 @@
                     "route": "BridgeRiskAssessmentsObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
@@ -873,7 +879,8 @@
                     "route": "NhvrRouteAssessmentsObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
@@ -891,7 +898,8 @@
                     "route": "LoadRatingCertificatesObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
@@ -909,7 +917,8 @@
                     "route": "BridgePermitsObjectPage"
                   }
                 }
-              }
+              },
+              "initialLoad": "Enabled"
             }
           }
         },
