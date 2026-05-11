@@ -78,6 +78,7 @@ annotate BridgeDefects with @(cds.persistence.indexes: [
     { name: 'idx_defect_status',   columns: ['remediationStatus'] }
 ]);
 
+// inspections: standalone draft entity — no longer a composition child of Bridges
 extend entity Bridges with {
-    inspections : Composition of many BridgeInspections on inspections.bridge = $self;
+    inspections : Association to many BridgeInspections on inspections.bridge = $self;
 }

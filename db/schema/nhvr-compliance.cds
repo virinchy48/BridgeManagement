@@ -61,7 +61,7 @@ annotate BridgeScourAssessmentDetail with @(cds.persistence.indexes: [
 ]);
 
 extend entity Bridges with {
-    nhvrRouteAssessments      : Composition of many NhvrRouteAssessments
+    nhvrRouteAssessments      : Association to many NhvrRouteAssessments
                                 on nhvrRouteAssessments.bridge = $self;
     scourAssessmentDetails    : Composition of many BridgeScourAssessmentDetail
                                 on scourAssessmentDetails.bridge = $self;

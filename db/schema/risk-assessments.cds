@@ -50,6 +50,6 @@ annotate BridgeRiskAssessments with @(cds.persistence.indexes: [
 ]);
 
 extend entity Bridges with {
-    riskAssessments : Composition of many BridgeRiskAssessments
+    riskAssessments : Association to many BridgeRiskAssessments
                       on riskAssessments.bridge = $self;
 }

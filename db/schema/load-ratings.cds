@@ -59,6 +59,6 @@ annotate LoadRatingCertificates with @(cds.persistence.indexes: [
 ]);
 
 extend entity Bridges with {
-    loadRatingCertificates : Composition of many LoadRatingCertificates
+    loadRatingCertificates : Association to many LoadRatingCertificates
                              on loadRatingCertificates.bridge = $self;
 }

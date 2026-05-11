@@ -27,7 +27,7 @@ namespace bridge.management;
 
 extend entity Bridges with {
       restriction  : Association to Restrictions;
-      capacities   : Composition of many BridgeCapacities
+      capacities   : Association to many BridgeCapacities
                        on capacities.bridge = $self;
       restrictions : Composition of many BridgeRestrictions
                        on restrictions.bridge = $self;
@@ -559,9 +559,9 @@ entity BridgePermits : cuid, managed, ChangeTracked {
 }
 
 extend entity Bridges with {
-  conditionSurveys : Composition of many BridgeConditionSurveys on conditionSurveys.bridge = $self;
-  loadRatings      : Composition of many BridgeLoadRatings      on loadRatings.bridge = $self;
-  permits          : Composition of many BridgePermits          on permits.bridge = $self;
+  conditionSurveys : Association to many BridgeConditionSurveys on conditionSurveys.bridge = $self;
+  loadRatings      : Association to many BridgeLoadRatings      on loadRatings.bridge = $self;
+  permits          : Association to many BridgePermits          on permits.bridge = $self;
 }
 
 // --------------------------------------------------------------------------------
