@@ -192,10 +192,11 @@ annotate AdminService.Bridges with @(
     FieldGroup#CurrentStatus: {
       Label: 'Current Status',
       Data: [
-        {Value: conditionTrend,       Label: 'Condition Trend'},
-        {Value: nextInspectionDue,    Label: 'Next Inspection Due'},
-        {Value: postingStatus,        Label: 'Posting Status'},
-        {Value: postingStatusReason,  Label: 'Posting Status Reason'},
+        {Value: conditionTrend,        Label: 'Condition Trend'},
+        {Value: nextInspectionDue,     Label: 'Next Inspection Due'},
+        {Value: postingStatus,         Label: 'Posting Status'},
+        {Value: postingStatusReason,   Label: 'Posting Status Reason'},
+        {Value: operationalStatusCode, Label: 'Operational Status Code'},
       ]
     },
 
@@ -229,11 +230,13 @@ annotate AdminService.Bridges with @(
     FieldGroup#Structure: {
       Label: 'Structure',
       Data: [
-        {Value: designLoad,      Label: 'Design Load (AS 5100 class)'},
-        {Value: designStandard,  Label: 'Design Standard'},
-        {Value: structureType,   Label: 'Structure Type'},
-        {Value: material,        Label: 'Construction Material'},
-        {Value: yearBuilt,       Label: 'Year Built'},
+        {Value: designLoad,              Label: 'Design Load (AS 5100 class)'},
+        {Value: designStandard,          Label: 'Design Standard'},
+        {Value: structureType,           Label: 'Structure Type'},
+        {Value: material,                Label: 'Construction Material'},
+        {Value: yearBuilt,               Label: 'Year Built'},
+        {Value: seismicZone,             Label: 'Seismic Zone'},
+        {Value: structuralDeficiencyCode, Label: 'Structural Deficiency Code'},
       ]
     },
     FieldGroup#Dimensions: {
@@ -248,7 +251,6 @@ annotate AdminService.Bridges with @(
       ]
     },
     // Environmental Context = former Site Context + spansOver/facilityTypeCode from T2
-    // seismicZone/asBuiltDrawingReference moved to T7 Administration
     FieldGroup#SiteContext: {
       Label: 'Environmental Context',
       Data: [
@@ -366,9 +368,6 @@ annotate AdminService.Bridges with @(
         {Value: openDataReference,        Label: 'Open Data Reference'},
         {Value: sourceRecordId,           Label: 'Source Record ID'},
         {Value: asBuiltDrawingReference,  Label: 'As-Built Drawing Reference'},
-        {Value: seismicZone,              Label: 'Seismic Zone'},
-        {Value: operationalStatusCode,    Label: 'Operational Status Code'},
-        {Value: structuralDeficiencyCode, Label: 'Structural Deficiency Code'},
       ]
     },
     FieldGroup#AuditTrail: {
