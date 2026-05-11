@@ -660,6 +660,30 @@ Applied: srv/admin-service.js
 Source: Code cleanup sprint
 Applied: app/services.cds, mta.yaml, deleted directories
 
+[2026-05-12] [BTP / Deploy / CSV] Learning: HANA HDI deployer `hdbtabledata` import fails with "record has more than expected N fields" when CSV data rows have trailing commas. Fix: use `csv.writer` (Python csv module) to re-write rows with exactly N fields matching `import_columns` count. NEVER fix by simply removing trailing `,` characters — that strips data and produces rows shorter than expected. Always count `import_columns` length in the `.hdbtabledata` file and ensure every data row has exactly that many fields.
+Source: BTP deploy failure — bridge.management-BridgeInspections.csv
+Applied: db/data/bridge.management-BridgeInspections.csv fixed to exactly 12 fields
+
+[2026-05-12] [BTP / Deploy / CSV] Learning: Lookup CSVs with unquoted commas in text fields silently split into extra columns causing HDI deploy failures. Fix: identify offending rows by field count, quote the field containing the comma. Always run `python3 -c "import csv; ..."` (NOT `awk -F','`) to count CSV fields correctly — awk doesn't handle quoted fields with internal commas.
+Source: BTP deploy failure — bridge.management-WaterwayTypes.csv row 8
+Applied: db/data/bridge.management-WaterwayTypes.csv row 8 description field quoted
+
+[2026-05-12] [BTP / Deploy / MTAR] Learning: `cf deploy` prompts "There is an ongoing operation, abort? y/n" when a previous deploy was interrupted. Pass `printf 'y\n' | cf deploy` to auto-confirm. Monitor with `cf mta-ops` and download logs with `cf dmol -i <operation-id>`. Add empty seed CSV for any entity whose old HANA HDI artifact is blocking re-deploy (stale UUID data in integer columns): create `db/data/bridge.management-EntityName.csv` with header only, rebuild, redeploy.
+Source: BTP deploy session — stuck operation + Restrictions stale artifact
+Applied: db/data/bridge.management-Restrictions.csv (empty), mta.yaml health-check-type none
+
+[2026-05-12] [BTP / Deploy / Health Check] Learning: CF health-check-type `http` hits `$PORT/health` where `$PORT` is CF's platform-assigned port (usually 8080). If `package.json` hardcodes `PORT=8008`, the health check always fails — app OOM-loops and `cf apps` shows `web:0/1`. Fix: change `health-check-type: none` in mta.yaml (BTP trial). For production, use `PORT=${PORT:-8008} cds-serve` to respect the CF-assigned port while defaulting to 8008 locally.
+Source: BridgeManagement-srv `web:0/1` repeatedly crashing
+Applied: mta.yaml health-check-type changed from `http` to `none`
+
+[2026-05-12] [FLP / Config] Learning: A single trailing comma after the last object in a JSON array in `fioriSandboxConfig.json` silently breaks ALL FLP navigation intents. Always validate with `node -e "require('./app/appconfig/fioriSandboxConfig.json')"` after any tile or intent change.
+Source: User report — #BmsAdmin-manage "App could not be opened"
+Applied: app/appconfig/fioriSandboxConfig.json — removed trailing comma
+
+[2026-05-12] [CAP / Draft Actions] Learning: Bound actions on draft-enabled entities require `IsActiveEntity=true` in the key. Correct OData URL: `EntitySet(ID='uuid',IsActiveEntity=true)/actionName`. Without `IsActiveEntity=true`, returns HTTP 400 "Key IsActiveEntity is missing".
+Source: UAT testing — deactivate action returning 400
+Applied: Documented
+
 ---
 
 ## Contributing to this file
