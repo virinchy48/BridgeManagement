@@ -1,6 +1,8 @@
 namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
 using { bridge.management.Bridges } from './bridge-entity';
+using { bridge.management.LoadRatingVehicleClass } from './enum-types';
+using { bridge.management.BridgeScourAssessments } from './scour-assessments';
 
 entity NhvrRouteAssessments : cuid, managed {
     bridge                     : Association to Bridges @mandatory;
@@ -42,6 +44,7 @@ annotate NhvrRouteAssessments with @(cds.persistence.indexes: [
 
 entity BridgeScourAssessmentDetail : cuid, managed {
     bridge                          : Association to Bridges @mandatory;
+    scourAssessment                 : Association to BridgeScourAssessments;
     assessmentDate                  : Date @mandatory;
 
     hydraulicModelRef               : String(50);
@@ -61,9 +64,31 @@ entity BridgeScourAssessmentDetail : cuid, managed {
 }
 
 annotate BridgeScourAssessmentDetail with @(cds.persistence.indexes: [
-    { name: 'idx_scour_bridge',   columns: ['bridge_ID'] },
-    { name: 'idx_scour_riskcat',  columns: ['scourRiskCategoryAp71'] }
+    { name: 'idx_scour_bridge',        columns: ['bridge_ID'] },
+    { name: 'idx_scour_riskcat',       columns: ['scourRiskCategoryAp71'] },
+    { name: 'idx_scour_detail_assess', columns: ['scourAssessment_ID'] }
 ]);
+
+entity NhvrApprovedVehicleClasses : cuid, managed {
+    assessment   : Association to NhvrRouteAssessments @mandatory;
+    vehicleClass : LoadRatingVehicleClass @mandatory;
+    maxGrossMass : Decimal(9,2);
+    conditions   : String(500);
+    active       : Boolean default true;
+}
+annotate NhvrApprovedVehicleClasses with @(cds.persistence.indexes: [
+    { name: 'idx_nhvr_avc_assess', columns: ['assessment_ID'] }
+]);
+
+extend entity NhvrRouteAssessments with {
+    approvedClasses : Composition of many NhvrApprovedVehicleClasses
+                      on approvedClasses.assessment = $self;
+}
+
+extend entity BridgeScourAssessments with {
+    hydraulicDetails : Association to many BridgeScourAssessmentDetail
+                       on hydraulicDetails.scourAssessment = $self;
+}
 
 extend entity Bridges with {
     nhvrRouteAssessments      : Association to many NhvrRouteAssessments

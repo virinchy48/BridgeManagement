@@ -1,0 +1,26 @@
+code,description,elementCategory,active
+DEK-SP,Deck Spalling,Deck,true
+DEK-CR,Deck Cracking,Deck,true
+DEK-DE,Deck Delamination,Deck,true
+DEK-WR,Deck Wearing Surface Deterioration,Deck,true
+BEA-CO,Beam/Girder Corrosion,Superstructure,true
+BEA-CR,Beam/Girder Cracking,Superstructure,true
+BEA-SP,Beam/Girder Spalling,Superstructure,true
+BEA-DF,Beam/Girder Deflection,Superstructure,true
+ABT-CR,Abutment Cracking,Substructure,true
+ABT-SC,Abutment Scour,Substructure,true
+ABT-SL,Abutment Settlement,Substructure,true
+PIE-CR,Pier Cracking,Substructure,true
+PIE-SC,Pier Scour,Substructure,true
+PIE-CO,Pier Corrosion,Substructure,true
+BRG-CO,Bearing Corrosion,Bearings,true
+BRG-DT,Bearing Deterioration,Bearings,true
+BRG-MV,Bearing Movement Restriction,Bearings,true
+JNT-DT,Joint Deterioration,Joints,true
+JNT-LD,Joint Leakage/Drainage Failure,Joints,true
+WLL-CR,Wing Wall Cracking,Wing Walls,true
+WLL-SC,Wing Wall Scour,Wing Walls,true
+RLG-CO,Railing Corrosion,Safety Barriers,true
+RLG-DM,Railing Damage,Safety Barriers,true
+DRN-BK,Drainage Blockage,Drainage,true
+DRN-DT,Drainage Deterioration,Drainage,true

@@ -48,6 +48,14 @@ module.exports = function registerNhvrComplianceHandlers (srv) {
         }
     })
 
+    srv.after(['CREATE', 'UPDATE'], 'NhvrRouteAssessments', async (data, req) => {
+        if (!data?.bridge_ID || data?.assessmentStatus !== 'Current') return
+        const db = await cds.connect.to('db')
+        await db.run(UPDATE('bridge.management.Bridges')
+            .set({ nhvrAssessed: true, nhvrAssessmentDate: data.assessmentDate })
+            .where({ ID: data.bridge_ID }))
+    })
+
     srv.on('exportNhvrPortalJson', async req => {
         const { bridgeId } = req.data
         const db = await cds.connect.to('db')

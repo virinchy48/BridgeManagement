@@ -1301,6 +1301,7 @@ annotate AdminService.BridgeScourAssessments with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Personnel',       Target: '@UI.FieldGroup#ScourPersonnel'},
         ]
       },
+      { $Type: 'UI.ReferenceFacet', Label: 'Hydraulic Details (AP-G71.8)', Target: 'hydraulicDetails/@UI.LineItem' },
     ],
     FieldGroup#ScourAssessment: {
       Label: 'Assessment',
@@ -1339,6 +1340,21 @@ annotate AdminService.BridgeScourAssessments with @(
       ]
     },
   }
+);
+
+////////////////////////////////////////////////////////////////////////////
+//  BridgeScourAssessmentDetail — hydraulic detail rows (AP-G71.8)
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.BridgeScourAssessmentDetail with @(
+  UI.LineItem: [
+    { Value: assessmentDate,        Label: 'Assessment Date' },
+    { Value: hydraulicModelType,    Label: 'Model Type' },
+    { Value: scourType,             Label: 'Scour Type' },
+    { Value: ap71ScoreNumeric,      Label: 'AP-G71.8 Score (1-5)' },
+    { Value: scourRiskCategoryAp71, Label: 'Risk Category' },
+    { Value: recommendedAction,     Label: 'Recommended Action' },
+  ]
 );
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1645,6 +1661,22 @@ annotate AdminService.BridgeInspections with @(
         {$Type: 'UI.ReferenceFacet', Label: 'S/4HANA',    Target: '@UI.FieldGroup#InspS4Links'},
       ]
     },
+    {
+      $Type : 'UI.CollectionFacet',
+      Label : 'Defects Found',
+      ID    : 'InspDefects',
+      Facets: [
+        {$Type: 'UI.ReferenceFacet', Label: 'Defects', Target: 'defects/@UI.LineItem'},
+      ]
+    },
+    {
+      $Type : 'UI.CollectionFacet',
+      Label : 'Element Conditions',
+      ID    : 'InspElements',
+      Facets: [
+        {$Type: 'UI.ReferenceFacet', Label: 'Element Conditions (CS1–CS4)', Target: 'inspectionElements/@UI.LineItem'},
+      ]
+    },
   ],
   UI.FieldGroup#InspGeneral: {
     Label: 'General',
@@ -1739,7 +1771,18 @@ annotate AdminService.BridgeDefects with {
   );
   defectId                @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Defect ID (auto-generated)';
   deteriorationMechanism  @title: 'Deterioration Mechanism';
-  defectCode              @title: 'SIMS Defect Code';
+  defectCode @(
+    title: 'SIMS Defect Code',
+    Common.ValueList: {
+      CollectionPath: 'DefectCodes',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         ValueListProperty: 'code',            LocalDataProperty: defectCode },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'description' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'elementCategory' },
+      ]
+    },
+    Common.ValueListWithFixedValues: false
+  );
   bridgeElementRef        @title: 'Linked Element';
   s4SyncDate              @title: 'S/4 Sync Date'    @UI.Hidden;
   s4SyncError             @title: 'S/4 Sync Error'   @UI.Hidden;
@@ -2347,9 +2390,10 @@ annotate AdminService.NhvrRouteAssessments with @(
     Description   : {Value: bridge.bridgeName},
   },
   UI.Facets: [
-    { $Type: 'UI.ReferenceFacet', Label: 'Assessment Details',  Target: '@UI.FieldGroup#NhvrDetails' },
-    { $Type: 'UI.ReferenceFacet', Label: 'NHVR Submission',     Target: '@UI.FieldGroup#NhvrSubmission' },
-    { $Type: 'UI.ReferenceFacet', Label: 'Approval Conditions', Target: '@UI.FieldGroup#NhvrConditions' },
+    { $Type: 'UI.ReferenceFacet', Label: 'Assessment Details',    Target: '@UI.FieldGroup#NhvrDetails' },
+    { $Type: 'UI.ReferenceFacet', Label: 'NHVR Submission',       Target: '@UI.FieldGroup#NhvrSubmission' },
+    { $Type: 'UI.ReferenceFacet', Label: 'Approval Conditions',   Target: '@UI.FieldGroup#NhvrConditions' },
+    { $Type: 'UI.ReferenceFacet', Label: 'Approved Vehicle Classes', Target: 'approvedClasses/@UI.LineItem' },
   ],
   UI.FieldGroup#NhvrDetails: {
     Label: 'Assessment',
@@ -2389,6 +2433,19 @@ annotate AdminService.NhvrRouteAssessments with @(
       { Value: notes,                    Label: 'Notes' },
     ]
   },
+);
+
+// ── NhvrApprovedVehicleClasses — sub-table of NHVR Route Assessments ────────
+annotate AdminService.NhvrApprovedVehicleClasses with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.LineItem: [
+    { Value: vehicleClass, Label: 'Vehicle Class' },
+    { Value: maxGrossMass, Label: 'Max Gross Mass (t)' },
+    { Value: conditions,   Label: 'Conditions' },
+    { Value: active,       Label: 'Active' },
+  ]
 );
 
 // ── AlertsAndNotifications — expert council full treatment ────────────────

@@ -137,4 +137,57 @@ module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBr
             r.reviewCriticality = due < today ? 1 : due <= in30 ? 2 : 3
         })
     })
+
+    srv.after(['CREATE', 'UPDATE'], 'Restrictions', async (data, req) => {
+        if (!data?.ID) return
+        const db = await cds.connect.to('db')
+        await _createGazetteAlerts(db, data)
+    })
+}
+
+async function _createGazetteAlerts(db, restriction) {
+    if (!restriction.bridge_ID) return
+
+    const today = new Date()
+    const threshold = new Date(today.getTime() + 90 * 24 * 60 * 60 * 1000)
+
+    const checks = [
+        { dateField: restriction.gazetteExpiryDate, alertType: 'GazetteExpiring',
+          titlePrefix: 'Gazette Expiring: ' },
+        { dateField: restriction.reviewDueDate,     alertType: 'RestrictionReviewDue',
+          titlePrefix: 'Review Due: ' }
+    ]
+
+    const ref = restriction.restrictionRef || restriction.restrictionCode || restriction.ID
+
+    for (const { dateField, alertType, titlePrefix } of checks) {
+        if (!dateField) continue
+        const date = new Date(dateField)
+        if (date > threshold) continue
+
+        const existing = await db.run(
+            SELECT.one.from('bridge.management.AlertsAndNotifications')
+                .columns('ID')
+                .where({ alertType, entityId: String(restriction.ID), status: 'Open' })
+        )
+        if (existing) continue
+
+        await db.run(
+            INSERT.into('bridge.management.AlertsAndNotifications').entries({
+                ID:               cds.utils.uuid(),
+                bridge_ID:        restriction.bridge_ID,
+                alertType,
+                entityType:       'Restriction',
+                entityId:         String(restriction.ID),
+                entityDescription: ref,
+                alertTitle:       titlePrefix + ref,
+                alertDescription: `${titlePrefix}${ref} — due ${dateField}`,
+                severity:         'High',
+                priority:         3,
+                triggeredDate:    new Date().toISOString(),
+                dueDate:          dateField,
+                status:           'Open'
+            })
+        )
+    }
 }

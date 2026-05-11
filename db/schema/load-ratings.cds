@@ -1,6 +1,7 @@
 namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
 using { bridge.management.Bridges } from './bridge-entity';
+using { bridge.management.RatingLevel } from './enum-types';
 
 entity LoadRatingCertificates : cuid, managed {
     bridge                  : Association to Bridges @mandatory;
@@ -9,7 +10,7 @@ entity LoadRatingCertificates : cuid, managed {
     status                  : String(20)  default 'Current';
 
     ratingStandard          : String(40)  @mandatory;
-    ratingLevel             : String(20)  @mandatory;
+    ratingLevel             : RatingLevel  @mandatory;
 
     certifyingEngineer      : String(111) @mandatory;
     engineerQualification   : String(20)  @mandatory;

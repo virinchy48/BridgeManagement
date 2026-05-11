@@ -1,7 +1,12 @@
 // Bridge Management System — DB Schema Barrel
 using { bridge.management.Bridges } from './schema/bridge-entity';
+using { bridge.management.LoadRatingVehicleClass, bridge.management.LoadRatingMethod } from './schema/enum-types';
+using { bridge.management.BridgeScourAssessmentDetail } from './schema/nhvr-compliance';
+using { bridge.management.BridgeScourAssessments } from './schema/scour-assessments';
 using from './schema/bridge-entity';
 using from './schema/types';
+using from './schema/enum-types';
+using from './schema/scour-assessments';
 using from './schema/core';
 using from './schema/restrictions';
 using from './schema/admin';
@@ -238,26 +243,6 @@ entity BridgeAttributes : cuid, managed {
   remarks             : LargeString;
 }
 
-entity BridgeScourAssessments : cuid, managed {
-  bridge                      : Association to Bridges;
-  assessmentDate              : Date;
-  assessmentType              : String(60);   // Visual Dive | GPR | Bathymetric | Sonar | Hydrologic
-  scourRisk                   : String(20);
-  measuredDepth               : Decimal(9,2);
-  floodImmunityAriYears       : Integer;
-  mitigationStatus            : String(60);
-  assessor                    : String(111);
-  inspectorAccreditationLevel : String(20);   // TfNSW-BIM §3.1: Level 1 | Level 2 | Level 3 | Level 4
-  nextReviewDate              : Date;
-  reportReference             : String(111);
-  // ── Austroads AP-G71.8 §3.1 & §4 fields ──────────────────────────────────
-  waterwayType                : String(40);   // River | Creek | Tidal | Drainage | Culvert
-  foundationType              : String(40);   // Pile | Spread Footing | Caisson | Rock | Pad
-  scourCountermeasureType     : String(50);   // None | Riprap | Sheet Pile | Caisson | Bed Grout | Combination
-  scourCountermeasureCondition : String(20);  // Good | Fair | Poor | Failed
-  remarks                     : LargeString;
-}
-
 entity BridgeDocuments : cuid, managed {
   bridge              : Association to Bridges;
   documentType        : String(60);
@@ -295,6 +280,13 @@ entity StructureTypes : sap.common.CodeList {
 
 entity DesignLoads : sap.common.CodeList {
   key code : String(40);
+}
+
+entity DefectCodes : managed {
+  key code            : String(10);
+  description         : String(200);
+  elementCategory     : String(40);
+  active              : Boolean default true;
 }
 
 entity PostingStatuses : sap.common.CodeList {
@@ -550,19 +542,6 @@ entity BridgeConditionSurveys : cuid, managed, ChangeTracked {
   overallGrade     : String(20);                             // Good | Satisfactory | Poor | Critical
   notes            : LargeString;
   status           : String(20) default 'Draft';             // Draft | Submitted | Approved
-}
-
-type LoadRatingVehicleClass : String enum {
-  T44    = 'T44';    SM1600 = 'SM1600'; HLP400 = 'HLP400';
-  W80    = 'W80';    A160   = 'A160';
-  PBS1   = 'PBS1';   PBS2   = 'PBS2';   PBS3   = 'PBS3';   PBS4   = 'PBS4';   PBS5 = 'PBS5';
-  HML    = 'HML';    CML    = 'CML';
-}
-
-type LoadRatingMethod : String enum {
-  AS5100      = 'AS 5100';
-  NAASRA      = 'NAASRA';
-  LoadTesting = 'Load Testing';
 }
 
 // ── LRT tile — per-vehicle-class load rating assessments ─────────────────────

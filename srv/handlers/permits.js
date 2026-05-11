@@ -12,7 +12,8 @@ module.exports = function registerPermitHandlers (srv, { logAudit }) {
                 SELECT.from('bridge.management.BridgePermits')
                     .columns('permitRef').orderBy('permitRef desc').limit(1)
             )
-            const seq = last?.permitRef ? parseInt(last.permitRef.replace('PM-', ''), 10) + 1 : 1
+            const m = last?.permitRef?.match(/^PM-(\d+)$/)
+            const seq = m ? parseInt(m[1], 10) + 1 : 1
             req.data.permitRef = `PM-${String(seq).padStart(4, '0')}`
             if (!req.data.status) req.data.status = 'Pending'
             if (req.data.active === undefined) req.data.active = true

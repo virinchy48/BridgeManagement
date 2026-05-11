@@ -9,6 +9,7 @@ service AdminService {
     action deactivate() returns Restrictions;
     action reactivate() returns Restrictions;
   };
+  @deprecated
   entity BridgeRestrictions as projection on my.BridgeRestrictions actions {
     action deactivate() returns BridgeRestrictions;
     action reactivate() returns BridgeRestrictions;
@@ -45,6 +46,7 @@ service AdminService {
     action deactivate() returns NhvrRouteAssessments;
     action reactivate() returns NhvrRouteAssessments;
   };
+  entity NhvrApprovedVehicleClasses as projection on my.NhvrApprovedVehicleClasses;
   // Alerts: Manager+Admin write; all read
   entity AlertsAndNotifications as projection on my.AlertsAndNotifications;
   entity BridgeInspectionElements as projection on my.BridgeInspectionElements;
@@ -56,7 +58,8 @@ service AdminService {
   @restrict: [
     { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
     { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
-    { grant: ['DELETE'],          to: [] }
+    { grant: ['DELETE'],          to: [] },
+    { grant: ['approveSurvey','rejectSurvey'], to: ['certify','admin'] }
   ]
   entity BridgeConditionSurveys as projection on my.BridgeConditionSurveys actions {
     action deactivate()       returns BridgeConditionSurveys;
@@ -79,14 +82,13 @@ service AdminService {
   @restrict: [
     { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
     { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
-    { grant: ['DELETE'],          to: [] }
+    { grant: ['DELETE'],          to: [] },
+    { grant: ['approve','rejectPermit'], to: ['certify','admin'] }
   ]
   entity BridgePermits as projection on my.BridgePermits actions {
     action deactivate() returns BridgePermits;
     action reactivate() returns BridgePermits;
-    @requires: ['certify','admin']
     action approve() returns BridgePermits;
-    @requires: ['certify','admin']
     action rejectPermit() returns BridgePermits;
   };
   entity AssetClasses as projection on my.AssetClasses;
@@ -114,7 +116,8 @@ service AdminService {
   entity FoundationTypes as projection on my.FoundationTypes;
   entity WaterwayTypes as projection on my.WaterwayTypes;
   entity FatigueDetailCategories as projection on my.FatigueDetailCategories;
-  entity GISConfig as projection on my.GISConfig;
+  @readonly entity DefectCodes as projection on my.DefectCodes;
+  entity GISConfig as projection on my.GISConfig excluding { hereApiKey };
   entity ReferenceLayerConfig as projection on my.ReferenceLayerConfig;
   @readonly entity ChangeLog as projection on my.ChangeLog;
 
@@ -135,4 +138,7 @@ service AdminService {
   // ── Demo Mode ────────────────────────────────────────────────────────────────
   action loadDemoData()  returns String;
   action clearDemoData() returns String;
+
+  @requires: ['admin', 'manage']
+  action refreshKPISnapshots() returns { snapshotDate: Date; statesProcessed: Integer; message: String };
 }
