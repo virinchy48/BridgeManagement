@@ -684,6 +684,26 @@ Applied: app/appconfig/fioriSandboxConfig.json — removed trailing comma
 Source: UAT testing — deactivate action returning 400
 Applied: Documented
 
+[2026-05-12] [BTP / xs-app.json] Learning: Every custom Express router path prefix must be explicitly listed in the `source` regex in `xs-app.json` BEFORE the catch-all `html5-apps-repo-rt` route. Without it, BTP approuter sends the request to html5-repo which returns HTML. Local dev works because all routes hit the same Express server without the approuter layer. Pattern: `"source": "^/?(bnac|system|audit|access|quality|mass-upload|mass-edit|admin-bridges|attributes)/(.*)$"`. Add every new router prefix here or BTP users get mysterious 404s.
+Source: BMS Admin #BmsAdmin-manage tile failing with "Failed to load UI5 component" on BTP — attributes API calls returning HTML
+Applied: app/bms-admin/xs-app.json — added `attributes` to route alternation
+
+[2026-05-12] [BTP / HANA HDI / hdbtabledata] Learning: The `mta.yaml` `before-all` hook runs `npx cds build --production` inside every `mbt build`, which wipes `gen/db/src/gen/data/`. Manually injecting a file into `gen/db/src/gen/data/` between CDS build and MBT build does NOT work because MBT re-runs CDS first. The ONLY reliable way to include a custom hdbtabledata is to create the corresponding seed CSV in `db/data/` so CDS generates the hdbtabledata naturally. Empty CSVs (header-only) are valid — CDS generates an hdbtabledata with those columns and 0 import rows.
+Source: Stale HANA HDI Restrictions artifact — multiple failed deploy attempts
+Applied: db/data/bridge.management-Restrictions.csv (minimal header-only: `ID,active`)
+
+[2026-05-12] [BTP / HANA HDI / CSV semicolons] Learning: Lookup CSVs that use `;` as delimiter AND have unquoted `;` within a text field cause HANA HDI to report "CSV record N has more than expected M fields". The fix is to re-write with Python `csv.writer(delimiter=';', quoting=QUOTE_MINIMAL)` using `line.split(';', ncols-1)` (split on first N-1 delimiters only), which properly double-quotes any field that contains `;`. Always run `python3 -c "import csv, glob; [check_csv(p) for p in glob.glob('db/data/bridge.management-*.csv')]"` after editing any semicolon-delimited CSV. Affected files in this session: bridge.management-DesignLoads.csv, bridge.management-StructureTypes.csv, bridge.management-VehicleClasses.csv.
+Source: BTP deploy failures after Restrictions fix revealed DesignLoads, StructureTypes, VehicleClasses had embedded semicolons
+Applied: All 3 CSVs rewritten with proper quoting
+
+[2026-05-12] [Mass Upload / templateOnly] Learning: Lookup datasets (States, Regions, BridgeTypes, etc.) added to the DATASETS array in `srv/mass-upload.js` for Excel workbook dropdown generation must be tagged `templateOnly: true` in the `lookupDataset()` helper. The `getDatasets()` function filters these out (`!dataset.templateOnly`) before returning the list to the UI. Without this, all 22 lookup entity datasets appear in the Upload dropdown alongside the user-facing datasets (Bridges, Restrictions, etc.), making the dropdown unusable.
+Source: MassUpload UI showing 22+ lookup datasets in dropdown
+Applied: srv/mass-upload.js — templateOnly flag + filter in getDatasets()
+
+[2026-05-12] [Fiori / Bridge Details] Learning: To remove a tab from Fiori Elements Bridge Details ObjectPage, delete its `CollectionFacet` block from `Bridges @UI.Facets` in `app/admin-bridges/fiori-service.cds`. Also remove any orphaned `DataPoint#XxxScore` annotations that were only referenced from that CollectionFacet — orphaned DataPoints don't cause compile errors but add dead weight. The removed tab's entity-level annotations (standalone ListReport config) should be left intact.
+Source: Remove Risk Intelligence (AssetIQ) tab from Bridge Details per user request
+Applied: app/admin-bridges/fiori-service.cds — removed T6 CollectionFacet + orphaned DataPoint#AssetIQScore
+
 ---
 
 ## Contributing to this file
