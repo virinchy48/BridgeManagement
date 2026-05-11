@@ -3,17 +3,23 @@ const cds = require('@sap/cds')
 
 module.exports = function registerLoadRatingHandlers (srv, { logAudit }) {
 
-    srv.before('CREATE', 'BridgeLoadRatings', async req => {
+    srv.before(['CREATE', 'UPDATE'], 'BridgeLoadRatings', async req => {
         const db = await cds.connect.to('db')
-        // Auto-generate ratingRef (LR-NNNN)
-        const [last] = await db.run(
-            SELECT.from('bridge.management.BridgeLoadRatings')
-                .columns('ratingRef').orderBy('ratingRef desc').limit(1)
-        )
-        const seq = last?.ratingRef ? parseInt(last.ratingRef.replace('LR-', ''), 10) + 1 : 1
-        req.data.ratingRef = `LR-${String(seq).padStart(4, '0')}`
 
-        // Resolve bridge_ID from bridgeRef (bridge's bridgeId)
+        if (req.event === 'CREATE') {
+            // Auto-generate ratingRef (LR-NNNN) once at creation
+            const [last] = await db.run(
+                SELECT.from('bridge.management.BridgeLoadRatings')
+                    .columns('ratingRef').orderBy('ratingRef desc').limit(1)
+            )
+            const seq = last?.ratingRef ? parseInt(last.ratingRef.replace('LR-', ''), 10) + 1 : 1
+            req.data.ratingRef = `LR-${String(seq).padStart(4, '0')}`
+            if (!req.data.status) req.data.status = 'Active'
+            if (req.data.active === undefined) req.data.active = true
+        }
+
+        // Resolve bridge_ID from bridgeRef on CREATE and UPDATE so that
+        // FE4 draft edits (PATCH after initial create) carry bridge_ID correctly
         if (req.data.bridgeRef && !req.data.bridge_ID) {
             const bridge = await db.run(
                 SELECT.one.from('bridge.management.Bridges')
@@ -21,9 +27,6 @@ module.exports = function registerLoadRatingHandlers (srv, { logAudit }) {
             )
             if (bridge) req.data.bridge_ID = bridge.ID
         }
-
-        if (!req.data.status) req.data.status = 'Active'
-        if (req.data.active === undefined) req.data.active = true
     })
 
     srv.after(['CREATE', 'UPDATE'], 'BridgeLoadRatings', async (data, req) => {

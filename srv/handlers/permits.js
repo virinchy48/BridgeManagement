@@ -3,17 +3,23 @@ const cds = require('@sap/cds')
 
 module.exports = function registerPermitHandlers (srv, { logAudit }) {
 
-    srv.before('CREATE', 'BridgePermits', async req => {
+    srv.before(['CREATE', 'UPDATE'], 'BridgePermits', async req => {
         const db = await cds.connect.to('db')
-        // Auto-generate permitRef (PM-NNNN)
-        const [last] = await db.run(
-            SELECT.from('bridge.management.BridgePermits')
-                .columns('permitRef').orderBy('permitRef desc').limit(1)
-        )
-        const seq = last?.permitRef ? parseInt(last.permitRef.replace('PM-', ''), 10) + 1 : 1
-        req.data.permitRef = `PM-${String(seq).padStart(4, '0')}`
 
-        // Resolve bridge_ID from bridgeRef (bridge's bridgeId)
+        if (req.event === 'CREATE') {
+            // Auto-generate permitRef (PM-NNNN) once at creation
+            const [last] = await db.run(
+                SELECT.from('bridge.management.BridgePermits')
+                    .columns('permitRef').orderBy('permitRef desc').limit(1)
+            )
+            const seq = last?.permitRef ? parseInt(last.permitRef.replace('PM-', ''), 10) + 1 : 1
+            req.data.permitRef = `PM-${String(seq).padStart(4, '0')}`
+            if (!req.data.status) req.data.status = 'Pending'
+            if (req.data.active === undefined) req.data.active = true
+        }
+
+        // Resolve bridge_ID from bridgeRef on CREATE and UPDATE so that
+        // FE4 draft edits (PATCH after initial create) carry bridge_ID correctly
         if (req.data.bridgeRef && !req.data.bridge_ID) {
             const bridge = await db.run(
                 SELECT.one.from('bridge.management.Bridges')
@@ -21,9 +27,6 @@ module.exports = function registerPermitHandlers (srv, { logAudit }) {
             )
             if (bridge) req.data.bridge_ID = bridge.ID
         }
-
-        if (!req.data.status) req.data.status = 'Pending'
-        if (req.data.active === undefined) req.data.active = true
     })
 
     srv.after(['CREATE', 'UPDATE'], 'BridgePermits', async (data, req) => {

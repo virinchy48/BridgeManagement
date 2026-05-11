@@ -2,11 +2,20 @@ const cds = require('@sap/cds')
 
 module.exports = function registerDefectHandlers (srv) {
 
-    srv.before('CREATE', 'BridgeDefects', req => {
+    srv.before('CREATE', 'BridgeDefects', async req => {
+        const db = await cds.connect.to('db')
         const d = req.data
+
+        // Auto-generate defectId (DEF-NNNN) if not supplied
         if (!d.defectId) {
-            req.error(400, 'defectId is required')
+            const [last] = await db.run(
+                SELECT.from('bridge.management.BridgeDefects')
+                    .columns('defectId').orderBy('defectId desc').limit(1)
+            )
+            const seq = last?.defectId ? parseInt(last.defectId.replace('DEF-', ''), 10) + 1 : 1
+            d.defectId = `DEF-${String(seq).padStart(4, '0')}`
         }
+
         if (d.severity === 1 || d.urgency === 1) {
             d.remediationStatus = d.remediationStatus || 'Open'
         }

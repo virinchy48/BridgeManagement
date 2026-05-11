@@ -3,17 +3,23 @@ const cds = require('@sap/cds')
 
 module.exports = function registerConditionHandlers (srv, { logAudit }) {
 
-    srv.before('CREATE', 'BridgeConditionSurveys', async req => {
+    srv.before(['CREATE', 'UPDATE'], 'BridgeConditionSurveys', async req => {
         const db = await cds.connect.to('db')
-        // Auto-generate surveyRef (CS-NNNN)
-        const [last] = await db.run(
-            SELECT.from('bridge.management.BridgeConditionSurveys')
-                .columns('surveyRef').orderBy('surveyRef desc').limit(1)
-        )
-        const seq = last?.surveyRef ? parseInt(last.surveyRef.replace('CS-', ''), 10) + 1 : 1
-        req.data.surveyRef = `CS-${String(seq).padStart(4, '0')}`
 
-        // Resolve bridge_ID from bridgeRef (bridge's bridgeId)
+        if (req.event === 'CREATE') {
+            // Auto-generate surveyRef (CS-NNNN) once at creation
+            const [last] = await db.run(
+                SELECT.from('bridge.management.BridgeConditionSurveys')
+                    .columns('surveyRef').orderBy('surveyRef desc').limit(1)
+            )
+            const seq = last?.surveyRef ? parseInt(last.surveyRef.replace('CS-', ''), 10) + 1 : 1
+            req.data.surveyRef = `CS-${String(seq).padStart(4, '0')}`
+            if (!req.data.status) req.data.status = 'Draft'
+            if (req.data.active === undefined) req.data.active = true
+        }
+
+        // Resolve bridge_ID from bridgeRef on CREATE and UPDATE so that
+        // FE4 draft edits (PATCH after initial create) carry bridge_ID correctly
         if (req.data.bridgeRef && !req.data.bridge_ID) {
             const bridge = await db.run(
                 SELECT.one.from('bridge.management.Bridges')
@@ -21,9 +27,6 @@ module.exports = function registerConditionHandlers (srv, { logAudit }) {
             )
             if (bridge) req.data.bridge_ID = bridge.ID
         }
-
-        if (!req.data.status) req.data.status = 'Draft'
-        if (req.data.active === undefined) req.data.active = true
     })
 
     srv.after(['CREATE', 'UPDATE'], 'BridgeConditionSurveys', async (data, req) => {
