@@ -539,7 +539,7 @@ annotate AdminService.Bridges with {
       { $Type: 'Common.ValueListParameterOut', LocalDataProperty: pbsApprovalClass, ValueListProperty: 'code' },
       { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
     ]}
-  ) @title: 'PBS Approval Class';
+  ) @title: 'PBS Approval Class'  @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Maintained via NHVR Route Assessments tile';
 
   // Restriction value help
   restriction @(Common: {
@@ -585,10 +585,10 @@ annotate AdminService.Bridges with {
   heavyVehiclePercent    @title: 'Heavy Vehicle Percentage (%)';
   freightRoute           @title: 'Freight Route';
   overMassRoute          @title: 'Over Mass Route';
-  hmlApproved            @title: 'HML Approved';
+  hmlApproved            @Common.FieldControl: #ReadOnly  @title: 'HML Approved'           @Common.QuickInfo: 'Maintained via NHVR Route Assessments tile';
   bDoubleApproved        @title: 'B-Double Approved';
-  nhvrAssessed           @title: 'NHVR Assessed';
-  nhvrAssessmentDate     @title: 'NHVR Assessment Date';
+  nhvrAssessed           @Common.FieldControl: #ReadOnly  @title: 'NHVR Assessed'          @Common.QuickInfo: 'Maintained via NHVR Route Assessments tile';
+  nhvrAssessmentDate     @Common.FieldControl: #ReadOnly  @title: 'NHVR Assessment Date'   @Common.QuickInfo: 'Maintained via NHVR Route Assessments tile';
   gazetteReference       @title: 'Gazette Reference';
   nhvrReferenceUrl       @title: 'NHVR Reference URL'  @UI.IsURL;
   dataSource             @title: 'Data Source';
@@ -662,10 +662,10 @@ annotate AdminService.Bridges with {
   ) @title: 'Waterway Type'  @Common.QuickInfo: 'Austroads AP-G71.8 §3.1 — determines scour risk methodology';
 
   // ── NHVR Approval Dates (NHVR-HVNL §§100–104) ───────────────────────────
-  pbsApprovalDate    @title: 'PBS Approval Date';
-  pbsApprovalExpiry  @title: 'PBS Approval Expiry'  @Common.QuickInfo: 'Alert generated 30/60/90 days before expiry';
-  hmlApprovalDate    @title: 'HML Approval Date';
-  hmlApprovalExpiry  @title: 'HML Approval Expiry'  @Common.QuickInfo: 'Alert generated 30/60/90 days before expiry';
+  pbsApprovalDate    @Common.FieldControl: #ReadOnly  @title: 'PBS Approval Date'    @Common.QuickInfo: 'Maintained via NHVR Route Assessments tile';
+  pbsApprovalExpiry  @Common.FieldControl: #ReadOnly  @title: 'PBS Approval Expiry'  @Common.QuickInfo: 'Alert generated 30/60/90 days before expiry — maintained via NHVR Route Assessments tile';
+  hmlApprovalDate    @Common.FieldControl: #ReadOnly  @title: 'HML Approval Date'    @Common.QuickInfo: 'Maintained via NHVR Route Assessments tile';
+  hmlApprovalExpiry  @Common.FieldControl: #ReadOnly  @title: 'HML Approval Expiry'  @Common.QuickInfo: 'Alert generated 30/60/90 days before expiry — maintained via NHVR Route Assessments tile';
 
   // ── Gazette & Legal (Roads Act 1993 NSW §§121–124) ───────────────────────
   gazetteEffectiveDate  @title: 'Gazette Effective Date'  @Common.QuickInfo: 'Date gazette order came into effect — Roads Act 1993 §122';

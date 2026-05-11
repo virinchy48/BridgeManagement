@@ -72,6 +72,7 @@
                            (bridgeLocation.bridgeId || "") + " \u00b7 " + (bridgeLocation.state || "") + "</small>")
                 .addTo(map);
             map.setView([lat, lng], 14);
+            setTimeout(function () { if (_map) _map.invalidateSize(); }, 300);
             _map = map;
         });
     }
