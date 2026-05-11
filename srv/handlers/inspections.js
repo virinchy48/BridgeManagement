@@ -16,6 +16,29 @@ module.exports = function registerInspectionHandlers (srv, { logAudit }) {
             const seq = last?.inspectionRef ? parseInt(last.inspectionRef.replace('INS-', ''), 10) + 1 : 1
             req.data.inspectionRef = `INS-${String(seq).padStart(4, '0')}`
         }
+
+        const restrictedTypes = ['Principal', 'Detailed']
+        if (restrictedTypes.includes(req.data.inspectionType)) {
+            const level = req.data.inspectorAccreditationLevel
+            const allowed = ['Level 3', 'Level 4']
+            if (level && !allowed.includes(level)) {
+                return req.error(422, `${req.data.inspectionType} inspections require Level 3 or Level 4 accreditation (current: ${level})`)
+            }
+        }
+    })
+
+    srv.before(['CREATE', 'UPDATE'], 'BridgeInspectionElements', req => {
+        const d = req.data
+        const cs1 = d.conditionState1Qty ?? 0
+        const cs2 = d.conditionState2Qty ?? 0
+        const cs3 = d.conditionState3Qty ?? 0
+        const cs4 = d.conditionState4Qty ?? 0
+        const total = cs1 + cs2 + cs3 + cs4
+        if (total > 0) {
+            d.elementHealthRating = Math.round(
+                ((cs1 * 1 + cs2 * 2 + cs3 * 3 + cs4 * 4) / total) * 100
+            ) / 100
+        }
     })
 
     srv.after(['CREATE', 'UPDATE'], 'BridgeInspections', async (data, req) => {

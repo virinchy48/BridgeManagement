@@ -13,3 +13,7 @@ a1000000-0000-0000-0000-000000000011,Posting Status Missing,Missing Data,warning
 a1000000-0000-0000-0000-000000000012,Structure Type Missing,Missing Data,info,required_field,structureType,,Structure type is missing,true,120,5
 a1000000-0000-0000-0000-000000000013,Year Built Missing,Missing Data,info,required_field,yearBuilt,,Year built is missing,true,130,5
 a1000000-0000-0000-0000-000000000014,Freight Route Without NHVR Assessment,NHVR Assessment,warning,freight_requires_nhvr,,,Bridge is on a freight route but NHVR assessment has not been completed,true,140,15
+a1000000-0000-0000-0000-000000000015,Condition Rating Not Recorded,Missing Data,critical,required_field,conditionRating,,Bridge has no condition rating recorded,true,150,30
+a1000000-0000-0000-0000-000000000016,Inspection Overdue (5 Years),Stale Inspection,critical,not_older_than_days,lastInspectionDate,"{""days"":1825}",No inspection in the past 5 years (TfNSW-BIM §4.2),true,160,35
+a1000000-0000-0000-0000-000000000017,GPS Coordinates Missing,Missing Location Data,warning,required_field,latitude,,Bridge has no GPS coordinates — cannot appear on map,true,170,20
+a1000000-0000-0000-0000-000000000018,Coordinates Outside Australia,Invalid Location Data,warning,coordinates_in_australia,,"[{""field"":""latitude"",""min"":-44,""max"":-10},{""field"":""longitude"",""min"":112,""max"":154}]",Coordinates appear to be outside Australia,true,180,15

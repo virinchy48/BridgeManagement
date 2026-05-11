@@ -12,17 +12,30 @@ module.exports = function registerRiskAssessmentHandlers (srv, { logAudit }) {
                 SELECT.from('bridge.management.BridgeRiskAssessments')
                     .columns('assessmentId').orderBy('assessmentId desc').limit(1)
             )
-            const seq = last?.assessmentId ? parseInt(last.assessmentId.replace('RSK-', ''), 10) + 1 : 1
+            const m = last?.assessmentId?.match(/^RSK-(\d+)$/)
+            const seq = m ? parseInt(m[1], 10) + 1 : 1
             d.assessmentId = `RSK-${String(seq).padStart(4, '0')}`
         }
 
         if (req.event === 'CREATE' && d.active === undefined) d.active = true
 
-        if (d.likelihood && d.consequence) {
-            d.inherentRiskScore = d.likelihood * d.consequence
+        const likelihood = d.likelihood ?? null
+        const consequence = d.consequence ?? null
+        if (likelihood !== null && consequence !== null) {
+            d.inherentRiskScore = likelihood * consequence
             d.inherentRiskLevel = scoreToLevel(d.inherentRiskScore)
+        } else if (req.event === 'UPDATE' && (likelihood !== null || consequence !== null)) {
+            const existing = await db.run(
+                SELECT.one.from('bridge.management.BridgeRiskAssessments')
+                    .columns('likelihood', 'consequence').where({ ID: d.ID })
+            )
+            const l = likelihood ?? existing?.likelihood
+            const c = consequence ?? existing?.consequence
+            if (l && c) {
+                d.inherentRiskScore = l * c
+                d.inherentRiskLevel = scoreToLevel(d.inherentRiskScore)
+            }
         }
-        // Do NOT auto-set residualRiskScore — it must be an explicit engineering input
     })
 
     srv.after(['CREATE', 'UPDATE'], 'BridgeRiskAssessments', async (data, req) => {

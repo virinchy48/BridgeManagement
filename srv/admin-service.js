@@ -951,6 +951,17 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     return db.run(SELECT.one.from('bridge.management.BridgeInspections').where({ ID }))
   })
 
+  // ── BridgeInspectionElements — resolve bridge_ID from linked inspection ──
+  this.before(['CREATE', 'UPDATE'], 'BridgeInspectionElements', async (req) => {
+    if (!req.data.inspection_ID || req.data.bridge_ID) return
+    const db = await cds.connect.to('db')
+    const insp = await db.run(
+      SELECT.one.from('bridge.management.BridgeInspections')
+        .columns('bridge_ID').where({ ID: req.data.inspection_ID })
+    )
+    if (insp?.bridge_ID) req.data.bridge_ID = insp.bridge_ID
+  })
+
   // ── BridgeDefects ─────────────────────────────────────────────────────────
   this.before('NEW', BridgeDefects.drafts, async (req) => {
     if (!req.data.defectId) {
@@ -1183,6 +1194,11 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (survey.status !== 'Submitted')
       return req.error(422, `Cannot approve survey in status "${survey.status}" — only Submitted surveys can be approved`)
     await db.run(UPDATE('bridge.management.BridgeConditionSurveys').set({ status: 'Approved' }).where({ ID }))
+    if (survey.conditionRating && survey.bridge_ID) {
+      await db.run(UPDATE('bridge.management.Bridges')
+        .set({ conditionRating: survey.conditionRating })
+        .where({ ID: survey.bridge_ID }))
+    }
     await writeChangeLogs(db, {
       objectType: 'ConditionSurvey', objectId: ID, objectName: survey.surveyRef || ID,
       source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
@@ -1419,6 +1435,104 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       changedBy:   req.user?.id || 'system',
       changes
     })
+  })
+
+  this.after(['CREATE', 'UPDATE'], BridgeScourAssessments, async (data, req) => {
+    if (!data?.bridge_ID || !data?.scourRisk) return
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.Bridges')
+      .set({ scourRisk: data.scourRisk })
+      .where({ ID: data.bridge_ID }))
+  })
+
+  this.after(['CREATE', 'UPDATE'], NhvrRouteAssessments, async (data, req) => {
+    if (!data?.bridge_ID || data?.assessmentStatus !== 'Current') return
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.Bridges')
+      .set({ nhvrAssessed: true, nhvrAssessmentDate: data.assessmentDate })
+      .where({ ID: data.bridge_ID }))
+  })
+
+  this.on('refreshKPISnapshots', async req => {
+    const db = await cds.connect.to('db')
+    const today = new Date().toISOString().slice(0, 10)
+    const ninetyDaysOut = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    const fiveYearsAgo = new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
+
+    const states = await db.run(
+      SELECT.from('bridge.management.Bridges').columns('state').where({ isActive: true })
+    )
+    const distinctStates = [...new Set(states.map(s => s.state).filter(Boolean)), 'ALL']
+
+    let statesProcessed = 0
+    for (const state of distinctStates) {
+      const filter = state === 'ALL' ? { isActive: true } : { isActive: true, state }
+
+      const [totals] = await db.run(
+        SELECT.from('bridge.management.Bridges')
+          .columns(
+            'count(1) as totalBridges',
+            'sum(case when conditionRating <= 3 then 1 else 0 end) as criticalCondition',
+            'sum(case when highPriorityAsset = true then 1 else 0 end) as highPriority',
+            'avg(conditionRating) as avgConditionRating'
+          ).where(filter)
+      )
+
+      const [overdueResult] = await db.run(
+        SELECT.from('bridge.management.Bridges')
+          .columns('count(1) as cnt')
+          .where({ ...filter, lastInspectionDate: { '<=': fiveYearsAgo } })
+      )
+
+      const [restrictionResult] = await db.run(
+        SELECT.from('bridge.management.Restrictions')
+          .columns('count(1) as cnt')
+          .where({ active: true, ...(state !== 'ALL' ? { 'bridge.state': state } : {}) })
+      )
+
+      const [alertResult] = await db.run(
+        SELECT.from('bridge.management.AlertsAndNotifications')
+          .columns('count(1) as cnt')
+          .where({ active: true, status: 'Open' })
+      )
+
+      const [lrcResult] = await db.run(
+        SELECT.from('bridge.management.LoadRatingCertificates')
+          .columns('count(1) as cnt')
+          .where({ active: true, expiryDate: { '<=': ninetyDaysOut } })
+      )
+
+      const snapshot = {
+        snapshotDate: today,
+        snapshotType: 'Daily',
+        state,
+        totalBridges: totals?.totalBridges || 0,
+        activeBridges: totals?.totalBridges || 0,
+        criticalCondition: totals?.criticalCondition || 0,
+        highPriority: totals?.highPriority || 0,
+        overdueInspections: overdueResult?.cnt || 0,
+        activeRestrictions: restrictionResult?.cnt || 0,
+        openAlerts: alertResult?.cnt || 0,
+        avgConditionRating: totals?.avgConditionRating ? Math.round(totals.avgConditionRating * 100) / 100 : null,
+        highRiskCount: 0,
+        lrcExpiringCount: lrcResult?.cnt || 0,
+        nhvrExpiringCount: 0
+      }
+
+      const existing = await db.run(
+        SELECT.one.from('bridge.management.KPISnapshots')
+          .where({ snapshotDate: today, snapshotType: 'Daily', state })
+      )
+      if (existing) {
+        await db.run(UPDATE('bridge.management.KPISnapshots').set(snapshot)
+          .where({ snapshotDate: today, snapshotType: 'Daily', state }))
+      } else {
+        await db.run(INSERT.into('bridge.management.KPISnapshots').entries(snapshot))
+      }
+      statesProcessed++
+    }
+
+    return { snapshotDate: today, statesProcessed, message: `KPI snapshot refreshed for ${statesProcessed} states` }
   })
 
   return super.init()

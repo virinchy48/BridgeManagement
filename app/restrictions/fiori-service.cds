@@ -116,7 +116,16 @@ annotate AdminService.Restrictions with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Enforcement',         Target: '@UI.FieldGroup#RstEnforcement'},
         ]
       },
-      // ── Tab 4: Notes ─────────────────────────────────────────────────────
+      // ── Tab 4: Sub-Restrictions ───────────────────────────────────────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Sub-Restrictions',
+        ID    : 'RstChildren',
+        Facets: [
+          { $Type: 'UI.ReferenceFacet', Label: 'Child Restrictions', Target: 'children/@UI.LineItem' }
+        ]
+      },
+      // ── Tab 5: Notes ─────────────────────────────────────────────────────
       {$Type: 'UI.ReferenceFacet', Label: 'Notes', Target: '@UI.FieldGroup#RstNotes'},
     ],
 

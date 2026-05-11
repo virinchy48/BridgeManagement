@@ -936,7 +936,7 @@ async function validateUpload({ buffer, fileName, datasetName }) {
     previewTitle: `Parsed ${totalCount} row(s) - showing the first ${Math.min(totalCount, 10)}.`,
     previewColumns: previewColumns.map((column) => column.label),
     previewRows: previewRows.slice(0, 10),
-    previewTruncated: totalCount > 10,
+    previewTruncated: errorCount > 10,
     message: buildValidationMessage(totalCount, validCount, warningCount, errorCount)
   }
 }

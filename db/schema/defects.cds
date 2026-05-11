@@ -2,6 +2,8 @@ namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
 using { bridge.management.Bridges } from './bridge-entity';
 using { bridge.management.BridgeElements } from './elements';
+using { bridge.management.InspectionStandard } from './enum-types';
+using { bridge.management.BridgeInspectionElements } from './gap-entities';
 
 // Inspection capture record — S/4 EAM owns scheduling; this captures the event data
 entity BridgeInspections : cuid, managed {
@@ -17,7 +19,7 @@ entity BridgeInspections : cuid, managed {
     qualificationExpiry          : Date;
 
     inspectionScope              : String(500);
-    inspectionStandard           : String(60);
+    inspectionStandard           : InspectionStandard;
     weatherConditions            : String(200);
     accessibilityIssues          : String(500);
 
@@ -34,6 +36,8 @@ entity BridgeInspections : cuid, managed {
     nextInspectionRecommended    : Date;
 
     active                       : Boolean default true;
+    defects                      : Association to many BridgeDefects           on defects.inspection           = $self;
+    inspectionElements           : Association to many BridgeInspectionElements on inspectionElements.inspection = $self;
 }
 
 // Defect capture — inspection link is optional (standalone defects allowed)

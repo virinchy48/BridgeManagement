@@ -12,7 +12,8 @@ module.exports = function registerConditionHandlers (srv, { logAudit }) {
                 SELECT.from('bridge.management.BridgeConditionSurveys')
                     .columns('surveyRef').orderBy('surveyRef desc').limit(1)
             )
-            const seq = last?.surveyRef ? parseInt(last.surveyRef.replace('CS-', ''), 10) + 1 : 1
+            const m = last?.surveyRef?.match(/^CS-(\d+)$/)
+            const seq = m ? parseInt(m[1], 10) + 1 : 1
             req.data.surveyRef = `CS-${String(seq).padStart(4, '0')}`
             if (!req.data.status) req.data.status = 'Draft'
             if (req.data.active === undefined) req.data.active = true
