@@ -424,6 +424,36 @@ Was originally annotated with only `@UI.LineItem` and `@UI.HeaderInfo`. Missing:
 - **FE4 `before('CREATE')` fires with empty body** when user clicks "Create" in a ListReport — NOT when they save. If a handler calls `req.error()` on a missing field at this point, it blocks every create attempt. Never block on empty required fields in `before('CREATE')` — auto-generate or default them instead.
 - **bridge_ID from bridgeRef must be resolved on BOTH CREATE and UPDATE.** User fills `bridgeRef` via FE4 draft PATCH (UPDATE), not during the initial empty CREATE. If the handler only runs `bridge_ID` resolution on `before('CREATE')`, the resolved UUID is never written → record saves with null `bridge_ID` → invisible in bridge-filtered list reports. Fix: `before(['CREATE', 'UPDATE'])` with resolution logic running on both; ref auto-gen guarded to `if (req.event === 'CREATE')`.
 
+### AdminService vs BridgeManagementService handler isolation (May 2026)
+- **AdminService (`srv/admin-service.js`) and BridgeManagementService (`srv/service.js`) are entirely separate CAP service instances.** Handlers registered on one service do NOT fire for the other, even when they project the same underlying DB entities (`bridge.management.*`). Any entity exposed through AdminService that needs lifecycle logic (deactivate/reactivate, auto-ref, virtual fields) must have that logic implemented directly in `admin-service.js`.
+- **Bound actions declared in `srv/services/*.cds` only fire on BridgeManagementService.** Adding `action deactivate()` to a service definition file (e.g. `srv/services/inspections.cds`) does NOT make that action available on AdminService's projection of the same entity. You must also declare the action in `srv/admin-service.cds` AND implement the handler in `srv/admin-service.js`.
+- **Pattern for adding deactivate/reactivate to an AdminService entity**: (1) add `actions { action deactivate() returns X; action reactivate() returns X; }` to the entity projection in `srv/admin-service.cds`; (2) add `this.on('deactivate', Entity, ...)` and `this.on('reactivate', Entity, ...)` handlers in `srv/admin-service.js`; (3) add `this.before('NEW', Entity.drafts, ...)` for auto-ref generation if needed.
+- **Virtual fields after READ must also be computed in admin-service.js.** `reviewCriticality` on Restrictions was only computed in `handlers/restrictions.js` (BridgeManagementService). AdminService callers saw `null`. Fix: duplicate the `after('READ', Restrictions, ...)` computation in `admin-service.js`. The virtual field must also be declared in `db/schema.cds` for CDS to serialise it in OData responses.
+
+### Composition vs Association for standalone CRUD (May 2026)
+- **`Composition of many` under a draft-enabled root entity blocks standalone CRUD.** CAP enforces "a draft-enabled entity can only be modified via its root entity" — any `Composition of many` child of a draft-enabled parent requires all writes to go through the parent's draft context. Standalone ListReport Create buttons return HTTP 400/403 with this message.
+- **Fix: change `Composition of many` → `Association to many` for entities that need standalone CRUD.** The DB FK column (`bridge_ID`) is unchanged — only the OData composition semantics change. The entity loses draft capability (it becomes a plain CRUD entity, no draftActivate flow). Applied to: `BridgeScourAssessmentDetail` and `BridgeElements`.
+- **Entities changed to Association become non-draft.** Their CRUD uses plain `POST /Entity` (no draftActivate step). Do not add `@odata.draft.enabled` to them individually — that reintroduces the composition constraint via a different path. If draft is required, keep them as Composition children and only create/edit them through the parent Bridge object page.
+
+### Auto-ref sequence generation — NaN protection (May 2026)
+- **Use regex match, not string replace, for auto-ref sequence extraction.** `last.defectId.replace('DEF-', '')` returns `""` when defectId is `""` or contains unexpected content, and `parseInt("", 10) = NaN` → sequence becomes `NaN` → generates `DEF-0NaN`. Fix: `const m = last?.defectId?.match(/^DEF-(\d+)$/); const seq = m ? parseInt(m[1], 10) + 1 : 1`. Same pattern for RSK-NNNN, CS-NNNN, LR-NNNN, PM-NNNN — always use named regex capture groups to extract the numeric part.
+- **`before('NEW', Entity.drafts, ...)` is the correct hook for auto-ref on draft entities.** `before('CREATE')` fires after draft activation, not on initial draft creation. Using `before('NEW', Entity.drafts)` fires when FE4 creates the empty draft (the first POST), ensuring the ref is generated before any PATCH updates the record.
+
+### AttributeValues EAV format (May 2026)
+- **`AttributeValues` is a simple EAV table** — fields: `objectType: "Bridge"`, `objectId: "1"` (string, bridge integer PK), `attributeKey: "SEISMIC_ZONE"` (matches AttributeDefinitions.internalKey), `valueText: "Zone A"`. NOT a bridge_ID (UUID) + definition_ID (UUID) FK structure. Do not attempt to use UUID FK joins — use string key lookups.
+- **`AttributeAllowedValues` FK is `attribute_ID`** (the CAP-generated FK for the `attribute: Association to AttributeDefinitions` field), NOT `definition_ID`. Passing `definition_ID` causes HTTP 400 "Property not found".
+- **`AttributeGroups` has a NOT NULL `internalKey` field** — always provide it on CREATE. Omitting it causes HTTP 500 from the SQLite NOT NULL constraint. Pattern: use an uppercase snake-case key like `"SEISMIC_DATA"`.
+- **`AttributeValues` was incorrectly marked `@readonly` in admin-service.cds** — removed. Any entity in AdminService that needs write access must NOT have the `@readonly` annotation, even if the underlying CAP entity has no write restrictions.
+
+### Correct field names — critical reference (May 2026)
+- **BridgeCapacities**: `capacityType` (not `vehicleType`), `engineeringNotes` (not `notes`), `effectiveFrom` is `@assert.mandatory` (draftActivate fails without it)
+- **BridgeElements**: `elementQuantity` (not `quantity`), `yearConstructed` (not `yearInstalled`), `currentConditionRating: Integer [1,5]` (not `currentConditionState`)
+- **Restrictions**: `appliesToVehicleClass` (not `vehicleType`), `grossMassLimit` (not `massLimit`), `approvedBy` (not `authorisedBy`), use `restrictionValue + restrictionUnit` string fields
+- **BridgeRiskAssessments**: `existingControls` (not `controlMeasures`), `treatmentActions` (not `treatmentPlan`), `reviewDueDate` (not `nextReviewDate`)
+- **NhvrRouteAssessments**: `assessmentStatus` field (not `status`), deactivate sets it to `'Superseded'`
+- **LoadRatingCertificates**: deactivate sets `status = 'Superseded'`
+- **BridgeLoadRatings**: no `notes` field; use `governingMember` for update tests
+
 ---
 
 ## Contributing to this file
