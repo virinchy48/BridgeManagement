@@ -126,17 +126,19 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Environmental Context', Target: '@UI.FieldGroup#SiteContext'},
         ]
       },
-      // ── T4: Condition & Inspection ────────────────────────────────────────
-      // Read-only section = updated by Inspect Now workflow only
-      // Editable section = manager-set inspection configuration
+      // ── T4: Inspection Status ─────────────────────────────────────────────
+      // "Current Condition" = read-only snapshot set by Inspect Now workflow
+      // "Inspection Schedule" = editable bridge-level manager config
+      // "Environmental & Risk Flags" = editable bridge-level attributes only
+      // Scour risk/depth live exclusively in the BridgeScourAssessments tile
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Condition & Inspection',
+        Label : 'Inspection Status',
         ID    : 'ConditionInspection',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Last Inspection Results',   Target: '@UI.FieldGroup#LastInspectionResults'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Resilience',         Target: '@UI.FieldGroup#RiskResilience'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Configuration',  Target: '@UI.FieldGroup#InspectionConfig'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Current Condition',          Target: '@UI.FieldGroup#LastInspectionResults'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Environmental & Risk Flags', Target: '@UI.FieldGroup#EnvRisk'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Schedule',        Target: '@UI.FieldGroup#InspectionConfig'},
         ]
       },
       // ── T5: Traffic & NHVR ───────────────────────────────────────────────
@@ -264,7 +266,7 @@ annotate AdminService.Bridges with @(
     // They are populated exclusively by the "Inspect Now" (CaptureCondition) workflow.
     // @Core.Computed annotations applied via field-level annotate block below.
     FieldGroup#LastInspectionResults: {
-      Label: 'Last Inspection Results — updated via Inspect Now only',
+      Label: 'Current Condition',
       Data: [
         {Value: conditionRating,          Label: 'Condition Rating (1–10)'},
         {Value: condition,                Label: 'Condition Grade'},
@@ -278,11 +280,10 @@ annotate AdminService.Bridges with @(
         {Value: conditionNotes,           Label: 'Condition Notes'},
       ]
     },
-    FieldGroup#RiskResilience: {
-      Label: 'Risk & Resilience',
+    // scourRisk + scourDepthLastMeasured removed — authoritative source is BridgeScourAssessments tile
+    FieldGroup#EnvRisk: {
+      Label: 'Environmental & Risk Flags',
       Data: [
-        {Value: scourRisk,              Label: 'Scour Risk Level'},
-        {Value: scourDepthLastMeasured, Label: 'Scour Depth Last Measured (m)'},
         {Value: floodImmunityAriYears,  Label: 'Flood Immunity ARI (years)'},
         {Value: floodImpacted,          Label: 'Flood Impacted'},
         {Value: deficiencyComments,     Label: 'Deficiency Comments'},
@@ -291,7 +292,7 @@ annotate AdminService.Bridges with @(
     },
     // Editable — manager-set inspection schedule configuration
     FieldGroup#InspectionConfig: {
-      Label: 'Inspection Configuration — editable by manager',
+      Label: 'Inspection Schedule',
       Data: [
         {Value: inspectionType,           Label: 'Required Inspection Type'},
         {Value: inspectionFrequencyYears, Label: 'Inspection Frequency (years)'},
@@ -492,7 +493,10 @@ annotate AdminService.Bridges with {
       { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
     ]}
   ) @title: 'Condition State';
+  // scourRisk is set by the BridgeScourAssessments workflow — read-only on the Bridge form
   scourRisk @(
+    Common.FieldControl: #ReadOnly,
+    Common.QuickInfo: 'Derived from the latest BridgeScourAssessment — edit via the Scour Assessments tile',
     Common.ValueListWithFixedValues,
     Common.ValueList: { SearchSupported: true, CollectionPath: 'ScourRiskLevels', Parameters: [
       { $Type: 'Common.ValueListParameterOut', LocalDataProperty: scourRisk, ValueListProperty: 'code' },
