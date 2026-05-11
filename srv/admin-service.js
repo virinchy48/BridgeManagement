@@ -21,9 +21,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       ['latitude', 'Latitude'],
       ['longitude', 'Longitude'],
       ['postingStatus', 'Posting Status'],
-      ['conditionRating', 'Condition Rating'],
-      ['structureType', 'Structure Type'],
-      ['lastInspectionDate', 'Last Inspection Date']
+      ['structureType', 'Structure Type']
+      // conditionRating and lastInspectionDate are set via the Inspect Now workflow
+      // and must not block initial bridge creation (they are ReadOnly in the UI form)
     ],
     Restrictions: [
       ['bridgeRef', 'Bridge'],

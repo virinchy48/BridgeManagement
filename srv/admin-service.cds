@@ -9,7 +9,6 @@ service AdminService {
     action deactivate() returns Restrictions;
     action reactivate() returns Restrictions;
   };
-  @deprecated
   entity BridgeRestrictions as projection on my.BridgeRestrictions actions {
     action deactivate() returns BridgeRestrictions;
     action reactivate() returns BridgeRestrictions;
