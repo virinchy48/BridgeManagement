@@ -1401,8 +1401,8 @@ annotate AdminService.BridgeInspections with @(
   UI.HeaderInfo: {
     TypeName      : 'Inspection',
     TypeNamePlural: 'Inspections',
-    Title         : {Value: inspectionRef},
-    Description   : {Value: inspector},
+    Title         : {Value: inspectionDate},
+    Description   : {Value: inspectionRef},
   },
   UI.Facets: [
     {
@@ -1493,8 +1493,8 @@ annotate AdminService.BridgeDefects with {
   notes                   @title: 'Notes'                    @UI.MultiLineText;
 };
 annotate AdminService.BridgeDefects with @(
-  Capabilities.InsertRestrictions.Insertable : false,
-  Capabilities.UpdateRestrictions.Updatable  : false,
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : false,
   UI.SelectionFields: [bridge_ID, severity, remediationStatus, defectType],
   UI.LineItem: [
