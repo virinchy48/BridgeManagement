@@ -197,7 +197,8 @@ annotate AdminService.Bridges with @(
     FieldGroup#ExecutiveOverview: {
       Label: 'Bridge Narrative',
       Data: [
-        {Value: assetClass,       Label: 'Asset Class'},
+        {Value: assetClass,        Label: 'Asset Class'},
+        {Value: importanceLevel,   Label: 'Importance Level (1=Critical–4=Ordinary)'},
         {Value: highPriorityAsset, Label: 'High Priority Asset'},
         {Value: descr,             Label: 'Executive Summary / Description'},
       ]
@@ -205,7 +206,6 @@ annotate AdminService.Bridges with @(
     FieldGroup#CurrentStatus: {
       Label: 'Current Status',
       Data: [
-        {Value: conditionTrend,        Label: 'Condition Trend'},
         {Value: nextInspectionDue,     Label: 'Next Inspection Due'},
         {Value: postingStatus,         Label: 'Posting Status'},
         {Value: postingStatusReason,   Label: 'Posting Status Reason'},
@@ -324,7 +324,6 @@ annotate AdminService.Bridges with @(
         {Value: loadLimitSemitrailer,  Label: 'Semi-Trailer Load Limit (t)'},
         {Value: averageDailyTraffic,   Label: 'Average Daily Traffic (vehicles/day)'},
         {Value: heavyVehiclePercent,   Label: 'Heavy Vehicle Proportion (%)'},
-        {Value: importanceLevel,       Label: 'Bridge Importance Level (1=Critical–4=Ordinary)'},
       ]
     },
     // hmlApproved moved here from RouteClass to sit next to its date fields
@@ -375,16 +374,13 @@ annotate AdminService.Bridges with @(
     FieldGroup#ExtNHVR: {
       Label: 'NHVR Portal',
       Data: [
-        {Value: nhvrReferenceUrl,   Label: 'NHVR Portal Reference URL'},
-        {Value: nhvrAssessed,       Label: 'NHVR Assessed'},
-        {Value: nhvrAssessmentDate, Label: 'NHVR Assessment Date'},
+        {Value: nhvrReferenceUrl, Label: 'NHVR Portal Reference URL'},
       ]
     },
     FieldGroup#ExtBNAC: {
       Label: 'BNAC Integration',
       Data: [
-        {Value: bnacMapping.bnacObjectId, Label: 'BNAC Object ID'},
-        {$Type: 'UI.DataFieldWithUrl',    Label: 'BNAC Deep Link',
+        {$Type: 'UI.DataFieldWithUrl', Label: 'BNAC Deep Link',
          Value: bnacMapping.bnacObjectId, Url: bnacMapping.bnacUrl},
       ]
     },
@@ -468,8 +464,8 @@ annotate AdminService.Bridges with {
     ]}
   ) @title: 'State';
   assetOwner   @Common.FieldControl: #Mandatory  @title: 'Asset Owner';
-  latitude     @Common.FieldControl: #Mandatory  @title: 'Latitude (°)'  @Common.QuickInfo: 'Valid range: -90 to 90';
-  longitude    @Common.FieldControl: #Mandatory  @title: 'Longitude (°)'  @Common.QuickInfo: 'Valid range: -180 to 180';
+  latitude     @Common.FieldControl: #Mandatory  @assert.range: [-44, -10]   @title: 'Latitude (°)'   @Common.QuickInfo: 'GDA2020 decimal degrees — valid Australian range: -44 to -10';
+  longitude    @Common.FieldControl: #Mandatory  @assert.range: [112, 154]   @title: 'Longitude (°)'  @Common.QuickInfo: 'GDA2020 decimal degrees — valid Australian range: 112 to 154';
   postingStatus @(
     Common.FieldControl: #Mandatory,
     Common.ValueListWithFixedValues,
@@ -1187,7 +1183,6 @@ annotate AdminService.BridgeCapacities with @(
       Data: [
         {Value: effectiveFrom,      Label: 'Effective From'},
         {Value: effectiveTo,        Label: 'Effective To'},
-        {Value: ratingDate,         Label: 'Rating Date'},
         {Value: nextReviewDue,      Label: 'Next Review Due'},
         {Value: supersessionReason, Label: 'Supersession Reason'},
       ]
@@ -2118,7 +2113,7 @@ annotate AdminService.BridgeRiskAssessments with @(
     ]
   },
   UI.FieldGroup#RiskMatrix: {
-    Label: 'Risk Quantification (ISO 31000)',
+    Label: 'Risk Quantification (TfNSW 5×5 Risk Matrix)',
     Data: [
       {Value: riskDescription,          Label: 'Risk Description'},
       {Value: potentialConsequence,     Label: 'Potential Consequence'},
