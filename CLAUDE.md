@@ -514,6 +514,26 @@ Applied: Added setTimeout(() => _map.invalidateSize(), 300) immediately after ma
 [2026-05-11] [Admin Service] Learning: after('READ', Bridges) always fired a GROUP BY COUNT even on list pages that don't render activeRestrictionCount, adding ~40ms per page load.
 Source: BMS performance audit
 Applied: Guarded with req.query.$select check — COUNT only runs when the field is actually requested
+
+[2026-05-11] [Map / GIS] Learning: ResizeObserver is far more reliable than setTimeout(invalidateSize) for Leaflet grey-tile fix. FE4 lazy-renders custom body sections — container dimensions become non-zero at unpredictable times.
+Source: BMS Bridge Details map section (continued grey-tile issue after 300ms fix)
+Applied: Replaced setTimeout with ResizeObserver in gisMapInit.js; observer fires exactly when container transitions from 0px to real dimensions
+
+[2026-05-11] [Security] Learning: BridgePermits.approve and BridgeConditionSurveys.approveSurvey require @restrict grant to certify/admin scope. Under HVNL, permit approvals are legal instruments; under AS 5100-7, condition survey approvals require qualified engineer.
+Source: Expert council audit — C05, C06
+Applied: @restrict on BridgePermits and BridgeConditionSurveys in srv/admin-service.cds
+
+[2026-05-11] [Risk Assessments] Learning: inherentRiskScore must ALWAYS be auto-computed as likelihood × consequence. Users cannot manually set it. residualRiskScore must NEVER auto-default to inherentRiskScore — it is a separate engineering input.
+Source: Expert council audit — C10
+Applied: srv/handlers/risk-assessments.js before(['CREATE','UPDATE']) always overwrites inherentRiskScore; residualRiskScore untouched
+
+[2026-05-11] [Fiori Annotations] Learning: importanceLevel belongs on Executive Summary (portfolio management KPI), NOT Traffic & NHVR (it is not a traffic metric). nhvrAssessed/nhvrAssessmentDate must not appear in both NHVRApprovals tab AND External Systems tab — keep in NHVRApprovals only.
+Source: Expert council audit — H04, M01
+Applied: Moved importanceLevel to FieldGroup#ExecutiveOverview; removed from TrafficData and ExtNHVR
+
+[2026-05-11] [Coordinates] Learning: Lat/lon @assert.range should be Australian bounding box (-44/-10, 112/154) not the global ±90/±180 range. Add @Common.QuickInfo referencing GDA2020 CRS. All bridge coordinates in Australia must be GDA2020.
+Source: Expert council audit — H05
+Applied: Updated lat/lon field annotations in fiori-service.cds
 ```
 
 ---
