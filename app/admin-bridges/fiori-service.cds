@@ -176,6 +176,8 @@ annotate AdminService.Bridges with @(
         ]
       },
       // ── T7: Administration ────────────────────────────────────────────────
+      // Bridge Geometry (GeoJSON) removed — raw coordinate fields are in Location & Ownership;
+      // the Map section provides the visual; geoJson blob is import-only, not user-editable.
       {
         $Type : 'UI.CollectionFacet',
         Label : 'Administration',
@@ -183,7 +185,6 @@ annotate AdminService.Bridges with @(
         Facets: [
           {$Type: 'UI.ReferenceFacet', Label: 'Source & Reference',  Target: '@UI.FieldGroup#SourceInfo'},
           {$Type: 'UI.ReferenceFacet', Label: 'System Information',  Target: '@UI.FieldGroup#AuditTrail'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Bridge Geometry',     Target: '@UI.FieldGroup#BridgeGeometry'},
         ]
       },
     ],
@@ -410,13 +411,6 @@ annotate AdminService.Bridges with @(
         {Value: modifiedAt, Label: 'Last Modified At'},
       ]
     },
-    FieldGroup#BridgeGeometry: {
-      Label: 'Bridge Geometry (GeoJSON)',
-      Data: [
-        {Value: geoJson, Label: 'GeoJSON Geometry'},
-      ]
-    },
-
     // ── ObjectPage Header Actions ─────────────────────────────────────────
     Identification: [
       {
@@ -457,7 +451,7 @@ annotate AdminService.Bridges with {
   // Bridge status is managed exclusively by Deactivate / Reactivate actions
   status     @Common.FieldControl: #ReadOnly  @title: 'Bridge Status';
   // GeoJSON is maintained on the object page, not in the create dialog
-  geoJson    @Common.FieldControl: #Optional  @UI.MultiLineText  @title: 'Bridge Geometry (GeoJSON)';
+  geoJson    @UI.Hidden  @title: 'Bridge Geometry (GeoJSON)';  // import-only; not surfaced in UI
   // Bridge ID auto-generated on create; never user-entered
   bridgeId   @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Bridge ID (auto-generated)';
 };
