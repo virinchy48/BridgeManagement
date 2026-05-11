@@ -946,6 +946,7 @@ annotate AdminService.BridgeCapacities with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : true,
+  UI.SelectionFields: [bridge_ID, capacityType, capacityStatus, nextReviewDue],
   UI: {
     HeaderInfo: {
       TypeName      : 'Bridge Capacity',
@@ -1342,6 +1343,21 @@ annotate AdminService.BridgeInspections with {
       ]
     }
   );
+  inspectionDate               @title: 'Inspection Date';
+  inspectionType               @title: 'Inspection Type';
+  inspector                    @title: 'Inspector';
+  inspectorAccreditationNumber @title: 'Accreditation Number';
+  inspectorAccreditationLevel  @title: 'Accreditation Level';
+  inspectorCompany             @title: 'Inspector Company';
+  qualificationExpiry          @title: 'Qualification Expiry';
+  inspectionScope              @title: 'Inspection Scope';
+  inspectionStandard           @title: 'Inspection Standard';
+  weatherConditions            @title: 'Weather Conditions';
+  accessibilityIssues          @title: 'Accessibility Issues';
+  s4InspectionOrderRef         @title: 'S/4 Inspection Order';
+  s4NotificationRef            @title: 'S/4 Notification';
+  reportStorageRef             @title: 'Report Storage Reference';
+  inspectionNotes              @title: 'Inspection Notes'  @UI.MultiLineText;
 };
 
 annotate AdminService.BridgeInspections with @(
@@ -1429,6 +1445,29 @@ annotate AdminService.BridgeDefects with {
       ]
     }
   );
+  defectId                @title: 'Defect ID';
+  defectType              @title: 'Defect Type';
+  defectDescription       @title: 'Description'              @UI.MultiLineText;
+  bridgeElement           @title: 'Bridge Element';
+  spanNumber              @title: 'Span Number';
+  pierNumber              @title: 'Pier Number';
+  face                    @title: 'Face';
+  position                @title: 'Position';
+  severity                @title: 'Severity (1=Low, 4=Critical)';
+  urgency                 @title: 'Urgency (1=Low, 4=Emergency)';
+  dimensionLengthMm       @title: 'Length (mm)';
+  dimensionWidthMm        @title: 'Width (mm)';
+  dimensionDepthMm        @title: 'Depth (mm)';
+  photoReferences         @title: 'Photo References'         @UI.MultiLineText;
+  remediationStatus       @title: 'Remediation Status';
+  estimatedRepairCost     @title: 'Estimated Repair Cost ($)';
+  plannedRemediationDate  @title: 'Planned Remediation Date';
+  actualRemediationDate   @title: 'Actual Remediation Date';
+  remediationNotes        @title: 'Remediation Notes'        @UI.MultiLineText;
+  s4NotificationId        @title: 'S/4 Notification ID';
+  s4OrderId               @title: 'S/4 Order ID';
+  s4SyncStatus            @title: 'S/4 Sync Status';
+  notes                   @title: 'Notes'                    @UI.MultiLineText;
 };
 annotate AdminService.BridgeDefects with @(
   Capabilities.InsertRestrictions.Insertable : false,
@@ -1470,6 +1509,8 @@ annotate AdminService.BridgeDefects with @(
       {Value: severity},
       {Value: urgency},
       {Value: remediationStatus},
+      {Value: photoReferences},
+      {Value: notes},
     ]
   },
   UI.FieldGroup#DefectLocation: {
@@ -1537,6 +1578,35 @@ annotate AdminService.BridgeRiskAssessments with {
       ]
     }
   );
+  assessmentId              @title: 'Assessment ID'                    @Common.FieldControl: #ReadOnly;
+  assessmentDate            @title: 'Assessment Date';
+  assessmentCycle           @title: 'Assessment Cycle';
+  riskType                  @title: 'Risk Type';
+  riskDescription           @title: 'Risk Description'                 @UI.MultiLineText;
+  potentialConsequence      @title: 'Potential Consequence'            @UI.MultiLineText;
+  likelihood                @title: 'Likelihood (1–5)';
+  likelihoodJustification   @title: 'Likelihood Justification'         @UI.MultiLineText;
+  consequence               @title: 'Consequence (1–5)';
+  consequenceJustification  @title: 'Consequence Justification'        @UI.MultiLineText;
+  inherentRiskScore         @title: 'Inherent Risk Score';
+  inherentRiskLevel         @title: 'Inherent Risk Level';
+  existingControls          @title: 'Existing Controls'                @UI.MultiLineText;
+  controlEffectiveness      @title: 'Control Effectiveness';
+  residualRiskScore         @title: 'Residual Risk Score';
+  residualRiskLevel         @title: 'Residual Risk Level';
+  residualRiskAcceptable    @title: 'Residual Risk Acceptable';
+  riskTreatmentStrategy     @title: 'Treatment Strategy';
+  treatmentActions          @title: 'Treatment Actions'                @UI.MultiLineText;
+  treatmentResponsible      @title: 'Responsible Officer';
+  treatmentDeadline         @title: 'Treatment Deadline';
+  treatmentBudget           @title: 'Treatment Budget ($)';
+  assessor                  @title: 'Assessor';
+  assessorTitle             @title: 'Assessor Title';
+  reviewDueDate             @title: 'Review Due Date';
+  lastReviewDate            @title: 'Last Review Date';
+  linkedInspectionId        @title: 'Linked Inspection';
+  linkedDefectId            @title: 'Linked Defect';
+  notes                     @title: 'Notes'                            @UI.MultiLineText;
 };
 
 annotate AdminService.BridgeRiskAssessments with @(
@@ -1659,9 +1729,10 @@ annotate AdminService.LoadRatingCertificates with @(
       Label : 'Certificate Details',
       ID    : 'LRCDetails',
       Facets: [
-        {$Type: 'UI.ReferenceFacet', Label: 'Certificate',  Target: '@UI.FieldGroup#LRCCertificate'},
-        {$Type: 'UI.ReferenceFacet', Label: 'Load Factors', Target: '@UI.FieldGroup#LRCLoadFactors'},
-        {$Type: 'UI.ReferenceFacet', Label: 'Fatigue Life', Target: '@UI.FieldGroup#LRCFatigue'},
+        {$Type: 'UI.ReferenceFacet', Label: 'Certificate',    Target: '@UI.FieldGroup#LRCCertificate'},
+        {$Type: 'UI.ReferenceFacet', Label: 'Load Factors',  Target: '@UI.FieldGroup#LRCLoadFactors'},
+        {$Type: 'UI.ReferenceFacet', Label: 'Fatigue Life',  Target: '@UI.FieldGroup#LRCFatigue'},
+        {$Type: 'UI.ReferenceFacet', Label: 'Supersession & Notes', Target: '@UI.FieldGroup#LRCSupersession'},
       ]
     },
   ],
@@ -1713,6 +1784,18 @@ annotate AdminService.LoadRatingCertificates with @(
       {Value: trafficSpectrumRef},
     ]
   },
+  UI.FieldGroup#LRCSupersession: {
+    Label: 'Supersession & Notes',
+    Data: [
+      {Value: governingCapacityType,  Label: 'Governing Capacity Type'},
+      {Value: expiryWarningDays,      Label: 'Expiry Warning (days)'},
+      {Value: previousCertId,         Label: 'Previous Certificate ID'},
+      {Value: supersessionReason,     Label: 'Supersession Reason'},
+      {Value: conditions,             Label: 'Conditions of Rating'},
+      {Value: reportStorageRef,       Label: 'Report Storage Reference'},
+      {Value: notes,                  Label: 'Notes'},
+    ]
+  },
 );
 
 // ── NhvrRouteAssessments — standalone + Bridge Details ──────────────────
@@ -1759,20 +1842,41 @@ annotate AdminService.NhvrRouteAssessments with @(
     Description   : {Value: bridge.bridgeName},
   },
   UI.Facets: [
-    { $Type: 'UI.ReferenceFacet', Label: 'Assessment Details', Target: '@UI.FieldGroup#NhvrDetails' }
+    { $Type: 'UI.ReferenceFacet', Label: 'Assessment Details',  Target: '@UI.FieldGroup#NhvrDetails' },
+    { $Type: 'UI.ReferenceFacet', Label: 'NHVR Submission',     Target: '@UI.FieldGroup#NhvrSubmission' },
+    { $Type: 'UI.ReferenceFacet', Label: 'Approval Conditions', Target: '@UI.FieldGroup#NhvrConditions' },
   ],
   UI.FieldGroup#NhvrDetails: {
+    Label: 'Assessment',
     Data: [
-      { Value: bridge_ID,         Label: 'Bridge' },
-      { Value: assessmentId },
-      { Value: assessmentDate },
-      { Value: assessmentStatus },
-      { Value: assessorName },
-      { Value: assessmentVersion },
-      { Value: validFrom },
-      { Value: validTo },
-      { Value: nhvrApprovalDate },
-      { Value: nextReviewDate },
+      { Value: bridge_ID,              Label: 'Bridge' },
+      { Value: assessmentId,           Label: 'Assessment ID' },
+      { Value: assessmentDate,         Label: 'Assessment Date' },
+      { Value: assessmentStatus,       Label: 'Status' },
+      { Value: assessmentVersion,      Label: 'Version' },
+      { Value: assessorName,           Label: 'Assessor' },
+      { Value: assessorAccreditationNo, Label: 'Assessor Accreditation No.' },
+      { Value: validFrom,              Label: 'Valid From' },
+      { Value: validTo,                Label: 'Valid To' },
+      { Value: nhvrApprovalDate,       Label: 'NHVR Approval Date' },
+      { Value: nextReviewDate,         Label: 'Next Review Date' },
+    ]
+  },
+  UI.FieldGroup#NhvrSubmission: {
+    Label: 'NHVR Submission',
+    Data: [
+      { Value: nhvrSubmissionRef,      Label: 'NHVR Submission Reference' },
+      { Value: nhvrSubmissionDate,     Label: 'Submission Date' },
+      { Value: iapRequired,            Label: 'IAP Required' },
+      { Value: iapRouteId,             Label: 'IAP Route ID' },
+    ]
+  },
+  UI.FieldGroup#NhvrConditions: {
+    Label: 'Approved Vehicle Classes & Conditions',
+    Data: [
+      { Value: approvedVehicleClasses, Label: 'Approved Vehicle Classes' },
+      { Value: conditions,             Label: 'Conditions of Approval' },
+      { Value: notes,                  Label: 'Notes' },
     ]
   },
 );
