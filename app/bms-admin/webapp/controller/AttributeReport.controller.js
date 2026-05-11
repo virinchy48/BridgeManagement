@@ -5,8 +5,9 @@ sap.ui.define([
   "sap/m/Text",
   "sap/m/ColumnListItem",
   "sap/m/MessageBox",
-  "sap/m/MessageToast"
-], function (Controller, JSONModel, Column, Text, ColumnListItem, MessageBox, MessageToast) {
+  "sap/m/MessageToast",
+  "sap/ui/core/Item"
+], function (Controller, JSONModel, Column, Text, ColumnListItem, MessageBox, MessageToast, Item) {
   "use strict";
 
   var ATTR_API = "/attributes/api";
@@ -178,7 +179,6 @@ sap.ui.define([
     _buildGroupFilter: function (groups) {
       var select = this.byId("groupFilter");
       select.destroyItems();
-      var Item = sap.ui.core.Item;
       select.addItem(new Item({ key: "", text: "All Groups" }));
       groups.forEach(function (group) {
         select.addItem(new Item({ key: group.internalKey, text: group.name }));

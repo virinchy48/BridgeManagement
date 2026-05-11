@@ -302,13 +302,13 @@ sap.ui.define([
             self._mutate(ATTR_API + "/import?objectType=" + vals["dlg-otype"] + "&mode=" + vals["dlg-mode"], "POST", { fileName: file.name, contentBase64: base64 })
             .then(function (importResponse) { return importResponse.json(); })
             .then(function (result) {
-              if (result.error) { sap.m.MessageBox.error(result.error.message); return; }
+              if (result.error) { MessageBox.error(result.error.message); return; }
               var s = result.summary || {};
               var msg = "Import complete:\n  Created: " + (s.created || 0) + "\n  Updated: " + (s.updated || 0) + "\n  Skipped: " + (s.skipped || 0) + "\n  Errors: " + (s.errors || 0);
               if (result.aborted) msg += "\n\nAborted due to errors.";
-              sap.m.MessageBox.information(msg);
+              MessageBox.information(msg);
             })
-            .catch(function (importError) { sap.m.MessageBox.error("Import failed: " + importError.message); });
+            .catch(function (importError) { MessageBox.error("Import failed: " + importError.message); });
           });
         };
         reader.readAsDataURL(file);
