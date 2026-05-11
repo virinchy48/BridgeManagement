@@ -201,14 +201,25 @@ entity BridgeCapacities : cuid, managed {
   criticalElement       : String(255);    // Critical fatigue element
   fatigueDetailCategory : String(10);     // AS 5100.6 §13.5 detail category (A|B|C|D|E|F|G)
 
+  // ── Temporal validity (valid-time pattern) ───────────────────────────────
+  effectiveFrom         : Date;           // Date rating came into regulatory force (gazette/order date)
+  effectiveTo           : Date;           // Null = currently operative; set by handler on supersession
+
   // ── Capacity Status ───────────────────────────────────────────────────────
-  capacityStatus        : String(40);     // e.g. Current, Under Review, Superseded
+  capacityStatus        : String(40) default 'Current';  // Current | Superseded | Under Review | Revoked
+  supersessionReason    : String(300);    // Why this record was superseded (deterioration, rehab, etc.)
   lastReviewedBy        : String(111);    // Engineer name + NER/CPEng
   statusReviewDue       : Date;           // Next review due date
 
   // ── Engineering Notes ─────────────────────────────────────────────────────
   engineeringNotes      : LargeString;    // Assessment notes, conditions, limitations
 }
+
+annotate BridgeCapacities with @(cds.persistence.indexes: [
+  { name: 'idx_cap_bridge',  columns: ['bridge_ID'] },
+  { name: 'idx_cap_status',  columns: ['capacityStatus'] },
+  { name: 'idx_cap_current', columns: ['bridge_ID', 'capacityType', 'effectiveTo'] }
+]);
 
 entity BridgeAttributes : cuid, managed {
   bridge              : Association to Bridges;

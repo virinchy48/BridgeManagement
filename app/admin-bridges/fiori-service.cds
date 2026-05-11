@@ -922,8 +922,16 @@ annotate AdminService.BridgeCapacities with {
   consumedLife          @title: 'Consumed Life (%)';
   fatigueSensitive      @title: 'Fatigue-Sensitive';
   criticalElement       @title: 'Critical Element';
+  effectiveFrom    @title: 'Effective From'
+                   @Common.QuickInfo: 'Date this rating came into regulatory force (gazette/order date)'
+                   @Common.FieldControl: #Mandatory;
+  effectiveTo      @title: 'Effective To'
+                   @Common.QuickInfo: 'Date this rating was superseded — blank means currently operative'
+                   @Common.FieldControl: #ReadOnly;
+  supersessionReason @title: 'Supersession Reason'
+                   @Common.FieldControl: #ReadOnly;
   capacityStatus @(
-    Common.FieldControl: #Mandatory,
+    Common.FieldControl: #ReadOnly,
     Common.ValueListWithFixedValues,
     Common.ValueList: { SearchSupported: true, CollectionPath: 'CapacityStatuses', Parameters: [
       { $Type: 'Common.ValueListParameterOut', LocalDataProperty: capacityStatus, ValueListProperty: 'code' },
@@ -932,7 +940,7 @@ annotate AdminService.BridgeCapacities with {
   ) @title: 'Status';
   lastReviewedBy   @title: 'Last Reviewed By';
   statusReviewDue  @title: 'Next Review Due';
-  engineeringNotes      @UI.MultiLineText  @title: 'Engineering Notes';
+  engineeringNotes @UI.MultiLineText  @title: 'Engineering Notes';
   fatigueDetailCategory @(
     Common.ValueListWithFixedValues,
     Common.ValueList: { SearchSupported: true, CollectionPath: 'FatigueDetailCategories', Parameters: [
@@ -946,23 +954,24 @@ annotate AdminService.BridgeCapacities with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : true,
-  UI.SelectionFields: [bridge_ID, capacityType, capacityStatus, nextReviewDue],
+  UI.SelectionFields: [bridge_ID, capacityType, capacityStatus, effectiveFrom, nextReviewDue],
   UI: {
     HeaderInfo: {
       TypeName      : 'Bridge Capacity',
       TypeNamePlural: 'Bridge Capacities',
       Title         : { $Type: 'UI.DataField', Value: capacityType },
-      Description   : { $Type: 'UI.DataField', Value: capacityStatus }
+      Description   : { $Type: 'UI.DataField', Value: effectiveFrom }
     },
     LineItem: [
       {Value: bridge.bridgeId,    Label: 'Bridge ID'},
       {Value: bridge.bridgeName,  Label: 'Bridge'},
       {Value: capacityType,       Label: 'Capacity Type'},
+      {Value: effectiveFrom,      Label: 'Effective From'},
+      {Value: effectiveTo,        Label: 'Effective To'},
       {Value: grossMassLimit,     Label: 'GVM (t)'},
       {Value: grossCombined,      Label: 'GCM (t)'},
       {Value: minClearancePosted, Label: 'Min Clearance (m)'},
       {Value: ratingFactor,       Label: 'RF'},
-      {Value: nextReviewDue,      Label: 'Next Review'},
       {Value: capacityStatus,     Label: 'Status'},
     ],
     Facets: [
@@ -980,6 +989,7 @@ annotate AdminService.BridgeCapacities with @(
       {$Type: 'UI.ReferenceFacet', Label: 'Load Rating (AS 5100.7)', Target: '@UI.FieldGroup#CapacityLoadRating'},
       {$Type: 'UI.ReferenceFacet', Label: 'Scour Assessment', Target: '@UI.FieldGroup#CapacityScour'},
       {$Type: 'UI.ReferenceFacet', Label: 'Fatigue Life', Target: '@UI.FieldGroup#CapacityFatigue'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Validity Period', Target: '@UI.FieldGroup#CapacityValidity'},
       {$Type: 'UI.ReferenceFacet', Label: 'Capacity Status', Target: '@UI.FieldGroup#CapacityStatus'},
       {$Type: 'UI.ReferenceFacet', Label: 'Engineering Notes', Target: '@UI.FieldGroup#CapacityEngineeringNotes'},
     ],
@@ -1041,11 +1051,21 @@ annotate AdminService.BridgeCapacities with @(
         {Value: criticalElement},
       ]
     },
+    FieldGroup#CapacityValidity: {
+      Label: 'Validity Period',
+      Data: [
+        {Value: effectiveFrom,      Label: 'Effective From'},
+        {Value: effectiveTo,        Label: 'Effective To'},
+        {Value: ratingDate,         Label: 'Rating Date'},
+        {Value: nextReviewDue,      Label: 'Next Review Due'},
+        {Value: supersessionReason, Label: 'Supersession Reason'},
+      ]
+    },
     FieldGroup#CapacityStatus: {
       Data: [
-        {Value: capacityStatus},
-        {Value: lastReviewedBy},
-        {Value: statusReviewDue},
+        {Value: capacityStatus,  Label: 'Status'},
+        {Value: lastReviewedBy,  Label: 'Reviewed By'},
+        {Value: statusReviewDue, Label: 'Status Review Due'},
       ]
     },
     FieldGroup#CapacityEngineeringNotes: {
