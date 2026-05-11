@@ -1327,6 +1327,10 @@ annotate AdminService.BridgeInspections with {
 };
 
 annotate AdminService.BridgeInspections with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.SelectionFields: [bridge_ID, inspectionType, inspectionDate],
   UI.LineItem: [
     {Value: bridge.bridgeId,        Label: 'Bridge ID'},
     {Value: bridge.bridgeName,      Label: 'Bridge'},
@@ -1390,9 +1394,32 @@ annotate AdminService.BridgeInspections with @(
   },
 );
 
-// ── BridgeDefects — shown inside BridgeInspections ObjectPage ───────────
+// ── BridgeDefects — standalone list + BridgeInspections ObjectPage ──────
+annotate AdminService.BridgeDefects with {
+  bridge @(
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Bridge',
+    Common.FieldControl    : #Mandatory,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridge_ID,     ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
+};
 annotate AdminService.BridgeDefects with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.SelectionFields: [bridge_ID, severity, remediationStatus, defectType],
   UI.LineItem: [
+    {Value: bridge.bridgeId,       Label: 'Bridge ID'},
+    {Value: bridge.bridgeName,     Label: 'Bridge'},
     {Value: defectId,              Label: 'Defect ID'},
     {Value: defectType,            Label: 'Type'},
     {Value: bridgeElement,         Label: 'Element'},
@@ -1407,6 +1434,50 @@ annotate AdminService.BridgeDefects with @(
     TypeNamePlural: 'Defects',
     Title         : {Value: defectId},
     Description   : {Value: defectType},
+  },
+  UI.Facets: [
+    { $Type: 'UI.CollectionFacet', Label: 'Defect Details', ID: 'DefectDetails', Facets: [
+      {$Type: 'UI.ReferenceFacet', Label: 'General',      Target: '@UI.FieldGroup#DefectGeneral'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Location',     Target: '@UI.FieldGroup#DefectLocation'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Remediation',  Target: '@UI.FieldGroup#DefectRemediation'},
+    ]},
+  ],
+  UI.FieldGroup#DefectGeneral: {
+    Label: 'General',
+    Data: [
+      {Value: bridge_ID,         Label: 'Bridge'},
+      {Value: defectId},
+      {Value: defectType},
+      {Value: defectDescription},
+      {Value: severity},
+      {Value: urgency},
+      {Value: remediationStatus},
+    ]
+  },
+  UI.FieldGroup#DefectLocation: {
+    Label: 'Location',
+    Data: [
+      {Value: bridgeElement},
+      {Value: spanNumber},
+      {Value: pierNumber},
+      {Value: face},
+      {Value: position},
+      {Value: dimensionLengthMm, Label: 'Length (mm)'},
+      {Value: dimensionWidthMm,  Label: 'Width (mm)'},
+      {Value: dimensionDepthMm,  Label: 'Depth (mm)'},
+    ]
+  },
+  UI.FieldGroup#DefectRemediation: {
+    Label: 'Remediation',
+    Data: [
+      {Value: estimatedRepairCost},
+      {Value: plannedRemediationDate},
+      {Value: actualRemediationDate},
+      {Value: remediationNotes},
+      {Value: s4NotificationId,  Label: 'S/4 Notification'},
+      {Value: s4OrderId,         Label: 'S/4 Order'},
+      {Value: s4SyncStatus,      Label: 'S/4 Sync Status'},
+    ]
   },
 );
 
@@ -1451,6 +1522,10 @@ annotate AdminService.BridgeRiskAssessments with {
 };
 
 annotate AdminService.BridgeRiskAssessments with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.SelectionFields: [bridge_ID, riskType, residualRiskLevel, treatmentDeadline],
   UI.LineItem: [
     {Value: bridge.bridgeId,    Label: 'Bridge ID'},
     {Value: bridge.bridgeName,  Label: 'Bridge'},
@@ -1468,6 +1543,52 @@ annotate AdminService.BridgeRiskAssessments with @(
     TypeNamePlural: 'Risk Assessments',
     Title         : {Value: riskType},
     Description   : {Value: residualRiskLevel},
+  },
+  UI.Facets: [
+    { $Type: 'UI.CollectionFacet', Label: 'Risk Assessment', ID: 'RiskDetails', Facets: [
+      {$Type: 'UI.ReferenceFacet', Label: 'Risk',      Target: '@UI.FieldGroup#RiskGeneral'},
+      {$Type: 'UI.ReferenceFacet', Label: 'Treatment', Target: '@UI.FieldGroup#RiskTreatment'},
+    ]},
+  ],
+  UI.FieldGroup#RiskGeneral: {
+    Label: 'Risk',
+    Data: [
+      {Value: bridge_ID,              Label: 'Bridge'},
+      {Value: assessmentId},
+      {Value: assessmentDate},
+      {Value: assessmentCycle},
+      {Value: riskType},
+      {Value: riskDescription},
+      {Value: potentialConsequence},
+      {Value: likelihood},
+      {Value: likelihoodJustification},
+      {Value: consequence},
+      {Value: consequenceJustification},
+      {Value: inherentRiskScore},
+      {Value: inherentRiskLevel},
+      {Value: existingControls},
+      {Value: controlEffectiveness},
+      {Value: residualRiskScore},
+      {Value: residualRiskLevel},
+      {Value: residualRiskAcceptable},
+      {Value: assessor},
+      {Value: assessorTitle},
+      {Value: reviewDueDate},
+      {Value: lastReviewDate},
+    ]
+  },
+  UI.FieldGroup#RiskTreatment: {
+    Label: 'Treatment',
+    Data: [
+      {Value: riskTreatmentStrategy},
+      {Value: treatmentActions},
+      {Value: treatmentResponsible},
+      {Value: treatmentDeadline},
+      {Value: treatmentBudget},
+      {Value: linkedInspectionId, Label: 'Linked Inspection'},
+      {Value: linkedDefectId,     Label: 'Linked Defect'},
+      {Value: notes},
+    ]
   },
 );
 
@@ -1491,6 +1612,10 @@ annotate AdminService.LoadRatingCertificates with {
 };
 
 annotate AdminService.LoadRatingCertificates with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.SelectionFields: [bridge_ID, status, ratingStandard, certificateIssueDate],
   UI.LineItem: [
     {Value: bridge.bridgeId,       Label: 'Bridge ID'},
     {Value: bridge.bridgeName,     Label: 'Bridge'},
@@ -1592,6 +1717,10 @@ annotate AdminService.NhvrRouteAssessments with {
 };
 
 annotate AdminService.NhvrRouteAssessments with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.SelectionFields: [bridge_ID, assessmentStatus, validFrom, validTo],
   UI.LineItem: [
     {Value: bridge.bridgeId,   Label: 'Bridge ID'},
     {Value: bridge.bridgeName, Label: 'Bridge'},
