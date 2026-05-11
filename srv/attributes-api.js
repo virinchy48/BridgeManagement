@@ -1,15 +1,33 @@
 /**
- * Configurable Attributes API
- * Mounts on /attributes/api
+ * @module attributes-api
+ * @description REST API for the Custom Attributes (EAV) system.
  *
- * Routes:
- *   GET  /config?objectType=bridge          — groups + attributes for an object type
- *   GET  /values/:objectType/:objectId      — all current attribute values for an object
- *   POST /values/:objectType/:objectId      — upsert attribute values (validates required + types)
- *   GET  /history/:objectType/:objectId/:key — version log for one attribute on one object
- *   GET  /template?objectType=bridge        — Excel template download (admin only)
- *   POST /import?objectType=bridge          — bulk import from XLSX/CSV (admin only)
- *   GET  /export?objectType=bridge          — all objects with attribute values as XLSX
+ * Architecture Overview:
+ * ┌─────────────────────────────────────────────────────────────────┐
+ * │  AttributeGroups → AttributeDefinitions → AttributeAllowedValues│
+ * │  (admin-managed schema)                                         │
+ * │                          ↓                                      │
+ * │  AttributeValues (per-record EAV storage)                       │
+ * │                          ↓                                      │
+ * │  AttributeValueHistory (append-only audit trail)                │
+ * └─────────────────────────────────────────────────────────────────┘
+ *
+ * Endpoints:
+ *   GET  /attributes/api/config?objectType=bridge    — schema for object type
+ *   GET  /attributes/api/values/:type/:id            — current values
+ *   POST /attributes/api/values/:type/:id            — upsert values
+ *   GET  /attributes/api/history/:type/:id/:key      — value history for one field
+ *   GET  /attributes/api/template?objectType=bridge  — Excel template (admin)
+ *   POST /attributes/api/import?objectType=bridge    — bulk import (admin)
+ *   GET  /attributes/api/export?objectType=bridge    — full export CSV (admin)
+ *
+ * Authentication: All endpoints require authenticated-user scope.
+ *   Template/import/export additionally require 'admin' scope.
+ *
+ * Data Types: Text | Integer | Decimal | Date | Boolean | SingleSelect | MultiSelect
+ *
+ * Object Types (extensible): 'bridge' | 'restriction' | any string matching an
+ *   AttributeGroup.objectType value.
  */
 
 const cds = require('@sap/cds')
@@ -20,6 +38,14 @@ const { SELECT, INSERT, UPDATE } = cds.ql
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+/**
+ * Resolves the identity of the requesting user.
+ * In non-production environments, accepts an `x-user` header as a fallback
+ * to simplify local testing without a full auth stack.
+ *
+ * @param {import('express').Request} req
+ * @returns {string} User identifier for audit trail writes
+ */
 function currentUser(req) {
   // Only trust the x-user header in non-production environments (e.g. local dev / test).
   // In production the authenticated identity must come from req.user set by the auth middleware.
@@ -27,6 +53,12 @@ function currentUser(req) {
   return req.user?.id || xUser || 'system'
 }
 
+/**
+ * Maps a dataType string to the corresponding typed column name in AttributeValues.
+ *
+ * @param {string} dataType - 'Text' | 'Integer' | 'Decimal' | 'Date' | 'Boolean' | 'SingleSelect' | 'MultiSelect'
+ * @returns {string} Column name (e.g. 'valueInteger', 'valueText')
+ */
 function getTypedValueColumn(dataType) {
   switch (dataType) {
     case 'Integer':     return 'valueInteger'
@@ -37,11 +69,27 @@ function getTypedValueColumn(dataType) {
   }
 }
 
+/**
+ * Extracts the typed value from an AttributeValues row using the appropriate column.
+ *
+ * @param {object} row - A row from bridge.management.AttributeValues
+ * @param {string} dataType - Attribute dataType string
+ * @returns {string|number|boolean|null} The stored value, or null if unset
+ */
 function extractRawValue(row, dataType) {
   const col = getTypedValueColumn(dataType)
   return row[col] ?? null
 }
 
+/**
+ * Converts raw input (string or typed) to the correct JavaScript type for a given attribute dataType.
+ * Called on every attribute value before insert/update.
+ *
+ * @param {string} dataType - 'Text' | 'Integer' | 'Decimal' | 'Date' | 'Boolean' | 'SingleSelect' | 'MultiSelect'
+ * @param {*} raw - Raw value from HTTP request body
+ * @returns {string|number|boolean|null} Coerced value
+ * @throws {Error} If value cannot be coerced (e.g. "abc" for Integer)
+ */
 function coerceValue(dataType, raw) {
   if (raw === null || raw === undefined || raw === '') return null
   switch (dataType) {
@@ -66,6 +114,18 @@ function coerceValue(dataType, raw) {
   }
 }
 
+/**
+ * Builds a flat value entry object ready for INSERT/UPDATE into AttributeValues.
+ * Sets exactly one typed column (valueText / valueInteger / etc.) and nulls the rest,
+ * matching the DB schema constraint that only one column is populated per row.
+ *
+ * @param {string} objectType
+ * @param {string|number} objectId
+ * @param {string} attributeKey - Matches AttributeDefinitions.internalKey
+ * @param {string} dataType
+ * @param {string|number|boolean|null} coerced - Result of coerceValue()
+ * @returns {object} Row shape for bridge.management.AttributeValues
+ */
 function buildValueEntry(objectType, objectId, attributeKey, dataType, coerced) {
   return {
     objectType,
@@ -79,6 +139,15 @@ function buildValueEntry(objectType, objectId, attributeKey, dataType, coerced) 
   }
 }
 
+/**
+ * Loads the full attribute schema for an objectType: groups, definitions, and allowed values.
+ * Only returns groups that have at least one enabled definition for this objectType.
+ * Results are sorted by displayOrder; definitions within each group are also sorted.
+ *
+ * @param {object} db - Connected CDS database client
+ * @param {string} objectType - e.g. 'bridge', 'restriction'
+ * @returns {Promise<AttributeGroup[]>} Groups with nested `attributes` array
+ */
 async function loadActiveConfig(db, objectType) {
   const groups = await db.run(
     SELECT.from('bridge.management.AttributeGroups')
@@ -136,6 +205,14 @@ async function loadActiveConfig(db, objectType) {
     }))
 }
 
+/**
+ * Fetches all stored attribute values for a single record from AttributeValues.
+ *
+ * @param {object} db - Connected CDS database client
+ * @param {string} objectType
+ * @param {string|number} objectId
+ * @returns {Promise<object[]>} Raw AttributeValues rows (all typed columns present)
+ */
 async function loadValues(db, objectType, objectId) {
   return db.run(
     SELECT.from('bridge.management.AttributeValues')
@@ -143,6 +220,18 @@ async function loadValues(db, objectType, objectId) {
   )
 }
 
+/**
+ * Upserts attribute values for a record and appends a history entry for every changed field.
+ * Existing rows are UPDATEd; missing rows are INSERTed. Both paths write to AttributeValueHistory.
+ *
+ * @param {object} db - Connected CDS database client
+ * @param {string} objectType
+ * @param {string|number} objectId
+ * @param {{ attributeKey: string, dataType: string, coercedValue: * }[]} updates
+ * @param {string} changedBy - User identifier for audit trail
+ * @param {string} changeSource - 'manual' | 'import' | 'system'
+ * @returns {Promise<void>}
+ */
 async function writeValuesWithHistory(db, objectType, objectId, updates, changedBy, changeSource) {
   const existing = await loadValues(db, objectType, objectId)
   const existingByKey = new Map(existing.map(v => [v.attributeKey, v]))
@@ -225,7 +314,14 @@ async function writeValuesWithHistory(db, objectType, objectId, updates, changed
   }
 }
 
-// Build a flat list of { label, key } attribute column headers for a template
+/**
+ * Builds a flat ordered list of attribute column descriptors for template/export generation.
+ * Each entry includes label, internalKey, dataType, unit, required flag, and allowed values.
+ *
+ * @param {object} db - Connected CDS database client
+ * @param {string} objectType
+ * @returns {Promise<{ label: string, key: string, dataType: string, required: boolean, unit: string, allowedValues: object[] }[]>}
+ */
 async function buildAttributeColumns(db, objectType) {
   const config = await loadActiveConfig(db, objectType)
   const cols = []
@@ -246,11 +342,31 @@ async function buildAttributeColumns(db, objectType) {
 
 // ── Router ────────────────────────────────────────────────────────────────────
 
+/**
+ * Mounts all Custom Attributes REST routes onto the Express app.
+ * Called once from srv/server.js during app bootstrap.
+ *
+ * All routes are mounted under /attributes/api and protected by the provided
+ * authentication and CSRF middleware. If middleware is omitted (e.g. in unit
+ * tests), no-op pass-through functions are substituted automatically.
+ *
+ * @param {import('express').Application} app
+ * @param {Function} [requiresAuthentication] - Express middleware that enforces auth
+ * @param {Function} [validateCsrfToken] - Express middleware that validates CSRF token
+ */
 module.exports = function mountAttributesApi(app, requiresAuthentication, validateCsrfToken) {
   const router = express.Router()
   router.use(express.json({ limit: '10mb' }))
 
-  // GET /config?objectType=bridge
+  /**
+   * GET /attributes/api/config?objectType=bridge
+   * Returns all active AttributeGroups with their AttributeDefinitions and AllowedValues
+   * for the specified objectType. Used by edit forms to determine which fields to render.
+   *
+   * @query {string} objectType - 'bridge' | 'restriction' | any configured object type
+   * @returns {{ objectType: string, groups: AttributeGroup[] }}
+   *   groups sorted by displayOrder; each group contains a nested `attributes` array
+   */
   router.get('/config', async (req, res) => {
     const { objectType } = req.query
     if (!objectType) return res.status(400).json({ error: { message: 'objectType is required' } })
@@ -263,7 +379,15 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
     }
   })
 
-  // GET /values/:objectType/:objectId
+  /**
+   * GET /attributes/api/values/:objectType/:objectId
+   * Returns all stored attribute values for a specific record as a flat key→value map.
+   *
+   * @param {string} objectType - Entity type ('bridge', 'restriction', etc.)
+   * @param {string} objectId   - Record identifier (bridge integer PK or UUID as string)
+   * @returns {{ objectType: string, objectId: string, values: Record<string, string|number|boolean|null> }}
+   *   `values` is a flat object keyed by attributeKey; value is the first non-null typed column
+   */
   router.get('/values/:objectType/:objectId', async (req, res) => {
     const { objectType, objectId } = req.params
     try {
@@ -279,8 +403,21 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
     }
   })
 
-  // POST /values/:objectType/:objectId
-  // Body: { values: { key: rawValue, ... } }
+  /**
+   * POST /attributes/api/values/:objectType/:objectId
+   * Upserts attribute values for a record. Validates type coercion, allowed values,
+   * min/max range, and required-field presence. Writes an AttributeValueHistory entry
+   * for every changed field as an audit trail.
+   *
+   * Partial saves are supported: only keys present in the request body are processed.
+   * Required-field validation only fires for keys that ARE present in the payload.
+   *
+   * @param {string} objectType - Entity type
+   * @param {string} objectId   - Record identifier
+   * @body {{ values: Record<string, *> }} values - Key-value pairs keyed by attributeKey
+   * @returns {{ ok: true, saved: number }}
+   * @throws {422} If type coercion fails, range is violated, or a required field is empty
+   */
   router.post('/values/:objectType/:objectId', async (req, res) => {
     const { objectType, objectId } = req.params
     const incoming = req.body?.values || {}
@@ -348,7 +485,16 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
     }
   })
 
-  // DELETE /values/:objectType/:objectId — remove all attribute values for an object (admin reset)
+  /**
+   * DELETE /attributes/api/values/:objectType/:objectId
+   * Removes all attribute values for a record (admin reset / record deletion cleanup).
+   * Before deleting, writes a AttributeValueHistory entry for every field that is being cleared,
+   * preserving the complete audit trail of what existed before the reset.
+   *
+   * @param {string} objectType
+   * @param {string} objectId
+   * @returns {{ ok: true, deleted: number }} Number of value rows removed
+   */
   router.delete('/values/:objectType/:objectId', async (req, res) => {
     const { objectType, objectId } = req.params
     try {
@@ -390,7 +536,16 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
     }
   })
 
-  // GET /history/:objectType/:objectId/:key
+  /**
+   * GET /attributes/api/history/:objectType/:objectId/:key
+   * Returns the full change history for a single attribute on a single record,
+   * ordered most-recent first.
+   *
+   * @param {string} objectType
+   * @param {string} objectId
+   * @param {string} key - attributeKey (AttributeDefinitions.internalKey)
+   * @returns {{ history: AttributeValueHistory[] }} All history rows for this field
+   */
   router.get('/history/:objectType/:objectId/:key', async (req, res) => {
     const { objectType, objectId, key } = req.params
     try {
@@ -406,7 +561,19 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
     }
   })
 
-  // GET /template?objectType=bridge&format=xlsx|csv  (admin only)
+  /**
+   * GET /attributes/api/template?objectType=bridge&format=xlsx|csv
+   * Generates and downloads a pre-formatted import template for the given objectType.
+   * Row 1 marks required columns with `*`; Row 2 contains human-readable column headers.
+   * Data rows start at Row 3. An Instructions sheet is included in XLSX output.
+   *
+   * @query {string} objectType - Required. Object type to build template for.
+   * @query {'xlsx'|'csv'} [format=xlsx] - Output format
+   * @returns {Buffer} File download (XLSX or CSV)
+   * @throws {400} If objectType is missing
+   * @throws {404} If no active attributes are configured for the objectType
+   * @auth Requires 'admin' scope (enforced by route-level middleware in server.js)
+   */
   router.get('/template', async (req, res) => {
     const { objectType, format = 'xlsx' } = req.query
     if (!objectType) return res.status(400).json({ error: { message: 'objectType is required' } })
@@ -469,9 +636,23 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
     }
   })
 
-  // POST /import?objectType=bridge&mode=all|skip  (admin only)
-  // Body: { fileName, contentBase64, mode }  (same pattern as mass-upload)
-  // mode=all: abort on any error; mode=skip: import valid rows, skip errors
+  /**
+   * POST /attributes/api/import?objectType=bridge&mode=all|skip
+   * Bulk-imports attribute values from an XLSX or CSV file (same base64 payload pattern
+   * as the mass-upload API). Resolves object IDs from the bridgeId / restrictionRef column,
+   * then upserts values and appends AttributeValueHistory for every row.
+   *
+   * @query {string} objectType - Required.
+   * @query {'all'|'skip'} [mode=all]
+   *   all  — abort immediately on the first row error (returns 422 with partial results)
+   *   skip — continue past errors, skip invalid rows, report them in the response
+   * @body {{ fileName: string, contentBase64: string, mode?: string }}
+   *   contentBase64 is the base64-encoded file content (XLSX or CSV)
+   * @returns {{ summary: { created, updated, skipped, errors }, rows: RowResult[] }}
+   * @throws {400} If objectType or contentBase64 is missing
+   * @throws {422} In mode=all, if any row contains a validation error
+   * @auth Requires 'admin' scope (enforced by route-level middleware in server.js)
+   */
   router.post('/import', async (req, res) => {
     const { objectType } = req.query
     const { fileName, contentBase64, mode = 'all' } = req.body || {}
@@ -591,7 +772,19 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
     }
   })
 
-  // GET /export?objectType=bridge&format=xlsx|csv
+  /**
+   * GET /attributes/api/export?objectType=bridge&format=xlsx|csv
+   * Exports all records of the given objectType with their current attribute values
+   * as a single flat sheet. Core entity fields (bridgeId, bridgeName, state, etc.) are
+   * included as the leading columns, followed by one column per active attribute definition.
+   * Records with no attribute values are included with empty attribute cells.
+   *
+   * @query {string} objectType - Required.
+   * @query {'xlsx'|'csv'} [format=xlsx] - Output format
+   * @returns {Buffer} File download (XLSX or CSV)
+   * @throws {400} If objectType is missing
+   * @auth Requires 'admin' scope (enforced by route-level middleware in server.js)
+   */
   router.get('/export', async (req, res) => {
     const { objectType, format = 'xlsx' } = req.query
     if (!objectType) return res.status(400).json({ error: { message: 'objectType is required' } })

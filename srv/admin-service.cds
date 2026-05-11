@@ -17,18 +17,34 @@ service AdminService {
   entity BridgeCapacities as projection on my.BridgeCapacities;
   entity BridgeAttributes as projection on my.BridgeAttributes;
   entity BridgeScourAssessments as projection on my.BridgeScourAssessments;
+  entity BridgeScourAssessmentDetail as projection on my.BridgeScourAssessmentDetail;
   entity BridgeDocuments as projection on my.BridgeDocuments;
 
   // ── Bridge Detail Sections — schema entities surfaced for ObjectPage ──────────
   // Inspections + Defects: Inspector+Manager+Admin can write; all authenticated can read
-  entity BridgeInspections     as projection on my.BridgeInspections;
-  entity BridgeDefects         as projection on my.BridgeDefects;
+  entity BridgeInspections as projection on my.BridgeInspections actions {
+    action deactivate() returns BridgeInspections;
+    action reactivate() returns BridgeInspections;
+  };
+  entity BridgeDefects as projection on my.BridgeDefects actions {
+    action deactivate() returns BridgeDefects;
+    action reactivate() returns BridgeDefects;
+  };
   // Structural elements: Manager+Admin write; all read
   entity BridgeElements        as projection on my.BridgeElements;
   // Risk + compliance: Manager+Admin write; all read
-  entity BridgeRiskAssessments as projection on my.BridgeRiskAssessments;
-  entity LoadRatingCertificates as projection on my.LoadRatingCertificates;
-  entity NhvrRouteAssessments  as projection on my.NhvrRouteAssessments;
+  entity BridgeRiskAssessments as projection on my.BridgeRiskAssessments actions {
+    action deactivate() returns BridgeRiskAssessments;
+    action reactivate() returns BridgeRiskAssessments;
+  };
+  entity LoadRatingCertificates as projection on my.LoadRatingCertificates actions {
+    action deactivate() returns LoadRatingCertificates;
+    action reactivate() returns LoadRatingCertificates;
+  };
+  entity NhvrRouteAssessments  as projection on my.NhvrRouteAssessments actions {
+    action deactivate() returns NhvrRouteAssessments;
+    action reactivate() returns NhvrRouteAssessments;
+  };
   // Alerts: Manager+Admin write; all read
   entity AlertsAndNotifications as projection on my.AlertsAndNotifications;
   entity BridgeInspectionElements as projection on my.BridgeInspectionElements;
@@ -43,8 +59,11 @@ service AdminService {
     { grant: ['DELETE'],          to: [] }
   ]
   entity BridgeConditionSurveys as projection on my.BridgeConditionSurveys actions {
-    action deactivate() returns BridgeConditionSurveys;
-    action reactivate() returns BridgeConditionSurveys;
+    action deactivate()       returns BridgeConditionSurveys;
+    action reactivate()       returns BridgeConditionSurveys;
+    action submitForReview()  returns BridgeConditionSurveys;
+    action approveSurvey()    returns BridgeConditionSurveys;
+    action rejectSurvey()     returns BridgeConditionSurveys;
   };
 
   @restrict: [
@@ -104,7 +123,7 @@ service AdminService {
   entity AttributeDefinitions      as projection on my.AttributeDefinitions;
   entity AttributeAllowedValues    as projection on my.AttributeAllowedValues;
   entity AttributeObjectTypeConfig as projection on my.AttributeObjectTypeConfig;
-  @readonly entity AttributeValues       as projection on my.AttributeValues;
+  entity AttributeValues       as projection on my.AttributeValues;
   @readonly entity AttributeValueHistory as projection on my.AttributeValueHistory;
   @readonly entity UserActivity          as projection on my.UserActivity;
   entity SystemConfig as projection on my.SystemConfig;

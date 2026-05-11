@@ -257,6 +257,53 @@ const LRC_COLUMNS = [
   column('notes',                     'string')
 ]
 
+const CONDITION_SURVEY_COLUMNS = [
+  column('bridgeRef',        'string',  { required: true }),
+  column('surveyRef',        'string',  { required: true }),
+  column('surveyDate',       'date',    { required: true }),
+  column('surveyType',       'string',  { required: true }),
+  column('surveyedBy',       'string',  { required: true }),
+  column('conditionRating',  'integer', { required: true }),
+  column('structuralRating', 'integer'),
+  column('overallGrade',     'string'),
+  column('status',           'string'),
+  column('notes',            'string'),
+  column('active',           'boolean'),
+]
+
+const LOAD_RATING_COLUMNS = [
+  column('bridgeRef',       'string',  { required: true }),
+  column('ratingRef',       'string',  { required: true }),
+  column('vehicleClass',    'string',  { required: true }),
+  column('ratingMethod',    'string',  { required: true }),
+  column('ratingFactor',    'decimal'),
+  column('grossMassLimit',  'decimal'),
+  column('assessedBy',      'string',  { required: true }),
+  column('assessmentDate',  'date',    { required: true }),
+  column('validTo',         'date'),
+  column('status',          'string'),
+  column('ratingBasis',     'string'),
+  column('active',          'boolean'),
+]
+
+const PERMIT_COLUMNS = [
+  column('bridgeRef',            'string',  { required: true }),
+  column('permitRef',            'string',  { required: true }),
+  column('permitType',           'string',  { required: true }),
+  column('applicantName',        'string',  { required: true }),
+  column('vehicleClass',         'string'),
+  column('grossMass',            'decimal'),
+  column('height',               'decimal'),
+  column('width',                'decimal'),
+  column('length',               'decimal'),
+  column('appliedDate',          'date'),
+  column('validFrom',            'date'),
+  column('validTo',              'date'),
+  column('status',               'string'),
+  column('conditionsOfApproval', 'string'),
+  column('active',               'boolean'),
+]
+
 const DATASETS = Object.freeze([
   lookupDataset('AssetClasses', 'Asset Classes', 'Bridge asset class dropdown values'),
   lookupDataset('States', 'States', 'Bridge state dropdown values'),
@@ -364,13 +411,16 @@ const DATASETS = Object.freeze([
       { header: 'Comments',            field: 'comments' }
     ],
     async importRows(rows, tx) {
-      let inserted = 0, updated = 0
-      for (const row of rows) {
-        if (!row.bridgeId || !row.elementType) continue
-        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
-        if (!bridge) continue
-        const data = {
-          bridge_ID: bridge.ID,
+      const valid = rows.filter(r => r.bridgeId && r.elementType)
+      if (!valid.length) return { inserted: 0, updated: 0, processed: rows.length }
+      const bridgeIds = [...new Set(valid.map(r => r.bridgeId))]
+      const bridges = await tx.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeIds } }))
+      const bm = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+      const entries = valid.map(row => {
+        const bridge_ID = bm.get(row.bridgeId)
+        if (!bridge_ID) return null
+        return {
+          ID: cds.utils.uuid(), bridge_ID,
           elementType: row.elementType,
           conditionState1Qty: row.conditionState1Qty ? parseFloat(row.conditionState1Qty) : null,
           conditionState2Qty: row.conditionState2Qty ? parseFloat(row.conditionState2Qty) : null,
@@ -381,13 +431,11 @@ const DATASETS = Object.freeze([
           conditionState3Pct: row.conditionState3Pct ? parseFloat(row.conditionState3Pct) : null,
           conditionState4Pct: row.conditionState4Pct ? parseFloat(row.conditionState4Pct) : null,
           elementHealthRating: row.elementHealthRating ? parseFloat(row.elementHealthRating) : null,
-          unit: row.unit,
-          comments: row.comments
+          unit: row.unit, comments: row.comments
         }
-        await tx.run(INSERT.into('bridge.management.BridgeInspectionElements').entries(data))
-        inserted++
-      }
-      return { inserted, updated, processed: rows.length }
+      }).filter(Boolean)
+      if (entries.length) await tx.run(INSERT.into('bridge.management.BridgeInspectionElements').entries(entries))
+      return { inserted: entries.length, updated: 0, processed: rows.length }
     }
   },
   {
@@ -411,13 +459,16 @@ const DATASETS = Object.freeze([
       { header: 'Comments',              field: 'comments' }
     ],
     async importRows(rows, tx) {
-      let inserted = 0, updated = 0
-      for (const row of rows) {
-        if (!row.bridgeId) continue
-        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
-        if (!bridge) continue
-        await tx.run(INSERT.into('bridge.management.BridgeCarriageways').entries({
-          bridge_ID: bridge.ID,
+      const valid = rows.filter(r => r.bridgeId)
+      if (!valid.length) return { inserted: 0, updated: 0, processed: rows.length }
+      const bridgeIds = [...new Set(valid.map(r => r.bridgeId))]
+      const bridges = await tx.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeIds } }))
+      const bm = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+      const entries = valid.map(row => {
+        const bridge_ID = bm.get(row.bridgeId)
+        if (!bridge_ID) return null
+        return {
+          ID: cds.utils.uuid(), bridge_ID,
           roadNumber: row.roadNumber, roadRankCode: row.roadRankCode, roadClassCode: row.roadClassCode,
           carriageCode: row.carriageCode,
           minWidthM: row.minWidthM ? parseFloat(row.minWidthM) : null,
@@ -427,10 +478,10 @@ const DATASETS = Object.freeze([
           prescribedDirFrom: row.prescribedDirFrom, prescribedDirTo: row.prescribedDirTo,
           distanceFromStartKm: row.distanceFromStartKm ? parseFloat(row.distanceFromStartKm) : null,
           linkForInspection: row.linkForInspection, comments: row.comments
-        }))
-        inserted++
-      }
-      return { inserted, updated, processed: rows.length }
+        }
+      }).filter(Boolean)
+      if (entries.length) await tx.run(INSERT.into('bridge.management.BridgeCarriageways').entries(entries))
+      return { inserted: entries.length, updated: 0, processed: rows.length }
     }
   },
   {
@@ -450,21 +501,24 @@ const DATASETS = Object.freeze([
       { header: 'Comments',      field: 'comments' }
     ],
     async importRows(rows, tx) {
-      let inserted = 0, updated = 0
-      for (const row of rows) {
-        if (!row.bridgeId) continue
-        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
-        if (!bridge) continue
-        await tx.run(INSERT.into('bridge.management.BridgeContacts').entries({
-          bridge_ID: bridge.ID,
+      const valid = rows.filter(r => r.bridgeId)
+      if (!valid.length) return { inserted: 0, updated: 0, processed: rows.length }
+      const bridgeIds = [...new Set(valid.map(r => r.bridgeId))]
+      const bridges = await tx.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeIds } }))
+      const bm = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+      const entries = valid.map(row => {
+        const bridge_ID = bm.get(row.bridgeId)
+        if (!bridge_ID) return null
+        return {
+          ID: cds.utils.uuid(), bridge_ID,
           contactGroup: row.contactGroup, primaryContact: row.primaryContact,
           organisation: row.organisation, position: row.position,
           phone: row.phone, mobile: row.mobile, address: row.address,
           email: row.email, comments: row.comments
-        }))
-        inserted++
-      }
-      return { inserted, updated, processed: rows.length }
+        }
+      }).filter(Boolean)
+      if (entries.length) await tx.run(INSERT.into('bridge.management.BridgeContacts').entries(entries))
+      return { inserted: entries.length, updated: 0, processed: rows.length }
     }
   },
   {
@@ -487,13 +541,16 @@ const DATASETS = Object.freeze([
       { header: 'Comments',         field: 'comments' }
     ],
     async importRows(rows, tx) {
-      let inserted = 0, updated = 0
-      for (const row of rows) {
-        if (!row.bridgeId) continue
-        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
-        if (!bridge) continue
-        await tx.run(INSERT.into('bridge.management.BridgeMehComponents').entries({
-          bridge_ID: bridge.ID,
+      const valid = rows.filter(r => r.bridgeId)
+      if (!valid.length) return { inserted: 0, updated: 0, processed: rows.length }
+      const bridgeIds = [...new Set(valid.map(r => r.bridgeId))]
+      const bridges = await tx.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeIds } }))
+      const bm = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+      const entries = valid.map(row => {
+        const bridge_ID = bm.get(row.bridgeId)
+        if (!bridge_ID) return null
+        return {
+          ID: cds.utils.uuid(), bridge_ID,
           componentType: row.componentType, name: row.name, make: row.make,
           model: row.model, serialNumber: row.serialNumber,
           isElectrical: row.isElectrical === true || row.isElectrical === 'true' || row.isElectrical === '1',
@@ -502,11 +559,38 @@ const DATASETS = Object.freeze([
           inspFrequency: row.inspFrequency, locationStored: row.locationStored,
           shelfLifeYears: row.shelfLifeYears ? parseInt(row.shelfLifeYears, 10) : null,
           comments: row.comments
-        }))
-        inserted++
-      }
-      return { inserted, updated, processed: rows.length }
+        }
+      }).filter(Boolean)
+      if (entries.length) await tx.run(INSERT.into('bridge.management.BridgeMehComponents').entries(entries))
+      return { inserted: entries.length, updated: 0, processed: rows.length }
     }
+  },
+  {
+    name: 'BridgeConditionSurveys',
+    label: 'Condition Surveys',
+    description: 'Bulk upload condition survey records linked to bridges',
+    entity: 'bridge.management.BridgeConditionSurveys',
+    columns: CONDITION_SURVEY_COLUMNS,
+    orderBy: 'surveyRef',
+    importer: importConditionSurveyRows
+  },
+  {
+    name: 'BridgeLoadRatings',
+    label: 'Load Ratings',
+    description: 'Bulk upload per-vehicle-class load rating assessments',
+    entity: 'bridge.management.BridgeLoadRatings',
+    columns: LOAD_RATING_COLUMNS,
+    orderBy: 'ratingRef',
+    importer: importLoadRatingRows
+  },
+  {
+    name: 'BridgePermits',
+    label: 'Permits',
+    description: 'Bulk upload permit applications and approvals',
+    entity: 'bridge.management.BridgePermits',
+    columns: PERMIT_COLUMNS,
+    orderBy: 'permitRef',
+    importer: importPermitRows
   }
 ])
 
@@ -1426,6 +1510,51 @@ async function importProvisionRows(tx, dataset, rows, warnings, auditContext) {
     naturalKey: 'provisionNumber',
     objectType: 'BridgeRestrictionProvision',
     getName: r => `${r.restrictionRef} / Provision ${r.provisionNumber}`
+  })
+}
+
+async function importConditionSurveyRows(tx, dataset, rows, warnings, auditContext) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+  await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  for (const row of normalized) {
+    if (!row.status) row.status = 'Draft'
+    if (row.active === null || row.active === undefined) row.active = true
+  }
+  return importCuidEntityRows(tx, dataset, normalized.map(r => ({ ...r, __alreadyNormalized: true })), warnings, auditContext, {
+    naturalKey: 'surveyRef',
+    objectType: 'BridgeConditionSurvey',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.surveyRef}`
+  })
+}
+
+async function importLoadRatingRows(tx, dataset, rows, warnings, auditContext) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+  await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  for (const row of normalized) {
+    if (!row.status) row.status = 'Active'
+    if (row.active === null || row.active === undefined) row.active = true
+  }
+  return importCuidEntityRows(tx, dataset, normalized.map(r => ({ ...r, __alreadyNormalized: true })), warnings, auditContext, {
+    naturalKey: 'ratingRef',
+    objectType: 'BridgeLoadRating',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.ratingRef}`
+  })
+}
+
+async function importPermitRows(tx, dataset, rows, warnings, auditContext) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+  await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  for (const row of normalized) {
+    if (!row.status) row.status = 'Pending'
+    if (row.active === null || row.active === undefined) row.active = true
+  }
+  return importCuidEntityRows(tx, dataset, normalized.map(r => ({ ...r, __alreadyNormalized: true })), warnings, auditContext, {
+    naturalKey: 'permitRef',
+    objectType: 'BridgePermit',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.permitRef}`
   })
 }
 

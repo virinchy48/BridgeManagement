@@ -1,6 +1,6 @@
-(function () {
+sap.ui.define([], function () {
   'use strict';
-
+  (function () {
   var API_BASE = '/attributes/api';
   var OBJECT_TYPE = 'bridge';
 
@@ -140,10 +140,14 @@
       attrs.forEach(function (attr) {
         var val = _s.values[attr.internalKey];
         html += '<div>';
+        var helpIcon = attr.helpText
+              ? '<span title="' + attr.helpText.replace(/"/g, '&quot;') + '" style="cursor:help;color:var(--sapNeutralColor,#6a6d70);margin-left:0.25rem;font-size:0.75rem">ⓘ</span>'
+              : '';
         html += '<label style="display:block;font-size:12px;color:#6a7a8b;font-weight:500;margin-bottom:3px">'
               + esc(attr.name)
               + (attr.required ? ' <span style="color:#bb0000">*</span>' : '')
               + (attr.unit ? ' <span style="color:#aaa;font-weight:400">(' + esc(attr.unit) + ')</span>' : '')
+              + helpIcon
               + '</label>';
         if (_s.editMode) {
           html += renderInput(attr, val);
@@ -282,6 +286,22 @@
     var id = getBridgeId();
     if (!id) return;
     var values = collectValues();
+
+    var group = _s.groups.find(function (g) { return g.internalKey === _s.selectedKey; });
+    var requiredErrors = [];
+    if (group) {
+      (group.attributes || []).forEach(function (attr) {
+        if (!attr.required) return;
+        var val = values[attr.internalKey];
+        var isEmpty = val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
+        if (isEmpty) requiredErrors.push(attr.name);
+      });
+    }
+    if (requiredErrors.length > 0) {
+      alert('Required attributes missing: ' + requiredErrors.join(', '));
+      return;
+    }
+
     fetch(API_BASE + '/values/' + OBJECT_TYPE + '/' + id, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -347,4 +367,6 @@
     if (n < 20) setTimeout(function () { _boot(n + 1); }, 300);
   }(0));
 
-}());
+  }());
+  return {};
+});

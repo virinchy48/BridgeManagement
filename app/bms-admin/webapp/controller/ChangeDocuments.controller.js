@@ -97,16 +97,13 @@ sap.ui.define([
       this.getView().setModel(this._s2Model, "s2");
       this._rawRows        = [];
       this._activeBatchKey = null;
+      this._lastParams     = null;
+      this._hasMore        = false;
     },
 
     // ── Section 1: Record Changes ─────────────────────────────────────────
 
     onSearchRecords: function () {
-      var view = this.getView();
-      view.setBusy(true);
-      this._activeBatchKey = null;
-      this.byId("s2ContextStrip").setVisible(false);
-
       var params = new URLSearchParams();
       var ot  = this.byId("s1ObjectType").getSelectedKey();
       var src = this.byId("s1Source").getSelectedKey();
@@ -118,12 +115,30 @@ sap.ui.define([
       if (usr)  params.set("user", usr);
       if (from) params.set("from", from);
       if (to)   params.set("to", to);
+      params.set("limit", "200");
+
+      this._lastParams     = params;
+      this._activeBatchKey = null;
+      this.byId("s2ContextStrip").setVisible(false);
+      this._fetchChanges({ append: false, offset: 0 });
+    },
+
+    _fetchChanges: function (opts) {
+      var append = opts && opts.append;
+      var offset = (opts && opts.offset) || 0;
+      var view   = this.getView();
+      view.setBusy(true);
+
+      var params = new URLSearchParams(this._lastParams ? this._lastParams.toString() : "");
+      params.set("offset", String(offset));
 
       fetch("/audit/api/changes?" + params.toString(), { credentials: "same-origin" })
         .then(function (r) { if (!r.ok) throw new Error(r.status + " " + r.statusText); return r.json(); })
         .then(function (data) {
           view.setBusy(false);
-          var rows = data.changes || [];
+          var rows = data.changes || data.value || [];
+          this._hasMore = !!data.hasMore;
+
           var needle = (this.byId("s1ObjectId").getValue() || "").trim().toLowerCase();
           if (needle) {
             rows = rows.filter(function (r) {
@@ -131,16 +146,23 @@ sap.ui.define([
                      (r.objectId   || "").toLowerCase().includes(needle);
             });
           }
-          this._rawRows = rows;
-          this._renderS1(rows);
-          this._s2Model.setProperty("/items", []);
-          this.byId("s2Count").setText("");
-          this.byId("tabAttributes").setCount("");
+          this._rawRows = append ? (this._rawRows || []).concat(rows) : rows;
+          this._renderS1(this._rawRows);
+          if (!append) {
+            this._s2Model.setProperty("/items", []);
+            this.byId("s2Count").setText("");
+            this.byId("tabAttributes").setCount("");
+          }
         }.bind(this))
         .catch(function (err) {
           view.setBusy(false);
           MessageBox.error("Failed to load changes: " + err.message);
         });
+    },
+
+    onLoadMore: function () {
+      var currentCount = (this._rawRows || []).length;
+      this._fetchChanges({ append: true, offset: currentCount });
     },
 
     _renderS1: function (rows) {
@@ -211,6 +233,8 @@ sap.ui.define([
       this._s1Model.setProperty("/items", []);
       this._rawRows        = [];
       this._activeBatchKey = null;
+      this._lastParams     = null;
+      this._hasMore        = false;
       this.byId("s1Count").setText("");
       this.byId("tabRecords").setCount("");
       this.byId("kpiStrip").setVisible(false);
@@ -334,6 +358,14 @@ sap.ui.define([
     },
 
     // ── Export ────────────────────────────────────────────────────────────
+
+    onExportS1Csv: function () {
+      var items = this._s1Model.getProperty("/items") || [];
+      if (!items.length) { MessageToast.show("No data to export."); return; }
+      var FIELDS  = ["changedAtDisplay","actionType","changedBy","objectType","objectName","fieldCount","changeSource","batchId"];
+      var HEADERS = ["Changed At","Action","Changed By","Entity Type","Record Name","Fields Changed","Source","Batch ID"];
+      this._downloadCsv(items, FIELDS, HEADERS, "BMS_RecordChanges");
+    },
 
     onExportCsv: function () {
       var items = this._s2Model.getProperty("/items") || [];

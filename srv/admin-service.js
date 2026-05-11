@@ -403,7 +403,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   // activeRestrictionCount: count of active BridgeRestrictions (detail page only)
   const POSTING_CRITICALITY = { 'Unrestricted': 3, 'Under Review': 2, 'Restricted': 2, 'Closed': 1 }
 
-  this.after('READ', Bridges, async (results) => {
+  this.after('READ', Bridges, async (results, req) => {
     const list = Array.isArray(results) ? results : (results ? [results] : [])
     for (const b of list) {
       if (!b) continue
@@ -411,8 +411,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       b.activeRestrictionCount   = 0
     }
     // Batch COUNT active restrictions for all records in one query
+    const wantCount = !req.query?.$select || req.query.$select.split(',').map(f => f.trim()).includes('activeRestrictionCount')
     const ids = list.map(b => b.ID).filter(Boolean)
-    if (ids.length > 0) {
+    if (wantCount && ids.length > 0) {
       const counts = await SELECT.from('bridge.management.BridgeRestrictions')
         .columns('bridge_ID', 'count(1) as cnt')
         .where({ bridge_ID: { in: ids }, active: true })
@@ -453,6 +454,17 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   })
   this.before('DELETE', Restrictions, req => {
     if (req.data?.IsActiveEntity !== false) req.error(405, 'Hard delete is not permitted. Use the Deactivate action instead.')
+  })
+
+  this.after('READ', Restrictions, (data) => {
+    const results = Array.isArray(data) ? data : [data]
+    const today = new Date()
+    const in30 = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+    results.forEach(r => {
+      if (!r || !r.reviewDueDate) { if (r) r.reviewCriticality = null; return }
+      const due = new Date(r.reviewDueDate)
+      r.reviewCriticality = due < today ? 1 : due <= in30 ? 2 : 3
+    })
   })
   this.before('DELETE', BridgeRestrictions, req => {
     if (req.data?.IsActiveEntity !== false) req.error(405, 'Hard delete is not permitted. Use the Deactivate action to retire this restriction.')
@@ -899,8 +911,185 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     }
   })
 
+  // ── BridgeInspections ────────────────────────────────────────────────────
+  const { BridgeInspections, BridgeDefects, BridgeRiskAssessments,
+          LoadRatingCertificates, NhvrRouteAssessments,
+          BridgeConditionSurveys, BridgeLoadRatings, BridgePermits } = this.entities
+
+  this.before('NEW', BridgeInspections.drafts, async (req) => {
+    if (!req.data.inspectionRef) {
+      const last = await SELECT.one.from(BridgeInspections).columns('inspectionRef').orderBy('inspectionRef desc').limit(1)
+      const seq = last?.inspectionRef ? parseInt(last.inspectionRef.replace('INS-', ''), 10) + 1 : 1
+      req.data.inspectionRef = `INS-${String(seq).padStart(4, '0')}`
+    }
+    if (req.data.active === undefined) req.data.active = true
+  })
+
+  this.on('deactivate', BridgeInspections, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.BridgeInspections', { ID })
+    await db.run(UPDATE('bridge.management.BridgeInspections').set({ active: false }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'Inspection', objectId: ID, objectName: old?.inspectionRef || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'active', oldValue: 'true', newValue: 'false' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeInspections').where({ ID }))
+  })
+
+  this.on('reactivate', BridgeInspections, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.BridgeInspections', { ID })
+    await db.run(UPDATE('bridge.management.BridgeInspections').set({ active: true }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'Inspection', objectId: ID, objectName: old?.inspectionRef || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'active', oldValue: 'false', newValue: 'true' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeInspections').where({ ID }))
+  })
+
+  // ── BridgeDefects ─────────────────────────────────────────────────────────
+  this.before('NEW', BridgeDefects.drafts, async (req) => {
+    if (!req.data.defectId) {
+      const last = await SELECT.one.from(BridgeDefects).columns('defectId').orderBy('defectId desc').limit(1)
+      const m = last?.defectId?.match(/^DEF-(\d+)$/)
+      const seq = m ? parseInt(m[1], 10) + 1 : 1
+      req.data.defectId = `DEF-${String(seq).padStart(4, '0')}`
+    }
+    if (req.data.active === undefined) req.data.active = true
+  })
+
+  this.on('deactivate', BridgeDefects, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.BridgeDefects', { ID })
+    await db.run(UPDATE('bridge.management.BridgeDefects').set({ active: false }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'Defect', objectId: ID, objectName: old?.defectId || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'active', oldValue: 'true', newValue: 'false' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeDefects').where({ ID }))
+  })
+
+  this.on('reactivate', BridgeDefects, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.BridgeDefects', { ID })
+    await db.run(UPDATE('bridge.management.BridgeDefects').set({ active: true }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'Defect', objectId: ID, objectName: old?.defectId || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'active', oldValue: 'false', newValue: 'true' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeDefects').where({ ID }))
+  })
+
+  // ── BridgeRiskAssessments ────────────────────────────────────────────────
+  this.before('NEW', BridgeRiskAssessments.drafts, async (req) => {
+    if (!req.data.assessmentId) {
+      const last = await SELECT.one.from(BridgeRiskAssessments).columns('assessmentId').orderBy('assessmentId desc').limit(1)
+      const m = last?.assessmentId?.match(/^RSK-(\d+)$/)
+      const seq = m ? parseInt(m[1], 10) + 1 : 1
+      req.data.assessmentId = `RSK-${String(seq).padStart(4, '0')}`
+    }
+    if (req.data.active === undefined) req.data.active = true
+  })
+
+  this.on('deactivate', BridgeRiskAssessments, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.BridgeRiskAssessments', { ID })
+    await db.run(UPDATE('bridge.management.BridgeRiskAssessments').set({ active: false }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'RiskAssessment', objectId: ID, objectName: old?.assessmentId || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'active', oldValue: 'true', newValue: 'false' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeRiskAssessments').where({ ID }))
+  })
+
+  this.on('reactivate', BridgeRiskAssessments, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.BridgeRiskAssessments', { ID })
+    await db.run(UPDATE('bridge.management.BridgeRiskAssessments').set({ active: true }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'RiskAssessment', objectId: ID, objectName: old?.assessmentId || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'active', oldValue: 'false', newValue: 'true' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeRiskAssessments').where({ ID }))
+  })
+
+  // ── LoadRatingCertificates ───────────────────────────────────────────────
+  this.on('deactivate', LoadRatingCertificates, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.LoadRatingCertificates', { ID })
+    await db.run(UPDATE('bridge.management.LoadRatingCertificates').set({ status: 'Superseded' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'LoadRatingCert', objectId: ID, objectName: old?.certificateNumber || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'status', oldValue: old?.status || 'Current', newValue: 'Superseded' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.LoadRatingCertificates').where({ ID }))
+  })
+
+  this.on('reactivate', LoadRatingCertificates, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.LoadRatingCertificates', { ID })
+    await db.run(UPDATE('bridge.management.LoadRatingCertificates').set({ status: 'Current' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'LoadRatingCert', objectId: ID, objectName: old?.certificateNumber || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'status', oldValue: old?.status || 'Superseded', newValue: 'Current' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.LoadRatingCertificates').where({ ID }))
+  })
+
+  // ── NhvrRouteAssessments ─────────────────────────────────────────────────
+  this.on('deactivate', NhvrRouteAssessments, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.NhvrRouteAssessments', { ID })
+    await db.run(UPDATE('bridge.management.NhvrRouteAssessments').set({ assessmentStatus: 'Superseded' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'NhvrAssessment', objectId: ID, objectName: old?.assessmentId || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'assessmentStatus', oldValue: old?.assessmentStatus || 'Current', newValue: 'Superseded' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.NhvrRouteAssessments').where({ ID }))
+  })
+
+  this.on('reactivate', NhvrRouteAssessments, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const old = await fetchCurrentRecord(db, 'bridge.management.NhvrRouteAssessments', { ID })
+    await db.run(UPDATE('bridge.management.NhvrRouteAssessments').set({ assessmentStatus: 'Current' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'NhvrAssessment', objectId: ID, objectName: old?.assessmentId || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'assessmentStatus', oldValue: old?.assessmentStatus || 'Superseded', newValue: 'Current' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.NhvrRouteAssessments').where({ ID }))
+  })
+
   // ── BridgeConditionSurveys (CON tile) ───────────────────────────────────
-  const { BridgeConditionSurveys, BridgeLoadRatings, BridgePermits } = this.entities
+
+  // Draft guards — block deactivate/reactivate/approve/rejectPermit on unsaved drafts
+  this.on('deactivate',   BridgeConditionSurveys.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',   BridgeConditionSurveys.drafts, req => req.error(409, 'Save or discard your changes before reactivating.'))
+  this.on('deactivate',   BridgeLoadRatings.drafts,      req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',   BridgeLoadRatings.drafts,      req => req.error(409, 'Save or discard your changes before reactivating.'))
+  this.on('deactivate',   BridgePermits.drafts,          req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',   BridgePermits.drafts,          req => req.error(409, 'Save or discard your changes before reactivating.'))
+  this.on('approve',      BridgePermits.drafts,          req => req.error(409, 'Save or discard your changes before approving.'))
+  this.on('rejectPermit', BridgePermits.drafts,          req => req.error(409, 'Save or discard your changes before rejecting.'))
 
   this.before('NEW', BridgeConditionSurveys.drafts, async (req) => {
     if (!req.data.surveyRef) {
@@ -968,6 +1157,54 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       objectType: 'ConditionSurvey', objectId: result.ID, objectName: fresh.surveyRef || result.ID,
       source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system', changes
     })
+  })
+
+  this.on('submitForReview', BridgeConditionSurveys, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const survey = await db.run(SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID }))
+    if (!survey) return req.error(404, 'Condition survey not found')
+    if (survey.status !== 'Draft')
+      return req.error(422, `Cannot submit survey in status "${survey.status}" — only Draft surveys can be submitted`)
+    await db.run(UPDATE('bridge.management.BridgeConditionSurveys').set({ status: 'Submitted' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'ConditionSurvey', objectId: ID, objectName: survey.surveyRef || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'status', oldValue: 'Draft', newValue: 'Submitted' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID }))
+  })
+
+  this.on('approveSurvey', BridgeConditionSurveys, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const survey = await db.run(SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID }))
+    if (!survey) return req.error(404, 'Condition survey not found')
+    if (survey.status !== 'Submitted')
+      return req.error(422, `Cannot approve survey in status "${survey.status}" — only Submitted surveys can be approved`)
+    await db.run(UPDATE('bridge.management.BridgeConditionSurveys').set({ status: 'Approved' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'ConditionSurvey', objectId: ID, objectName: survey.surveyRef || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'status', oldValue: 'Submitted', newValue: 'Approved' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID }))
+  })
+
+  this.on('rejectSurvey', BridgeConditionSurveys, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const survey = await db.run(SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID }))
+    if (!survey) return req.error(404, 'Condition survey not found')
+    if (survey.status !== 'Submitted')
+      return req.error(422, `Cannot reject survey in status "${survey.status}" — only Submitted surveys can be rejected`)
+    await db.run(UPDATE('bridge.management.BridgeConditionSurveys').set({ status: 'Rejected' }).where({ ID }))
+    await writeChangeLogs(db, {
+      objectType: 'ConditionSurvey', objectId: ID, objectName: survey.surveyRef || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'status', oldValue: 'Submitted', newValue: 'Rejected' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID }))
   })
 
   this.before('DELETE', BridgeConditionSurveys, (req) => {

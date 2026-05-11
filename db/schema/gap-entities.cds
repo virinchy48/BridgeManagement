@@ -33,6 +33,9 @@ entity BridgeCarriageways : cuid, managed {
   minWidthM               : Decimal(9,2);
   maxWidthM               : Decimal(9,2);
   laneCount               : Integer;
+  speedLimitKmh           : Integer;
+  surfaceCondition        : String(20);
+  guardrailType           : String(40);
   verticalClearanceM      : Decimal(9,2);
   prescribedDirFrom       : String(80);
   prescribedDirTo         : String(80);
@@ -66,9 +69,16 @@ entity BridgeMehComponents : cuid, managed {
   isHydraulic       : Boolean;
   inspFrequency     : String(40);
   locationStored    : String(111);
-  shelfLifeYears    : Integer;
-  attributes        : LargeString;
-  comments          : LargeString;
+  shelfLifeYears      : Integer;
+  s4EquipmentNumber   : String(18);
+  installationDate    : Date;
+  lastServiceDate     : Date;
+  nextServiceDue      : Date;
+  condition           : String(20);
+  criticality         : String(20);
+  warranteeExpiry     : Date;
+  attributes          : LargeString;
+  comments            : LargeString;
 }
 
 extend entity Bridges with {

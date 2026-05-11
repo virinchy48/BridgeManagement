@@ -1,10 +1,12 @@
 namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
 using { bridge.management.Bridges } from './bridge-entity';
+using { bridge.management.BridgeElements } from './elements';
 
 // Inspection capture record — S/4 EAM owns scheduling; this captures the event data
 entity BridgeInspections : cuid, managed {
     bridge                       : Association to Bridges @mandatory;
+    inspectionRef                : String(40);
     inspectionDate               : Date        @mandatory;
     inspectionType               : String(40)  @mandatory;
 
@@ -25,20 +27,28 @@ entity BridgeInspections : cuid, managed {
 
     reportStorageRef             : String(500);
     inspectionNotes              : LargeString;
-    defects                      : Composition of many BridgeDefects
-                                   on defects.inspection = $self;
+
+    overallConditionRating       : Integer @assert.range: [1, 10];
+    criticalFindings             : Boolean default false;
+    recommendedActions           : LargeString;
+    nextInspectionRecommended    : Date;
+
+    active                       : Boolean default true;
 }
 
-// Defect capture — links optionally to S/4 notification when EAM is connected
+// Defect capture — inspection link is optional (standalone defects allowed)
 entity BridgeDefects : cuid, managed {
     bridge       : Association to Bridges      @mandatory;
-    inspection   : Association to BridgeInspections @mandatory;
-    defectId     : String(30)  @mandatory;
+    inspection   : Association to BridgeInspections;
+    defectId     : String(30);
+    deteriorationMechanism : String(60);     // Corrosion | Fatigue | Impact | Scour | Overload | Chemical | Settlement | Aging
+    defectCode       : String(20);           // SIMS element defect code (e.g. BS01, SW23)
 
     defectType   : String(40)  @mandatory;
     defectDescription : String(500) @mandatory;
 
-    bridgeElement : String(40) @mandatory;
+    bridgeElement : String(40);
+    bridgeElementRef : Association to BridgeElements;  // optional VH-driven link to structured element
     spanNumber    : Integer;
     pierNumber    : Integer;
     face          : String(60);
@@ -50,7 +60,7 @@ entity BridgeDefects : cuid, managed {
     dimensionLengthMm : Decimal(8,2);
     dimensionWidthMm  : Decimal(8,2);
     dimensionDepthMm  : Decimal(8,2);
-    photoReferences   : String(1000);
+    photoReferences   : LargeString;
 
     remediationStatus      : String(20) default 'Open';
     estimatedRepairCost    : Decimal(12,2);
@@ -62,8 +72,11 @@ entity BridgeDefects : cuid, managed {
     s4NotificationId : String(40);
     s4OrderId        : String(40);
     s4SyncStatus     : String(20) default 'NOT_SYNCED';
+    s4SyncDate       : Timestamp;            // Last successful sync to S/4 HANA
+    s4SyncError      : String(500);          // Last sync error message
 
-    notes : LargeString;
+    notes   : LargeString;
+    active  : Boolean default true;
 }
 
 annotate BridgeInspections with @(cds.persistence.indexes: [
@@ -78,6 +91,7 @@ annotate BridgeDefects with @(cds.persistence.indexes: [
     { name: 'idx_defect_status',   columns: ['remediationStatus'] }
 ]);
 
+// inspections: standalone draft entity — no longer a composition child of Bridges
 extend entity Bridges with {
-    inspections : Composition of many BridgeInspections on inspections.bridge = $self;
+    inspections : Association to many BridgeInspections on inspections.bridge = $self;
 }

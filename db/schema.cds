@@ -27,7 +27,7 @@ namespace bridge.management;
 
 extend entity Bridges with {
       restriction  : Association to Restrictions;
-      capacities   : Composition of many BridgeCapacities
+      capacities   : Association to many BridgeCapacities
                        on capacities.bridge = $self;
       restrictions : Composition of many BridgeRestrictions
                        on restrictions.bridge = $self;
@@ -37,6 +37,7 @@ extend entity Bridges with {
                        on scourAssessments.bridge = $self;
       documents    : Composition of many BridgeDocuments
                        on documents.bridge = $self;
+      maintenanceClass     : String(20);         // TfNSW maintenance tier (A/B/C/D)
 }
 
 /** Hierarchically organized Restrictions */
@@ -85,6 +86,10 @@ entity Restrictions : cuid, managed {
   loadLimitOrderExpiry : Date;         // Date LLO expires
   // ── NHVR Escort requirements ─────────────────────────────────────────────
   pilotVehicleCount   : Integer;       // Number of pilot/escort vehicles required (NHVR-HVNL)
+  reviewDueDate        : Date;               // When the restriction must next be reviewed
+  legalEffectiveDate   : Date;               // Date restriction has legal force (gazette effective date)
+  signRequirements     : String(255);        // AS 1742.10 sign type and placement notes
+  virtual reviewCriticality : Integer;       // 1=Overdue, 2=Due within 30d, 3=OK — computed in after READ
   parent   : Association to Restrictions;
   children : Composition of many Restrictions
                on children.parent = $self;
@@ -201,14 +206,25 @@ entity BridgeCapacities : cuid, managed {
   criticalElement       : String(255);    // Critical fatigue element
   fatigueDetailCategory : String(10);     // AS 5100.6 §13.5 detail category (A|B|C|D|E|F|G)
 
+  // ── Temporal validity (valid-time pattern) ───────────────────────────────
+  effectiveFrom         : Date;           // Date rating came into regulatory force (gazette/order date)
+  effectiveTo           : Date;           // Null = currently operative; set by handler on supersession
+
   // ── Capacity Status ───────────────────────────────────────────────────────
-  capacityStatus        : String(40);     // e.g. Current, Under Review, Superseded
+  capacityStatus        : String(40) default 'Current';  // Current | Superseded | Under Review | Revoked
+  supersessionReason    : String(300);    // Why this record was superseded (deterioration, rehab, etc.)
   lastReviewedBy        : String(111);    // Engineer name + NER/CPEng
   statusReviewDue       : Date;           // Next review due date
 
   // ── Engineering Notes ─────────────────────────────────────────────────────
   engineeringNotes      : LargeString;    // Assessment notes, conditions, limitations
 }
+
+annotate BridgeCapacities with @(cds.persistence.indexes: [
+  { name: 'idx_cap_bridge',  columns: ['bridge_ID'] },
+  { name: 'idx_cap_status',  columns: ['capacityStatus'] },
+  { name: 'idx_cap_current', columns: ['bridge_ID', 'capacityType', 'effectiveTo'] }
+]);
 
 entity BridgeAttributes : cuid, managed {
   bridge              : Association to Bridges;
@@ -413,6 +429,15 @@ entity ChangeLog {
   batchId          : String(111);  // groups all fields changed in one save
 }
 
+annotate ChangeLog with @(cds.persistence.indexes: [
+  { name: 'idx_cl_changedat',  columns: ['changedAt'] },
+  { name: 'idx_cl_objecttype', columns: ['objectType'] },
+  { name: 'idx_cl_objectid',   columns: ['objectId'] },
+  { name: 'idx_cl_changedby',  columns: ['changedBy'] },
+  { name: 'idx_cl_batchid',    columns: ['batchId'] },
+  { name: 'idx_cl_composite',  columns: ['objectType', 'objectId', 'changedAt'] }
+]);
+
 entity UserActivity {
   key userId      : String(111);
   displayName     : String(255);
@@ -515,6 +540,11 @@ entity BridgeConditionSurveys : cuid, managed, ChangeTracked {
   surveyDate       : Date @mandatory;
   surveyType       : String(40);                             // Routine | Detailed | Principal | Special
   surveyedBy       : String(111);
+  inspectorAccreditationLevel : String(20);  // Austroads Level 1 | Level 2 | Level 3
+  accessMethod         : String(40);         // Visual | Under-bridge unit | Rope access | Diving
+  nextSurveyRecommended: Date;
+  estimatedRehabCost   : Decimal(12,2);      // AUD
+  actionPlan           : LargeString;
   conditionRating  : Integer @assert.range: [1,10];
   structuralRating : Integer @assert.range: [1,10];
   overallGrade     : String(20);                             // Good | Satisfactory | Poor | Critical
@@ -522,18 +552,36 @@ entity BridgeConditionSurveys : cuid, managed, ChangeTracked {
   status           : String(20) default 'Draft';             // Draft | Submitted | Approved
 }
 
+type LoadRatingVehicleClass : String enum {
+  T44    = 'T44';    SM1600 = 'SM1600'; HLP400 = 'HLP400';
+  W80    = 'W80';    A160   = 'A160';
+  PBS1   = 'PBS1';   PBS2   = 'PBS2';   PBS3   = 'PBS3';   PBS4   = 'PBS4';   PBS5 = 'PBS5';
+  HML    = 'HML';    CML    = 'CML';
+}
+
+type LoadRatingMethod : String enum {
+  AS5100      = 'AS 5100';
+  NAASRA      = 'NAASRA';
+  LoadTesting = 'Load Testing';
+}
+
 // ── LRT tile — per-vehicle-class load rating assessments ─────────────────────
 entity BridgeLoadRatings : cuid, managed, ChangeTracked {
-  ratingRef        : String(40);                             // auto-generated LR-NNNN
+  ratingRef        : String(40);
   bridge           : Association to Bridges;
   bridgeRef        : String(40);
-  vehicleClass     : String(60);                             // T44 | SM1600 | HLP400 | PBS1-5 | HML | CML
-  ratingMethod     : String(60);                             // AS 5100 | NAASRA | Load Testing
-  ratingFactor     : Decimal(9,4) @assert.range: [0, 2];    // 0.0–2.0 typical
+  vehicleClass     : LoadRatingVehicleClass;
+  ratingMethod     : LoadRatingMethod;
+  ratingFactor     : Decimal(9,4) @assert.range: [0, 5];    // 0.0–5.0 typical
   grossMassLimit   : Decimal(9,2) @assert.range: [0, 1000]; // tonnes
   assessedBy       : String(111);
   assessmentDate   : Date;
-  validTo          : Date;
+  validTo              : Date @mandatory;
+  ratingEngineerNer    : String(20);
+  governingMember      : String(100);
+  governingFailureMode : String(60);
+  dynamicLoadAllowance : Decimal(5,3);
+  reportRef            : String(255);
   status           : String(20) default 'Active';            // Active | Superseded | Revoked
 }
 
@@ -542,13 +590,19 @@ entity BridgePermits : cuid, managed, ChangeTracked {
   permitRef        : String(40);                             // auto-generated PM-NNNN
   bridge           : Association to Bridges;
   bridgeRef        : String(40);
-  permitType       : String(60);                             // Oversize | Overmass | PBS | HML | Special
+  permitType           : String(60);                         // Oversize | Overmass | PBS | HML | Special
+  nhvrPermitNumber     : String(50);
+  nhvrApplicationNumber: String(50);
+  tripCount            : Integer default 1;
+  axleConfiguration    : String(60);
+  escortRequired       : Boolean default false;
+  pilotVehicleCount    : Integer;
   applicantName    : String(255);
   vehicleClass     : String(60);
   grossMass        : Decimal(9,2) @assert.range: [0, 1000]; // tonnes
-  height           : Decimal(9,2) @assert.range: [0, 30];   // metres
-  width            : Decimal(9,2) @assert.range: [0, 100];  // metres
-  length           : Decimal(9,2) @assert.range: [0, 1000]; // metres
+  height           : Decimal(9,2) @assert.range: [0, 8];    // metres
+  width            : Decimal(9,2) @assert.range: [0, 8];    // metres
+  length           : Decimal(9,2) @assert.range: [0, 60];   // metres
   appliedDate      : Date;
   validFrom        : Date;
   validTo          : Date;
@@ -556,12 +610,18 @@ entity BridgePermits : cuid, managed, ChangeTracked {
   decisionBy       : String(111);
   decisionDate     : Date;
   conditionsOfApproval : LargeString;
+  permitCategory       : String(30);         // B-Double | Road Train | PBS | HML | Mass Managed
+  applicantABN         : String(11);         // Australian Business Number (11 digits)
+  applicantEmail       : String(255);
+  applicantPhone       : String(20);
+  vehicleDescription   : LargeString;
+  routeDescription     : LargeString;
 }
 
 extend entity Bridges with {
-  conditionSurveys : Composition of many BridgeConditionSurveys on conditionSurveys.bridge = $self;
-  loadRatings      : Composition of many BridgeLoadRatings      on loadRatings.bridge = $self;
-  permits          : Composition of many BridgePermits          on permits.bridge = $self;
+  conditionSurveys : Association to many BridgeConditionSurveys on conditionSurveys.bridge = $self;
+  loadRatings      : Association to many BridgeLoadRatings      on loadRatings.bridge = $self;
+  permits          : Association to many BridgePermits          on permits.bridge = $self;
 }
 
 // --------------------------------------------------------------------------------

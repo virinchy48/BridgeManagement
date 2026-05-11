@@ -15,6 +15,11 @@ entity NhvrRouteAssessments : cuid, managed {
 
     approvedVehicleClasses     : LargeString;
     conditions                 : LargeString;
+    iapConditions              : LargeString;         // Individual Access Permit conditions text
+    structuralAnalysisRequired : Boolean default false; // Triggers mandatory engineering review
+    concessionalMass           : Boolean default false; // NHVR Concessional Mass Limit scheme
+    lastReviewDate             : Date;
+    reviewFrequencyMonths      : Integer;              // How often the assessment must be reviewed
 
     iapRequired                : Boolean default false;
     iapRouteId                 : String(50);
@@ -61,8 +66,8 @@ annotate BridgeScourAssessmentDetail with @(cds.persistence.indexes: [
 ]);
 
 extend entity Bridges with {
-    nhvrRouteAssessments      : Composition of many NhvrRouteAssessments
+    nhvrRouteAssessments      : Association to many NhvrRouteAssessments
                                 on nhvrRouteAssessments.bridge = $self;
-    scourAssessmentDetails    : Composition of many BridgeScourAssessmentDetail
+    scourAssessmentDetails    : Association to many BridgeScourAssessmentDetail
                                 on scourAssessmentDetails.bridge = $self;
 }

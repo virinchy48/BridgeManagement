@@ -49,6 +49,9 @@ entity LoadRatingCertificates : cuid, managed {
     reportStorageRef        : String(500);
     previousCertId          : String(40);
     supersessionReason      : String(300);
+    ratingBasis            : String(40);      // Austroads Guide | AS 5100 | Load Testing | Proof Loading
+    jurisdictionApproval   : String(60);      // TfNSW, VicRoads, DPTI, etc. approval reference
+    approvalDate           : Date;            // When jurisdiction approved this certificate
     notes                   : LargeString;
 }
 
@@ -59,6 +62,6 @@ annotate LoadRatingCertificates with @(cds.persistence.indexes: [
 ]);
 
 extend entity Bridges with {
-    loadRatingCertificates : Composition of many LoadRatingCertificates
+    loadRatingCertificates : Association to many LoadRatingCertificates
                              on loadRatingCertificates.bridge = $self;
 }

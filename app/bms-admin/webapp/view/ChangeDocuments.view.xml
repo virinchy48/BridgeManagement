@@ -98,6 +98,7 @@
               <Toolbar style="Clear">
                 <ToolbarSpacer/>
                 <Text id="s1Count" text="" class="sapMuted sapUiSmallMarginEnd"/>
+                <Button icon="sap-icon://download" text="Export CSV" press=".onExportS1Csv" tooltip="Export current results to CSV" type="Transparent"/>
               </Toolbar>
 
               <Table id="s1Table"
@@ -190,6 +191,7 @@
                   <Column width="36px"><Text text=""/></Column>
                   <Column><Text text="After"/></Column>
                   <Column width="120px" minScreenWidth="Tablet" demandPopin="true"><Text text="Source"/></Column>
+                  <Column width="9rem"  minScreenWidth="Tablet" demandPopin="true"><Text text="Batch"/></Column>
                 </columns>
                 <items>
                   <ColumnListItem>
@@ -201,6 +203,7 @@
                       <core:Icon src="sap-icon://arrow-right" color="#8696a9" size="0.875rem"/>
                       <Text text="{s2>newValue}"         wrapping="true"  class="bmsAuditNew bmsAuditCell"/>
                       <ObjectStatus text="{s2>changeSource}" state="{s2>sourceState}"/>
+                      <Text text="{s2>batchId}"          wrapping="false" tooltip="{s2>batchId}" maxLines="1"/>
                     </cells>
                   </ColumnListItem>
                 </items>

@@ -15,7 +15,8 @@ sap.ui.define([
     attributeConfig:  "attributeConfig",
     attributeReport:  "attributeReport",
     apiDocs:          "apiDocs",
-    demoMode:         "demoMode"
+    demoMode:         "demoMode",
+    featureFlags:     "featureFlags"
   };
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.Shell", {

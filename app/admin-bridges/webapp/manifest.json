@@ -155,15 +155,101 @@
           "pattern": "Bridges({key})/permits({key2}):?query:",
           "target": "BridgePermitsDetails"
         },
-        { "pattern": "BridgeCapacities:?query:",       "name": "BridgeCapacitiesList",       "target": "BridgeCapacitiesList" },
-        { "pattern": "BridgeConditionSurveys:?query:", "name": "BridgeConditionSurveysList", "target": "BridgeConditionSurveysList" },
-        { "pattern": "BridgeInspections:?query:",      "name": "BridgeInspectionsList",      "target": "BridgeInspectionsList" },
-        { "pattern": "BridgeDefects:?query:",          "name": "BridgeDefectsList",          "target": "BridgeDefectsList" },
-        { "pattern": "BridgeLoadRatings:?query:",      "name": "BridgeLoadRatingsList",      "target": "BridgeLoadRatingsList" },
-        { "pattern": "BridgeRiskAssessments:?query:",  "name": "BridgeRiskAssessmentsList",  "target": "BridgeRiskAssessmentsList" },
-        { "pattern": "NhvrRouteAssessments:?query:",   "name": "NhvrRouteAssessmentsList",   "target": "NhvrRouteAssessmentsList" },
-        { "pattern": "LoadRatingCertificates:?query:", "name": "LoadRatingCertificatesList", "target": "LoadRatingCertificatesList" },
-        { "pattern": "BridgePermits:?query:",          "name": "BridgePermitsList",          "target": "BridgePermitsList" }
+        {
+          "name": "BridgeAttributesDetails",
+          "pattern": "Bridges({key})/attributes({key2}):?query:",
+          "target": "BridgeAttributesDetails"
+        },
+        {
+          "pattern": "BridgeCapacities:?query:",
+          "name": "BridgeCapacitiesList",
+          "target": "BridgeCapacitiesList"
+        },
+        {
+          "pattern": "BridgeConditionSurveys:?query:",
+          "name": "BridgeConditionSurveysList",
+          "target": "BridgeConditionSurveysList"
+        },
+        {
+          "pattern": "BridgeInspections:?query:",
+          "name": "BridgeInspectionsList",
+          "target": "BridgeInspectionsList"
+        },
+        {
+          "pattern": "BridgeDefects:?query:",
+          "name": "BridgeDefectsList",
+          "target": "BridgeDefectsList"
+        },
+        {
+          "pattern": "BridgeLoadRatings:?query:",
+          "name": "BridgeLoadRatingsList",
+          "target": "BridgeLoadRatingsList"
+        },
+        {
+          "pattern": "BridgeRiskAssessments:?query:",
+          "name": "BridgeRiskAssessmentsList",
+          "target": "BridgeRiskAssessmentsList"
+        },
+        {
+          "pattern": "NhvrRouteAssessments:?query:",
+          "name": "NhvrRouteAssessmentsList",
+          "target": "NhvrRouteAssessmentsList"
+        },
+        {
+          "pattern": "LoadRatingCertificates:?query:",
+          "name": "LoadRatingCertificatesList",
+          "target": "LoadRatingCertificatesList"
+        },
+        {
+          "pattern": "BridgePermits:?query:",
+          "name": "BridgePermitsList",
+          "target": "BridgePermitsList"
+        },
+        {
+          "pattern": "BridgeInspections({key}):?query:",
+          "name": "BridgeInspectionsObjectPage",
+          "target": "BridgeInspectionsObjectPage"
+        },
+        {
+          "pattern": "BridgeCapacities({key}):?query:",
+          "name": "BridgeCapacitiesObjectPage",
+          "target": "BridgeCapacitiesObjectPage"
+        },
+        {
+          "pattern": "BridgeRiskAssessments({key}):?query:",
+          "name": "BridgeRiskAssessmentsObjectPage",
+          "target": "BridgeRiskAssessmentsObjectPage"
+        },
+        {
+          "pattern": "LoadRatingCertificates({key}):?query:",
+          "name": "LoadRatingCertificatesObjectPage",
+          "target": "LoadRatingCertificatesObjectPage"
+        },
+        {
+          "pattern": "NhvrRouteAssessments({key}):?query:",
+          "name": "NhvrRouteAssessmentsObjectPage",
+          "target": "NhvrRouteAssessmentsObjectPage"
+        },
+        {
+          "pattern": "BridgeConditionSurveys({key}):?query:",
+          "name": "BridgeConditionSurveysObjectPage",
+          "target": "BridgeConditionSurveysObjectPage"
+        },
+        {
+          "pattern": "BridgeLoadRatings({key}):?query:",
+          "name": "BridgeLoadRatingsObjectPage",
+          "target": "BridgeLoadRatingsObjectPage"
+        },
+        {
+          "pattern": "BridgePermits({key}):?query:",
+          "name": "BridgePermitsObjectPage",
+          "target": "BridgePermitsObjectPage"
+        },
+        {
+          "pattern": "BridgeDefects({key}):?query:",
+          "name": "BridgeDefectsObjectPage",
+          "target": "BridgeDefectsObjectPage"
+        }
       ],
       "targets": {
         "GISConfig": {
@@ -263,13 +349,46 @@
                     "route": "AlertsAndNotificationsDetails"
                   }
                 },
-                "inspectionElements": { "detail": { "route": "BridgeInspectionElementsDetails" } },
-                "carriageways": { "detail": { "route": "BridgeCarriagewaysDetails" } },
-                "contacts": { "detail": { "route": "BridgeContactsDetails" } },
-                "mehComponents": { "detail": { "route": "BridgeMehComponentsDetails" } },
-                "conditionSurveys": { "detail": { "route": "BridgeConditionSurveysDetails" } },
-                "loadRatings": { "detail": { "route": "BridgeLoadRatingsDetails" } },
-                "permits": { "detail": { "route": "BridgePermitsDetails" } }
+                "inspectionElements": {
+                  "detail": {
+                    "route": "BridgeInspectionElementsDetails"
+                  }
+                },
+                "carriageways": {
+                  "detail": {
+                    "route": "BridgeCarriagewaysDetails"
+                  }
+                },
+                "contacts": {
+                  "detail": {
+                    "route": "BridgeContactsDetails"
+                  }
+                },
+                "mehComponents": {
+                  "detail": {
+                    "route": "BridgeMehComponentsDetails"
+                  }
+                },
+                "conditionSurveys": {
+                  "detail": {
+                    "route": "BridgeConditionSurveysDetails"
+                  }
+                },
+                "loadRatings": {
+                  "detail": {
+                    "route": "BridgeLoadRatingsDetails"
+                  }
+                },
+                "permits": {
+                  "detail": {
+                    "route": "BridgePermitsDetails"
+                  }
+                },
+                "attributes": {
+                  "detail": {
+                    "route": "BridgeAttributesDetails"
+                  }
+                }
               },
               "controlConfiguration": {
                 "capacities/@com.sap.vocabularies.UI.v1.LineItem": {
@@ -344,16 +463,44 @@
                   }
                 },
                 "inspectionElements/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": { "enablePaste": false, "creationMode": { "name": "NewPage" } }
+                  "tableSettings": {
+                    "enablePaste": false,
+                    "creationMode": {
+                      "name": "NewPage"
+                    }
+                  }
                 },
                 "carriageways/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": { "enablePaste": false, "creationMode": { "name": "NewPage" } }
+                  "tableSettings": {
+                    "enablePaste": false,
+                    "creationMode": {
+                      "name": "NewPage"
+                    }
+                  }
                 },
                 "contacts/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": { "enablePaste": false, "creationMode": { "name": "NewPage" } }
+                  "tableSettings": {
+                    "enablePaste": false,
+                    "creationMode": {
+                      "name": "NewPage"
+                    }
+                  }
                 },
                 "mehComponents/@com.sap.vocabularies.UI.v1.LineItem": {
-                  "tableSettings": { "enablePaste": false, "creationMode": { "name": "NewPage" } }
+                  "tableSettings": {
+                    "enablePaste": false,
+                    "creationMode": {
+                      "name": "NewPage"
+                    }
+                  }
+                },
+                "attributes/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "enablePaste": false,
+                    "creationMode": {
+                      "name": "NewPage"
+                    }
+                  }
                 }
               },
               "content": {
@@ -374,7 +521,7 @@
                       "type": "Default"
                     },
                     "viewInS4Action": {
-                      "text": "View in S/4HANA ↗",
+                      "text": "View in S/4HANA \u2197",
                       "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onViewInS4Hana",
                       "enabled": true,
                       "requiresSelection": false,
@@ -394,7 +541,7 @@
                       "title": "Documents & Attachments",
                       "position": {
                         "placement": "Before",
-                        "anchor": "DocumentsMap"
+                        "anchor": "Administration"
                       }
                     },
                     "mapSection": {
@@ -402,31 +549,7 @@
                       "title": "Map",
                       "position": {
                         "placement": "After",
-                        "anchor": "BridgeIdentity"
-                      }
-                    },
-                    "customAttributesSection": {
-                      "template": "BridgeManagement.adminbridges.ext.fragment.CustomAttributes",
-                      "title": "Custom Attributes",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "mapSection"
-                      }
-                    },
-                    "executiveKpiSection": {
-                      "template": "BridgeManagement.adminbridges.ext.fragment.ExecutiveKpiPanel",
-                      "title": "Executive Summary",
-                      "position": {
-                        "placement": "Before",
-                        "anchor": "BridgeIdentity"
-                      }
-                    },
-                    "inspectionRegisterSection": {
-                      "template": "BridgeManagement.adminbridges.ext.fragment.InspectionRegister",
-                      "title": "Inspection & Defect Register",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "ConditionInspections"
+                        "anchor": "PhysicalStructure"
                       }
                     }
                   }
@@ -439,6 +562,7 @@
         "BridgeCapacitiesDetails": {
           "type": "Component",
           "id": "BridgeCapacitiesDetails",
+          "title": "Bridge Capacity",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -450,6 +574,7 @@
         "BridgeRestrictionsDetails": {
           "type": "Component",
           "id": "BridgeRestrictionsDetails",
+          "title": "Restrictions",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -461,6 +586,7 @@
         "BridgeInspectionsDetails": {
           "type": "Component",
           "id": "BridgeInspectionsDetails",
+          "title": "Inspections",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -472,6 +598,7 @@
         "BridgeRiskAssessmentsDetails": {
           "type": "Component",
           "id": "BridgeRiskAssessmentsDetails",
+          "title": "Risk Assessments",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -483,6 +610,7 @@
         "LoadRatingCertificatesDetails": {
           "type": "Component",
           "id": "LoadRatingCertificatesDetails",
+          "title": "Load Rating Certificates",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -494,6 +622,7 @@
         "BridgeElementsDetails": {
           "type": "Component",
           "id": "BridgeElementsDetails",
+          "title": "Bridge Elements",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -505,6 +634,7 @@
         "NhvrRouteAssessmentsDetails": {
           "type": "Component",
           "id": "NhvrRouteAssessmentsDetails",
+          "title": "NHVR Route Assessments",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -516,6 +646,7 @@
         "AlertsAndNotificationsDetails": {
           "type": "Component",
           "id": "AlertsAndNotificationsDetails",
+          "title": "Alerts & Notifications",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -527,80 +658,377 @@
         "BridgeInspectionElementsDetails": {
           "type": "Component",
           "id": "BridgeInspectionElementsDetails",
+          "title": "Inspection Elements",
           "name": "sap.fe.templates.ObjectPage",
-          "options": { "settings": { "entitySet": "BridgeInspectionElements", "editableHeaderContent": false } }
+          "options": {
+            "settings": {
+              "entitySet": "BridgeInspectionElements",
+              "editableHeaderContent": false
+            }
+          }
         },
         "BridgeCarriagewaysDetails": {
           "type": "Component",
           "id": "BridgeCarriagewaysDetails",
+          "title": "Carriageways",
           "name": "sap.fe.templates.ObjectPage",
-          "options": { "settings": { "entitySet": "BridgeCarriageways", "editableHeaderContent": false } }
+          "options": {
+            "settings": {
+              "entitySet": "BridgeCarriageways",
+              "editableHeaderContent": false
+            }
+          }
         },
         "BridgeContactsDetails": {
           "type": "Component",
           "id": "BridgeContactsDetails",
+          "title": "Contacts",
           "name": "sap.fe.templates.ObjectPage",
-          "options": { "settings": { "entitySet": "BridgeContacts", "editableHeaderContent": false } }
+          "options": {
+            "settings": {
+              "entitySet": "BridgeContacts",
+              "editableHeaderContent": false
+            }
+          }
         },
         "BridgeMehComponentsDetails": {
           "type": "Component",
           "id": "BridgeMehComponentsDetails",
+          "title": "MEH Components",
           "name": "sap.fe.templates.ObjectPage",
-          "options": { "settings": { "entitySet": "BridgeMehComponents", "editableHeaderContent": false } }
+          "options": {
+            "settings": {
+              "entitySet": "BridgeMehComponents",
+              "editableHeaderContent": false
+            }
+          }
         },
         "BridgeConditionSurveysDetails": {
           "type": "Component",
           "id": "BridgeConditionSurveysDetails",
+          "title": "Condition Surveys",
           "name": "sap.fe.templates.ObjectPage",
-          "options": { "settings": { "entitySet": "BridgeConditionSurveys", "editableHeaderContent": false } }
+          "options": {
+            "settings": {
+              "entitySet": "BridgeConditionSurveys",
+              "editableHeaderContent": false
+            }
+          }
         },
         "BridgeLoadRatingsDetails": {
           "type": "Component",
           "id": "BridgeLoadRatingsDetails",
+          "title": "Load Ratings",
           "name": "sap.fe.templates.ObjectPage",
-          "options": { "settings": { "entitySet": "BridgeLoadRatings", "editableHeaderContent": false } }
+          "options": {
+            "settings": {
+              "entitySet": "BridgeLoadRatings",
+              "editableHeaderContent": false
+            }
+          }
         },
         "BridgePermitsDetails": {
           "type": "Component",
           "id": "BridgePermitsDetails",
+          "title": "Permits",
           "name": "sap.fe.templates.ObjectPage",
-          "options": { "settings": { "entitySet": "BridgePermits", "editableHeaderContent": false } }
+          "options": {
+            "settings": {
+              "entitySet": "BridgePermits",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "BridgeAttributesDetails": {
+          "type": "Component",
+          "id": "BridgeAttributesDetails",
+          "title": "Custom Attribute",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeAttributes",
+              "editableHeaderContent": false
+            }
+          }
         },
         "BridgeCapacitiesList": {
-          "type": "Component", "id": "BridgeCapacitiesList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "BridgeCapacities", "navigation": { "BridgeCapacities": { "detail": { "route": "BridgeCapacitiesDetails" } } } } }
+          "type": "Component",
+          "id": "BridgeCapacitiesList",
+          "title": "Bridge Capacity",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeCapacities",
+              "navigation": {
+                "BridgeCapacities": {
+                  "detail": {
+                    "route": "BridgeCapacitiesObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
         },
         "BridgeConditionSurveysList": {
-          "type": "Component", "id": "BridgeConditionSurveysList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "BridgeConditionSurveys", "navigation": { "BridgeConditionSurveys": { "detail": { "route": "BridgeConditionSurveysDetails" } } } } }
+          "type": "Component",
+          "id": "BridgeConditionSurveysList",
+          "title": "Condition Surveys",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeConditionSurveys",
+              "navigation": {
+                "BridgeConditionSurveys": {
+                  "detail": {
+                    "route": "BridgeConditionSurveysObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
         },
         "BridgeInspectionsList": {
-          "type": "Component", "id": "BridgeInspectionsList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "BridgeInspections", "navigation": { "BridgeInspections": { "detail": { "route": "BridgeInspectionsDetails" } } } } }
+          "type": "Component",
+          "id": "BridgeInspectionsList",
+          "title": "Inspections",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeInspections",
+              "navigation": {
+                "BridgeInspections": {
+                  "detail": {
+                    "route": "BridgeInspectionsObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
         },
         "BridgeDefectsList": {
-          "type": "Component", "id": "BridgeDefectsList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "BridgeDefects", "navigation": { "BridgeDefects": { "detail": { "route": "BridgeInspectionsDetails" } } } } }
+          "type": "Component",
+          "id": "BridgeDefectsList",
+          "title": "Defects",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeDefects",
+              "navigation": {
+                "BridgeDefects": {
+                  "detail": {
+                    "route": "BridgeDefectsObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
         },
         "BridgeLoadRatingsList": {
-          "type": "Component", "id": "BridgeLoadRatingsList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "BridgeLoadRatings", "navigation": { "BridgeLoadRatings": { "detail": { "route": "BridgeLoadRatingsDetails" } } } } }
+          "type": "Component",
+          "id": "BridgeLoadRatingsList",
+          "title": "Load Ratings",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeLoadRatings",
+              "navigation": {
+                "BridgeLoadRatings": {
+                  "detail": {
+                    "route": "BridgeLoadRatingsObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
         },
         "BridgeRiskAssessmentsList": {
-          "type": "Component", "id": "BridgeRiskAssessmentsList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "BridgeRiskAssessments", "navigation": { "BridgeRiskAssessments": { "detail": { "route": "BridgeRiskAssessmentsDetails" } } } } }
+          "type": "Component",
+          "id": "BridgeRiskAssessmentsList",
+          "title": "Risk Assessments",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeRiskAssessments",
+              "navigation": {
+                "BridgeRiskAssessments": {
+                  "detail": {
+                    "route": "BridgeRiskAssessmentsObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
         },
         "NhvrRouteAssessmentsList": {
-          "type": "Component", "id": "NhvrRouteAssessmentsList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "NhvrRouteAssessments", "navigation": { "NhvrRouteAssessments": { "detail": { "route": "NhvrRouteAssessmentsDetails" } } } } }
+          "type": "Component",
+          "id": "NhvrRouteAssessmentsList",
+          "title": "NHVR Route Assessments",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "NhvrRouteAssessments",
+              "navigation": {
+                "NhvrRouteAssessments": {
+                  "detail": {
+                    "route": "NhvrRouteAssessmentsObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
         },
         "LoadRatingCertificatesList": {
-          "type": "Component", "id": "LoadRatingCertificatesList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "LoadRatingCertificates", "navigation": { "LoadRatingCertificates": { "detail": { "route": "LoadRatingCertificatesDetails" } } } } }
+          "type": "Component",
+          "id": "LoadRatingCertificatesList",
+          "title": "Load Rating Certificates",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "LoadRatingCertificates",
+              "navigation": {
+                "LoadRatingCertificates": {
+                  "detail": {
+                    "route": "LoadRatingCertificatesObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
         },
         "BridgePermitsList": {
-          "type": "Component", "id": "BridgePermitsList", "name": "sap.fe.templates.ListReport",
-          "options": { "settings": { "entitySet": "BridgePermits", "navigation": { "BridgePermits": { "detail": { "route": "BridgePermitsDetails" } } } } }
+          "type": "Component",
+          "id": "BridgePermitsList",
+          "title": "Permits",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgePermits",
+              "navigation": {
+                "BridgePermits": {
+                  "detail": {
+                    "route": "BridgePermitsObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
+        },
+        "BridgeInspectionsObjectPage": {
+          "type": "Component",
+          "id": "BridgeInspectionsObjectPage",
+          "title": "Inspections",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeInspections",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "BridgeCapacitiesObjectPage": {
+          "type": "Component",
+          "id": "BridgeCapacitiesObjectPage",
+          "title": "Bridge Capacity",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeCapacities",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "BridgeRiskAssessmentsObjectPage": {
+          "type": "Component",
+          "id": "BridgeRiskAssessmentsObjectPage",
+          "title": "Risk Assessments",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeRiskAssessments",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "LoadRatingCertificatesObjectPage": {
+          "type": "Component",
+          "id": "LoadRatingCertificatesObjectPage",
+          "title": "Load Rating Certificates",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "LoadRatingCertificates",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "NhvrRouteAssessmentsObjectPage": {
+          "type": "Component",
+          "id": "NhvrRouteAssessmentsObjectPage",
+          "title": "NHVR Route Assessments",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "NhvrRouteAssessments",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "BridgeConditionSurveysObjectPage": {
+          "type": "Component",
+          "id": "BridgeConditionSurveysObjectPage",
+          "title": "Condition Surveys",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeConditionSurveys",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "BridgeLoadRatingsObjectPage": {
+          "type": "Component",
+          "id": "BridgeLoadRatingsObjectPage",
+          "title": "Load Ratings",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeLoadRatings",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "BridgePermitsObjectPage": {
+          "type": "Component",
+          "id": "BridgePermitsObjectPage",
+          "title": "Permits",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgePermits",
+              "editableHeaderContent": false
+            }
+          }
+        },
+        "BridgeDefectsObjectPage": {
+          "type": "Component",
+          "id": "BridgeDefectsObjectPage",
+          "title": "Defects",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeDefects",
+              "editableHeaderContent": false
+            }
+          }
         }
       }
     },

@@ -292,6 +292,7 @@ Only `app/admin-bridges` uses standard Fiori Elements + CAP annotations (`@odata
 - **`using from 'path'` (wildcard) does NOT make entities available to other files in the barrel** — only `using { X } from 'path'` (named import) resolves references across files. CDS deploy succeeds with wildcard imports but `cds-serve` runtime fails at model load. Always use named imports when one schema sub-file references an entity defined in another sub-file.
 - **CDS linter strips `using { X } from '../schema'` (parent barrel) as circular** — any import that points back to the barrel file (`db/schema.cds`) will be silently removed. Fix: point the import to the defining file directly (`'./bridge-entity'`), not the barrel.
 - **`action resolve()` conflicts with ApplicationService base class** — CDS CAP `ApplicationService` has a built-in `resolve()` method. Naming an OData bound action `resolve` on any entity generates a warning and shadows the base method. Use a domain-specific name like `resolveAlert` instead.
+- **`action reject()` conflicts with ApplicationService base class** — same issue as `resolve()`. The base class has a built-in `reject()` method; naming a bound action `reject` generates `WARNING: custom action 'reject()' conflicts with method in base class`. Use a domain-specific name instead (e.g. `rejectPermit`, `rejectApplication`). This applies to any short verb that could be a JavaScript Promise/base-class method name.
 - **Stale SQLite WAL/journal files cause `cannot rollback - no transaction is active` on fresh deploys.** When `cds deploy --to sqlite:db.sqlite` fails with this opaque error and the dry-run DDL is clean, the culprit is leftover `-wal`, `-shm`, or `-journal` sidecar files from a previous failed deploy. Fix: `rm -f db.sqlite db.sqlite-wal db.sqlite-shm db.sqlite-journal` before re-running deploy. The error is a secondary failure — SQLite's rollback handler fires on a transaction that was already aborted by the corrupt page cache, and the real error is never surfaced by CAP's logger.
 - **`npx cds deploy` tolerates circular imports at deploy-time; `cds-serve` does not** — a deploy that shows no errors does not guarantee the runtime server will start. Always test `npm start` (or `node -e "cds.load(...)"`) after schema changes, not just deploy.
 
@@ -305,10 +306,235 @@ Only `app/admin-bridges` uses standard Fiori Elements + CAP annotations (`@odata
 - **`BridgeContacts`** — bridge-specific contact persons. Fields: `contactGroup`, `primaryContact`, `organisation`, `position`, `phone`, `mobile`, `address`, `email`.
 - **`BridgeMehComponents`** — Mechanical/Electrical/Hydraulic components. Fields: `componentType`, `name`, `make`, `model`, `serialNumber`, `isElectrical/isMechanical/isHydraulic` (Boolean), `inspFrequency`, `locationStored`, `shelfLifeYears`, `attributes` (LargeString for flexible JSON).
 
+### Sub-domain standalone CRUD pattern (May 2026)
+- **Removing a sub-domain from Bridge Details = remove its `ReferenceFacet` from `BridgeSubdomains` CollectionFacet in `app/admin-bridges/fiori-service.cds`.** Each entity then lives only in its own standalone List Report + Object Page (FLP tile). Do NOT also remove the entity's own `@UI.LineItem` / `@UI.HeaderInfo` / `@UI.Facets` annotations — those are what power the standalone page.
+- **Two ValueHelp patterns for the bridge field on composition children:**
+  1. **Entities with `bridgeRef : String(40)`** (BridgeConditionSurveys, BridgeLoadRatings, BridgePermits) — use `ValueListParameterInOut` pointing at `Bridges.bridgeId` (the human-readable bridge reference like `NSW-001`). This is identical to the standalone `Restrictions` gold standard: `bridgeRef @(Common.ValueList: { Parameters: [{ $Type: 'Common.ValueListParameterInOut', ValueListProperty: 'bridgeId', LocalDataProperty: bridgeRef }, ...] }, Common.Text: bridge.bridgeName)`.
+  2. **Entities without `bridgeRef`** (BridgeCapacities, BridgeInspections, etc.) — annotate the `bridge` association with `ValueListParameterOut` targeting `bridge_ID` vs `Bridges.ID`, and add `Common.Text: bridge.bridgeName`. Keep `bridge` NOT hidden so FE4 resolves the navigation path.
+- **Navigation paths in `LineItem Value` work directly in FE4:** `{ Value: bridge.bridgeId, Label: 'Bridge ID' }` and `{ Value: bridge.bridgeName, Label: 'Bridge' }` are valid path expressions. No wrapper needed. Confirmed from the standalone `Restrictions` tile annotations in `app/restrictions/fiori-service.cds`.
+- **Handler pattern for new sub-domain entities** (CON/LRT/PRM at `srv/handlers/conditions.js`, `load-ratings-new.js`, `permits.js`): `before('CREATE')` auto-generates the record ref (CS-NNNN etc.) and resolves `bridge_ID` from `bridgeRef` via `SELECT.one.from('bridge.management.Bridges').where({ bridgeId: req.data.bridgeRef })`. Register all three in `srv/service.js` alongside existing handlers.
+- **`NhvrRouteAssessments` had only `@UI.LineItem` + `@UI.HeaderInfo` — no Object Page body.** Added `@UI.Facets` + `@UI.FieldGroup#NhvrDetails` in `fiori-service.cds` when promoting it to standalone. Any entity promoted to standalone that is missing Facets will show a blank Object Page body in FE4.
+- **CAP draft composition constraint: "A draft-enabled entity can only be modified via its root entity."** If `Bridges` has `@odata.draft.enabled`, ALL its `Composition of many` children (BridgeInspections, BridgeCapacities, etc.) can only be created/modified through the Bridges draft context. Clicking Create in a standalone FE4 ListReport on a composition child triggers this error. Fix: change `Composition of many` → `Association to many` on the Bridges side for any entity that needs its own standalone CRUD, then add `@odata.draft.enabled` to each entity individually. The FK column (`bridge_ID`) in the DB table is unchanged — only the OData composition semantics change.
+- **FLP local sandbox does NOT apply `innerAppRoute` from `resolutionResult`.** In `fiori-apps.html` and `fioriSandboxConfig.json`, the `innerAppRoute` property inside `resolutionResult` is ignored by the local `sap.ushell.Container` sandbox. Use the `&/InnerRoute` hash fragment directly in `targetURL` instead — e.g. `"#Bridges-manage&/BridgeInspections"` (same pattern as NetworkReports). The separate FLP intents (Inspections-manage, Capacity-manage, etc.) and their `innerAppRoute` config are DEAD CODE locally; production FLP may honour them, but for local testing the direct hash format is required.
+- **Standalone CRUD for composition-child entities requires explicit `Capabilities` annotations.** FE4 ListReport defaults to read-only for composition children exposed as top-level service projections. Add `Capabilities.InsertRestrictions.Insertable: true`, `Capabilities.UpdateRestrictions.Updatable: true`, `Capabilities.DeleteRestrictions.Deletable: false` to each entity's annotation block in `fiori-service.cds`. Without these, the ListReport header has no Create button and ObjectPage has no Edit button.
+- **Entities promoted to standalone also need `UI.SelectionFields`.** Without SelectionFields, the standalone ListReport shows no filter bar. Minimum recommended: `[bridge_ID, <key_status_or_type_field>, <key_date_field>]` so users can filter by bridge.
+- **`BridgeDefects` and `BridgeRiskAssessments` were missing `UI.Facets` + `UI.FieldGroup`.** Added when promoting to standalone — these are required for the ObjectPage to render a form body. Any entity with only `UI.LineItem` + `UI.HeaderInfo` shows a blank ObjectPage body when navigated to directly.
+
+### Sub-domain entities added in BMS (May 2026)
+- **`BridgeConditionSurveys`** — standalone condition survey (CON tile). Fields: `surveyRef` (auto CS-NNNN), `bridgeRef`, `surveyDate`, `surveyType`, `surveyedBy`, `conditionRating`, `structuralRating`, `overallGrade`, `notes`, `status` (Draft/Submitted/Approved), `active`. Handler: `srv/handlers/conditions.js`. Lifecycle actions: `submitForReview()` (Draft→Submitted) and `approveSurvey()` (Submitted→Approved) — both guard against invalid state transitions.
+- **`BridgeLoadRatings`** — per-vehicle-class load rating (LRT tile). Fields: `ratingRef` (auto LR-NNNN), `bridgeRef`, `vehicleClass` (CDS enum type `LoadRatingVehicleClass`), `ratingMethod` (CDS enum type `LoadRatingMethod`), `ratingFactor`, `grossMassLimit`, `assessedBy`, `assessmentDate`, `validTo`, `status` (Active/Superseded/Revoked), `active`. Handler: `srv/handlers/load-ratings-new.js` (separate from `load-ratings.js` which handles `LoadRatingCertificates`). Enum types defined in `db/schema.cds` auto-generate value-help dropdowns in FE4.
+- **`BridgePermits`** — permit applications (PRM tile). Fields: `permitRef` (auto PM-NNNN), `bridgeRef`, `permitType`, `applicantName`, `vehicleClass`, `grossMass/height/width/length`, `appliedDate`, `validFrom/To`, `status` (Pending/Approved/Rejected/Expired), `decisionBy`, `decisionDate`, `conditionsOfApproval`, `active`. Handler: `srv/handlers/permits.js` with `approve()` / `rejectPermit()` actions.
+- **`BridgeInspections`** — has `inspectionRef : String(40)` auto-generated as `INS-NNNN` by `srv/handlers/inspections.js`. Used as ObjectPage `UI.HeaderInfo.Title`. Add to `UI.SelectionFields` so users can search by ref. Handler registered in `srv/service.js` via `registerInspectionHandlers(this, helpers)`.
+
+### CDS enum types for fixed-value dropdowns (May 2026)
+- **`LoadRatingVehicleClass`** and **`LoadRatingMethod`** defined as `type X : String enum { ... }` in `db/schema.cds`. CDS v9 automatically generates `@Common.ValueListWithFixedValues` and value help annotations for enum types in Fiori Elements. Used on `BridgeLoadRatings.vehicleClass` and `ratingMethod` fields respectively.
+- **CDS enum type vs `@assert.range` for strings**: `@assert.range` on a String field only adds a DB check constraint and server-side validation — it does NOT generate a UI dropdown. Use `type X : String enum { ... }` to get both validation and UI value help. The DB column DDL is unchanged (still VARCHAR) — only the allowed values constraint is added.
+- **Naming enum values with spaces**: CDS enum symbolic names must be valid identifiers (no spaces). Use a camelCase or abbreviated identifier and set the value to the display string: `AS5100 = 'AS 5100'`. The value (right side) is what's stored in the DB and shown in the UI.
+
+### BridgeConditionSurveys workflow (May 2026)
+- **Status lifecycle**: Draft → Submitted (via `submitForReview()`) → Approved (via `approveSurvey()`). Each action guards against invalid transitions: `submitForReview` errors if status != 'Draft'; `approveSurvey` errors if status != 'Submitted'.
+- **Action buttons use `![@UI.Hidden]` with status-based logic**: `{ ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Draft'] } } }` shows the Submit button only when status IS 'Draft'. Remember: `![@UI.Hidden]` sets the `Hidden` property — when the expression is `true` (status != Draft), it IS hidden; when the expression is `false` (status == Draft), it is SHOWN. Add `@Common.SideEffects: { TargetProperties: ['status'] }` to each action annotation so FE4 refreshes the status chip after the action fires.
+
+### Sub-domain tile naming conventions (May 2026)
+- Tile titles in `app/appconfig/fioriSandboxConfig.json` and `app/fiori-apps.html` must be updated in BOTH locations when renamed — tiles group (lines ~90-100) AND FLP intents (lines ~295-303 in sandbox config, ~91-99 in fiori-apps.html).
+- Canonical tile titles: "Bridge Capacity" (not "Capacity"), "Risk Assessments" (not "Risk & Compliance"), "Load Rating Certificates" (not "Load Rating Certs"), NHVR subtitle = "Heavy Vehicle Route Approvals", Defects subtitle = "View-Only — Create via Inspections".
+
+### Bridge Details UX — Expert Council pattern (May 2026)
+- **Shell bar title per sub-domain tile**: Each routing target in `manifest.json` must have a `"title"` property for FE4 to update the shell bar dynamically when navigating to that route. Without it, FE4 shows the app-level title ("Bridge Asset Registry") on every sub-domain ListReport.
+- **Expert council UX review**: When the Bridge Details ObjectPage needs redesign, convene a multi-persona council (UX_DESIGNER, BRIDGE_INSPECTOR, BRIDGE_MANAGER, END_USER, DATA_STEWARD) and implement HIGH/MEDIUM priority items as a single atomic rewrite of `Facets` + all `FieldGroup` blocks. Never patch FieldGroups one-by-one — stale orphaned FieldGroups silently disappear rather than erroring.
+- **"Last Inspection Results" fields must be `@Common.FieldControl: #ReadOnly`.** Fields set by the "Inspect Now" / CaptureCondition workflow (`conditionRating`, `condition`, `conditionTrend`, `conditionSummary`, `structuralAdequacy`, `structuralAdequacyRating`, `conditionAssessor`, `lastInspectionDate`, `conditionReportRef`, `conditionNotes`) must be annotated read-only in `fiori-service.cds`. Without this, Bridge Managers can bypass the inspection record lifecycle by directly patching Bridge entity fields via the ObjectPage form. These start null on new bridge create — users set them via "Inspect Now".
+- **`@UI.IsURL` for URL fields in FE4**: Add `@UI.IsURL` to any String field containing a URL (e.g. `nhvrReferenceUrl`, `sourceReferenceUrl`) to render it as a clickable hyperlink in the ObjectPage form rather than plain text.
+- **`sap.ui.define` wrapping required for all extension controllers**: A bare self-executing IIFE in `ext/controller/*.js` is never loaded by FE4. Always wrap in `sap.ui.define([], function() { 'use strict'; /* ... */ return {}; })` and reference via `core:require="{MyAlias: 'AppNamespace/appid/ext/controller/MyFile'}"` in the fragment XML.
+- **`Documents & Map` tab removed (May 2026)**: Documents (attachments) and Map sub-tabs were consolidated into the Bridge Details body via custom fragment sections in `manifest.json` `sectionedLayout`. The `DocumentsMap` section anchor in manifest is now replaced with dedicated `attachmentsSection` (anchor: `Administration`) and `mapSection` (anchor: `PhysicalStructure`).
+- **Physical Structure tab**: Always include in `Facets` to avoid inspector confusion. Fields: `designLoad` (FIRST — inspector priority), `designStandard`, `structureType`, `material`, `yearBuilt` in Structure group; `clearanceHeight` (FIRST — safety), `numberOfLanes`, `deckWidth`, `spanCount`, `spanLength`, `totalLength` in Dimensions group; `spansOver`, `waterwayType`, `facilityTypeCode`, `surfaceType`, `substructureType`, `foundationType` in Environmental Context group.
+
+### BridgeDefects standalone architecture (May 2026)
+- **BridgeDefects is now standalone — inspection link is optional.** Removed `Composition of many BridgeDefects` from `BridgeInspections`; changed `inspection : Association to BridgeInspections @mandatory` → `inspection : Association to BridgeInspections` (optional). Also removed the server-side 422 guard in `srv/handlers/defects.js` that blocked standalone creation. Users can now create defects without an inspection, and optionally link to one via a value-help picker.
+- **Defects value-help for linked inspection**: Annotate `inspection` with `Common.Text: inspection.inspectionRef`, `Common.TextArrangement: #TextOnly`, and a `Common.ValueList` pointing to `BridgeInspections` with parameters for `ID`, `inspectionRef`, `inspectionDate`, `inspectionType`. This gives a clean search dialog without exposing the UUID.
+
+### Expert council persona priority order for BMS sub-domain tiles
+When running expert council UX review on a tile, apply these priorities in order:
+1. **BRIDGE_INSPECTOR**: Condition state / risk / measured values go FIRST in FieldGroups and LineItem — inspector sees the asset status at a glance (e.g. `currentConditionRating`, `scourRisk`, `severity`).
+2. **BRIDGE_MANAGER**: Action-triggering fields (next review due, treatment deadline, urgency level, estimated repair cost) must appear in LineItem so managers can triage from the list report.
+3. **END_USER**: Mandatory fields (`@Common.FieldControl: #Mandatory`) labelled clearly; value-help pickers for all FK associations; QuickInfo on any field with a technical range or standard reference.
+4. **DATA_STEWARD**: Auto-generated ref fields (`@Core.Computed @Common.FieldControl: #ReadOnly`) so users cannot accidentally set them; audit fields (`createdBy`, `createdAt`, `modifiedBy`, `modifiedAt`) always `@UI.Hidden`; mandatory validation on key identity fields.
+5. **UX_DESIGNER**: One FieldGroup per semantic concern (Identity, Condition, Maintenance, Integration) — never dump all fields in a single flat group.
+
+### BridgeScourAssessments — bridge field was hidden (bug)
+`bridge @UI.Hidden` was set on BridgeScourAssessments, making the bridge link invisible on the ObjectPage. Fix: remove `@UI.Hidden`; add the standard `Common.Text/TextArrangement/ValueList` bridge picker annotation (same pattern as BridgeInspections/BridgeCapacities).
+
+### AlertsAndNotifications — system-generated, always Insertable: false
+Alerts are auto-generated by the system (expiry triggers, inspection overdue, etc.). Set `Capabilities.InsertRestrictions.Insertable: false`. Users can only acknowledge (write `acknowledgementNote`) and resolve (write `resolutionNote` + `resolutionProof`). All alert metadata fields should be `@Common.FieldControl: #ReadOnly`. `resolutionProof` is a URL — annotate with `@UI.IsURL`.
+
+### BridgeInspectionElements — condition states CS1–CS4 terminology
+Use SIMS-aligned labels: CS1 = "Good/New", CS2 = "Satisfactory", CS3 = "Poor", CS4 = "Failed". Present Qty and % as pairs in the FieldGroup (CS1 Qty then CS1 %, then CS2 Qty then CS2 %, etc.) — this matches the inspector's natural data entry flow from their field report. `elementHealthRating` is computed — add QuickInfo explaining it is auto-calculated from qty weights.
+
+### BridgeElements — entity required full CRUD treatment from scratch
+Was originally annotated with only `@UI.LineItem` and `@UI.HeaderInfo`. Missing: `Capabilities`, `SelectionFields`, `field-level annotations`, `bridge value-help`, `Facets`, `FieldGroups`. Pattern for similar gaps: add bridge VH first, then Capabilities, then SelectionFields, then HeaderInfo, then full Facets with 4 sub-groups.
+
+### FieldGroup naming collisions — use entity-prefix for all FieldGroup IDs
+`FieldGroup#General` defined on two different entities in the same CDS service file will compile but only the last one survives at runtime. Always prefix FieldGroup IDs with the entity short-name: `ElemIdentity`, `ElemCondition`, `CarrGeometry`, `MehIdentity`, `InspElemCondition`, `ContactDetails`, etc. Never use bare `General`, `Details`, or `Summary` without a prefix.
+
 ### Multi-agent parallel execution pattern
 - **Split file ownership strictly — zero overlap is the only safe contract.** When dispatching 4 parallel worktree agents: Agent 1 owns `db/schema.cds` only, Agent 2 owns `srv/*.cds` (service definitions), Agent 3 owns `srv/*.js` (handlers + mass-upload), Agent 4 owns `app/**` (annotations + manifest). Any overlap on a shared file will produce last-writer-wins content loss with no merge conflict warning (worktrees share the same working directory).
 - **After parallel agents complete, always run `npx cds compile db/ srv/` before committing.** Agents working on partial models (schema changes not yet reflected in service definitions) may each exit 0 locally, but the combined compile can still fail. The compile check is the merge gate.
 - **Agent prompts must name exact files and exact CDS/JS patterns.** Vague prompts like "add the BSI fields" result in agents creating duplicate entities or using wrong field types. Always include the CDS snippet verbatim in the prompt, the exact file path, and whether the agent should read the file first to understand existing structure.
+
+### Feature flag system — BHI/BSI plug-and-play (May 2026)
+- **Feature flags live in `SystemConfig` with `category = 'Feature Flags'`** — keys follow `feature.<flagKey>` pattern (e.g. `feature.bhiBsiAssessment`). All seed rows: `value=false, defaultValue=false, dataType=boolean, isReadOnly=false`. DO NOT add a separate entity for feature flags.
+- **`srv/feature-flags.js`** — single source of truth for `KNOWN_FLAGS`, `DEPENDENCIES` (child→parent map), `isFeatureEnabled(flagKey)`, and `requireFeature(flagKey, req)`. Import this in any handler that guards behind a flag. Never inline `getConfigBool('feature.*')` calls in handler files.
+- **`requireFeature(flagKey, req)` pattern** — call at the top of a handler action and `return` its result: `const guard = await requireFeature('bhiBsiAssessment', req); if (guard) return guard;`. CAP will short-circuit with the 403 automatically.
+- **`GET /system/api/features`** — public within authenticated session (no scope restriction). Returns `{flags: [{flagKey, enabled, label, description}]}`. Sourced from SystemConfig by category. Feature flag GET must never require `config_manager` — the `admin-bridges` app polls it on init with no admin scope.
+- **`PATCH /system/api/features/:key`** — requires `config_manager` OR `admin` scope + CSRF token. Validates flagKey against KNOWN_FLAGS. Enforces dependency: child cannot be enabled when parent is disabled; disabling parent cascades-disables all children. Logs each change to `bridge.management.ChangeLog` via `writeChangeLogs()`. Returns `{flagKey, previousValue, newValue, cascadeDisabled, changedBy, changedAt}`.
+- **`initFeatureFlags(oComponent)` in Component.js** — sets a named `featureFlags` JSONModel with all flags initialised to `false` (safe default), then fetches `/system/api/features` and updates the model. App starts up with no BHI/BSI tabs until the server responds. On fetch failure, all stay false — app continues normally.
+- **UI binding for feature-flagged tabs/sections**: `visible="{featureFlags>/bhiBsiAssessment}"` — zero DOM manipulation, declarative. The `featureFlags` model is set on the component; all views within the app inherit it via model propagation.
+- **FeatureFlags Admin screen** — `app/bms-admin/webapp/view/FeatureFlags.view.xml` + `controller/FeatureFlags.controller.js`. Table bound to local `flags` JSONModel (not OData). `onToggleFlag` shows a MessageBox.confirm; `_setFlag` PATCHes with CSRF token; on success syncs the component-level `featureFlags` model so tabs update immediately in the same session without page reload.
+- **`config_manager` scope** in `xs-security.json` — separate from `admin`; used only for feature flag PATCH. Role template `BMS_CONFIG_MANAGER` includes `config_manager + view`. `BMS_ADMIN` does NOT need `config_manager` explicitly — the PATCH route accepts `config_manager OR admin` via `requireScope('config_manager', 'admin')`.
+- **`user-info` endpoint for scope checking in controller**: `_checkScopes()` calls `GET /system/api/user-info` and checks `scopes` array for `config_manager` or `admin` to control the `userScopes>/canManage` binding. The `ObjectStatus` in the table header reflects this — it does NOT disable the buttons (buttons use `visible=` not `enabled=` to avoid misleading greyed-out state).
+- **Cascade-disable is server-side only** — the client sends one PATCH for the master flag; the server returns the full `cascadeDisabled` list in the response. The client then bulk-updates the component model: `data.cascadeDisabled.forEach(k => oFfModel.setProperty('/' + k, false))`. Never implement cascade logic in the UI controller.
+- **Adding a new flag — 4-step checklist**: (1) CSV row in `bridge.management-SystemConfig.csv`; (2) add to `KNOWN_FLAGS` in `srv/feature-flags.js`; (3) add to `initFeatureFlags()` default object in `Component.js`; (4) bind `visible="{featureFlags>/yourFlagKey}"` in the view. No other files needed unless it has a parent dependency — then also add to `DEPENDENCIES` map.
+
+### Expert council attribute audit — cross-tile rules (May 2026)
+- **Defect severity scale is 1=Low, 4=Critical** in BMS — handler condition triggering auto-open must be `severity >= 3` (High/Critical), NOT `severity === 1`. The original wrong condition auto-opened for the LOWEST severity defect. This must be verified whenever severity logic is added to any handler.
+- **TfNSW 5×5 risk matrix thresholds**: Low ≤4, Medium 5–9, High 10–14, Extreme ≥15. The `scoreToLevel()` function in `srv/handlers/risk-assessments.js` uses these. Do not change to the old thresholds (Critical/High ≥20/12/6) — those severely understated network risk.
+- **`residualRiskScore` must NOT auto-default to `inherentRiskScore`** — residual score is an explicit engineering input after controls are assessed. Auto-defaulting produced misleading risk registers where every risk appeared already-mitigated.
+- **Soft-delete is now required on BridgeInspections, BridgeDefects, BridgeRiskAssessments** (added May 2026). All three now have `active: Boolean default true` + `deactivate/reactivate` bound actions + `@Capabilities.DeleteRestrictions.Deletable: false`. These records are legally admissible evidence under Civil Liability Act 2002 — they must never be permanently deleted.
+- **Audit trail gap in older handlers** — `registerDefectHandlers` and `registerRiskAssessmentHandlers` previously received no `{ logAudit }` helper from `srv/service.js`. Fixed by updating the call sites in `service.js` to pass `helpers`. Any new handler that needs audit logging must receive `helpers` as second parameter and the call site in `service.js` must be updated simultaneously.
+- **Service CDS bare projections block bound actions** — adding bound actions to an entity that is already projected in a service CDS file (e.g. `srv/services/defects.cds`) must be done by updating that file in-place. You cannot re-declare the same projection in another service extend block (e.g. `admin.cds`) — CDS will throw a duplicate entity error.
+- **`linkedInspection` / `linkedDefect` are now typed Associations** on `BridgeRiskAssessments` (was String FKs). Annotation references must use navigation paths: `linkedInspection.inspectionRef` (not `linkedInspectionId`). After changing String→Association, always grep fiori-service.cds for old field names.
+- **Two parallel restriction registers exist** — `bridge.management.Restrictions` (standalone tile, authoritative) and `bridge.management.BridgeRestrictions` (composition child of Bridge). These are separate DB tables. Pick one canonical source; do not add new fields to BridgeRestrictions as it will eventually be deprecated in favour of Restrictions.
+- **`Capabilities.DeleteRestrictions.Deletable: false` + `@restrict` must both be set** when exposing a "soft-delete only" entity in a service file. The Capabilities annotation is what FE4 reads to hide the Delete button; the `@restrict` annotation controls OData-level access. Both are required — omitting @restrict lets any authenticated user write.
+
+### Bridge Details tab redesign patterns (May 2026)
+- **Condition & Inspection tab = read-only snapshot only.** When sub-domain tiles (Inspections, Condition Surveys) exist as standalone registers, the Bridge Details tab must NOT duplicate editable CRUD — it shows the latest snapshot only. Rename it "Inspection Status", remove scour fields that are authoritative in BridgeScourAssessments, apply `@Common.FieldControl: #ReadOnly` to all last-inspection fields.
+- **Field placement rule:** `seismicZone` + `structuralDeficiencyCode` → Physical Structure tab (structural characteristics). `operationalStatusCode` → Executive Summary tab (operational state). Never put these in Administration (Source & Reference).
+- **External Systems tab pattern:** One CollectionFacet `ExternalSystems` with two ReferenceFacets: `ExtNHVR` (nhvrReferenceUrl, nhvrAssessed, nhvrAssessmentDate) and `ExtBNAC` (bnacMapping.bnacObjectId + `UI.DataFieldWithUrl` for deep link). Remove duplicated `nhvrReferenceUrl` from other FieldGroups.
+- **`UI.DataFieldWithUrl` for deep links:** `{ $Type: 'UI.DataFieldWithUrl', Label: 'BNAC Deep Link', Value: bnacMapping.bnacObjectId, Url: bnacMapping.bnacUrl }` — `Value` is the visible label text; `Url` is the navigation target expression.
+
+### BnacObjectIdMap navigation from Bridges (May 2026)
+- **`BnacObjectIdMap` is in `bridge.management` namespace, not `nhvr`** — `using bridge from '../../db/schema'` is required as a separate import in `srv/services/admin.cds` alongside the existing `using nhvr` import. Referencing it as `nhvr.BnacObjectIdMap` causes CDS compile error "Artifact not found".
+- **`extend projection` pattern for adding navigation to existing projections.** In `srv/services/bridges.cds`, `extend projection BridgeManagementService.Bridges { bnacMapping: Association to BridgeManagementService.BnacObjectIdMaps on bnacMapping.bridgeId = $self.bridgeId }` adds the navigation without touching the base projection definition. Works for read-only cross-table navigation; does not create a DB join — resolved lazily by OData expand.
+
+### Auto-generated ref fields — consistency rule (May 2026)
+- **All auto-generated ID/ref fields must be `@Core.Computed @Common.FieldControl: #ReadOnly`.** Fields: `defectId` (DEF-NNNN), `assessmentId` (RSK-NNNN), `surveyRef` (CS-NNNN), `ratingRef` (LR-NNNN), `permitRef` (PM-NNNN), `inspectionRef` (INS-NNNN). Without `@Core.Computed`, FE4 renders them as editable text inputs. Without `@Common.FieldControl: #ReadOnly`, users can overwrite them.
+- **Remove `@mandatory` when a field is auto-generated** — `@mandatory` fires before `before('CREATE')` in CAP's validation pipeline, blocking creation when the field is empty (which it will be at initial draft click). Fix: remove `@mandatory` from the schema entity; the field is always populated by the handler before the record is saved.
+- **`assessmentId` auto-generation pattern:** `RSK-${String(seq).padStart(4,'0')}` generated in `srv/handlers/risk-assessments.js` `before(['CREATE','UPDATE'])`, guarded to `if (req.event === 'CREATE' && !d.assessmentId)`. Matches DEF-NNNN / INS-NNNN convention.
+
+### FE4 draft CRUD root cause pattern (May 2026)
+- **FE4 `before('CREATE')` fires with empty body** when user clicks "Create" in a ListReport — NOT when they save. If a handler calls `req.error()` on a missing field at this point, it blocks every create attempt. Never block on empty required fields in `before('CREATE')` — auto-generate or default them instead.
+- **bridge_ID from bridgeRef must be resolved on BOTH CREATE and UPDATE.** User fills `bridgeRef` via FE4 draft PATCH (UPDATE), not during the initial empty CREATE. If the handler only runs `bridge_ID` resolution on `before('CREATE')`, the resolved UUID is never written → record saves with null `bridge_ID` → invisible in bridge-filtered list reports. Fix: `before(['CREATE', 'UPDATE'])` with resolution logic running on both; ref auto-gen guarded to `if (req.event === 'CREATE')`.
+
+### AdminService vs BridgeManagementService handler isolation (May 2026)
+- **AdminService (`srv/admin-service.js`) and BridgeManagementService (`srv/service.js`) are entirely separate CAP service instances.** Handlers registered on one service do NOT fire for the other, even when they project the same underlying DB entities (`bridge.management.*`). Any entity exposed through AdminService that needs lifecycle logic (deactivate/reactivate, auto-ref, virtual fields) must have that logic implemented directly in `admin-service.js`.
+- **Bound actions declared in `srv/services/*.cds` only fire on BridgeManagementService.** Adding `action deactivate()` to a service definition file (e.g. `srv/services/inspections.cds`) does NOT make that action available on AdminService's projection of the same entity. You must also declare the action in `srv/admin-service.cds` AND implement the handler in `srv/admin-service.js`.
+- **Pattern for adding deactivate/reactivate to an AdminService entity**: (1) add `actions { action deactivate() returns X; action reactivate() returns X; }` to the entity projection in `srv/admin-service.cds`; (2) add `this.on('deactivate', Entity, ...)` and `this.on('reactivate', Entity, ...)` handlers in `srv/admin-service.js`; (3) add `this.before('NEW', Entity.drafts, ...)` for auto-ref generation if needed.
+- **Virtual fields after READ must also be computed in admin-service.js.** `reviewCriticality` on Restrictions was only computed in `handlers/restrictions.js` (BridgeManagementService). AdminService callers saw `null`. Fix: duplicate the `after('READ', Restrictions, ...)` computation in `admin-service.js`. The virtual field must also be declared in `db/schema.cds` for CDS to serialise it in OData responses.
+
+### Composition vs Association for standalone CRUD (May 2026)
+- **`Composition of many` under a draft-enabled root entity blocks standalone CRUD.** CAP enforces "a draft-enabled entity can only be modified via its root entity" — any `Composition of many` child of a draft-enabled parent requires all writes to go through the parent's draft context. Standalone ListReport Create buttons return HTTP 400/403 with this message.
+- **Fix: change `Composition of many` → `Association to many` for entities that need standalone CRUD.** The DB FK column (`bridge_ID`) is unchanged — only the OData composition semantics change. The entity loses draft capability (it becomes a plain CRUD entity, no draftActivate flow). Applied to: `BridgeScourAssessmentDetail` and `BridgeElements`.
+- **Entities changed to Association become non-draft.** Their CRUD uses plain `POST /Entity` (no draftActivate step). Do not add `@odata.draft.enabled` to them individually — that reintroduces the composition constraint via a different path. If draft is required, keep them as Composition children and only create/edit them through the parent Bridge object page.
+
+### Auto-ref sequence generation — NaN protection (May 2026)
+- **Use regex match, not string replace, for auto-ref sequence extraction.** `last.defectId.replace('DEF-', '')` returns `""` when defectId is `""` or contains unexpected content, and `parseInt("", 10) = NaN` → sequence becomes `NaN` → generates `DEF-0NaN`. Fix: `const m = last?.defectId?.match(/^DEF-(\d+)$/); const seq = m ? parseInt(m[1], 10) + 1 : 1`. Same pattern for RSK-NNNN, CS-NNNN, LR-NNNN, PM-NNNN — always use named regex capture groups to extract the numeric part.
+- **`before('NEW', Entity.drafts, ...)` is the correct hook for auto-ref on draft entities.** `before('CREATE')` fires after draft activation, not on initial draft creation. Using `before('NEW', Entity.drafts)` fires when FE4 creates the empty draft (the first POST), ensuring the ref is generated before any PATCH updates the record.
+
+### AttributeValues EAV format (May 2026)
+- **`AttributeValues` is a simple EAV table** — fields: `objectType: "Bridge"`, `objectId: "1"` (string, bridge integer PK), `attributeKey: "SEISMIC_ZONE"` (matches AttributeDefinitions.internalKey), `valueText: "Zone A"`. NOT a bridge_ID (UUID) + definition_ID (UUID) FK structure. Do not attempt to use UUID FK joins — use string key lookups.
+- **`AttributeAllowedValues` FK is `attribute_ID`** (the CAP-generated FK for the `attribute: Association to AttributeDefinitions` field), NOT `definition_ID`. Passing `definition_ID` causes HTTP 400 "Property not found".
+- **`AttributeGroups` has a NOT NULL `internalKey` field** — always provide it on CREATE. Omitting it causes HTTP 500 from the SQLite NOT NULL constraint. Pattern: use an uppercase snake-case key like `"SEISMIC_DATA"`.
+- **`AttributeValues` was incorrectly marked `@readonly` in admin-service.cds** — removed. Any entity in AdminService that needs write access must NOT have the `@readonly` annotation, even if the underlying CAP entity has no write restrictions.
+
+### Correct field names — critical reference (May 2026)
+- **BridgeCapacities**: `capacityType` (not `vehicleType`), `engineeringNotes` (not `notes`), `effectiveFrom` is `@assert.mandatory` (draftActivate fails without it)
+- **BridgeElements**: `elementQuantity` (not `quantity`), `yearConstructed` (not `yearInstalled`), `currentConditionRating: Integer [1,5]` (not `currentConditionState`)
+- **Restrictions**: `appliesToVehicleClass` (not `vehicleType`), `grossMassLimit` (not `massLimit`), `approvedBy` (not `authorisedBy`), use `restrictionValue + restrictionUnit` string fields
+- **BridgeRiskAssessments**: `existingControls` (not `controlMeasures`), `treatmentActions` (not `treatmentPlan`), `reviewDueDate` (not `nextReviewDate`)
+- **NhvrRouteAssessments**: `assessmentStatus` field (not `status`), deactivate sets it to `'Superseded'`
+- **LoadRatingCertificates**: deactivate sets `status = 'Superseded'`
+- **BridgeLoadRatings**: no `notes` field; use `governingMember` for update tests
+
+---
+
+## Reusable Components — Cross-Project Standard
+
+Any learning from any BMS project, client deployment, or external codebase that improves a reusable component MUST be back-ported to this codebase and documented here. This ensures the BMS reusable components evolve with every project and new deployments start from the best known state.
+
+### The 6 Core Reusable Components
+
+| Component | Files | Reuse Status |
+|-----------|-------|-------------|
+| **Audit Log** | `srv/audit-log.js` + `db/schema.cds:ChangeLog` + `app/bms-admin/webapp/controller/ChangeDocuments*` | ✅ Ready — extract `audit-log.js` + ChangeLog entity to npm package |
+| **Mass Upload** | `srv/mass-upload.js` + `app/mass-upload/webapp/` | ✅ Ready — parametrize DATASETS array for any entity set |
+| **Mass Update** | `app/mass-edit/webapp/` + `srv/server.js:saveMassEdit*` | ✅ Ready — ENTITY_CONFIG pattern enables any field set |
+| **Maps** | `app/map-view/webapp/` + `srv/server.js:/map/api/*` | 🔶 Partially reusable — needs data model abstraction |
+| **Custom Attributes** | `srv/attributes-api.js` + `db/attributes-schema.cds` + `app/attributes-admin/webapp/` | ✅ Ready — fully EAV-based, just change namespace |
+| **Change Documents** | `app/bms-admin/webapp/controller/ChangeDocuments*` | ✅ Ready — depends only on ChangeLog entity |
+
+### Reusability Rules
+
+- **Never hardcode entity names** in reusable components. Use a config object or parameter.
+- **Audit log must be called from all CREATE/UPDATE handlers** — this is non-negotiable for compliance.
+- **Custom attributes use objectType string** to scope to any entity — do not add new DB columns for extensibility; extend via attribute definitions instead.
+- **Map backend must receive data as `{ id, lat, lng, ...metadata }`** — abstract bridge-specific fields behind the metadata property when adapting to new asset types.
+- **Mass upload DATASETS array is the only extension point** — adding a new entity to upload requires only a new DATASETS entry + importer function. Never touch the core pipeline.
+
+### Cross-Project Learnings Log
+
+When you discover a pattern in another project that improves one of these components, add it here:
+
+```
+[YYYY-MM-DD] [Component] Learning: <what you learned>
+Source: <project name or issue>
+Applied: <what was changed in this codebase>
+```
+
+**Example entries (add real ones as discovered):**
+```
+[2026-05-11] [Audit Log] Learning: ChangeLog queries without indexes caused 45-second query times on a 500k-row table in production.
+Source: BMS UAT deployment
+Applied: Added 6 indexes to ChangeLog entity in db/schema.cds
+
+[2026-05-11] [Mass Edit] Learning: Users were saving changes without reviewing them, causing data quality issues. Diff preview before save reduced incorrect saves by ~80% in user testing.
+Source: BMS UAT user feedback
+Applied: Added MessageBox diff preview to MassEdit.controller.js onSave()
+
+[2026-05-11] [Custom Attributes] Learning: Frontend not enforcing required attributes meant 30% of bridges had missing mandatory safety fields.
+Source: BMS data quality audit
+Applied: Added required validation + asterisk indicators to CustomAttributesInit.js
+
+[2026-05-11] [Mass Upload] Learning: Row-by-row bridge ID resolution (N SELECT + N INSERT calls per row) was 200x slower than batch pattern at 500 rows.
+Source: BMS performance audit
+Applied: Rewrote importRows for BridgeInspectionElements, BridgeCarriageways, BridgeContacts, BridgeMehComponents to 2 calls: single SELECT WHERE IN + single bulk INSERT.entries([])
+
+[2026-05-11] [Map / GIS] Learning: Leaflet map shows grey tiles when created inside an inactive FE4 tab (core:HTML fragment) because the container has zero dimensions until the tab is revealed.
+Source: BMS Bridge Details map tab
+Applied: Added setTimeout(() => _map.invalidateSize(), 300) immediately after map.setView() in gisMapInit.js
+
+[2026-05-11] [Admin Service] Learning: after('READ', Bridges) always fired a GROUP BY COUNT even on list pages that don't render activeRestrictionCount, adding ~40ms per page load.
+Source: BMS performance audit
+Applied: Guarded with req.query.$select check — COUNT only runs when the field is actually requested
+
+[2026-05-11] [Map / GIS] Learning: ResizeObserver is far more reliable than setTimeout(invalidateSize) for Leaflet grey-tile fix. FE4 lazy-renders custom body sections — container dimensions become non-zero at unpredictable times.
+Source: BMS Bridge Details map section (continued grey-tile issue after 300ms fix)
+Applied: Replaced setTimeout with ResizeObserver in gisMapInit.js; observer fires exactly when container transitions from 0px to real dimensions
+
+[2026-05-11] [Security] Learning: BridgePermits.approve and BridgeConditionSurveys.approveSurvey require @restrict grant to certify/admin scope. Under HVNL, permit approvals are legal instruments; under AS 5100-7, condition survey approvals require qualified engineer.
+Source: Expert council audit — C05, C06
+Applied: @restrict on BridgePermits and BridgeConditionSurveys in srv/admin-service.cds
+
+[2026-05-11] [Risk Assessments] Learning: inherentRiskScore must ALWAYS be auto-computed as likelihood × consequence. Users cannot manually set it. residualRiskScore must NEVER auto-default to inherentRiskScore — it is a separate engineering input.
+Source: Expert council audit — C10
+Applied: srv/handlers/risk-assessments.js before(['CREATE','UPDATE']) always overwrites inherentRiskScore; residualRiskScore untouched
+
+[2026-05-11] [Fiori Annotations] Learning: importanceLevel belongs on Executive Summary (portfolio management KPI), NOT Traffic & NHVR (it is not a traffic metric). nhvrAssessed/nhvrAssessmentDate must not appear in both NHVRApprovals tab AND External Systems tab — keep in NHVRApprovals only.
+Source: Expert council audit — H04, M01
+Applied: Moved importanceLevel to FieldGroup#ExecutiveOverview; removed from TrafficData and ExtNHVR
+
+[2026-05-11] [Coordinates] Learning: Lat/lon @assert.range should be Australian bounding box (-44/-10, 112/154) not the global ±90/±180 range. Add @Common.QuickInfo referencing GDA2020 CRS. All bridge coordinates in Australia must be GDA2020.
+Source: Expert council audit — H05
+Applied: Updated lat/lon field annotations in fiori-service.cds
+```
 
 ---
 

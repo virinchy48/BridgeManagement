@@ -31,6 +31,7 @@ annotate AdminService.Restrictions with @(
   UI.SelectionFields: [
     restrictionRef, bridgeRef, restrictionType,
     restrictionStatus, restrictionCategory,
+    reviewDueDate,
     permitRequired, temporary, active
   ],
   UI.LineItem: [
@@ -45,6 +46,8 @@ annotate AdminService.Restrictions with @(
     { Value: restrictionStatus,       Label: 'Status' },
     { Value: temporary,               Label: 'Temp' },
     { Value: permitRequired,          Label: 'Permit Req.' },
+    { Value: reviewDueDate,           Label: 'Review Due', Criticality: reviewCriticality, CriticalityRepresentation: #WithIcon },
+    { Value: legalEffectiveDate,      Label: 'Legal Effective' },
     { Value: effectiveFrom,           Label: 'From' },
     { Value: effectiveTo,             Label: 'To' },
     { Value: active,                  Label: 'Active' },
@@ -167,6 +170,9 @@ annotate AdminService.Restrictions with @(
       Data: [
         {Value: effectiveFrom},   // mandatory — see field annotation below
         {Value: effectiveTo},
+        {Value: reviewDueDate},
+        {Value: legalEffectiveDate},
+        {Value: signRequirements},
       ]
     },
     // Temporary-only fields — hidden when restrictionCategory != 'Temporary'
@@ -306,6 +312,9 @@ annotate AdminService.Restrictions with {
   issuingAuthority     @title: 'Issuing Authority';
   enforcementAuthority @title: 'Enforcement Authority';
   remarks              @title: 'Notes'  @UI.MultiLineText;
+  reviewDueDate        @title: 'Review Due Date';
+  legalEffectiveDate   @title: 'Legal Effective Date';
+  signRequirements     @title: 'Sign Requirements (AS 1742.10)';
 };
 
 ////////////////////////////////////////////////////////////////////////////

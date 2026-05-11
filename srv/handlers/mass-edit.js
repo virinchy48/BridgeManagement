@@ -1,7 +1,7 @@
 const cds = require('@sap/cds')
 
 const GRID_FIELDS = ['condition','conditionRating','postingStatus','loadRating',
-                     'hmlApproved','bdoubleApproved','freightRoute','isActive']
+                     'hmlApproved','bDoubleApproved','freightRoute','isActive']
 
 const CONDITION_LABELS = {
     1:'CRITICAL',2:'CRITICAL',3:'POOR',4:'POOR',5:'FAIR',
@@ -19,11 +19,8 @@ module.exports = function registerMassEditHandlers (srv, { logAudit, validateEnu
         for (let [rowIndex, row] of rows.entries()) {
             try {
                 if (!row.ID) { failed++; errors.push(`Row ${rowIndex + 1}: ID required`); continue }
-                let current = await db.run(SELECT.one.from('nhvr.Bridge').where({ ID: row.ID }))
+                let current = await db.run(SELECT.one.from('bridge.management.Bridges').where({ ID: row.ID }))
                 if (!current) { failed++; errors.push(`Row ${rowIndex + 1}: Bridge ${row.ID} not found`); continue }
-                if (row.version !== undefined && current.version !== row.version) {
-                    failed++; errors.push(`Row ${rowIndex + 1}: Version conflict for ${current.bridgeId}`); continue
-                }
                 let patch = {}
                 GRID_FIELDS.forEach(fieldName => { if (row[fieldName] !== undefined) patch[fieldName] = row[fieldName] })
                 if (patch.conditionRating) {
@@ -33,8 +30,7 @@ module.exports = function registerMassEditHandlers (srv, { logAudit, validateEnu
                     patch.conditionScore = Math.round((conditionRating / 10) * 100)
                     patch.highPriorityAsset = conditionRating <= 4
                 }
-                patch.version = current.version + 1
-                await db.run(UPDATE('nhvr.Bridge').set(patch).where({ ID: row.ID }))
+                await db.run(UPDATE('bridge.management.Bridges').set(patch).where({ ID: row.ID }))
                 updated++
             } catch (error) { failed++; errors.push(`Row ${rowIndex + 1}: ${error.message}`) }
         }

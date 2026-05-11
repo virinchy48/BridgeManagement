@@ -15,5 +15,4 @@ annotate BridgeManagementService.Restrictions with @restrict: [
 ];
 
 annotate BridgeManagementService.Lookups           with @restrict: [{ grant: '*', to: 'Admin' }];
-annotate BridgeManagementService.AttributeDefinitions with @restrict: [{ grant: '*', to: 'Admin' }];
 annotate BridgeManagementService.RoleConfigs       with @restrict: [{ grant: '*', to: 'Admin' }];

@@ -62,3 +62,9 @@ extend service BridgeManagementService with {
     ]
     entity BridgeAttributes as projection on nhvr.BridgeAttribute;
 }
+
+// Expose BNAC mapping as navigable from the Bridges ObjectPage
+extend projection BridgeManagementService.Bridges {
+    bnacMapping: Association to BridgeManagementService.BnacObjectIdMaps
+                 on bnacMapping.bridgeId = $self.bridgeId
+}

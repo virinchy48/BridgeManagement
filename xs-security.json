@@ -10,7 +10,8 @@
     { "name": "$XSAPPNAME.view", "description": "Read-only access to bridges and restrictions" },
     { "name": "$XSAPPNAME.executive_view", "description": "Executive KPI summary — header only, no editable tabs" },
     { "name": "$XSAPPNAME.external_view", "description": "External/public card view — curated read-only fields, unauthenticated route" },
-    { "name": "$XSAPPNAME.certify", "description": "Approve or reject load rating certificates and permits" }
+    { "name": "$XSAPPNAME.certify", "description": "Approve or reject load rating certificates and permits" },
+    { "name": "$XSAPPNAME.config_manager", "description": "Enable or disable feature flags and system configuration" }
   ],
   "attributes": [],
   "role-templates": [
@@ -56,6 +57,11 @@
       "name": "BMS_EXTERNAL_VIEWER",
       "description": "External stakeholders (councils, carriers) — public card view with restrictions and permit status only",
       "scope-references": ["$XSAPPNAME.external_view"]
+    },
+    {
+      "name": "BMS_CONFIG_MANAGER",
+      "description": "Enable and disable feature flags without a code deployment",
+      "scope-references": ["$XSAPPNAME.config_manager", "$XSAPPNAME.view"]
     }
   ],
   "role-collections": [
@@ -93,6 +99,11 @@
       "name": "BMS External Viewer",
       "description": "External public card access — active restrictions and permit status only",
       "role-template-references": ["$XSAPPNAME.BMS_EXTERNAL_VIEWER"]
+    },
+    {
+      "name": "BMS Config Manager",
+      "description": "Feature flag management without code deployment",
+      "role-template-references": ["$XSAPPNAME.BMS_CONFIG_MANAGER"]
     }
   ]
 }

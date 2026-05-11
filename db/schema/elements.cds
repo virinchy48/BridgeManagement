@@ -6,6 +6,10 @@ entity BridgeElements : cuid, managed {
     bridge               : Association to Bridges @mandatory;
     elementId            : String(40)  @mandatory;
     elementType          : String(40)  @mandatory;
+    elementCode          : String(40);
+    elementQuantity      : Decimal(10,3);
+    elementUnit          : String(20);
+    parentElement        : Association to BridgeElements;
     elementName          : String(111) @mandatory;
 
     spanNumber           : Integer;
@@ -40,5 +44,5 @@ annotate BridgeElements with @(cds.persistence.indexes: [
 ]);
 
 extend entity Bridges with {
-    elements : Composition of many BridgeElements on elements.bridge = $self;
+    elements : Association to many BridgeElements on elements.bridge = $self;
 }

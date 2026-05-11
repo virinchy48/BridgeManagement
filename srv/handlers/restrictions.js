@@ -126,4 +126,15 @@ module.exports = function registerRestrictionHandlers (srv, { logAudit, updateBr
             reason, req.user?.id || 'system')
         return { status: 'ACTIVE', message: 'Temporary restriction created', ID }
     })
+
+    srv.after('READ', 'Restrictions', (data) => {
+        const results = Array.isArray(data) ? data : [data]
+        const today = new Date()
+        const in30 = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
+        results.forEach(r => {
+            if (!r.reviewDueDate) { r.reviewCriticality = null; return }
+            const due = new Date(r.reviewDueDate)
+            r.reviewCriticality = due < today ? 1 : due <= in30 ? 2 : 3
+        })
+    })
 }
