@@ -608,6 +608,47 @@ extend entity Bridges with {
   permits          : Association to many BridgePermits          on permits.bridge = $self;
 }
 
+// ── AssetIQ Risk Scoring Engine ──────────────────────────────────────────────
+
+entity AssetIQScores : cuid, managed {
+  bridge          : Association to Bridges @mandatory;
+  overallScore    : Decimal(5,2);
+  ragStatus       : String(10);           // GREEN | AMBER | RED
+  bciFactor       : Decimal(5,2);         // BCI component (35% weight)
+  ageFactor       : Decimal(5,2);         // Age component (15% weight)
+  trafficFactor   : Decimal(5,2);         // Traffic component (20% weight)
+  defectFactor    : Decimal(5,2);         // Defect severity component (20% weight)
+  loadFactor      : Decimal(5,2);         // Load exposure component (10% weight)
+  modelVersion    : String(20) default '1.0.0';
+  scoredAt        : Timestamp;
+  overrideFlag    : Boolean default false;
+  overrideBy      : String(111);
+  overrideReason  : LargeString;
+  overrideAt      : Timestamp;
+}
+
+annotate AssetIQScores with @(cds.persistence.indexes: [
+  { name: 'idx_aiq_bridge', columns: ['bridge_ID'] },
+  { name: 'idx_aiq_scored', columns: ['scoredAt'] }
+]);
+
+entity AssetIQModels : cuid, managed {
+  version         : String(20) @mandatory;
+  isActive        : Boolean default false;
+  bciWeight       : Decimal(4,3) default 0.350;
+  ageWeight       : Decimal(4,3) default 0.150;
+  trafficWeight   : Decimal(4,3) default 0.200;
+  defectWeight    : Decimal(4,3) default 0.200;
+  loadWeight      : Decimal(4,3) default 0.100;
+  description     : String(500);
+  activatedAt     : Timestamp;
+  activatedBy     : String(111);
+}
+
+extend entity Bridges with {
+  virtual ragStatus : String(10);
+}
+
 // --------------------------------------------------------------------------------
 // Temporary workaround for this situation:
 // - Fiori apps annotate Bridges with @fiori.draft.enabled.

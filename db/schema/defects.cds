@@ -95,6 +95,7 @@ entity BridgeDefects : cuid, managed {
 
     notes   : LargeString;
     active  : Boolean default true;
+    alertSent : Boolean default false;
 }
 
 annotate BridgeInspections with @(cds.persistence.indexes: [

@@ -103,4 +103,6 @@ entity Bridges : managed {
       virtual bsiWidthRating           : Integer;
       virtual bsiBarrierRating         : Integer;
       virtual bsiRouteAltRating        : Integer;
+      virtual bhi                      : Decimal(5,2);
+      virtual nbi                      : Decimal(5,2);
 }

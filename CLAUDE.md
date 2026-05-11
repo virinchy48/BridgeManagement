@@ -600,6 +600,26 @@ Applied: srv/mass-upload.js — ALLOWED_VALUES_WHITELIST, importAllowedValueRows
 Source: Tile attribute analysis
 Applied: db/schema/enum-types.cds (7 new types), db/schema/defects.cds, risk-assessments.cds, scour-assessments.cds, nhvr-compliance.cds, elements.cds, db/schema.cds, app/admin-bridges/fiori-service.cds
 
+[2026-05-11] [UI5 / XML Views] Learning: `data:` namespace for CustomData attributes (`data:myProp="{model>field}"`) requires `xmlns:data="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"` in the view's root element. A missing namespace declaration causes an XML parse error at UI5 component load time — not a runtime error — which silently prevents the ENTIRE component from loading. The FLP shows "App could not be opened" for ALL routes in that component, not just the view with the error. Always run an XML namespace check (`python3 -c "import xml.etree.ElementTree as ET; ET.parse(f)"`) on all view files before committing.
+Source: BmsAdmin "#BmsAdmin-manage" load failure — FeatureFlags.view.xml missing `xmlns:data`
+Applied: app/bms-admin/webapp/view/FeatureFlags.view.xml — added xmlns:data declaration
+
+[2026-05-11] [AssetIQ / Risk Scoring] Learning: AssetIQ risk scoring engine is now separate from BSI (Bridge Sufficiency Index). BSI = virtual field on Bridges computed from BCI formula. AssetIQ = persisted `AssetIQScores` entity with 5 factors (BCI 35%, Age 15%, Traffic 20%, Defect 20%, Load 10%) computed by `scoreAllBridges()` AdminService action. BHI/NBI = computed by `srv/bhi-bsi-engine.js` multi-modal engine, only populated when `feature.bhiBsiAssessment = true`. Three scoring systems coexist: bsiScore (virtual, always computed), AssetIQScore (persisted, on-demand batch), BHI/NBI (virtual, feature-flagged).
+Source: Phase 4 FD implementation
+Applied: db/schema.cds (AssetIQScores, AssetIQModels entities), srv/admin-service.cds/js, srv/bhi-bsi-engine.js, srv/bhi-bsi-api.js
+
+[2026-05-11] [BHI/BSI Engine] Learning: `srv/bhi-bsi-engine.js` implements the multi-modal BHI/BSI formula with 6 transport modes (Road/Rail/Metro/LightRail/Ferry/Port). Exposed via `srv/bhi-bsi-api.js` at `/bhi-bsi/api` with 3 endpoints: `POST /assess` (single bridge), `GET /network-summary` (batch up to 200), `GET /mode-params` (public). All endpoints except mode-params are guarded by auth + feature flag check (503 when `feature.bhiBsiAssessment = false`). BHI/NBI virtual fields on Bridges are only computed in `after('READ', Bridges)` when the feature flag is enabled — checked via `isFeatureEnabled('bhiBsiAssessment')` from `srv/feature-flags.js`.
+Source: Phase 4 FD — BHI/BSI multi-modal assessment engine
+Applied: srv/bhi-bsi-engine.js (new), srv/bhi-bsi-api.js (new), srv/server.js (mount), srv/admin-service.js (virtual field population), db/schema/bridge-entity.cds (virtual bhi/nbi fields)
+
+[2026-05-11] [Phase 4 FD / Defect Escalation] Learning: Severity 4+ defects now auto-create an AlertsAndNotifications record. Guard with deduplication check (`SELECT.one WHERE entityId = defect.ID AND status = 'Open'`) before inserting to avoid duplicate alerts. Set `alertSent = true` on the defect after alert creation. Pattern reused from load-ratings expiry alert. The `requiresLoadRestriction` flag on BridgeDefects auto-creates a Draft Restriction record if none exists.
+Source: Phase 4 FD Gherkin — severity escalation scenarios
+Applied: srv/handlers/defects.js, db/schema/defects.cds (alertSent field)
+
+[2026-05-11] [FLP / Static Config Limitation] Learning: FLP tiles in `fiori-apps.html` and `fioriSandboxConfig.json` are STATIC — there is no way to conditionally show/hide a tile based on a runtime feature flag. The AssetIQ tile is always visible in the launchpad. Feature flag gating is applied at the CONTENT layer: the `/bhi-bsi/api/*` endpoints return HTTP 503 with a clear message when the flag is off, and the screen shows the error. To hide the tile entirely in production, use BTP FLP personalisation or role-based tile visibility (assign to a role-collection that only BMS_ADMIN or BMS_BRIDGE_MANAGER has).
+Source: BHI/BSI tile feature flag gating
+Applied: Documented; tile visible; content gated at API level
+
 ---
 
 ## Contributing to this file

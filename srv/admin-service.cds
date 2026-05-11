@@ -37,6 +37,7 @@ service AdminService {
   entity BridgeInspections as projection on my.BridgeInspections actions {
     action deactivate() returns BridgeInspections;
     action reactivate() returns BridgeInspections;
+    action complete()   returns BridgeInspections;
   };
   @restrict: [
     { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
@@ -150,6 +151,29 @@ service AdminService {
   entity BnacObjectIdMap   as projection on my.BnacObjectIdMap;
   @readonly entity BnacLoadHistory as projection on my.BnacLoadHistory;
   entity DataQualityRules as projection on my.DataQualityRules;
+
+  // ── AssetIQ Risk Scoring Engine ──────────────────────────────────────────────
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
+  entity AssetIQScores as projection on my.AssetIQScores actions {
+    action override(reason: String) returns AssetIQScores;
+    action dismissOverride() returns AssetIQScores;
+  };
+
+  @restrict: [
+    { grant: ['READ'],            to: ['view','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
+  entity AssetIQModels as projection on my.AssetIQModels actions {
+    action activate() returns AssetIQModels;
+  };
+
+  @requires: ['admin', 'manage']
+  action scoreAllBridges() returns { scored: Integer; skipped: Integer; message: String };
 
   // ── Demo Mode ────────────────────────────────────────────────────────────────
   action loadDemoData()  returns String;

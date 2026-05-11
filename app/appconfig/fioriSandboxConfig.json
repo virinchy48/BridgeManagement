@@ -125,6 +125,16 @@
                     "icon": "sap-icon://edit",
                     "targetURL": "#MassEdit-manage"
                   }
+                },
+                {
+                  "id": "AssetIQ",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "AssetIQ — Risk Intelligence",
+                    "subtitle": "Bridge Health & Risk Scores",
+                    "icon": "sap-icon://ai",
+                    "targetURL": "#Bridges-manage&/AssetIQScores"
+                  }
                 }
               ]
             }
@@ -289,7 +299,8 @@
             "RiskAssessments-manage":      { "semanticObject": "RiskAssessments",      "action": "manage", "title": "Risk Assessments",        "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgeRiskAssessments" } },
             "NhvrRouteAssessments-manage": { "semanticObject": "NhvrRouteAssessments", "action": "manage", "title": "NHVR Route Assessments",  "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "NhvrRouteAssessments" } },
             "LoadRatingCerts-manage":      { "semanticObject": "LoadRatingCerts",      "action": "manage", "title": "Load Rating Certificates", "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "LoadRatingCertificates" } },
-            "Permits-manage":              { "semanticObject": "Permits",              "action": "manage", "title": "Permits",                "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgePermits" } }
+            "Permits-manage":              { "semanticObject": "Permits",              "action": "manage", "title": "Permits",                "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgePermits" } },
+            "AssetIQ-display":             { "semanticObject": "AssetIQ",              "action": "display", "title": "AssetIQ Risk Intelligence", "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "AssetIQScores" } }
           }
         }
       }
