@@ -394,6 +394,25 @@ Was originally annotated with only `@UI.LineItem` and `@UI.HeaderInfo`. Missing:
 - **Cascade-disable is server-side only** — the client sends one PATCH for the master flag; the server returns the full `cascadeDisabled` list in the response. The client then bulk-updates the component model: `data.cascadeDisabled.forEach(k => oFfModel.setProperty('/' + k, false))`. Never implement cascade logic in the UI controller.
 - **Adding a new flag — 4-step checklist**: (1) CSV row in `bridge.management-SystemConfig.csv`; (2) add to `KNOWN_FLAGS` in `srv/feature-flags.js`; (3) add to `initFeatureFlags()` default object in `Component.js`; (4) bind `visible="{featureFlags>/yourFlagKey}"` in the view. No other files needed unless it has a parent dependency — then also add to `DEPENDENCIES` map.
 
+### Bridge Details tab redesign patterns (May 2026)
+- **Condition & Inspection tab = read-only snapshot only.** When sub-domain tiles (Inspections, Condition Surveys) exist as standalone registers, the Bridge Details tab must NOT duplicate editable CRUD — it shows the latest snapshot only. Rename it "Inspection Status", remove scour fields that are authoritative in BridgeScourAssessments, apply `@Common.FieldControl: #ReadOnly` to all last-inspection fields.
+- **Field placement rule:** `seismicZone` + `structuralDeficiencyCode` → Physical Structure tab (structural characteristics). `operationalStatusCode` → Executive Summary tab (operational state). Never put these in Administration (Source & Reference).
+- **External Systems tab pattern:** One CollectionFacet `ExternalSystems` with two ReferenceFacets: `ExtNHVR` (nhvrReferenceUrl, nhvrAssessed, nhvrAssessmentDate) and `ExtBNAC` (bnacMapping.bnacObjectId + `UI.DataFieldWithUrl` for deep link). Remove duplicated `nhvrReferenceUrl` from other FieldGroups.
+- **`UI.DataFieldWithUrl` for deep links:** `{ $Type: 'UI.DataFieldWithUrl', Label: 'BNAC Deep Link', Value: bnacMapping.bnacObjectId, Url: bnacMapping.bnacUrl }` — `Value` is the visible label text; `Url` is the navigation target expression.
+
+### BnacObjectIdMap navigation from Bridges (May 2026)
+- **`BnacObjectIdMap` is in `bridge.management` namespace, not `nhvr`** — `using bridge from '../../db/schema'` is required as a separate import in `srv/services/admin.cds` alongside the existing `using nhvr` import. Referencing it as `nhvr.BnacObjectIdMap` causes CDS compile error "Artifact not found".
+- **`extend projection` pattern for adding navigation to existing projections.** In `srv/services/bridges.cds`, `extend projection BridgeManagementService.Bridges { bnacMapping: Association to BridgeManagementService.BnacObjectIdMaps on bnacMapping.bridgeId = $self.bridgeId }` adds the navigation without touching the base projection definition. Works for read-only cross-table navigation; does not create a DB join — resolved lazily by OData expand.
+
+### Auto-generated ref fields — consistency rule (May 2026)
+- **All auto-generated ID/ref fields must be `@Core.Computed @Common.FieldControl: #ReadOnly`.** Fields: `defectId` (DEF-NNNN), `assessmentId` (RSK-NNNN), `surveyRef` (CS-NNNN), `ratingRef` (LR-NNNN), `permitRef` (PM-NNNN), `inspectionRef` (INS-NNNN). Without `@Core.Computed`, FE4 renders them as editable text inputs. Without `@Common.FieldControl: #ReadOnly`, users can overwrite them.
+- **Remove `@mandatory` when a field is auto-generated** — `@mandatory` fires before `before('CREATE')` in CAP's validation pipeline, blocking creation when the field is empty (which it will be at initial draft click). Fix: remove `@mandatory` from the schema entity; the field is always populated by the handler before the record is saved.
+- **`assessmentId` auto-generation pattern:** `RSK-${String(seq).padStart(4,'0')}` generated in `srv/handlers/risk-assessments.js` `before(['CREATE','UPDATE'])`, guarded to `if (req.event === 'CREATE' && !d.assessmentId)`. Matches DEF-NNNN / INS-NNNN convention.
+
+### FE4 draft CRUD root cause pattern (May 2026)
+- **FE4 `before('CREATE')` fires with empty body** when user clicks "Create" in a ListReport — NOT when they save. If a handler calls `req.error()` on a missing field at this point, it blocks every create attempt. Never block on empty required fields in `before('CREATE')` — auto-generate or default them instead.
+- **bridge_ID from bridgeRef must be resolved on BOTH CREATE and UPDATE.** User fills `bridgeRef` via FE4 draft PATCH (UPDATE), not during the initial empty CREATE. If the handler only runs `bridge_ID` resolution on `before('CREATE')`, the resolved UUID is never written → record saves with null `bridge_ID` → invisible in bridge-filtered list reports. Fix: `before(['CREATE', 'UPDATE'])` with resolution logic running on both; ref auto-gen guarded to `if (req.event === 'CREATE')`.
+
 ---
 
 ## Contributing to this file
