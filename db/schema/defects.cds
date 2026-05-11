@@ -5,6 +5,7 @@ using { bridge.management.Bridges } from './bridge-entity';
 // Inspection capture record — S/4 EAM owns scheduling; this captures the event data
 entity BridgeInspections : cuid, managed {
     bridge                       : Association to Bridges @mandatory;
+    inspectionRef                : String(40);
     inspectionDate               : Date        @mandatory;
     inspectionType               : String(40)  @mandatory;
 

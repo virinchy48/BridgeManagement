@@ -43,8 +43,10 @@ service AdminService {
     { grant: ['DELETE'],          to: [] }
   ]
   entity BridgeConditionSurveys as projection on my.BridgeConditionSurveys actions {
-    action deactivate() returns BridgeConditionSurveys;
-    action reactivate() returns BridgeConditionSurveys;
+    action deactivate()       returns BridgeConditionSurveys;
+    action reactivate()       returns BridgeConditionSurveys;
+    action submitForReview()  returns BridgeConditionSurveys;
+    action approveSurvey()    returns BridgeConditionSurveys;
   };
 
   @restrict: [

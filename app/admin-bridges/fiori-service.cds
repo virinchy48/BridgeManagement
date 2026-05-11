@@ -1343,6 +1343,7 @@ annotate AdminService.BridgeInspections with {
       ]
     }
   );
+  inspectionRef                @title: 'Inspection Ref'  @Common.FieldControl: #ReadOnly;
   inspectionDate               @title: 'Inspection Date';
   inspectionType               @title: 'Inspection Type';
   inspector                    @title: 'Inspector';
@@ -1364,8 +1365,9 @@ annotate AdminService.BridgeInspections with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : false,
-  UI.SelectionFields: [bridge_ID, inspectionType, inspectionDate],
+  UI.SelectionFields: [bridge_ID, inspectionType, inspectionDate, inspectionRef],
   UI.LineItem: [
+    {Value: inspectionRef,          Label: 'Ref'},
     {Value: bridge.bridgeId,        Label: 'Bridge ID'},
     {Value: bridge.bridgeName,      Label: 'Bridge'},
     {Value: inspectionDate,         Label: 'Date'},
@@ -1379,7 +1381,7 @@ annotate AdminService.BridgeInspections with @(
   UI.HeaderInfo: {
     TypeName      : 'Inspection',
     TypeNamePlural: 'Inspections',
-    Title         : {Value: inspectionDate},
+    Title         : {Value: inspectionRef},
     Description   : {Value: inspector},
   },
   UI.Facets: [
@@ -1399,6 +1401,7 @@ annotate AdminService.BridgeInspections with @(
     Label: 'General',
     Data: [
       {Value: bridge_ID,       Label: 'Bridge'},
+      {Value: inspectionRef},
       {Value: inspectionDate},
       {Value: inspectionType},
       {Value: inspectionStandard},
@@ -2084,6 +2087,20 @@ annotate AdminService.BridgeConditionSurveys with @(
   UI.Identification: [
     {
       $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.submitForReview',
+      Label      : 'Submit for Review',
+      Criticality: #Warning,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Draft'] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.approveSurvey',
+      Label      : 'Approve',
+      Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Submitted'] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
       Action     : 'AdminService.deactivate',
       Label      : 'Deactivate',
       Criticality: #Negative,
@@ -2131,8 +2148,10 @@ annotate AdminService.BridgeConditionSurveys with {
 };
 
 annotate AdminService.BridgeConditionSurveys with actions {
-  deactivate @Common.SideEffects: { TargetProperties: ['active'] };
-  reactivate @Common.SideEffects: { TargetProperties: ['active'] };
+  deactivate      @Common.SideEffects: { TargetProperties: ['active'] };
+  reactivate      @Common.SideEffects: { TargetProperties: ['active'] };
+  submitForReview @Common.SideEffects: { TargetProperties: ['status'] };
+  approveSurvey   @Common.SideEffects: { TargetProperties: ['status'] };
 };
 
 ////////////////////////////////////////////////////////////////////////////
