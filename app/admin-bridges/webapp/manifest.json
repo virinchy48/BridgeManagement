@@ -551,14 +551,6 @@
                         "placement": "After",
                         "anchor": "PhysicalStructure"
                       }
-                    },
-                    "inspectionRegisterSection": {
-                      "template": "BridgeManagement.adminbridges.ext.fragment.InspectionRegister",
-                      "title": "Inspection & Defect Register",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "ConditionInspection"
-                      }
                     }
                   }
                 }
