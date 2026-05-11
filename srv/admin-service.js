@@ -1086,6 +1086,30 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (req.data.active === undefined) req.data.active = true
   })
 
+  this.before(['CREATE', 'UPDATE'], BridgeRiskAssessments, async (req) => {
+    const d = req.data
+    const db = await cds.connect.to('db')
+    const likelihood = d.likelihood ?? null
+    const consequence = d.consequence ?? null
+    if (likelihood !== null && consequence !== null) {
+      d.inherentRiskScore = likelihood * consequence
+      const score = d.inherentRiskScore
+      d.inherentRiskLevel = score >= 15 ? 'Extreme' : score >= 10 ? 'High' : score >= 5 ? 'Medium' : 'Low'
+    } else if (req.event === 'UPDATE' && (likelihood !== null || consequence !== null)) {
+      const existing = await db.run(
+        SELECT.one.from('bridge.management.BridgeRiskAssessments')
+          .columns('likelihood', 'consequence').where({ ID: d.ID })
+      )
+      const l = likelihood ?? existing?.likelihood
+      const c = consequence ?? existing?.consequence
+      if (l && c) {
+        d.inherentRiskScore = l * c
+        const score = d.inherentRiskScore
+        d.inherentRiskLevel = score >= 15 ? 'Extreme' : score >= 10 ? 'High' : score >= 5 ? 'Medium' : 'Low'
+      }
+    }
+  })
+
   this.on('deactivate', BridgeRiskAssessments, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')

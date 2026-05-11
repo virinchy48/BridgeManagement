@@ -620,6 +620,26 @@ Applied: srv/handlers/defects.js, db/schema/defects.cds (alertSent field)
 Source: BHI/BSI tile feature flag gating
 Applied: Documented; tile visible; content gated at API level
 
+[2026-05-12] [UI5 / FLP Sandbox] Learning: The `test-resources/sap/ushell/bootstrap/sandbox.js` CDN bootstrap always deep-merges `FioriSandboxDefaultConfig.json` which registers dozens of SAP sample apps (AppNavSample, RTA Demo App, AppPersSample, etc.) into "My Home". To suppress them without switching bootstrap: (1) add `bootstrapConfig: { mergeApplications: false }` to `sap-ushell-config`; (2) add an `Object.defineProperty` getter/setter trap BEFORE sandbox.js loads that freezes the `groups` array — when sandbox.js tries to assign/merge groups, the no-op setter discards the change and only BMS groups remain.
+Source: User report — sample apps appearing in FLP home page
+Applied: app/fiori-apps.html — bootstrapConfig property + Object.defineProperty trap script
+
+[2026-05-12] [UI5 / Controller Pattern] Learning: `byId("list").setModel(new JSONModel([]))` on every data load creates a new JSONModel instance, which forces a full aggregation re-bind and causes visible flickering. Fix: create named models ONCE in `onInit` on the VIEW (`this.getView().setModel(new JSONModel([]), "groups")`), then use `getView().getModel("groups").setData(newData)` to update in-place. In the XML view, bind aggregations with the model prefix: `items="{groups>/}"` and item properties as `{groups>name}`. Zero flicker, better memory usage.
+Source: Attribute Configuration tab flickering in BMS Admin
+Applied: app/bms-admin/webapp/controller/AttributeConfig.controller.js + view
+
+[2026-05-12] [CDS / Demo Mode] Learning: Demo mode (`loadDemoData`/`clearDemoData` actions, DemoMode.controller.js/view) was removed entirely. These actions were registered in AdminService and backed by `srv/demo-handler.js`. Removing them: (1) delete the handler file; (2) remove both action lines from admin-service.cds; (3) remove the `require` and registration call from server.js; (4) remove the route/target from manifest.json; (5) remove the nav item from Shell.view.xml; (6) remove the nav key constant from Shell.controller.js; (7) remove any SystemConfig seed rows for demo settings.
+Source: User request — remove all sample app code
+Applied: srv/demo-handler.js deleted, admin-service.cds, server.js, manifest.json, Shell.controller.js, Shell.view.xml, SystemConfig.csv
+
+[2026-05-12] [CAP / Admin Service] Learning: Two critical admin-service.js bugs found in CRUD testing: (1) `conditionRating` and `lastInspectionDate` were in `requiredFields.Bridges` — these are set by the inspection workflow and must NOT be required on create (blocks every new bridge creation); (2) `inherentRiskScore` and `inherentRiskLevel` were only computed in BridgeManagementService handler (srv/handlers/risk-assessments.js) but NOT in AdminService — records created via AdminService (direct OData) always had null risk scores. AdminService requires its own `before(['CREATE','UPDATE'], BridgeRiskAssessments)` handler that mirrors the BMS service handler.
+Source: Full CRUD test audit — docs/crud-test-report.md
+Applied: srv/admin-service.js
+
+[2026-05-12] [Cleanup] Learning: Five orphaned app directories deleted (23,329 lines): `app/bridge-hierarchy/`, `app/bridges-public/`, `app/bms-business-admin/`, `app/operations/dashboard/`, `app/operations/map-view/`. These had no registered FLP intent and some were duplicates of active apps. After deletion, `app/services.cds` `using from` statements pointing to deleted paths must also be removed (causes `[ERROR] Can't find local module` at compile time), and `mta.yaml` module/artifact entries must be cleaned up.
+Source: Code cleanup sprint
+Applied: app/services.cds, mta.yaml, deleted directories
+
 ---
 
 ## Contributing to this file
