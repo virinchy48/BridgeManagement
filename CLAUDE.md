@@ -534,6 +534,30 @@ Applied: Moved importanceLevel to FieldGroup#ExecutiveOverview; removed from Tra
 [2026-05-11] [Coordinates] Learning: Lat/lon @assert.range should be Australian bounding box (-44/-10, 112/154) not the global ±90/±180 range. Add @Common.QuickInfo referencing GDA2020 CRS. All bridge coordinates in Australia must be GDA2020.
 Source: Expert council audit — H05
 Applied: Updated lat/lon field annotations in fiori-service.cds
+
+[2026-05-11] [Schema / CDS] Learning: CDS enum types for fixed-value domain fields (InspectionStandard, RatingLevel, LoadRatingVehicleClass, LoadRatingMethod) must live in a dedicated db/schema/enum-types.cds file to prevent circular imports across other schema sub-files. Using `using { X } from './enum-types'` in consuming schema sub-files rather than importing from the barrel db/schema.cds prevents CDS linter circular reference stripping.
+Source: Expert council gap-closure — C01, C03 (inspectionStandard, ratingLevel)
+Applied: db/schema/enum-types.cds created; enum types applied to BridgeInspections.inspectionStandard and LoadRatingCertificates.ratingLevel
+
+[2026-05-11] [Handlers / Inspections] Learning: TfNSW-BIM §3.1 mandates that Principal and Detailed inspection types require inspector accreditation Level 3 or Level 4. This must be enforced server-side in before(['CREATE','UPDATE'], 'BridgeInspections') — UI-only guards can be bypassed.
+Source: Expert council audit — C02 (accreditation guard)
+Applied: Added accreditation level check in srv/handlers/inspections.js
+
+[2026-05-11] [AdminService / KPI] Learning: refreshKPISnapshots() action must be declared in srv/admin-service.cds AND implemented in srv/admin-service.js (not in a handler file under srv/handlers/). AdminService handlers registered in srv/service.js do NOT fire for AdminService — they are separate CAP service instances.
+Source: Expert council audit — H09 (KPI snapshots)
+Applied: refreshKPISnapshots upserts per-state daily snapshots into bridge.management.KPISnapshots
+
+[2026-05-11] [AdminService / Sync] Learning: Approval actions on sub-domain entities (approveSurvey, NhvrRouteAssessments status=Current) must sync denormalised fields back to the parent Bridges entity (conditionRating, nhvrAssessed, nhvrAssessmentDate). This sync must be in srv/admin-service.js after() handlers, not in srv/service.js handlers — both services project the same DB entities but handlers only fire for their own service.
+Source: Expert council audit — Section 6.2 sync triggers
+Applied: admin-service.js: after approveSurvey → Bridges.conditionRating; after CREATE/UPDATE NhvrRouteAssessments → Bridges.nhvrAssessed + nhvrAssessmentDate
+
+[2026-05-11] [Schema / NHVR] Learning: NhvrApprovedVehicleClasses must be a Composition child of NhvrRouteAssessments (not standalone) with a persistence index on routeAssessment_ID for join performance. The approvedClasses/@UI.LineItem ReferenceFacet in the NHVR Object Page requires the composition to be defined in db/schema/nhvr-compliance.cds and surfaced in srv/admin-service.cds.
+Source: Expert council audit — C09 (NHVR approved classes sub-table)
+Applied: db/schema/nhvr-compliance.cds, srv/admin-service.cds, app/admin-bridges/fiori-service.cds
+
+[2026-05-11] [Handlers / Load Ratings] Learning: When BridgeLoadRatings.validTo is within 90 days, a system alert should be auto-created in AlertsAndNotifications. Deduplicate by checking for an existing Open alert with the same entityType/entityId before inserting — duplicate alerts cause noise in the Alerts tile.
+Source: Expert council audit — H13 (expiry alert for load ratings)
+Applied: srv/handlers/load-ratings-new.js after(['CREATE','UPDATE']) handler
 ```
 
 ---
