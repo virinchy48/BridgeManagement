@@ -502,6 +502,18 @@ Applied: Added MessageBox diff preview to MassEdit.controller.js onSave()
 [2026-05-11] [Custom Attributes] Learning: Frontend not enforcing required attributes meant 30% of bridges had missing mandatory safety fields.
 Source: BMS data quality audit
 Applied: Added required validation + asterisk indicators to CustomAttributesInit.js
+
+[2026-05-11] [Mass Upload] Learning: Row-by-row bridge ID resolution (N SELECT + N INSERT calls per row) was 200x slower than batch pattern at 500 rows.
+Source: BMS performance audit
+Applied: Rewrote importRows for BridgeInspectionElements, BridgeCarriageways, BridgeContacts, BridgeMehComponents to 2 calls: single SELECT WHERE IN + single bulk INSERT.entries([])
+
+[2026-05-11] [Map / GIS] Learning: Leaflet map shows grey tiles when created inside an inactive FE4 tab (core:HTML fragment) because the container has zero dimensions until the tab is revealed.
+Source: BMS Bridge Details map tab
+Applied: Added setTimeout(() => _map.invalidateSize(), 300) immediately after map.setView() in gisMapInit.js
+
+[2026-05-11] [Admin Service] Learning: after('READ', Bridges) always fired a GROUP BY COUNT even on list pages that don't render activeRestrictionCount, adding ~40ms per page load.
+Source: BMS performance audit
+Applied: Guarded with req.query.$select check — COUNT only runs when the field is actually requested
 ```
 
 ---
