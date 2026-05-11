@@ -1,3 +1,4 @@
+'use strict'
 const cds = require('@sap/cds')
 
 module.exports = function registerElementHandlers (srv) {
@@ -7,6 +8,18 @@ module.exports = function registerElementHandlers (srv) {
         if (!d.elementId) {
             req.error(400, 'elementId is required')
         }
+    })
+
+    srv.on('deactivate', 'BridgeElements', async req => {
+        const { ID } = req.params[0]
+        await cds.run(UPDATE('bridge.management.BridgeElements').set({ active: false }).where({ ID }))
+        return cds.run(SELECT.one.from('bridge.management.BridgeElements').where({ ID }))
+    })
+
+    srv.on('reactivate', 'BridgeElements', async req => {
+        const { ID } = req.params[0]
+        await cds.run(UPDATE('bridge.management.BridgeElements').set({ active: true }).where({ ID }))
+        return cds.run(SELECT.one.from('bridge.management.BridgeElements').where({ ID }))
     })
 
     srv.on('getElementConditionSummary', async req => {

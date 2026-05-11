@@ -35,6 +35,7 @@ entity BridgeElements : cuid, managed {
 
     s4EquipmentNumber      : String(18);
     notes                  : LargeString;
+    active                 : Boolean default true;
 }
 
 annotate BridgeElements with @(cds.persistence.indexes: [

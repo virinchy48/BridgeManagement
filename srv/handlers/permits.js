@@ -21,12 +21,13 @@ module.exports = function registerPermitHandlers (srv, { logAudit }) {
 
         // Resolve bridge_ID from bridgeRef on CREATE and UPDATE so that
         // FE4 draft edits (PATCH after initial create) carry bridge_ID correctly
-        if (req.data.bridgeRef && !req.data.bridge_ID) {
+        if (req.data.bridgeRef) {
             const bridge = await db.run(
                 SELECT.one.from('bridge.management.Bridges')
                     .columns('ID').where({ bridgeId: req.data.bridgeRef })
             )
             if (bridge) req.data.bridge_ID = bridge.ID
+            else return req.error(400, `Bridge '${req.data.bridgeRef}' not found`)
         }
     })
 

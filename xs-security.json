@@ -26,7 +26,7 @@
     {
       "name": "BMS_ADMIN",
       "description": "Full system access including administration and configuration",
-      "scope-references": ["$XSAPPNAME.admin", "$XSAPPNAME.manage", "$XSAPPNAME.operate", "$XSAPPNAME.inspect", "$XSAPPNAME.view"]
+      "scope-references": ["$XSAPPNAME.admin", "$XSAPPNAME.manage", "$XSAPPNAME.operate", "$XSAPPNAME.inspect", "$XSAPPNAME.view", "$XSAPPNAME.certify", "$XSAPPNAME.config_manager"]
     },
     {
       "name": "BMS_BRIDGE_MANAGER",

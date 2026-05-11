@@ -15,18 +15,34 @@ service AdminService {
     action reactivate() returns BridgeRestrictions;
   };
   entity BridgeRestrictionProvisions as projection on my.BridgeRestrictionProvisions;
-  entity BridgeCapacities as projection on my.BridgeCapacities;
+  entity BridgeCapacities as projection on my.BridgeCapacities actions {
+    action deactivate() returns BridgeCapacities;
+    action reactivate() returns BridgeCapacities;
+  };
   entity BridgeAttributes as projection on my.BridgeAttributes;
-  entity BridgeScourAssessments as projection on my.BridgeScourAssessments;
+  entity BridgeScourAssessments as projection on my.BridgeScourAssessments actions {
+    action deactivate() returns BridgeScourAssessments;
+    action reactivate() returns BridgeScourAssessments;
+  };
   entity BridgeScourAssessmentDetail as projection on my.BridgeScourAssessmentDetail;
   entity BridgeDocuments as projection on my.BridgeDocuments;
 
   // ── Bridge Detail Sections — schema entities surfaced for ObjectPage ──────────
   // Inspections + Defects: Inspector+Manager+Admin can write; all authenticated can read
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['inspect','manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
   entity BridgeInspections as projection on my.BridgeInspections actions {
     action deactivate() returns BridgeInspections;
     action reactivate() returns BridgeInspections;
   };
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['inspect','manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
   entity BridgeDefects as projection on my.BridgeDefects actions {
     action deactivate() returns BridgeDefects;
     action reactivate() returns BridgeDefects;

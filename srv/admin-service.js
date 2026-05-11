@@ -467,7 +467,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     })
   })
   this.before('DELETE', BridgeRestrictions, req => {
-    if (req.data?.IsActiveEntity !== false) req.error(405, 'Hard delete is not permitted. Use the Deactivate action to retire this restriction.')
+    return req.error(405, 'BridgeRestrictions cannot be deleted — use deactivate instead.')
   })
 
   // Soft-delete: deactivate / reactivate Bridges (use db directly to bypass draft flow)
@@ -772,6 +772,18 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     })
   })
 
+  this.on('deactivate', BridgeCapacities, async (req) => {
+    const { ID } = req.params[0]
+    await cds.run(UPDATE('bridge.management.BridgeCapacities').set({ capacityStatus: 'Superseded' }).where({ ID }))
+    return cds.run(SELECT.one.from('bridge.management.BridgeCapacities').where({ ID }))
+  })
+
+  this.on('reactivate', BridgeCapacities, async (req) => {
+    const { ID } = req.params[0]
+    await cds.run(UPDATE('bridge.management.BridgeCapacities').set({ capacityStatus: 'Current' }).where({ ID }))
+    return cds.run(SELECT.one.from('bridge.management.BridgeCapacities').where({ ID }))
+  })
+
   this.before('DELETE', BridgeCapacities, async (req) => {
     // Log deletion before it happens so the audit trail is preserved
     const id = req.data?.ID
@@ -832,6 +844,18 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       changedBy:   req.user?.id || 'system',
       changes
     })
+  })
+
+  this.on('deactivate', BridgeScourAssessments, async (req) => {
+    const { ID } = req.params[0]
+    await cds.run(UPDATE('bridge.management.BridgeScourAssessments').set({ mitigationStatus: 'Superseded' }).where({ ID }))
+    return cds.run(SELECT.one.from('bridge.management.BridgeScourAssessments').where({ ID }))
+  })
+
+  this.on('reactivate', BridgeScourAssessments, async (req) => {
+    const { ID } = req.params[0]
+    await cds.run(UPDATE('bridge.management.BridgeScourAssessments').set({ mitigationStatus: 'Active' }).where({ ID }))
+    return cds.run(SELECT.one.from('bridge.management.BridgeScourAssessments').where({ ID }))
   })
 
   this.before('DELETE', BridgeScourAssessments, async (req) => {
@@ -918,8 +942,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
 
   this.before('NEW', BridgeInspections.drafts, async (req) => {
     if (!req.data.inspectionRef) {
-      const last = await SELECT.one.from(BridgeInspections).columns('inspectionRef').orderBy('inspectionRef desc').limit(1)
-      const seq = last?.inspectionRef ? parseInt(last.inspectionRef.replace('INS-', ''), 10) + 1 : 1
+      const last = await cds.run(SELECT.one.from('bridge.management.BridgeInspections').columns('inspectionRef').orderBy('inspectionRef desc').limit(1))
+      const m = last?.inspectionRef?.match(/^INS-(\d+)$/)
+      const seq = m ? parseInt(m[1], 10) + 1 : 1
       req.data.inspectionRef = `INS-${String(seq).padStart(4, '0')}`
     }
     if (req.data.active === undefined) req.data.active = true
@@ -1037,6 +1062,10 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   })
 
   // ── LoadRatingCertificates ───────────────────────────────────────────────
+  this.before('NEW', LoadRatingCertificates.drafts, async (req) => {
+    if (req.data.active === undefined) req.data.active = true
+  })
+
   this.on('deactivate', LoadRatingCertificates, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
@@ -1064,6 +1093,16 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   })
 
   // ── NhvrRouteAssessments ─────────────────────────────────────────────────
+  this.before('NEW', NhvrRouteAssessments.drafts, async (req) => {
+    if (!req.data.assessmentId) {
+      const last = await cds.run(SELECT.one.from('bridge.management.NhvrRouteAssessments').columns('assessmentId').orderBy('assessmentId desc').limit(1))
+      const m = last?.assessmentId?.match(/^NRA-(\d+)$/)
+      const seq = m ? parseInt(m[1], 10) + 1 : 1
+      req.data.assessmentId = `NRA-${String(seq).padStart(4, '0')}`
+    }
+    if (req.data.active === undefined) req.data.active = true
+  })
+
   this.on('deactivate', NhvrRouteAssessments, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
@@ -1104,8 +1143,10 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
 
   this.before('NEW', BridgeConditionSurveys.drafts, async (req) => {
     if (!req.data.surveyRef) {
-      const { cnt } = await SELECT.one.from(BridgeConditionSurveys).columns('count(1) as cnt')
-      req.data.surveyRef = `CS-${String((cnt || 0) + 1).padStart(4, '0')}`
+      const last = await cds.run(SELECT.one.from('bridge.management.BridgeConditionSurveys').columns('surveyRef').orderBy('surveyRef desc').limit(1))
+      const m = last?.surveyRef?.match(/^CS-(\d+)$/)
+      const seq = m ? parseInt(m[1], 10) + 1 : 1
+      req.data.surveyRef = `CS-${String(seq).padStart(4, '0')}`
     }
     if (req.data.active === undefined) req.data.active = true
   })

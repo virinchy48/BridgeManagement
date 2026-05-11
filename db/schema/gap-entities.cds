@@ -82,8 +82,8 @@ entity BridgeMehComponents : cuid, managed {
 }
 
 extend entity Bridges with {
-  inspectionElements  : Composition of many BridgeInspectionElements on inspectionElements.bridge = $self;
-  carriageways        : Composition of many BridgeCarriageways on carriageways.bridge = $self;
-  contacts            : Composition of many BridgeContacts on contacts.bridge = $self;
-  mehComponents       : Composition of many BridgeMehComponents on mehComponents.bridge = $self;
+  inspectionElements  : Association to many BridgeInspectionElements on inspectionElements.bridge = $self;
+  carriageways        : Association to many BridgeCarriageways on carriageways.bridge = $self;
+  contacts            : Association to many BridgeContacts on contacts.bridge = $self;
+  mehComponents       : Association to many BridgeMehComponents on mehComponents.bridge = $self;
 }

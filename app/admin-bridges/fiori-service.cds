@@ -1080,7 +1080,7 @@ annotate AdminService.BridgeCapacities with {
 annotate AdminService.BridgeCapacities with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
-  Capabilities.DeleteRestrictions.Deletable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
   UI.SelectionFields: [bridge_ID, capacityType, capacityStatus, effectiveFrom, nextReviewDue],
   UI: {
     HeaderInfo: {
@@ -1346,15 +1346,92 @@ annotate AdminService.BridgeScourAssessments with @(
 //  BridgeScourAssessmentDetail — hydraulic detail rows (AP-G71.8)
 ////////////////////////////////////////////////////////////////////////////
 
+annotate AdminService.BridgeScourAssessmentDetail with {
+  ID         @UI.Hidden;
+  createdAt  @UI.Hidden;  createdBy  @UI.Hidden;
+  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
+  bridge @(
+    Common.Text            : bridge.bridgeName,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Bridge',
+    Common.FieldControl    : #Mandatory,
+    Common.ValueList: {
+      CollectionPath : 'Bridges',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridge_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
+  assessmentDate     @Common.FieldControl: #Mandatory  @title: 'Assessment Date';
+  hydraulicModelRef  @title: 'Hydraulic Model Reference';
+  hydraulicModelType @title: 'Hydraulic Model Type';
+  velocityAtDesignFloodMs      @title: 'Velocity at Design Flood (m/s)';
+  waterwayOpeningAreaM2        @title: 'Waterway Opening Area (m²)';
+  scourType                    @title: 'Scour Type';
+  ap71ScoreNumeric             @title: 'AP-G71.8 Score (1–5)'         @Common.QuickInfo: 'Austroads AP-G71.8 §4.2 — 1=Very Low to 5=Very High';
+  scourRiskCategoryAp71        @title: 'Risk Category (AP-G71.8)';
+  countermeasureEffectivenessRating @title: 'Countermeasure Effectiveness';
+  recommendedAction            @title: 'Recommended Action';
+  nextAssessmentDate           @title: 'Next Assessment Date';
+  notes                        @title: 'Notes'  @UI.MultiLineText;
+};
+
 annotate AdminService.BridgeScourAssessmentDetail with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.SelectionFields: [bridge_ID, scourRiskCategoryAp71, assessmentDate],
+  UI.HeaderInfo: {
+    TypeName      : 'Scour Detail',
+    TypeNamePlural: 'Scour Details',
+    Title         : {Value: ID},
+    Description   : {Value: bridge.bridgeName},
+  },
   UI.LineItem: [
+    { Value: bridge.bridgeId,       Label: 'Bridge ID' },
+    { Value: bridge.bridgeName,     Label: 'Bridge' },
     { Value: assessmentDate,        Label: 'Assessment Date' },
     { Value: hydraulicModelType,    Label: 'Model Type' },
     { Value: scourType,             Label: 'Scour Type' },
     { Value: ap71ScoreNumeric,      Label: 'AP-G71.8 Score (1-5)' },
     { Value: scourRiskCategoryAp71, Label: 'Risk Category' },
     { Value: recommendedAction,     Label: 'Recommended Action' },
-  ]
+  ],
+  UI.Facets: [
+    {
+      $Type : 'UI.CollectionFacet', Label: 'Scour Detail', ID: 'ScourDetailInfo',
+      Facets: [
+        {$Type: 'UI.ReferenceFacet', Label: 'Assessment',  Target: '@UI.FieldGroup#ScourDetailAssessment'},
+        {$Type: 'UI.ReferenceFacet', Label: 'Risk',        Target: '@UI.FieldGroup#ScourDetailRisk'},
+      ]
+    }
+  ],
+  UI.FieldGroup#ScourDetailAssessment: {
+    Label: 'Assessment',
+    Data: [
+      {Value: bridge_ID,             Label: 'Bridge'},
+      {Value: assessmentDate,        Label: 'Assessment Date'},
+      {Value: hydraulicModelRef,     Label: 'Hydraulic Model Reference'},
+      {Value: hydraulicModelType,    Label: 'Hydraulic Model Type'},
+      {Value: velocityAtDesignFloodMs, Label: 'Velocity at Design Flood (m/s)'},
+      {Value: waterwayOpeningAreaM2, Label: 'Waterway Opening Area (m²)'},
+      {Value: nextAssessmentDate,    Label: 'Next Assessment Date'},
+      {Value: notes,                 Label: 'Notes'},
+    ]
+  },
+  UI.FieldGroup#ScourDetailRisk: {
+    Label: 'Risk (Austroads AP-G71.8)',
+    Data: [
+      {Value: scourType,                          Label: 'Scour Type'},
+      {Value: ap71ScoreNumeric,                   Label: 'AP-G71.8 Score (1–5)'},
+      {Value: scourRiskCategoryAp71,              Label: 'Risk Category'},
+      {Value: countermeasureEffectivenessRating,  Label: 'Countermeasure Effectiveness'},
+      {Value: recommendedAction,                  Label: 'Recommended Action'},
+    ]
+  },
 );
 
 ////////////////////////////////////////////////////////////////////////////
@@ -1601,9 +1678,16 @@ annotate AdminService.BridgeInspections with {
       ]
     }
   );
-  inspectionRef                @title: 'Inspection Ref'  @Common.FieldControl: #ReadOnly;
+  inspectionRef                @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Inspection Ref';
   inspectionDate               @title: 'Inspection Date';
-  inspectionType               @title: 'Inspection Type';
+  inspectionType @(
+    title: 'Inspection Type',
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { SearchSupported: true, CollectionPath: 'InspectionTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: inspectionType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  );
   inspector                    @title: 'Inspector';
   inspectorAccreditationNumber @title: 'Accreditation Number';
   inspectorAccreditationLevel  @title: 'Accreditation Level';
@@ -1784,8 +1868,8 @@ annotate AdminService.BridgeDefects with {
     Common.ValueListWithFixedValues: false
   );
   bridgeElementRef        @title: 'Linked Element';
-  s4SyncDate              @title: 'S/4 Sync Date'    @UI.Hidden;
-  s4SyncError             @title: 'S/4 Sync Error'   @UI.Hidden;
+  s4SyncDate              @title: 'S/4 Sync Date';
+  s4SyncError             @title: 'S/4 Sync Error'  @UI.MultiLineText;
   defectType              @title: 'Defect Type';
   defectDescription       @title: 'Description'              @UI.MultiLineText;
   bridgeElement           @title: 'Bridge Element';
@@ -1840,6 +1924,7 @@ annotate AdminService.BridgeDefects with @(
       {$Type: 'UI.ReferenceFacet', Label: 'General',      Target: '@UI.FieldGroup#DefectGeneral'},
       {$Type: 'UI.ReferenceFacet', Label: 'Location',     Target: '@UI.FieldGroup#DefectLocation'},
       {$Type: 'UI.ReferenceFacet', Label: 'Remediation',  Target: '@UI.FieldGroup#DefectRemediation'},
+      {$Type: 'UI.ReferenceFacet', Label: 'S/4HANA Integration', Target: '@UI.FieldGroup#DefectS4Integration'},
     ]},
   ],
   UI.FieldGroup#DefectGeneral: {
@@ -1879,9 +1964,16 @@ annotate AdminService.BridgeDefects with @(
       {Value: plannedRemediationDate, Label: 'Planned Remediation Date'},
       {Value: actualRemediationDate,  Label: 'Actual Remediation Date'},
       {Value: remediationNotes,       Label: 'Remediation Notes'},
-      {Value: s4NotificationId,       Label: 'S/4 Notification'},
-      {Value: s4OrderId,              Label: 'S/4 Order'},
-      {Value: s4SyncStatus,           Label: 'S/4 Sync Status'},
+    ]
+  },
+  UI.FieldGroup#DefectS4Integration: {
+    Label: 'S/4HANA Integration',
+    Data: [
+      {Value: s4NotificationId, Label: 'S/4 Notification ID'},
+      {Value: s4OrderId,        Label: 'S/4 Order ID'},
+      {Value: s4SyncStatus,     Label: 'S/4 Sync Status'},
+      {Value: s4SyncDate,       Label: 'S/4 Sync Date'},
+      {Value: s4SyncError,      Label: 'S/4 Sync Error'},
     ]
   },
   UI.Identification: [
@@ -2084,8 +2176,8 @@ annotate AdminService.BridgeRiskAssessments with {
   likelihoodJustification   @title: 'Likelihood Justification'         @UI.MultiLineText;
   consequence               @title: 'Consequence (1–5)';
   consequenceJustification  @title: 'Consequence Justification'        @UI.MultiLineText;
-  inherentRiskScore         @title: 'Inherent Risk Score';
-  inherentRiskLevel         @title: 'Inherent Risk Level';
+  inherentRiskScore         @Core.Computed  @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Auto-calculated: Likelihood × Consequence'  @title: 'Inherent Risk Score';
+  inherentRiskLevel         @Core.Computed  @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Auto-calculated: Likelihood × Consequence'  @title: 'Inherent Risk Level';
   existingControls          @title: 'Existing Controls'                @UI.MultiLineText;
   controlEffectiveness      @title: 'Control Effectiveness';
   residualRiskScore         @title: 'Residual Risk Score';
@@ -2207,7 +2299,7 @@ annotate AdminService.BridgeRiskAssessments with @(
 );
 
 annotate AdminService.BridgeRiskAssessments with actions {
-  deactivate @Common.SideEffects: { TargetProperties: ['active'] };
+  deactivate @Common.SideEffects: { TargetProperties: ['active', 'riskLevel'] };
   reactivate @Common.SideEffects: { TargetProperties: ['active'] };
 };
 
@@ -2365,6 +2457,16 @@ annotate AdminService.NhvrRouteAssessments with {
   );
 };
 
+annotate AdminService.NhvrRouteAssessments with {
+  assessmentStatus @(
+    Common.ValueListWithFixedValues: true,
+    Common.ValueList: {
+      CollectionPath: 'NhvrRouteAssessments',
+      Parameters: [{ $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'assessmentStatus' }]
+    }
+  ) @title: 'Assessment Status';
+};
+
 annotate AdminService.NhvrRouteAssessments with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
@@ -2440,12 +2542,34 @@ annotate AdminService.NhvrApprovedVehicleClasses with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.HeaderInfo: {
+    TypeName      : 'Approved Class',
+    TypeNamePlural: 'Approved Vehicle Classes',
+    Title         : {Value: vehicleClass},
+    Description   : {Value: assessment.assessmentId},
+  },
   UI.LineItem: [
     { Value: vehicleClass, Label: 'Vehicle Class' },
     { Value: maxGrossMass, Label: 'Max Gross Mass (t)' },
     { Value: conditions,   Label: 'Conditions' },
     { Value: active,       Label: 'Active' },
-  ]
+  ],
+  UI.Facets: [
+    { $Type: 'UI.CollectionFacet', Label: 'Vehicle Class Details', ID: 'NhvrClassDetails',
+      Facets: [
+        {$Type: 'UI.ReferenceFacet', Label: 'Details', Target: '@UI.FieldGroup#NhvrClassData'}
+      ]
+    }
+  ],
+  UI.FieldGroup#NhvrClassData: {
+    Label: 'Vehicle Class',
+    Data: [
+      {Value: vehicleClass,  Label: 'Vehicle Class'},
+      {Value: maxGrossMass,  Label: 'Max Gross Mass (t)'},
+      {Value: conditions,    Label: 'Conditions'},
+      {Value: active,        Label: 'Active'},
+    ]
+  },
 );
 
 // ── AlertsAndNotifications — expert council full treatment ────────────────
@@ -2619,7 +2743,7 @@ annotate AdminService.BridgeInspectionElements with {
   bridge              @UI.Hidden;  // accessed via inspection.bridge
   elementType         @Common.FieldControl: #Mandatory  @title: 'Element Type'          @Common.QuickInfo: 'SIMS element type code — e.g. DEK (Deck), ABT (Abutment), BRG (Bearing)';
   unit                @title: 'Unit of Measure'         @Common.QuickInfo: 'm², m, no.';
-  elementHealthRating @title: 'Element Health Rating'   @Common.QuickInfo: 'Weighted composite of condition state quantities — lower is worse; auto-calculated';
+  elementHealthRating @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Element Health Rating'  @Common.QuickInfo: 'Weighted composite of condition state quantities — lower is worse; auto-calculated';
   conditionState1Qty  @title: 'CS1 Quantity (Good/New)';
   conditionState2Qty  @title: 'CS2 Quantity (Satisfactory)';
   conditionState3Qty  @title: 'CS3 Quantity (Poor)';
@@ -3353,14 +3477,20 @@ annotate AdminService.BridgePermits with @(
       Action     : 'AdminService.approve',
       Label      : 'Approve',
       Criticality: #Positive,
-      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Pending'] } }
+      ![@UI.Hidden]: { $edmJson: { $Or: [
+        { $Not: { $Path: 'IsActiveEntity' } },
+        { $Ne: [{ $Path: 'status' }, 'Pending'] }
+      ] } }
     },
     {
       $Type      : 'UI.DataFieldForAction',
       Action     : 'AdminService.rejectPermit',
       Label      : 'Reject',
       Criticality: #Negative,
-      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Pending'] } }
+      ![@UI.Hidden]: { $edmJson: { $Or: [
+        { $Not: { $Path: 'IsActiveEntity' } },
+        { $Ne: [{ $Path: 'status' }, 'Pending'] }
+      ] } }
     },
     {
       $Type      : 'UI.DataFieldForAction',
