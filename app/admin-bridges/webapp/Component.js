@@ -1,7 +1,8 @@
 sap.ui.define([
     "sap/fe/core/AppComponent",
+    "sap/ui/model/json/JSONModel",
     "./fe-shims/NavServicePatch"
-], function (AppComponent) {
+], function (AppComponent, JSONModel) {
     "use strict";
 
     var GIS_SCRIPT = "/admin-bridges/webapp/ext/controller/gisMapInit.js";
@@ -41,6 +42,35 @@ sap.ui.define([
         loadScript("_bms_restrictions_validation_script", RESTRICTIONS_VALIDATION_SCRIPT);
     }
 
+    // CUSTOM: feature flag polling — tab visibility binding not achievable via CDS annotation alone.
+    // All flags start false (safe default) until the response arrives from /system/api/features.
+    // Tabs/sections bind to {featureFlags>/flagKey} — zero DOM manipulation required.
+    function initFeatureFlags(oComponent) {
+        var oModel = new JSONModel({
+            bhiBsiAssessment:            false,
+            bhiBsiOrgComparison:         false,
+            bhiBsiScourPoa:              false,
+            bhiBsiCertificationWorkflow: false,
+            bhiBsiAdminWeightConfig:     false
+        });
+        oComponent.setModel(oModel, "featureFlags");
+
+        fetch("/system/api/features", { credentials: "include" })
+            .then(function (res) { return res.ok ? res.json() : Promise.reject(res.status); })
+            .then(function (data) {
+                var oUpdate = {};
+                (data.flags || []).forEach(function (f) {
+                    oUpdate[f.flagKey] = f.enabled;
+                });
+                oModel.setData(oUpdate);
+            })
+            .catch(function (err) {
+                // Feature flags unavailable — all remain false (safe default).
+                // App continues normally; BHI/BSI tabs stay hidden.
+                console.warn("[BMS] Feature flags unavailable — defaulting all to false:", err);
+            });
+    }
+
     return AppComponent.extend("BridgeManagement.adminbridges.Component", {
         metadata: { manifest: "json" },
         init: function () {
@@ -49,6 +79,7 @@ sap.ui.define([
             startCustomAttributes();
             startNumericInputGuard();
             startRestrictionsValidation();
+            initFeatureFlags(this);
         }
     });
 });

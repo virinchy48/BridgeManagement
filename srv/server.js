@@ -1980,6 +1980,116 @@ cds.on('bootstrap', (app) => {
 
   app.use('/system/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, sysRouter)
 
+  // ── Feature Flags API — read (all authenticated), write (config_manager|admin) ──
+  const { isFeatureEnabled, DEPENDENCIES, KNOWN_FLAGS } = require('./feature-flags')
+  const { writeChangeLogs } = require('./audit-log')
+  const featRouter = express.Router()
+  featRouter.use(express.json())
+
+  // GET /system/api/features — all authenticated users
+  featRouter.get('/', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const rows = await db.run(
+        SELECT.from('bridge.management.SystemConfig')
+          .where({ category: 'Feature Flags' })
+          .orderBy('sortOrder')
+      )
+      const flags = rows.map(r => ({
+        flagKey: r.configKey.replace(/^feature\./, ''),
+        enabled: r.value === 'true',
+        label:   r.label,
+        description: r.description,
+      }))
+      res.json({ flags })
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
+  })
+
+  // PATCH /system/api/features/:key — requires config_manager or admin scope
+  featRouter.patch('/:key', requireScope('config_manager', 'admin'), validateCsrfToken, async (req, res) => {
+    try {
+      const flagKey = req.params.key                        // e.g. 'bhiBsiAssessment'
+      const configKey = 'feature.' + flagKey               // DB key
+      const { enabled } = req.body || {}
+      if (typeof enabled !== 'boolean')
+        return res.status(400).json({ error: { message: "'enabled' must be a boolean" } })
+
+      const db = await cds.connect.to('db')
+
+      // Validate the flag key exists in SystemConfig
+      const existing = await db.run(
+        SELECT.one.from('bridge.management.SystemConfig').where({ configKey })
+      )
+      if (!existing)
+        return res.status(404).json({ error: { message: `Unknown feature flag: '${flagKey}'` } })
+
+      // Dependency check: enabling a child requires parent to be on
+      if (enabled && DEPENDENCIES[flagKey]) {
+        const parentKey = DEPENDENCIES[flagKey]
+        const parentEnabled = await isFeatureEnabled(parentKey)
+        if (!parentEnabled)
+          return res.status(422).json({
+            error: { message: `Cannot enable '${flagKey}': requires '${parentKey}' to be enabled first.` }
+          })
+      }
+
+      const oldValue = existing.value
+      const newValue = enabled ? 'true' : 'false'
+
+      // Cascade-disable children when master flag is turned off
+      const cascaded = []
+      if (!enabled && flagKey === 'bhiBsiAssessment') {
+        const children = Object.keys(DEPENDENCIES).filter(k => DEPENDENCIES[k] === flagKey)
+        for (const child of children) {
+          const childKey = 'feature.' + child
+          const childRow = await db.run(SELECT.one.from('bridge.management.SystemConfig').where({ configKey: childKey }))
+          if (childRow && childRow.value === 'true') {
+            await db.run(UPDATE('bridge.management.SystemConfig')
+              .set({ value: 'false', modifiedAt: new Date().toISOString(), modifiedBy: req.user?.id || 'system' })
+              .where({ configKey: childKey }))
+            cascaded.push(child)
+            await writeChangeLogs(db, {
+              objectType: 'SystemConfig', objectId: childKey,
+              objectName: childRow.label, source: 'FeatureFlags',
+              batchId: `ff-cascade-${Date.now()}`,
+              changedBy: req.user?.id || 'system',
+              changes: [{ fieldName: 'value', oldValue: 'true', newValue: 'false' }]
+            })
+            const { invalidateCache } = require('./system-config')
+            invalidateCache(childKey)
+          }
+        }
+      }
+
+      // Write the primary flag
+      await db.run(UPDATE('bridge.management.SystemConfig')
+        .set({ value: newValue, modifiedAt: new Date().toISOString(), modifiedBy: req.user?.id || 'system' })
+        .where({ configKey }))
+
+      const { invalidateCache } = require('./system-config')
+      invalidateCache(configKey)
+
+      // ChangeLog — NON-NEGOTIABLE #7
+      await writeChangeLogs(db, {
+        objectType: 'SystemConfig', objectId: configKey,
+        objectName: existing.label, source: 'FeatureFlags',
+        batchId: `ff-${Date.now()}`,
+        changedBy: req.user?.id || 'system',
+        changes: [{ fieldName: 'value', oldValue, newValue }]
+      })
+
+      res.json({
+        flagKey, previousValue: oldValue === 'true', newValue: enabled,
+        cascadeDisabled: cascaded,
+        changedBy: req.user?.id || 'system',
+        changedAt: new Date().toISOString(),
+      })
+    } catch (error) { res.status(500).json({ error: { message: error.message } }) }
+  })
+
+  // GET — no scope restriction beyond authentication (all users can read feature state)
+  app.use('/system/api/features', requiresAuthentication, featRouter)
+
   // ── Admin Bridges attachment API ─────────────────────────────────────────
   const adminBridgeRouter = express.Router()
   adminBridgeRouter.use(express.json({ limit: '25mb' }))

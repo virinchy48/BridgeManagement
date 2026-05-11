@@ -34,6 +34,7 @@
             <tnt:NavigationListItem text="Attribute Report"  key="attributeReport" icon="sap-icon://table-chart"   />
             <tnt:NavigationListItem text="API Reference"     key="apiDocs"         icon="sap-icon://developer-settings" />
             <tnt:NavigationListItem text="Demo Mode"         key="demoMode"        icon="sap-icon://simulate"      />
+            <tnt:NavigationListItem text="Feature Flags"     key="featureFlags"    icon="sap-icon://switch-views"  />
           </tnt:NavigationList>
         </tnt:item>
       </tnt:SideNavigation>

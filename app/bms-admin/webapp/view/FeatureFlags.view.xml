@@ -1,0 +1,113 @@
+<mvc:View
+  controllerName="BridgeManagement.bmsadmin.controller.FeatureFlags"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:f="sap.f"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+
+  <f:DynamicPage id="featureFlagsPage" fitContent="true">
+
+    <f:title>
+      <f:DynamicPageTitle>
+        <f:heading>
+          <Title text="{i18n>admin.featureFlags.title}" level="H2"/>
+        </f:heading>
+        <f:snappedHeading>
+          <Title text="{i18n>admin.featureFlags.title}" level="H2"/>
+        </f:snappedHeading>
+        <f:actions>
+          <Button text="{i18n>admin.featureFlags.refresh}"
+                  icon="sap-icon://refresh"
+                  press=".onRefreshFlags"/>
+        </f:actions>
+      </f:DynamicPageTitle>
+    </f:title>
+
+    <f:content>
+      <VBox class="sapUiMediumMargin">
+
+        <MessageStrip
+          text="{i18n>admin.featureFlags.info}"
+          type="Information"
+          showIcon="true"
+          class="sapUiSmallMarginBottom"/>
+
+        <Table
+          id="tblFeatureFlags"
+          items="{flags>/flags}"
+          growing="false"
+          alternateRowColors="true"
+          noDataText="{i18n>admin.featureFlags.noData}">
+
+          <headerToolbar>
+            <OverflowToolbar>
+              <Title text="{i18n>admin.featureFlags.table.title}" level="H3"/>
+              <ToolbarSpacer/>
+              <ObjectStatus
+                text="{i18n>admin.featureFlags.scopeStatus}"
+                state="{= ${userScopes>/canManage} ? 'Success' : 'None' }"
+                icon="{= ${userScopes>/canManage} ? 'sap-icon://accept' : 'sap-icon://locked' }"/>
+            </OverflowToolbar>
+          </headerToolbar>
+
+          <columns>
+            <Column><Text text="{i18n>admin.featureFlags.col.feature}"/></Column>
+            <Column width="9rem" hAlign="Center"><Text text="{i18n>admin.featureFlags.col.status}"/></Column>
+            <Column width="11rem" hAlign="End"><Text text="{i18n>admin.featureFlags.col.action}"/></Column>
+          </columns>
+
+          <items>
+            <ColumnListItem>
+              <cells>
+                <VBox>
+                  <Title text="{flags>label}" level="H5"/>
+                  <Text text="{flags>flagKey}" class="sapUiTinyMarginTop sapMuted"/>
+                  <Text text="{flags>description}" class="sapUiTinyMarginTop" wrapping="true"/>
+                </VBox>
+
+                <ObjectStatus
+                  text="{= ${flags>enabled} ? 'ENABLED' : 'DISABLED' }"
+                  state="{= ${flags>enabled} ? 'Success' : 'None' }"
+                  icon="{= ${flags>enabled} ? 'sap-icon://accept' : 'sap-icon://sys-cancel' }"/>
+
+                <!-- visible binding (not enabled=false) — NON-NEGOTIABLE #12 -->
+                <Button
+                  text="{= ${flags>enabled} ? '{i18n>admin.featureFlags.disable}' : '{i18n>admin.featureFlags.enable}' }"
+                  type="{= ${flags>enabled} ? 'Negative' : 'Emphasized' }"
+                  visible="{userScopes>/canManage}"
+                  press=".onToggleFlag"
+                  data:flagKey="{flags>flagKey}"
+                  data:enabled="{flags>enabled}"
+                  data:label="{flags>label}"/>
+              </cells>
+            </ColumnListItem>
+          </items>
+
+        </Table>
+
+        <MessageStrip
+          text="{i18n>admin.featureFlags.dependency.note}"
+          type="Warning"
+          showIcon="true"
+          class="sapUiSmallMarginTop"/>
+
+        <!-- Contractor guide: how to add a new flag -->
+        <Panel
+          id="devGuidePanel"
+          headerText="{i18n>admin.featureFlags.devGuide.title}"
+          expandable="true"
+          expanded="false"
+          class="sapUiSmallMarginTop">
+          <content>
+            <FormattedText
+              htmlText="{i18n>admin.featureFlags.devGuide.body}"
+              class="sapUiSmallMargin"/>
+          </content>
+        </Panel>
+
+      </VBox>
+    </f:content>
+  </f:DynamicPage>
+
+</mvc:View>
