@@ -7,15 +7,6 @@ extend service BridgeManagementService with {
     entity Lookups as projection on nhvr.Lookup;
 
     @restrict: [{ grant: '*', to: 'admin' }]
-    entity AttributeDefinitions as projection on nhvr.AttributeDefinition {
-        *, validValues: redirected to AttributeValidValues
-    };
-
-    @cds.redirection.target: true
-    @restrict: [{ grant: '*', to: 'admin' }]
-    entity AttributeValidValues as projection on nhvr.AttributeValidValue;
-
-    @restrict: [{ grant: '*', to: 'admin' }]
     entity RoleConfigs as projection on nhvr.RoleConfig;
 
     @readonly

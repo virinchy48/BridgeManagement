@@ -127,6 +127,16 @@
                   }
                 },
                 {
+                  "id": "AttributesAdmin",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "Attribute Configuration",
+                    "subtitle": "Class & Characteristics Setup",
+                    "icon": "sap-icon://customize",
+                    "targetURL": "#AttributesAdmin-manage"
+                  }
+                },
+                {
                   "id": "MassEdit",
                   "tileType": "sap.ushell.ui.tile.StaticTile",
                   "properties": {
@@ -247,6 +257,20 @@
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.bmsadmin",
                 "url": "/bms-admin/webapp"
+              }
+            },
+            "AttributesAdmin-manage": {
+              "semanticObject": "AttributesAdmin",
+              "action": "manage",
+              "title": "Attribute Configuration",
+              "signature": {
+                "parameters": {},
+                "additionalParameters": "allowed"
+              },
+              "resolutionResult": {
+                "applicationType": "SAPUI5",
+                "additionalInformation": "SAPUI5.Component=BridgeManagement.attributesadmin",
+                "url": "/attributes-admin/webapp"
               }
             },
             "MassEdit-manage": {

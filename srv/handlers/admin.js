@@ -8,12 +8,6 @@ module.exports = function registerAdminHandlers (srv, { logAudit }) {
             data?.ID, `${data?.category}:${data?.code}`, data, `Lookup ${req.event.toLowerCase()}d`)
     })
 
-    srv.after(['CREATE','UPDATE','DELETE'], 'AttributeDefinitions', async (data, req) => {
-        let db = await cds.connect.to('db')
-        await logAudit(db, req, req.event, 'AttributeDefinition',
-            data?.ID, data?.name, data, `AttributeDefinition ${req.event.toLowerCase()}d`)
-    })
-
     srv.on('saveRoleConfig', async req => {
         let { configs } = req.data
         if (!configs?.length) return req.error(400, 'configs array is required')
