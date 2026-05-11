@@ -572,6 +572,34 @@ Source: Agent 4 gap audit
 Applied: admin-service.js before(['CREATE','UPDATE'], 'BridgeInspectionElements') handler added
 ```
 
+[2026-05-11] [Security / CSP] Learning: Helmet contentSecurityPolicy `img-src` and `connect-src` must include `https://*.tile.openstreetmap.org`, `https://unpkg.com`, and `https://cdnjs.cloudflare.com` for Leaflet basemap tiles to load. Without these, the browser silently blocks tile requests and shows a grey map with no error visible in the app. This applies to BOTH the standalone map-view app AND the Bridge Details embedded Leaflet map.
+Source: User report — map tiles not loading
+Applied: srv/server.js lines 1107-1108
+
+[2026-05-11] [FLP / Config] Learning: When removing a tile from the FLP, three locations must be updated: (1) the tile entry in the tiles array of its group in fioriSandboxConfig.json; (2) the FLP intent entry in fioriSandboxConfig.json `inbounds`; (3) both corresponding entries in fiori-apps.html (tile array + inbounds). Missing any of the three leaves a dead intent that shows "app could not be opened" if navigated to via URL hash.
+Source: Remove BridgeHierarchy + bridges-public tiles
+Applied: Both files cleaned in all three locations
+
+[2026-05-11] [Custom Attributes / AttributesAdmin] Learning: The AttributesAdmin standalone app had 4 bugs that made it completely non-functional: (1) `list.getBindingInfo("items").template` crashes when the list has no items binding — use `setModel(new JSONModel(...))` instead; (2) OData UUID filter values must be single-quoted: `group_ID eq 'uuid-here'` not `group_ID eq uuid-here`; (3) XML view list/table controls need `items="{/}"` attribute to render JSONModel data; (4) PATCH/POST/DELETE calls need X-CSRF-Token headers. All four patterns recur across custom REST controllers — always check for them when debugging a non-functional list.
+Source: User report — custom attributes not working
+Applied: app/attributes-admin/webapp/controller/ + view fixes
+
+[2026-05-11] [Reports API] Learning: Three common bugs in reports-api.js: (1) `criticalDefectFlag` doesn't exist on `bridge.management.Bridges` — use `conditionRating >= 4` as proxy for critical defects count; (2) `dataQualityScore` doesn't exist — compute inline from non-null field count; (3) query params like `?state=NSW` are sent by the UI but route handlers don't read `req.query.state` — always add `if (state) query.where({ state })` guard on each endpoint. State filter was missing from ALL 6 report endpoints.
+Source: Reports audit — data quality and risk register tiles showing 0
+Applied: srv/reports-api.js
+
+[2026-05-11] [Roles / XSUAA] Learning: BMS_ADMIN role-template must include ALL 9 scopes: admin, manage, operate, inspect, view, certify, config_manager, executive_view, external_view. `executive_view` and `external_view` are easy to miss because they look like UI-only scopes — but admin must be able to test every view mode. Also: XSUAA scaffolding creates a stale `"admin"` role-template (description: "generated") with just the admin scope — this is dead code that should be removed immediately to avoid accidental role-collection assignment.
+Source: Roles audit — xs-security.json
+Applied: xs-security.json — removed stale "admin" template; added executive_view + external_view to BMS_ADMIN
+
+[2026-05-11] [Mass Upload / AllowedValues] Learning: When adding a multi-entity importer to the DATASETS array (e.g. AllowedValues that writes to 26 different lookup entities), set `entity: null` and add a guard `if (!dataset.entity) return []` in `readDatasetRows` and `buildWorkbookTemplate`. The importer function receives the full list of rows and groups them by `entityName` internally. Maintain a whitelist Set of allowed entity names as the security boundary — never pass a user-supplied entity name directly to `SELECT.from()`.
+Source: Allowed values Excel restructure feature
+Applied: srv/mass-upload.js — ALLOWED_VALUES_WHITELIST, importAllowedValueRows, fetchAllLookupValues, AllowedValues DATASET entry
+
+[2026-05-11] [Schema / Industry Standards] Learning: 21 HIGH-priority field gaps identified across 12 sub-domain tiles against AS 5100 / SIMS / AGAM / NHVR HVNL standards. Full analysis in docs/tile-attribute-design.md. Key gaps: inspectionMethodology (AS 5100-2 / AGAM), repairMethod (SIMS repair method codes), maintenancePriority (P1-P4 TfNSW framework), requiresLoadRestriction (links defect to restriction workflow), residualLikelihood/Consequence (TfNSW 5×5 matrix needs both inherent AND residual scores), riskRegisterStatus (Open/Escalated/Accepted/Treated/Closed), simsElementCode (SIMS lookup for element IDs), assessmentMethodology (NHVR desktop/field/load-testing). All implemented with CDS enum types and FE4 annotations.
+Source: Tile attribute analysis
+Applied: db/schema/enum-types.cds (7 new types), db/schema/defects.cds, risk-assessments.cds, scour-assessments.cds, nhvr-compliance.cds, elements.cds, db/schema.cds, app/admin-bridges/fiori-service.cds
+
 ---
 
 ## Contributing to this file
