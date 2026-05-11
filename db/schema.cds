@@ -522,13 +522,26 @@ entity BridgeConditionSurveys : cuid, managed, ChangeTracked {
   status           : String(20) default 'Draft';             // Draft | Submitted | Approved
 }
 
+type LoadRatingVehicleClass : String enum {
+  T44    = 'T44';    SM1600 = 'SM1600'; HLP400 = 'HLP400';
+  W80    = 'W80';    A160   = 'A160';
+  PBS1   = 'PBS1';   PBS2   = 'PBS2';   PBS3   = 'PBS3';   PBS4   = 'PBS4';   PBS5 = 'PBS5';
+  HML    = 'HML';    CML    = 'CML';
+}
+
+type LoadRatingMethod : String enum {
+  AS5100      = 'AS 5100';
+  NAASRA      = 'NAASRA';
+  LoadTesting = 'Load Testing';
+}
+
 // ── LRT tile — per-vehicle-class load rating assessments ─────────────────────
 entity BridgeLoadRatings : cuid, managed, ChangeTracked {
-  ratingRef        : String(40);                             // auto-generated LR-NNNN
+  ratingRef        : String(40);
   bridge           : Association to Bridges;
   bridgeRef        : String(40);
-  vehicleClass     : String(60);                             // T44 | SM1600 | HLP400 | PBS1-5 | HML | CML
-  ratingMethod     : String(60);                             // AS 5100 | NAASRA | Load Testing
+  vehicleClass     : LoadRatingVehicleClass;
+  ratingMethod     : LoadRatingMethod;
   ratingFactor     : Decimal(9,4) @assert.range: [0, 2];    // 0.0–2.0 typical
   grossMassLimit   : Decimal(9,2) @assert.range: [0, 1000]; // tonnes
   assessedBy       : String(111);
