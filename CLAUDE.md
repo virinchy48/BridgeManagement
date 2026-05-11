@@ -558,6 +558,18 @@ Applied: db/schema/nhvr-compliance.cds, srv/admin-service.cds, app/admin-bridges
 [2026-05-11] [Handlers / Load Ratings] Learning: When BridgeLoadRatings.validTo is within 90 days, a system alert should be auto-created in AlertsAndNotifications. Deduplicate by checking for an existing Open alert with the same entityType/entityId before inserting — duplicate alerts cause noise in the Alerts tile.
 Source: Expert council audit — H13 (expiry alert for load ratings)
 Applied: srv/handlers/load-ratings-new.js after(['CREATE','UPDATE']) handler
+
+[2026-05-11] [FE4 / Navigation] Learning: To show a sub-table on a draft-enabled entity's ObjectPage (e.g. Defects on Inspections), add `Association to many` (NOT `Composition of many`) in the schema pointing back from the parent to the child using the existing FK. Composition would lock the child under the parent's draft context. Association gives FE4 a navigation path for the ReferenceFacet `Target: 'defects/@UI.LineItem'` without draft constraint side-effects.
+Source: H11 implementation — BridgeInspections ObjectPage defects + inspectionElements sub-tables
+Applied: db/schema/defects.cds — added defects + inspectionElements Association to many on BridgeInspections
+
+[2026-05-11] [Handlers / Auto-ref] Learning: Never use `.replace('PREFIX-', '')` to extract the sequence number from auto-generated refs. If the ref is empty string, blank, or malformed, parseInt returns NaN → next ref becomes 'PREFIX-0NaN'. Always use regex: `const m = last?.ref?.match(/^PREFIX-(\d+)$/); const seq = m ? parseInt(m[1], 10) + 1 : 1`. This applies to ALL auto-ref patterns (CS-NNNN, LR-NNNN, PM-NNNN, DEF-NNNN, RSK-NNNN, INS-NNNN).
+Source: Agent 4 handler audit — found in conditions.js, load-ratings-new.js, permits.js
+Applied: All three files updated to use regex match pattern
+
+[2026-05-11] [AdminService / BridgeInspectionElements] Learning: BridgeInspectionElements created via AdminService (not mass-upload) need a `before(['CREATE','UPDATE'])` handler in srv/admin-service.js that resolves `bridge_ID` from the linked `inspection_ID` — since users pick the inspection via value-help but don't see the bridge_ID UUID field. Without this, bridge_ID is null and the record is invisible in bridge-filtered list reports.
+Source: Agent 4 gap audit
+Applied: admin-service.js before(['CREATE','UPDATE'], 'BridgeInspectionElements') handler added
 ```
 
 ---
