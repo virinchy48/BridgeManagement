@@ -9,7 +9,7 @@
       "csrfProtection": false
     },
     {
-      "source": "^/?(bnac|system|audit|access|quality|mass-upload|mass-edit|admin-bridges)/(.*)$",
+      "source": "^/?(bnac|system|audit|access|quality|mass-upload|mass-edit|admin-bridges|attributes)/(.*)$",
       "target": "/$1/$2",
       "destination": "srv-api",
       "authenticationType": "xsuaa",

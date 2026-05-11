@@ -88,15 +88,6 @@ annotate AdminService.Bridges with @(
       Title: 'Posting Status',
       Criticality: postingStatusCriticality
     },
-    DataPoint#AssetIQScore: {
-      Value: assetiqScore.overallScore,
-      Title: 'AssetIQ Score',
-      CriticalityCalculation: {
-        ImprovementDirection  : #Minimize,
-        ToleranceRangeLowValue: 35,
-        DeviationRangeLowValue: 60
-      }
-    },
     DataPoint#LastInspection: {
       Value: lastInspectionDate,
       Title: 'Last Inspected'
@@ -183,16 +174,7 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Closure',              Target: '@UI.FieldGroup#Closure'},
         ]
       },
-      // ── T6: Risk Intelligence (AssetIQ) ─────────────────────────────────────
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Risk Intelligence (AssetIQ)',
-        ID    : 'RiskIntelligence',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Risk Intelligence (AssetIQ)', Target: 'assetiqScore/@UI.FieldGroup#AiqScore', ID: 'AiqRisk'},
-        ]
-      },
-      // ── T7: External System References ───────────────────────────────────
+      // ── T6: External System References ───────────────────────────────────
       {
         $Type : 'UI.CollectionFacet',
         Label : 'External Systems',
