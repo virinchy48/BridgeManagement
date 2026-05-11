@@ -570,6 +570,26 @@ Applied: All three files updated to use regex match pattern
 [2026-05-11] [AdminService / BridgeInspectionElements] Learning: BridgeInspectionElements created via AdminService (not mass-upload) need a `before(['CREATE','UPDATE'])` handler in srv/admin-service.js that resolves `bridge_ID` from the linked `inspection_ID` — since users pick the inspection via value-help but don't see the bridge_ID UUID field. Without this, bridge_ID is null and the record is invisible in bridge-filtered list reports.
 Source: Agent 4 gap audit
 Applied: admin-service.js before(['CREATE','UPDATE'], 'BridgeInspectionElements') handler added
+
+[2026-05-11] [AdminService / Auto-ref] Learning: surveyRef auto-generation in admin-service.js must NOT use `count(1)` for sequence extraction — count stays high after deactivation and concurrent inserts race. Always use `SELECT.one ... orderBy('field desc').limit(1)` + regex match, the same pattern used by all BridgeManagementService handlers.
+Source: Expert council P0 audit finding
+Applied: admin-service.js BridgeConditionSurveys surveyRef generation fixed
+
+[2026-05-11] [AdminService / Draft] Learning: Draft-enabled entities with `@mandatory` fields MUST have a `before('NEW', Entity.drafts, ...)` handler in admin-service.js that sets `active = true` as a minimum default. Without this, clicking "Create" in the ListReport fires a draft-NEW with an empty payload — the mandatory field constraint fires before the user enters anything and blocks creation. Applied to NhvrRouteAssessments (assessmentId NRA-NNNN auto-gen) and LoadRatingCertificates (active default).
+Source: Expert council P1 audit finding
+Applied: before('NEW', NhvrRouteAssessments.drafts) + before('NEW', LoadRatingCertificates.drafts) added
+
+[2026-05-11] [Schema / Composition→Association] Learning: BridgeCarriageways, BridgeContacts, BridgeMehComponents were Composition children of Bridges (draft-enabled root). CAP blocks standalone Create for these via AdminService with "can only be modified via root entity". Fix: change to `Association to many` in gap-entities.cds. DB FK unchanged. Add `@odata.draft.enabled` individually to each entity for standalone draft CRUD. This is the same fix applied earlier to BridgeInspections, BridgeDefects, BridgeScourAssessmentDetail.
+Source: Expert council P1 audit finding #13
+Applied: db/schema/gap-entities.cds carriageways/contacts/mehComponents changed to Association
+
+[2026-05-11] [Security / XSUAA] Learning: BMS_ADMIN role template must include ALL scopes that administrators need: admin, manage, operate, inspect, view, certify (permit/LRC approvals), config_manager (feature flags). An admin who cannot certify permits must be assigned BMS_BRIDGE_MANAGER too — undesirable in production. Always add new scopes to BMS_ADMIN when adding them to xs-security.json.
+Source: Expert council P3 audit finding #43
+Applied: xs-security.json BMS_ADMIN scope-references updated
+
+[2026-05-11] [Fiori / Annotations] Learning: `@Core.Computed` must be added alongside `@Common.FieldControl: #ReadOnly` for auto-generated ref fields. `#ReadOnly` alone shows a greyed-out editable input; `@Core.Computed` suppresses the field entirely from create forms. Both are needed: `@Core.Computed @Common.FieldControl: #ReadOnly`. Applied to inspectionRef, and should apply to all auto-ref fields.
+Source: Expert council P2 audit finding #20
+Applied: BridgeInspections.inspectionRef annotated with @Core.Computed
 ```
 
 ---
