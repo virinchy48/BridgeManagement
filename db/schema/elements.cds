@@ -7,6 +7,7 @@ entity BridgeElements : cuid, managed {
     elementId            : String(40)  @mandatory;
     elementType          : String(40)  @mandatory;
     elementCode          : String(40);
+    simsElementCode      : String(20);    // SIMS §3.2 national element code — DEK/ABT/PRM/BRG/EXP/DRN/GRD/FON/PRA
     elementQuantity      : Decimal(10,3);
     elementUnit          : String(20);
     parentElement        : Association to BridgeElements;
@@ -26,6 +27,7 @@ entity BridgeElements : cuid, managed {
     ratingFrequencyMonths  : Integer;
 
     material               : String(60);
+    designWorkingLifeYears : Integer;     // AS 5100-7 §4.3 — element-level design working life
     yearConstructed        : Integer;
     yearLastRehabbed       : Integer;
 

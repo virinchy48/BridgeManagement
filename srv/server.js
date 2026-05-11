@@ -13,11 +13,11 @@ const {
 
 const mountAttributesApi = require('./attributes-api')
 const mountReportsApi = require('./reports-api')
+const mountBhiBsiApi = require('./bhi-bsi-api')
 
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 
 const { getConfigInt } = require('./system-config')
-const demoHandler = require('./demo-handler')
 
 const { SELECT, INSERT, UPDATE, DELETE } = cds.ql
 
@@ -1104,8 +1104,8 @@ cds.on('bootstrap', (app) => {
         'script-src':  ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', "'unsafe-inline'"],
         'style-src':   ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https:', "'unsafe-inline'"],
         'font-src':    ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https:', 'data:'],
-        'img-src':     ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'data:', 'blob:'],
-        'connect-src': ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com'],
+        'img-src':     ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https://*.tile.openstreetmap.org', 'https://unpkg.com', 'https://cdnjs.cloudflare.com', 'data:', 'blob:'],
+        'connect-src': ["'self'", 'https://ui5.sap.com', 'https://sapui5.hana.ondemand.com', 'https://*.tile.openstreetmap.org', 'https://unpkg.com', 'https://cdnjs.cloudflare.com'],
         'worker-src':  ["'self'", 'blob:'],
       }
     }
@@ -2542,16 +2542,12 @@ cds.on('bootstrap', (app) => {
   })
 
   mountReportsApi(app, requiresAuthentication)
+  mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken)
 
   app.use('/bnac/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
 })
 
 cds.on('served', async () => {
-  // ── Register demo mode action handlers on AdminService ──────────────────────
-  // cds.services is populated once all OData services are fully served.
-  // Using 'served' (not 'connect') ensures the service object exists.
-  const adminSrv = cds.services['AdminService'];
-  if (adminSrv) demoHandler(adminSrv);
 
   // ── HANA: back-fill spatial geoLocation column after first boot ─────────────
   if (!isHanaDb()) return;

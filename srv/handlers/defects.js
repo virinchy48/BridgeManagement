@@ -12,7 +12,8 @@ module.exports = function registerDefectHandlers (srv, { logAudit }) {
                 SELECT.from('bridge.management.BridgeDefects')
                     .columns('defectId').orderBy('defectId desc').limit(1)
             )
-            const seq = last?.defectId ? parseInt(last.defectId.replace('DEF-', ''), 10) + 1 : 1
+            const m = last?.defectId?.match(/^DEF-(\d+)$/)
+            const seq = m ? parseInt(m[1], 10) + 1 : 1
             d.defectId = `DEF-${String(seq).padStart(4, '0')}`
         }
 
@@ -29,6 +30,54 @@ module.exports = function registerDefectHandlers (srv, { logAudit }) {
         const db = await cds.connect.to('db')
         await logAudit(db, req, req.event, 'BridgeDefect',
             data.ID, data.defectId, data, `Defect ${req.event.toLowerCase()}d`)
+
+        const defect = await db.run(SELECT.one.from('bridge.management.BridgeDefects').where({ ID: data.ID }))
+        if (!defect) return
+
+        if (defect.severity >= 4 && !defect.alertSent) {
+            const existing = await db.run(
+                SELECT.one.from('bridge.management.AlertsAndNotifications')
+                    .where({ entityType: 'BridgeDefects', entityId: defect.ID, status: 'Open' })
+            )
+            if (!existing) {
+                await db.run(INSERT.into('bridge.management.AlertsAndNotifications').entries({
+                    ID: cds.utils.uuid(),
+                    bridge_ID: defect.bridge_ID,
+                    alertType: 'DefectSeverity',
+                    severity: 'Critical',
+                    alertTitle: `Severity ${defect.severity} Defect — ${defect.defectType}`,
+                    alertDescription: `A severity ${defect.severity} defect has been recorded. Defect ID: ${defect.defectId || defect.ID}. Immediate review required.`,
+                    entityType: 'BridgeDefects',
+                    entityId: defect.ID,
+                    entityDescription: defect.defectId || defect.ID,
+                    triggeredDate: new Date().toISOString(),
+                    status: 'Open',
+                    active: true
+                }))
+                await db.run(UPDATE('bridge.management.BridgeDefects').set({ alertSent: true }).where({ ID: defect.ID }))
+            }
+        }
+
+        if (defect.requiresLoadRestriction && defect.bridge_ID) {
+            const existingRestriction = await db.run(
+                SELECT.one.from('bridge.management.Restrictions')
+                    .where({ bridge_ID: defect.bridge_ID, restrictionType: 'Weight', restrictionStatus: 'Draft', active: true })
+                    .columns('ID')
+            )
+            if (!existingRestriction) {
+                await db.run(INSERT.into('bridge.management.Restrictions').entries({
+                    ID: cds.utils.uuid(),
+                    bridge_ID: defect.bridge_ID,
+                    name: `Auto-suggested: Load restriction from defect ${defect.defectId || defect.ID}`,
+                    descr: `Defect ${defect.defectId || defect.ID} requires load assessment. Auto-suggested restriction pending review.`,
+                    restrictionType: 'Weight',
+                    restrictionStatus: 'Draft',
+                    restrictionCategory: 'Temporary',
+                    active: true,
+                    effectiveFrom: new Date().toISOString().split('T')[0]
+                }))
+            }
+        }
     })
 
     srv.on('deactivate', 'BridgeDefects', async req => {

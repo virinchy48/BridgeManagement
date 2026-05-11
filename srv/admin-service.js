@@ -1,5 +1,7 @@
 const cds = require('@sap/cds')
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
+const { computeBhiBsi } = require('./bhi-bsi-engine')
+const { isFeatureEnabled } = require('./feature-flags')
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
@@ -19,9 +21,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       ['latitude', 'Latitude'],
       ['longitude', 'Longitude'],
       ['postingStatus', 'Posting Status'],
-      ['conditionRating', 'Condition Rating'],
-      ['structureType', 'Structure Type'],
-      ['lastInspectionDate', 'Last Inspection Date']
+      ['structureType', 'Structure Type']
+      // conditionRating and lastInspectionDate are set via the Inspect Now workflow
+      // and must not block initial bridge creation (they are ReadOnly in the UI form)
     ],
     Restrictions: [
       ['bridgeRef', 'Bridge'],
@@ -434,6 +436,37 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
         const barrier    = ((b.bsiBarrierRating ?? 5) / 10) * 15
         const route      = ((b.bsiRouteAltRating ?? 5) / 10) * 15
         b.bsiScore = Math.min(100, Math.round((structural + width + barrier + route) * 10) / 10)
+      }
+    }
+    // AssetIQ RAG status — look up from AssetIQScores by bridge_ID
+    if (ids.length > 0) {
+      const aiqScores = await SELECT.from('bridge.management.AssetIQScores')
+        .columns('bridge_ID', 'ragStatus')
+        .where({ bridge_ID: { in: ids } })
+      const aiqMap = Object.fromEntries((aiqScores || []).map(r => [r.bridge_ID, r.ragStatus]))
+      for (const b of list) b.ragStatus = aiqMap[b.ID] ?? null
+    }
+    // BHI/NBI — only computed when feature flag is enabled
+    const bhiEnabled = await isFeatureEnabled('bhiBsiAssessment')
+    if (bhiEnabled) {
+      for (const b of list) {
+        if (b.conditionRating != null) {
+          const elementRatings = [
+            { element: 'Deck',           rating: b.conditionRating, weight: 25 },
+            { element: 'Substructure',   rating: b.conditionRating, weight: 30 },
+            { element: 'Superstructure', rating: b.conditionRating, weight: 30 },
+            { element: 'Approach',       rating: b.conditionRating, weight: 15 },
+          ]
+          const result = computeBhiBsi({
+            structureMode: 'Road',
+            elementRatings,
+            importanceClass: b.importanceLevel || 2,
+            envPenalty: 0,
+            yearBuilt: b.yearBuilt
+          })
+          b.bhi = result.bhi
+          b.nbi = result.nbi
+        }
       }
     }
   })
@@ -976,6 +1009,24 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     return db.run(SELECT.one.from('bridge.management.BridgeInspections').where({ ID }))
   })
 
+  this.on('complete', BridgeInspections, async (req) => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    const insp = await db.run(SELECT.one.from('bridge.management.BridgeInspections').where({ ID }))
+    if (!insp) return req.error(404, 'Inspection not found')
+    if (insp.overallConditionRating && insp.bridge_ID) {
+      const updates = { conditionRating: insp.overallConditionRating }
+      if (insp.inspectionDate) updates.lastInspectionDate = insp.inspectionDate
+      await db.run(UPDATE('bridge.management.Bridges').set(updates).where({ ID: insp.bridge_ID }))
+    }
+    await writeChangeLogs(db, {
+      objectType: 'Inspection', objectId: ID, objectName: insp.inspectionRef || ID,
+      source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
+      changes: [{ fieldName: 'status', oldValue: 'In Progress', newValue: 'Complete' }]
+    })
+    return db.run(SELECT.one.from('bridge.management.BridgeInspections').where({ ID }))
+  })
+
   // ── BridgeInspectionElements — resolve bridge_ID from linked inspection ──
   this.before(['CREATE', 'UPDATE'], 'BridgeInspectionElements', async (req) => {
     if (!req.data.inspection_ID || req.data.bridge_ID) return
@@ -1033,6 +1084,30 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       req.data.assessmentId = `RSK-${String(seq).padStart(4, '0')}`
     }
     if (req.data.active === undefined) req.data.active = true
+  })
+
+  this.before(['CREATE', 'UPDATE'], BridgeRiskAssessments, async (req) => {
+    const d = req.data
+    const db = await cds.connect.to('db')
+    const likelihood = d.likelihood ?? null
+    const consequence = d.consequence ?? null
+    if (likelihood !== null && consequence !== null) {
+      d.inherentRiskScore = likelihood * consequence
+      const score = d.inherentRiskScore
+      d.inherentRiskLevel = score >= 15 ? 'Extreme' : score >= 10 ? 'High' : score >= 5 ? 'Medium' : 'Low'
+    } else if (req.event === 'UPDATE' && (likelihood !== null || consequence !== null)) {
+      const existing = await db.run(
+        SELECT.one.from('bridge.management.BridgeRiskAssessments')
+          .columns('likelihood', 'consequence').where({ ID: d.ID })
+      )
+      const l = likelihood ?? existing?.likelihood
+      const c = consequence ?? existing?.consequence
+      if (l && c) {
+        d.inherentRiskScore = l * c
+        const score = d.inherentRiskScore
+        d.inherentRiskLevel = score >= 15 ? 'Extreme' : score >= 10 ? 'High' : score >= 5 ? 'Medium' : 'Low'
+      }
+    }
   })
 
   this.on('deactivate', BridgeRiskAssessments, async (req) => {
@@ -1492,6 +1567,147 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     await db.run(UPDATE('bridge.management.Bridges')
       .set({ nhvrAssessed: true, nhvrAssessmentDate: data.assessmentDate })
       .where({ ID: data.bridge_ID }))
+  })
+
+  // ── AssetIQ Risk Scoring Engine ──────────────────────────────────────────────
+
+  const computeAssetIQScore = (bridge, defectCount, model) => {
+    const bciNorm = bridge.conditionRating ? (bridge.conditionRating / 10) : 0.5
+    const bciFactor = (1 - bciNorm) * 100 * model.bciWeight
+
+    const age = bridge.yearBuilt ? (new Date().getFullYear() - bridge.yearBuilt) : 40
+    const ageFactor = Math.min(1, age / 120) * 100 * model.ageWeight
+
+    const hvPct = bridge.heavyVehiclePercent || 10
+    const trafficFactor = Math.min(1, hvPct / 30) * 100 * model.trafficWeight
+
+    const defectFactor = Math.min(1, defectCount / 5) * 100 * model.defectWeight
+
+    const loadFactor = (bridge.postingStatus === 'Posted' || bridge.postingStatus === 'Closed')
+      ? 100 * model.loadWeight
+      : 20 * model.loadWeight
+
+    const overall = bciFactor + ageFactor + trafficFactor + defectFactor + loadFactor
+    const ragStatus = overall >= 60 ? 'RED' : overall >= 35 ? 'AMBER' : 'GREEN'
+
+    return {
+      bciFactor: Math.round(bciFactor * 100) / 100,
+      ageFactor: Math.round(ageFactor * 100) / 100,
+      trafficFactor: Math.round(trafficFactor * 100) / 100,
+      defectFactor: Math.round(defectFactor * 100) / 100,
+      loadFactor: Math.round(loadFactor * 100) / 100,
+      overall: Math.round(overall * 100) / 100,
+      ragStatus
+    }
+  }
+
+  const DEFAULT_MODEL = { bciWeight: 0.350, ageWeight: 0.150, trafficWeight: 0.200, defectWeight: 0.200, loadWeight: 0.100 }
+
+  this.on('scoreAllBridges', async req => {
+    const db = await cds.connect.to('db')
+    const now = new Date().toISOString()
+
+    const activeModel = await db.run(
+      SELECT.one.from('bridge.management.AssetIQModels').where({ isActive: true })
+    )
+    const model = activeModel || { version: '1.0.0', ...DEFAULT_MODEL }
+
+    const bridges = await db.run(
+      SELECT.from('bridge.management.Bridges')
+        .columns('ID', 'conditionRating', 'yearBuilt', 'heavyVehiclePercent', 'postingStatus')
+        .where({ isActive: true })
+    )
+
+    if (!bridges.length) return { scored: 0, skipped: 0, message: 'No active bridges found' }
+
+    const bridgeIds = bridges.map(b => b.ID)
+    const defectCounts = await db.run(
+      SELECT.from('bridge.management.BridgeDefects')
+        .columns('bridge_ID', 'count(1) as cnt')
+        .where({ bridge_ID: { in: bridgeIds }, severity: { '>=': 3 }, remediationStatus: 'Open' })
+        .groupBy('bridge_ID')
+    )
+    const defectMap = Object.fromEntries((defectCounts || []).map(r => [r.bridge_ID, Number(r.cnt)]))
+
+    const existingScores = await db.run(
+      SELECT.from('bridge.management.AssetIQScores')
+        .columns('ID', 'bridge_ID')
+        .where({ bridge_ID: { in: bridgeIds } })
+    )
+    const existingMap = Object.fromEntries((existingScores || []).map(r => [r.bridge_ID, r.ID]))
+
+    let scored = 0, skipped = 0
+    for (const bridge of bridges) {
+      try {
+        const defectCount = defectMap[bridge.ID] || 0
+        const computed = computeAssetIQScore(bridge, defectCount, model)
+        const scoreRecord = {
+          overallScore:   computed.overall,
+          ragStatus:      computed.ragStatus,
+          bciFactor:      computed.bciFactor,
+          ageFactor:      computed.ageFactor,
+          trafficFactor:  computed.trafficFactor,
+          defectFactor:   computed.defectFactor,
+          loadFactor:     computed.loadFactor,
+          modelVersion:   model.version || '1.0.0',
+          scoredAt:       now
+        }
+        const existingId = existingMap[bridge.ID]
+        if (existingId) {
+          await db.run(UPDATE('bridge.management.AssetIQScores').set(scoreRecord).where({ ID: existingId }))
+        } else {
+          await db.run(INSERT.into('bridge.management.AssetIQScores').entries({
+            ID: cds.utils.uuid(),
+            bridge_ID: bridge.ID,
+            overrideFlag: false,
+            ...scoreRecord
+          }))
+        }
+        scored++
+      } catch (_) {
+        skipped++
+      }
+    }
+
+    return { scored, skipped, message: `AssetIQ scored ${scored} bridges (${skipped} skipped)` }
+  })
+
+  this.on('override', 'AssetIQScores', async req => {
+    const { ID } = req.params[0]
+    const reason = req.data?.reason
+    if (!reason) return req.error(400, 'Override reason is required')
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.AssetIQScores').set({
+      overrideFlag:   true,
+      overrideBy:     req.user?.id || 'system',
+      overrideReason: reason,
+      overrideAt:     new Date().toISOString()
+    }).where({ ID }))
+    return db.run(SELECT.one.from('bridge.management.AssetIQScores').where({ ID }))
+  })
+
+  this.on('dismissOverride', 'AssetIQScores', async req => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.AssetIQScores').set({
+      overrideFlag:   false,
+      overrideBy:     null,
+      overrideReason: null,
+      overrideAt:     null
+    }).where({ ID }))
+    return db.run(SELECT.one.from('bridge.management.AssetIQScores').where({ ID }))
+  })
+
+  this.on('activate', 'AssetIQModels', async req => {
+    const { ID } = req.params[0]
+    const db = await cds.connect.to('db')
+    await db.run(UPDATE('bridge.management.AssetIQModels').set({ isActive: false }))
+    await db.run(UPDATE('bridge.management.AssetIQModels').set({
+      isActive:    true,
+      activatedAt: new Date().toISOString(),
+      activatedBy: req.user?.id || 'system'
+    }).where({ ID }))
+    return db.run(SELECT.one.from('bridge.management.AssetIQModels').where({ ID }))
   })
 
   this.on('refreshKPISnapshots', async req => {

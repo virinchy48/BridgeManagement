@@ -115,21 +115,9 @@ modules:
           artifacts:
             - operations-bridges.zip
           target-path: app/
-        - name: BridgeManagementoperationsdashboard
-          artifacts:
-            - operations-dashboard.zip
-          target-path: app/
         - name: BridgeManagementoperationsrestrictions
           artifacts:
             - operations-restrictions.zip
-          target-path: app/
-        - name: BridgeManagementbridgehierarchy
-          artifacts:
-            - bridge-hierarchy.zip
-          target-path: app/
-        - name: BridgeManagementbridgespublic
-          artifacts:
-            - bridges-public.zip
           target-path: app/
     requires:
       - name: BridgeManagement-auth
@@ -239,42 +227,9 @@ modules:
         - npm run build
       supported-platforms: []
 
-  - name: BridgeManagementoperationsdashboard
-    type: html5
-    path: app/operations/dashboard
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms: []
-
   - name: BridgeManagementoperationsrestrictions
     type: html5
     path: app/operations/restrictions
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms: []
-
-  - name: BridgeManagementbridgehierarchy
-    type: html5
-    path: app/bridge-hierarchy
-    build-parameters:
-      build-result: dist
-      builder: custom
-      commands:
-        - npm ci
-        - npm run build
-      supported-platforms: []
-
-  - name: BridgeManagementbridgespublic
-    type: html5
-    path: app/bridges-public
     build-parameters:
       build-result: dist
       builder: custom

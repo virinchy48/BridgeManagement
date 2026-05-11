@@ -1,8 +1,10 @@
 namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
-using { bridge.management.Bridges }         from './bridge-entity';
-using { bridge.management.BridgeInspections } from './defects';
-using { bridge.management.BridgeDefects }     from './defects';
+using { bridge.management.Bridges }            from './bridge-entity';
+using { bridge.management.BridgeInspections }  from './defects';
+using { bridge.management.BridgeDefects }      from './defects';
+using { bridge.management.RiskRegisterStatus } from './enum-types';
+using { bridge.management.TreatmentStatus }    from './enum-types';
 
 entity BridgeRiskAssessments : cuid, managed {
     bridge               : Association to Bridges @mandatory;
@@ -25,6 +27,8 @@ entity BridgeRiskAssessments : cuid, managed {
 
     existingControls     : LargeString;
     controlEffectiveness : String(30);
+    residualLikelihood   : Integer @assert.range: [1, 5];  // ISO 31000 §6.6 — post-control likelihood input
+    residualConsequence  : Integer @assert.range: [1, 5];  // ISO 31000 §6.6 — post-control consequence input
     residualRiskScore    : Integer;
     residualRiskLevel    : String(20);
     residualRiskAcceptable : Boolean;
@@ -46,6 +50,8 @@ entity BridgeRiskAssessments : cuid, managed {
 
     linkedInspection     : Association to BridgeInspections;
     linkedDefect         : Association to BridgeDefects;
+    riskRegisterStatus   : RiskRegisterStatus default 'Open';  // ISO 31000 §6.7 — lifecycle status
+    treatmentStatus      : TreatmentStatus default 'Not Started';   // ISO 31000 §6.5 — treatment programme progress
     notes                : LargeString;
     active               : Boolean default true;
 }

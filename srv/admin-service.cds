@@ -9,7 +9,6 @@ service AdminService {
     action deactivate() returns Restrictions;
     action reactivate() returns Restrictions;
   };
-  @deprecated
   entity BridgeRestrictions as projection on my.BridgeRestrictions actions {
     action deactivate() returns BridgeRestrictions;
     action reactivate() returns BridgeRestrictions;
@@ -37,6 +36,7 @@ service AdminService {
   entity BridgeInspections as projection on my.BridgeInspections actions {
     action deactivate() returns BridgeInspections;
     action reactivate() returns BridgeInspections;
+    action complete()   returns BridgeInspections;
   };
   @restrict: [
     { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
@@ -151,9 +151,28 @@ service AdminService {
   @readonly entity BnacLoadHistory as projection on my.BnacLoadHistory;
   entity DataQualityRules as projection on my.DataQualityRules;
 
-  // ── Demo Mode ────────────────────────────────────────────────────────────────
-  action loadDemoData()  returns String;
-  action clearDemoData() returns String;
+  // ── AssetIQ Risk Scoring Engine ──────────────────────────────────────────────
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
+  entity AssetIQScores as projection on my.AssetIQScores actions {
+    action override(reason: String) returns AssetIQScores;
+    action dismissOverride() returns AssetIQScores;
+  };
+
+  @restrict: [
+    { grant: ['READ'],            to: ['view','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
+  entity AssetIQModels as projection on my.AssetIQModels actions {
+    action activate() returns AssetIQModels;
+  };
+
+  @requires: ['admin', 'manage']
+  action scoreAllBridges() returns { scored: Integer; skipped: Integer; message: String };
 
   @requires: ['admin', 'manage']
   action refreshKPISnapshots() returns { snapshotDate: Date; statesProcessed: Integer; message: String };

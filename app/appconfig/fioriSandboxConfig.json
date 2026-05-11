@@ -61,26 +61,6 @@
                     "targetURL": "#Bridges-manage&/NetworkReports"
                   }
                 },
-                {
-                  "id": "BridgeHierarchy",
-                  "tileType": "sap.ushell.ui.tile.StaticTile",
-                  "properties": {
-                    "title": "Bridge Hierarchy",
-                    "subtitle": "List · Tree · Map · 3D",
-                    "icon": "sap-icon://org-chart",
-                    "targetURL": "#BridgeHierarchy-display"
-                  }
-                },
-                {
-                  "id": "BridgePublicCard",
-                  "tileType": "sap.ushell.ui.tile.StaticTile",
-                  "properties": {
-                    "title": "Bridge Public Info",
-                    "subtitle": "External — Restrictions & Permits",
-                    "icon": "sap-icon://share",
-                    "targetURL": "/bridges-public/index.html"
-                  }
-                }
               ]
             },
             {
@@ -144,6 +124,16 @@
                     "subtitle": "In-App Grid Editor",
                     "icon": "sap-icon://edit",
                     "targetURL": "#MassEdit-manage"
+                  }
+                },
+                {
+                  "id": "AssetIQ",
+                  "tileType": "sap.ushell.ui.tile.StaticTile",
+                  "properties": {
+                    "title": "AssetIQ — Risk Intelligence",
+                    "subtitle": "Bridge Health & Risk Scores",
+                    "icon": "sap-icon://ai",
+                    "targetURL": "#Bridges-manage&/AssetIQScores"
                   }
                 }
               ]
@@ -301,20 +291,6 @@
                 "url": "/reports/webapp"
               }
             },
-            "BridgeHierarchy-display": {
-              "semanticObject": "BridgeHierarchy",
-              "action": "display",
-              "title": "Bridge Hierarchy Explorer",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.bridgehierarchy",
-                "url": "/bridge-hierarchy/webapp"
-              }
-            },
             "Inspections-manage":          { "semanticObject": "Inspections",          "action": "manage", "title": "Inspections",            "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgeInspections" } },
             "Defects-manage":              { "semanticObject": "Defects",              "action": "manage", "title": "Defects",                "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgeDefects" } },
             "Capacity-manage":             { "semanticObject": "Capacity",             "action": "manage", "title": "Bridge Capacity",         "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgeCapacities" } },
@@ -323,7 +299,8 @@
             "RiskAssessments-manage":      { "semanticObject": "RiskAssessments",      "action": "manage", "title": "Risk Assessments",        "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgeRiskAssessments" } },
             "NhvrRouteAssessments-manage": { "semanticObject": "NhvrRouteAssessments", "action": "manage", "title": "NHVR Route Assessments",  "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "NhvrRouteAssessments" } },
             "LoadRatingCerts-manage":      { "semanticObject": "LoadRatingCerts",      "action": "manage", "title": "Load Rating Certificates", "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "LoadRatingCertificates" } },
-            "Permits-manage":              { "semanticObject": "Permits",              "action": "manage", "title": "Permits",                "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgePermits" } }
+            "Permits-manage":              { "semanticObject": "Permits",              "action": "manage", "title": "Permits",                "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "BridgePermits" } },
+            "AssetIQ-display":             { "semanticObject": "AssetIQ",              "action": "display", "title": "AssetIQ Risk Intelligence", "signature": { "parameters": {}, "additionalParameters": "allowed" }, "resolutionResult": { "applicationType": "SAPUI5", "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges", "url": "/admin-bridges/webapp", "innerAppRoute": "AssetIQScores" } }
           }
         }
       }

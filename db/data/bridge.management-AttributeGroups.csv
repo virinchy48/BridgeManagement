@@ -3,3 +3,5 @@ ID,objectType,name,internalKey,displayOrder,status,createdAt,createdBy,modifiedA
 10000000-0000-0000-0000-000000000002,bridge,Structural Properties,structural_properties,20,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
 10000000-0000-0000-0000-000000000003,restriction,Restriction Details,restriction_details,10,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
 10000000-0000-0000-0000-000000000004,bridge,Engineering Assessment,eng_assessment,30,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+10000000-0000-0000-0000-000000000005,bridge,Structural Assessment,STRUCTURAL_ASSESSMENT,40,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system
+10000000-0000-0000-0000-000000000006,bridge,Environmental Exposure,ENVIRONMENTAL_EXPOSURE,50,Active,2025-01-01T00:00:00Z,system,2025-01-01T00:00:00Z,system

@@ -42,6 +42,10 @@ sap.ui.define([
       this._objectType = "bridge";
       this._selectedGroup = null;
       this._selectedAttr = null;
+      this.getView().setModel(new JSONModel([]), "groups");
+      this.getView().setModel(new JSONModel([]), "attrs");
+      this.getView().setModel(new JSONModel([]), "configs");
+      this.getView().setModel(new JSONModel([]), "allowedValues");
       this._loadGroups();
     },
 
@@ -51,7 +55,7 @@ sap.ui.define([
         .then(function (groupResponse) { return groupResponse.json(); })
         .then(function (groupData) {
           if (groupData.error) throw new Error(groupData.error.message);
-          self.byId("groupList").setModel(new JSONModel(groupData.value || []));
+          self.getView().getModel("groups").setData(groupData.value || []);
           self._selectedGroup = null;
           self.byId("defsPanel").setVisible(false);
           self.byId("attrDetailPanel").setVisible(false);
@@ -65,7 +69,7 @@ sap.ui.define([
         .then(function (attributeResponse) { return attributeResponse.json(); })
         .then(function (attributeData) {
           if (attributeData.error) throw new Error(attributeData.error.message);
-          self.byId("attrList").setModel(new JSONModel(attributeData.value || []));
+          self.getView().getModel("attrs").setData(attributeData.value || []);
           self._selectedAttr = null;
           self.byId("attrDetailPanel").setVisible(false);
         })
@@ -93,14 +97,14 @@ sap.ui.define([
         self.byId("detailMax").setText(attr.maxValue != null ? String(attr.maxValue) : "");
         self.byId("detailStatus").setText(attr.status || "");
 
-        self.byId("allowedValuesTable").setModel(new JSONModel(allowedValues));
+        self.getView().getModel("allowedValues").setData(allowedValues);
 
         var existingByType = {};
         objectTypeConfigs.forEach(function (objectTypeConfig) { existingByType[objectTypeConfig.objectType] = objectTypeConfig; });
         var configRows = OBJECT_TYPES.map(function (objectType) {
           return existingByType[objectType] || { objectType: objectType, enabled: false, required: false, displayOrder: null, ID: null, attribute_ID: attrId };
         });
-        self.byId("configTable").setModel(new JSONModel(configRows));
+        self.getView().getModel("configs").setData(configRows);
 
         self.byId("attrDetailPanel").setVisible(true);
       }).catch(function (err) { MessageBox.error("Failed to load attribute details: " + err.message); });
@@ -256,8 +260,7 @@ sap.ui.define([
 
     onConfigChange: function () {
       var self = this;
-      var model = self.byId("configTable").getModel();
-      var rows = model.getData();
+      var rows = self.getView().getModel("configs").getData();
       rows.forEach(function (row) {
         if (!row.ID) return;
         self._mutate(BASE + "/AttributeObjectTypeConfig('" + row.ID + "')", "PATCH", { enabled: row.enabled, required: row.required, displayOrder: row.displayOrder || null })
@@ -302,13 +305,13 @@ sap.ui.define([
             self._mutate(ATTR_API + "/import?objectType=" + vals["dlg-otype"] + "&mode=" + vals["dlg-mode"], "POST", { fileName: file.name, contentBase64: base64 })
             .then(function (importResponse) { return importResponse.json(); })
             .then(function (result) {
-              if (result.error) { sap.m.MessageBox.error(result.error.message); return; }
+              if (result.error) { MessageBox.error(result.error.message); return; }
               var s = result.summary || {};
               var msg = "Import complete:\n  Created: " + (s.created || 0) + "\n  Updated: " + (s.updated || 0) + "\n  Skipped: " + (s.skipped || 0) + "\n  Errors: " + (s.errors || 0);
               if (result.aborted) msg += "\n\nAborted due to errors.";
-              sap.m.MessageBox.information(msg);
+              MessageBox.information(msg);
             })
-            .catch(function (importError) { sap.m.MessageBox.error("Import failed: " + importError.message); });
+            .catch(function (importError) { MessageBox.error("Import failed: " + importError.message); });
           });
         };
         reader.readAsDataURL(file);

@@ -2,7 +2,11 @@ namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
 using { bridge.management.Bridges } from './bridge-entity';
 using { bridge.management.BridgeElements } from './elements';
-using { bridge.management.InspectionStandard } from './enum-types';
+using { bridge.management.InspectionStandard }         from './enum-types';
+using { bridge.management.InspectionMethodology }      from './enum-types';
+using { bridge.management.StructuralAdequacyVerdict }  from './enum-types';
+using { bridge.management.RepairMethod }               from './enum-types';
+using { bridge.management.MaintenancePriority }        from './enum-types';
 using { bridge.management.BridgeInspectionElements } from './gap-entities';
 
 // Inspection capture record — S/4 EAM owns scheduling; this captures the event data
@@ -34,6 +38,13 @@ entity BridgeInspections : cuid, managed {
     criticalFindings             : Boolean default false;
     recommendedActions           : LargeString;
     nextInspectionRecommended    : Date;
+
+    // ── HIGH priority additions (AS5100-7 §3.2, TfNSW-BIM §3.3, AGAM §4.2) ──
+    inspectionMethodology        : InspectionMethodology;      // Visual / Under-Bridge Unit / Rope Access / Underwater / Drone
+    overallStructuralAdequacy    : StructuralAdequacyVerdict;  // Adequate | Marginal | Inadequate (TfNSW-BIM §3.3)
+    loadCarryingCapacityConfirmed : Boolean default true;      // AS 5100-7 §3.2 — inspector confirms posted capacity still valid
+    followUpRequired             : Boolean default false;      // Drives alert for bridge manager when true
+    reportIssueDate              : Date;                       // TfNSW-BIM §3.4 — formal report issue date (may differ from inspectionDate)
 
     active                       : Boolean default true;
     defects                      : Association to many BridgeDefects           on defects.inspection           = $self;
@@ -71,6 +82,9 @@ entity BridgeDefects : cuid, managed {
     plannedRemediationDate : Date;
     actualRemediationDate  : Date;
     remediationNotes       : String(500);
+    repairMethod           : RepairMethod;                 // SIMS §4.3 — required on remediation record
+    requiresLoadRestriction : Boolean default false;      // TfNSW-BIM §4.4 — triggers capacity review alert when true
+    maintenancePriority    : MaintenancePriority;          // AGAM §5.3 — P1 Emergency / P2 Urgent / P3 Routine / P4 Planned
 
     // EAM references (nullable — used when eamConnected = true)
     s4NotificationId : String(40);
@@ -81,6 +95,7 @@ entity BridgeDefects : cuid, managed {
 
     notes   : LargeString;
     active  : Boolean default true;
+    alertSent : Boolean default false;
 }
 
 annotate BridgeInspections with @(cds.persistence.indexes: [

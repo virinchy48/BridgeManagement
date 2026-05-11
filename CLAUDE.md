@@ -592,6 +592,74 @@ Source: Expert council P2 audit finding #20
 Applied: BridgeInspections.inspectionRef annotated with @Core.Computed
 ```
 
+[2026-05-11] [Security / CSP] Learning: Helmet contentSecurityPolicy `img-src` and `connect-src` must include `https://*.tile.openstreetmap.org`, `https://unpkg.com`, and `https://cdnjs.cloudflare.com` for Leaflet basemap tiles to load. Without these, the browser silently blocks tile requests and shows a grey map with no error visible in the app. This applies to BOTH the standalone map-view app AND the Bridge Details embedded Leaflet map.
+Source: User report — map tiles not loading
+Applied: srv/server.js lines 1107-1108
+
+[2026-05-11] [FLP / Config] Learning: When removing a tile from the FLP, three locations must be updated: (1) the tile entry in the tiles array of its group in fioriSandboxConfig.json; (2) the FLP intent entry in fioriSandboxConfig.json `inbounds`; (3) both corresponding entries in fiori-apps.html (tile array + inbounds). Missing any of the three leaves a dead intent that shows "app could not be opened" if navigated to via URL hash.
+Source: Remove BridgeHierarchy + bridges-public tiles
+Applied: Both files cleaned in all three locations
+
+[2026-05-11] [Custom Attributes / AttributesAdmin] Learning: The AttributesAdmin standalone app had 4 bugs that made it completely non-functional: (1) `list.getBindingInfo("items").template` crashes when the list has no items binding — use `setModel(new JSONModel(...))` instead; (2) OData UUID filter values must be single-quoted: `group_ID eq 'uuid-here'` not `group_ID eq uuid-here`; (3) XML view list/table controls need `items="{/}"` attribute to render JSONModel data; (4) PATCH/POST/DELETE calls need X-CSRF-Token headers. All four patterns recur across custom REST controllers — always check for them when debugging a non-functional list.
+Source: User report — custom attributes not working
+Applied: app/attributes-admin/webapp/controller/ + view fixes
+
+[2026-05-11] [Reports API] Learning: Three common bugs in reports-api.js: (1) `criticalDefectFlag` doesn't exist on `bridge.management.Bridges` — use `conditionRating >= 4` as proxy for critical defects count; (2) `dataQualityScore` doesn't exist — compute inline from non-null field count; (3) query params like `?state=NSW` are sent by the UI but route handlers don't read `req.query.state` — always add `if (state) query.where({ state })` guard on each endpoint. State filter was missing from ALL 6 report endpoints.
+Source: Reports audit — data quality and risk register tiles showing 0
+Applied: srv/reports-api.js
+
+[2026-05-11] [Roles / XSUAA] Learning: BMS_ADMIN role-template must include ALL 9 scopes: admin, manage, operate, inspect, view, certify, config_manager, executive_view, external_view. `executive_view` and `external_view` are easy to miss because they look like UI-only scopes — but admin must be able to test every view mode. Also: XSUAA scaffolding creates a stale `"admin"` role-template (description: "generated") with just the admin scope — this is dead code that should be removed immediately to avoid accidental role-collection assignment.
+Source: Roles audit — xs-security.json
+Applied: xs-security.json — removed stale "admin" template; added executive_view + external_view to BMS_ADMIN
+
+[2026-05-11] [Mass Upload / AllowedValues] Learning: When adding a multi-entity importer to the DATASETS array (e.g. AllowedValues that writes to 26 different lookup entities), set `entity: null` and add a guard `if (!dataset.entity) return []` in `readDatasetRows` and `buildWorkbookTemplate`. The importer function receives the full list of rows and groups them by `entityName` internally. Maintain a whitelist Set of allowed entity names as the security boundary — never pass a user-supplied entity name directly to `SELECT.from()`.
+Source: Allowed values Excel restructure feature
+Applied: srv/mass-upload.js — ALLOWED_VALUES_WHITELIST, importAllowedValueRows, fetchAllLookupValues, AllowedValues DATASET entry
+
+[2026-05-11] [Schema / Industry Standards] Learning: 21 HIGH-priority field gaps identified across 12 sub-domain tiles against AS 5100 / SIMS / AGAM / NHVR HVNL standards. Full analysis in docs/tile-attribute-design.md. Key gaps: inspectionMethodology (AS 5100-2 / AGAM), repairMethod (SIMS repair method codes), maintenancePriority (P1-P4 TfNSW framework), requiresLoadRestriction (links defect to restriction workflow), residualLikelihood/Consequence (TfNSW 5×5 matrix needs both inherent AND residual scores), riskRegisterStatus (Open/Escalated/Accepted/Treated/Closed), simsElementCode (SIMS lookup for element IDs), assessmentMethodology (NHVR desktop/field/load-testing). All implemented with CDS enum types and FE4 annotations.
+Source: Tile attribute analysis
+Applied: db/schema/enum-types.cds (7 new types), db/schema/defects.cds, risk-assessments.cds, scour-assessments.cds, nhvr-compliance.cds, elements.cds, db/schema.cds, app/admin-bridges/fiori-service.cds
+
+[2026-05-11] [UI5 / XML Views] Learning: `data:` namespace for CustomData attributes (`data:myProp="{model>field}"`) requires `xmlns:data="http://schemas.sap.com/sapui5/extension/sap.ui.core.CustomData/1"` in the view's root element. A missing namespace declaration causes an XML parse error at UI5 component load time — not a runtime error — which silently prevents the ENTIRE component from loading. The FLP shows "App could not be opened" for ALL routes in that component, not just the view with the error. Always run an XML namespace check (`python3 -c "import xml.etree.ElementTree as ET; ET.parse(f)"`) on all view files before committing.
+Source: BmsAdmin "#BmsAdmin-manage" load failure — FeatureFlags.view.xml missing `xmlns:data`
+Applied: app/bms-admin/webapp/view/FeatureFlags.view.xml — added xmlns:data declaration
+
+[2026-05-11] [AssetIQ / Risk Scoring] Learning: AssetIQ risk scoring engine is now separate from BSI (Bridge Sufficiency Index). BSI = virtual field on Bridges computed from BCI formula. AssetIQ = persisted `AssetIQScores` entity with 5 factors (BCI 35%, Age 15%, Traffic 20%, Defect 20%, Load 10%) computed by `scoreAllBridges()` AdminService action. BHI/NBI = computed by `srv/bhi-bsi-engine.js` multi-modal engine, only populated when `feature.bhiBsiAssessment = true`. Three scoring systems coexist: bsiScore (virtual, always computed), AssetIQScore (persisted, on-demand batch), BHI/NBI (virtual, feature-flagged).
+Source: Phase 4 FD implementation
+Applied: db/schema.cds (AssetIQScores, AssetIQModels entities), srv/admin-service.cds/js, srv/bhi-bsi-engine.js, srv/bhi-bsi-api.js
+
+[2026-05-11] [BHI/BSI Engine] Learning: `srv/bhi-bsi-engine.js` implements the multi-modal BHI/BSI formula with 6 transport modes (Road/Rail/Metro/LightRail/Ferry/Port). Exposed via `srv/bhi-bsi-api.js` at `/bhi-bsi/api` with 3 endpoints: `POST /assess` (single bridge), `GET /network-summary` (batch up to 200), `GET /mode-params` (public). All endpoints except mode-params are guarded by auth + feature flag check (503 when `feature.bhiBsiAssessment = false`). BHI/NBI virtual fields on Bridges are only computed in `after('READ', Bridges)` when the feature flag is enabled — checked via `isFeatureEnabled('bhiBsiAssessment')` from `srv/feature-flags.js`.
+Source: Phase 4 FD — BHI/BSI multi-modal assessment engine
+Applied: srv/bhi-bsi-engine.js (new), srv/bhi-bsi-api.js (new), srv/server.js (mount), srv/admin-service.js (virtual field population), db/schema/bridge-entity.cds (virtual bhi/nbi fields)
+
+[2026-05-11] [Phase 4 FD / Defect Escalation] Learning: Severity 4+ defects now auto-create an AlertsAndNotifications record. Guard with deduplication check (`SELECT.one WHERE entityId = defect.ID AND status = 'Open'`) before inserting to avoid duplicate alerts. Set `alertSent = true` on the defect after alert creation. Pattern reused from load-ratings expiry alert. The `requiresLoadRestriction` flag on BridgeDefects auto-creates a Draft Restriction record if none exists.
+Source: Phase 4 FD Gherkin — severity escalation scenarios
+Applied: srv/handlers/defects.js, db/schema/defects.cds (alertSent field)
+
+[2026-05-11] [FLP / Static Config Limitation] Learning: FLP tiles in `fiori-apps.html` and `fioriSandboxConfig.json` are STATIC — there is no way to conditionally show/hide a tile based on a runtime feature flag. The AssetIQ tile is always visible in the launchpad. Feature flag gating is applied at the CONTENT layer: the `/bhi-bsi/api/*` endpoints return HTTP 503 with a clear message when the flag is off, and the screen shows the error. To hide the tile entirely in production, use BTP FLP personalisation or role-based tile visibility (assign to a role-collection that only BMS_ADMIN or BMS_BRIDGE_MANAGER has).
+Source: BHI/BSI tile feature flag gating
+Applied: Documented; tile visible; content gated at API level
+
+[2026-05-12] [UI5 / FLP Sandbox] Learning: The `test-resources/sap/ushell/bootstrap/sandbox.js` CDN bootstrap always deep-merges `FioriSandboxDefaultConfig.json` which registers dozens of SAP sample apps (AppNavSample, RTA Demo App, AppPersSample, etc.) into "My Home". To suppress them without switching bootstrap: (1) add `bootstrapConfig: { mergeApplications: false }` to `sap-ushell-config`; (2) add an `Object.defineProperty` getter/setter trap BEFORE sandbox.js loads that freezes the `groups` array — when sandbox.js tries to assign/merge groups, the no-op setter discards the change and only BMS groups remain.
+Source: User report — sample apps appearing in FLP home page
+Applied: app/fiori-apps.html — bootstrapConfig property + Object.defineProperty trap script
+
+[2026-05-12] [UI5 / Controller Pattern] Learning: `byId("list").setModel(new JSONModel([]))` on every data load creates a new JSONModel instance, which forces a full aggregation re-bind and causes visible flickering. Fix: create named models ONCE in `onInit` on the VIEW (`this.getView().setModel(new JSONModel([]), "groups")`), then use `getView().getModel("groups").setData(newData)` to update in-place. In the XML view, bind aggregations with the model prefix: `items="{groups>/}"` and item properties as `{groups>name}`. Zero flicker, better memory usage.
+Source: Attribute Configuration tab flickering in BMS Admin
+Applied: app/bms-admin/webapp/controller/AttributeConfig.controller.js + view
+
+[2026-05-12] [CDS / Demo Mode] Learning: Demo mode (`loadDemoData`/`clearDemoData` actions, DemoMode.controller.js/view) was removed entirely. These actions were registered in AdminService and backed by `srv/demo-handler.js`. Removing them: (1) delete the handler file; (2) remove both action lines from admin-service.cds; (3) remove the `require` and registration call from server.js; (4) remove the route/target from manifest.json; (5) remove the nav item from Shell.view.xml; (6) remove the nav key constant from Shell.controller.js; (7) remove any SystemConfig seed rows for demo settings.
+Source: User request — remove all sample app code
+Applied: srv/demo-handler.js deleted, admin-service.cds, server.js, manifest.json, Shell.controller.js, Shell.view.xml, SystemConfig.csv
+
+[2026-05-12] [CAP / Admin Service] Learning: Two critical admin-service.js bugs found in CRUD testing: (1) `conditionRating` and `lastInspectionDate` were in `requiredFields.Bridges` — these are set by the inspection workflow and must NOT be required on create (blocks every new bridge creation); (2) `inherentRiskScore` and `inherentRiskLevel` were only computed in BridgeManagementService handler (srv/handlers/risk-assessments.js) but NOT in AdminService — records created via AdminService (direct OData) always had null risk scores. AdminService requires its own `before(['CREATE','UPDATE'], BridgeRiskAssessments)` handler that mirrors the BMS service handler.
+Source: Full CRUD test audit — docs/crud-test-report.md
+Applied: srv/admin-service.js
+
+[2026-05-12] [Cleanup] Learning: Five orphaned app directories deleted (23,329 lines): `app/bridge-hierarchy/`, `app/bridges-public/`, `app/bms-business-admin/`, `app/operations/dashboard/`, `app/operations/map-view/`. These had no registered FLP intent and some were duplicates of active apps. After deletion, `app/services.cds` `using from` statements pointing to deleted paths must also be removed (causes `[ERROR] Can't find local module` at compile time), and `mta.yaml` module/artifact entries must be cleaned up.
+Source: Code cleanup sprint
+Applied: app/services.cds, mta.yaml, deleted directories
+
 ---
 
 ## Contributing to this file

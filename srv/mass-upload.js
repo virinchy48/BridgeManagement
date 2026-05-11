@@ -10,6 +10,22 @@ const LOOKUP_COLUMNS = [
   column('descr', 'string')
 ]
 
+const ALLOWED_VALUES_COLUMNS = [
+  column('entityName', 'string', { required: true }),
+  column('code',       'string', { required: true }),
+  column('label',      'string'),
+  column('description','string')
+]
+
+const ALLOWED_VALUES_WHITELIST = new Set([
+  'ConditionStates', 'ConditionTrends', 'ConditionSummaries', 'StructuralAdequacyTypes',
+  'PostingStatuses', 'CapacityStatuses', 'AssetClasses', 'StructureTypes', 'DesignLoads',
+  'States', 'Regions', 'InspectionTypes', 'ScourRiskLevels', 'PbsApprovalClasses',
+  'RestrictionTypes', 'RestrictionStatuses', 'VehicleClasses', 'RestrictionCategories',
+  'RestrictionUnits', 'RestrictionDirections', 'SurfaceTypes', 'SubstructureTypes',
+  'FoundationTypes', 'WaterwayTypes', 'FatigueDetailCategories', 'DefectCodes'
+])
+
 const BRIDGE_COLUMNS = [
   column('ID', 'integer'),
   column('descr', 'string'),
@@ -327,6 +343,15 @@ const DATASETS = Object.freeze([
   lookupDataset('FoundationTypes', 'Foundation Types', 'Bridge foundation type dropdown values (AS 5100.7 §6.2.5)'),
   lookupDataset('WaterwayTypes', 'Waterway Types', 'Waterway type dropdown values (Austroads AP-G71.8 §3.1)'),
   lookupDataset('FatigueDetailCategories', 'Fatigue Detail Categories', 'AS 5100.6 §13.5 fatigue detail category dropdown values'),
+  {
+    name: 'AllowedValues',
+    label: 'Allowed Values (Lookups)',
+    description: 'Maintain lookup values for all dropdown fields — upload rows with entityName, code, label, description',
+    entity: null,
+    columns: ALLOWED_VALUES_COLUMNS,
+    orderBy: 'entityName',
+    importer: importAllowedValueRows
+  },
   {
     name: 'Bridges',
     label: 'Bridges',
@@ -678,13 +703,18 @@ async function buildWorkbookTemplate() {
   XLSX.utils.book_append_sheet(workbook, XLSX.utils.aoa_to_sheet(instructions), 'Instructions')
 
   for (const dataset of DATASETS) {
-    const rows = await readDatasetRows(db, dataset)
+    let rows
+    if (dataset.name === 'AllowedValues') {
+      rows = await fetchAllLookupValues(db)
+    } else {
+      rows = await readDatasetRows(db, dataset)
+    }
     datasetRowsByName.set(dataset.name, rows)
     const header = buildHeaderRow(dataset)
-    const sheet = XLSX.utils.aoa_to_sheet([
-      header,
-      ...rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
-    ])
+    const sheetRows = dataset.name === 'AllowedValues'
+      ? rows.map((row) => [row.entityName, row.code, row.label, row.description])
+      : rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
+    const sheet = XLSX.utils.aoa_to_sheet([header, ...sheetRows])
     sheet['!cols'] = dataset.columns.map((columnDef) => ({ wch: Math.max(columnDef.name.length + 4, 16) }))
     XLSX.utils.book_append_sheet(workbook, sheet, dataset.name)
   }
@@ -733,11 +763,15 @@ async function buildWorkbookTemplate() {
 async function buildCsvTemplate(datasetName) {
   const dataset = requireDataset(datasetName)
   const db = await cds.connect.to('db')
-  const rows = await readDatasetRows(db, dataset)
-  const sheet = XLSX.utils.aoa_to_sheet([
-    buildHeaderRow(dataset),
-    ...rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
-  ])
+  let dataRows
+  if (dataset.name === 'AllowedValues') {
+    const all = await fetchAllLookupValues(db)
+    dataRows = all.map(row => [row.entityName, row.code, row.label, row.description])
+  } else {
+    const rows = await readDatasetRows(db, dataset)
+    dataRows = rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
+  }
+  const sheet = XLSX.utils.aoa_to_sheet([buildHeaderRow(dataset), ...dataRows])
   return Buffer.from(XLSX.utils.sheet_to_csv(sheet), 'utf8')
 }
 
@@ -1005,6 +1039,15 @@ function getPreviewColumns(dataset) {
       { name: 'active',          label: 'Active' }
     ]
   }
+  if (dataset.name === 'AllowedValues') {
+    return [
+      { name: 'entityName',   label: 'Entity' },
+      { name: 'code',         label: 'Code' },
+      { name: 'label',        label: 'Label' },
+      { name: 'description',  label: 'Description' },
+      { name: '',             label: '' }
+    ]
+  }
   return [
     { name: 'code', label: 'Code' },
     { name: 'name', label: 'Name' },
@@ -1081,6 +1124,7 @@ async function importCsv(tx, buffer, datasetName, auditContext) {
 }
 
 async function readDatasetRows(dbOrTx, dataset) {
+  if (!dataset.entity) return []
   return dbOrTx.run(
     SELECT.from(dataset.entity).columns(...dataset.columns.map((columnDef) => columnDef.name)).orderBy(dataset.orderBy)
   )
@@ -1090,6 +1134,126 @@ function queueAudit(auditContext, entry) {
   if (!auditContext) return
   if (!auditContext._auditQueue) auditContext._auditQueue = []
   auditContext._auditQueue.push(entry)
+}
+
+async function fetchAllLookupValues(db) {
+  const results = []
+  const entityFieldMap = {
+    DefectCodes: { labelField: 'description', descrField: null }
+  }
+  for (const entityName of ALLOWED_VALUES_WHITELIST) {
+    try {
+      const entityRef = `bridge.management.${entityName}`
+      const { labelField = 'name', descrField = 'descr' } = entityFieldMap[entityName] || {}
+      const selectCols = ['code', labelField, descrField].filter(Boolean)
+      const rows = await db.run(SELECT.from(entityRef).columns(...selectCols).orderBy('code'))
+      for (const row of rows) {
+        results.push({
+          entityName,
+          code:        row.code != null ? String(row.code) : '',
+          label:       row[labelField] != null ? String(row[labelField]) : '',
+          description: descrField && row[descrField] != null ? String(row[descrField]) : ''
+        })
+      }
+    } catch (_) {
+      // entity may not exist in dev — skip gracefully
+    }
+  }
+  return results
+}
+
+async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+
+  const grouped = new Map()
+  for (const row of normalized) {
+    if (!ALLOWED_VALUES_WHITELIST.has(row.entityName)) {
+      warnings.push(`AllowedValues: skipped row with unknown entityName "${row.entityName}". Allowed entities: ${[...ALLOWED_VALUES_WHITELIST].join(', ')}.`)
+      continue
+    }
+    if (!grouped.has(row.entityName)) grouped.set(row.entityName, [])
+    grouped.get(row.entityName).push(row)
+  }
+
+  let totalInserted = 0
+  let totalUpdated = 0
+  let totalProcessed = 0
+  const entityFieldMap = {
+    DefectCodes: { labelField: 'description', descrField: null }
+  }
+
+  for (const [entityName, entityRows] of grouped) {
+    const entityRef = `bridge.management.${entityName}`
+    const { labelField = 'name', descrField = 'descr' } = entityFieldMap[entityName] || {}
+
+    const codes = entityRows.map(r => r.code)
+    const existingRows = await tx.run(SELECT.from(entityRef).columns('code').where({ code: { in: codes } }))
+    const existingCodes = new Set(existingRows.map(r => r.code))
+
+    const inserts = []
+    const updates = []
+    for (const row of entityRows) {
+      if (existingCodes.has(row.code)) updates.push(row)
+      else inserts.push(row)
+    }
+
+    if (inserts.length) {
+      await tx.run(INSERT.into(entityRef).entries(inserts.map(r => {
+        const entry = { code: r.code, [labelField]: r.label || r.code }
+        if (descrField) entry[descrField] = r.description || null
+        return entry
+      })))
+      for (const row of inserts) {
+        queueAudit(auditContext, {
+          objectType: 'Lookup',
+          objectId:   `${entityName}:${row.code}`,
+          objectName: `${entityName} / ${row.code}`,
+          source:     'MassUpload',
+          batchId:    auditContext?.batchId,
+          changedBy:  auditContext?.changedBy || 'system',
+          changes:    [{ fieldName: 'code', oldValue: '', newValue: row.code },
+                       { fieldName: labelField, oldValue: '', newValue: row.label || '' }]
+        })
+      }
+    }
+
+    for (const row of updates) {
+      const setClause = { [labelField]: row.label || row.code }
+      if (descrField) setClause[descrField] = row.description || null
+      const oldRow = await fetchCurrentRecord(tx, entityRef, { code: row.code })
+      await tx.run(UPDATE(entityRef).set(setClause).where({ code: row.code }))
+      if (oldRow) {
+        const changes = diffRecords(
+          Object.fromEntries(Object.keys(setClause).map(k => [k, oldRow[k]])),
+          setClause
+        )
+        if (changes.length) {
+          queueAudit(auditContext, {
+            objectType: 'Lookup',
+            objectId:   `${entityName}:${row.code}`,
+            objectName: `${entityName} / ${row.code}`,
+            source:     'MassUpload',
+            batchId:    auditContext?.batchId,
+            changedBy:  auditContext?.changedBy || 'system',
+            changes
+          })
+        }
+      }
+    }
+
+    totalInserted += inserts.length
+    totalUpdated += updates.length
+    totalProcessed += entityRows.length
+  }
+
+  return {
+    dataset: dataset.name,
+    label: dataset.label,
+    inserted: totalInserted,
+    updated: totalUpdated,
+    processed: totalProcessed
+  }
 }
 
 async function importLookupRows(tx, dataset, rows, warnings, auditContext) {
@@ -1604,6 +1768,11 @@ function normalizeRow(dataset, row, warnings) {
     return normalized
   }
 
+  if (dataset.name === 'AllowedValues') {
+    if (!normalized.label) normalized.label = normalized.code
+    return normalized
+  }
+
   if (dataset.name === 'Bridges' && !hasValue(normalized.ID) && !hasValue(normalized.bridgeId)) {
     if (warnings) {
       warnings.push(
@@ -1772,6 +1941,7 @@ function parsePrimaryLookupRowKey(row) {
 
 function getDedupeKey(dataset, row) {
   if (dataset.columns === LOOKUP_COLUMNS) return parsePrimaryLookupRowKey(row)
+  if (dataset.name === 'AllowedValues') return `${row.entityName}:${row.code}`
   if (dataset.name === 'Bridges') return row.ID ?? `bridgeId:${row.bridgeId}`
   if (dataset.name === 'Restrictions') return row.ID ?? `restrictionRef:${row.restrictionRef}`
   if (dataset.name === 'BridgeInspections') return row.ID ?? `${row.bridgeRef}|${row.inspectionDate}|${row.inspectionType}`
