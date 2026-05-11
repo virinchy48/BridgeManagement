@@ -403,7 +403,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   // activeRestrictionCount: count of active BridgeRestrictions (detail page only)
   const POSTING_CRITICALITY = { 'Unrestricted': 3, 'Under Review': 2, 'Restricted': 2, 'Closed': 1 }
 
-  this.after('READ', Bridges, async (results) => {
+  this.after('READ', Bridges, async (results, req) => {
     const list = Array.isArray(results) ? results : (results ? [results] : [])
     for (const b of list) {
       if (!b) continue
@@ -411,8 +411,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       b.activeRestrictionCount   = 0
     }
     // Batch COUNT active restrictions for all records in one query
+    const wantCount = !req.query?.$select || req.query.$select.split(',').map(f => f.trim()).includes('activeRestrictionCount')
     const ids = list.map(b => b.ID).filter(Boolean)
-    if (ids.length > 0) {
+    if (wantCount && ids.length > 0) {
       const counts = await SELECT.from('bridge.management.BridgeRestrictions')
         .columns('bridge_ID', 'count(1) as cnt')
         .where({ bridge_ID: { in: ids }, active: true })

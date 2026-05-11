@@ -411,13 +411,16 @@ const DATASETS = Object.freeze([
       { header: 'Comments',            field: 'comments' }
     ],
     async importRows(rows, tx) {
-      let inserted = 0, updated = 0
-      for (const row of rows) {
-        if (!row.bridgeId || !row.elementType) continue
-        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
-        if (!bridge) continue
-        const data = {
-          bridge_ID: bridge.ID,
+      const valid = rows.filter(r => r.bridgeId && r.elementType)
+      if (!valid.length) return { inserted: 0, updated: 0, processed: rows.length }
+      const bridgeIds = [...new Set(valid.map(r => r.bridgeId))]
+      const bridges = await tx.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeIds } }))
+      const bm = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+      const entries = valid.map(row => {
+        const bridge_ID = bm.get(row.bridgeId)
+        if (!bridge_ID) return null
+        return {
+          ID: cds.utils.uuid(), bridge_ID,
           elementType: row.elementType,
           conditionState1Qty: row.conditionState1Qty ? parseFloat(row.conditionState1Qty) : null,
           conditionState2Qty: row.conditionState2Qty ? parseFloat(row.conditionState2Qty) : null,
@@ -428,13 +431,11 @@ const DATASETS = Object.freeze([
           conditionState3Pct: row.conditionState3Pct ? parseFloat(row.conditionState3Pct) : null,
           conditionState4Pct: row.conditionState4Pct ? parseFloat(row.conditionState4Pct) : null,
           elementHealthRating: row.elementHealthRating ? parseFloat(row.elementHealthRating) : null,
-          unit: row.unit,
-          comments: row.comments
+          unit: row.unit, comments: row.comments
         }
-        await tx.run(INSERT.into('bridge.management.BridgeInspectionElements').entries(data))
-        inserted++
-      }
-      return { inserted, updated, processed: rows.length }
+      }).filter(Boolean)
+      if (entries.length) await tx.run(INSERT.into('bridge.management.BridgeInspectionElements').entries(entries))
+      return { inserted: entries.length, updated: 0, processed: rows.length }
     }
   },
   {
@@ -458,13 +459,16 @@ const DATASETS = Object.freeze([
       { header: 'Comments',              field: 'comments' }
     ],
     async importRows(rows, tx) {
-      let inserted = 0, updated = 0
-      for (const row of rows) {
-        if (!row.bridgeId) continue
-        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
-        if (!bridge) continue
-        await tx.run(INSERT.into('bridge.management.BridgeCarriageways').entries({
-          bridge_ID: bridge.ID,
+      const valid = rows.filter(r => r.bridgeId)
+      if (!valid.length) return { inserted: 0, updated: 0, processed: rows.length }
+      const bridgeIds = [...new Set(valid.map(r => r.bridgeId))]
+      const bridges = await tx.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeIds } }))
+      const bm = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+      const entries = valid.map(row => {
+        const bridge_ID = bm.get(row.bridgeId)
+        if (!bridge_ID) return null
+        return {
+          ID: cds.utils.uuid(), bridge_ID,
           roadNumber: row.roadNumber, roadRankCode: row.roadRankCode, roadClassCode: row.roadClassCode,
           carriageCode: row.carriageCode,
           minWidthM: row.minWidthM ? parseFloat(row.minWidthM) : null,
@@ -474,10 +478,10 @@ const DATASETS = Object.freeze([
           prescribedDirFrom: row.prescribedDirFrom, prescribedDirTo: row.prescribedDirTo,
           distanceFromStartKm: row.distanceFromStartKm ? parseFloat(row.distanceFromStartKm) : null,
           linkForInspection: row.linkForInspection, comments: row.comments
-        }))
-        inserted++
-      }
-      return { inserted, updated, processed: rows.length }
+        }
+      }).filter(Boolean)
+      if (entries.length) await tx.run(INSERT.into('bridge.management.BridgeCarriageways').entries(entries))
+      return { inserted: entries.length, updated: 0, processed: rows.length }
     }
   },
   {
@@ -497,21 +501,24 @@ const DATASETS = Object.freeze([
       { header: 'Comments',      field: 'comments' }
     ],
     async importRows(rows, tx) {
-      let inserted = 0, updated = 0
-      for (const row of rows) {
-        if (!row.bridgeId) continue
-        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
-        if (!bridge) continue
-        await tx.run(INSERT.into('bridge.management.BridgeContacts').entries({
-          bridge_ID: bridge.ID,
+      const valid = rows.filter(r => r.bridgeId)
+      if (!valid.length) return { inserted: 0, updated: 0, processed: rows.length }
+      const bridgeIds = [...new Set(valid.map(r => r.bridgeId))]
+      const bridges = await tx.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeIds } }))
+      const bm = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+      const entries = valid.map(row => {
+        const bridge_ID = bm.get(row.bridgeId)
+        if (!bridge_ID) return null
+        return {
+          ID: cds.utils.uuid(), bridge_ID,
           contactGroup: row.contactGroup, primaryContact: row.primaryContact,
           organisation: row.organisation, position: row.position,
           phone: row.phone, mobile: row.mobile, address: row.address,
           email: row.email, comments: row.comments
-        }))
-        inserted++
-      }
-      return { inserted, updated, processed: rows.length }
+        }
+      }).filter(Boolean)
+      if (entries.length) await tx.run(INSERT.into('bridge.management.BridgeContacts').entries(entries))
+      return { inserted: entries.length, updated: 0, processed: rows.length }
     }
   },
   {
@@ -534,13 +541,16 @@ const DATASETS = Object.freeze([
       { header: 'Comments',         field: 'comments' }
     ],
     async importRows(rows, tx) {
-      let inserted = 0, updated = 0
-      for (const row of rows) {
-        if (!row.bridgeId) continue
-        const bridge = await tx.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: row.bridgeId }))
-        if (!bridge) continue
-        await tx.run(INSERT.into('bridge.management.BridgeMehComponents').entries({
-          bridge_ID: bridge.ID,
+      const valid = rows.filter(r => r.bridgeId)
+      if (!valid.length) return { inserted: 0, updated: 0, processed: rows.length }
+      const bridgeIds = [...new Set(valid.map(r => r.bridgeId))]
+      const bridges = await tx.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ bridgeId: { in: bridgeIds } }))
+      const bm = new Map(bridges.map(b => [b.bridgeId, b.ID]))
+      const entries = valid.map(row => {
+        const bridge_ID = bm.get(row.bridgeId)
+        if (!bridge_ID) return null
+        return {
+          ID: cds.utils.uuid(), bridge_ID,
           componentType: row.componentType, name: row.name, make: row.make,
           model: row.model, serialNumber: row.serialNumber,
           isElectrical: row.isElectrical === true || row.isElectrical === 'true' || row.isElectrical === '1',
@@ -549,10 +559,10 @@ const DATASETS = Object.freeze([
           inspFrequency: row.inspFrequency, locationStored: row.locationStored,
           shelfLifeYears: row.shelfLifeYears ? parseInt(row.shelfLifeYears, 10) : null,
           comments: row.comments
-        }))
-        inserted++
-      }
-      return { inserted, updated, processed: rows.length }
+        }
+      }).filter(Boolean)
+      if (entries.length) await tx.run(INSERT.into('bridge.management.BridgeMehComponents').entries(entries))
+      return { inserted: entries.length, updated: 0, processed: rows.length }
     }
   },
   {

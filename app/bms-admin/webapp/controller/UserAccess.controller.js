@@ -10,8 +10,7 @@ sap.ui.define([
     onInit: function () {
       this._model = new JSONModel({ users: [], filtered: [] });
       this.getView().setModel(this._model);
-      this._loadSummary();
-      this._loadActivity();
+      Promise.all([this._loadSummary(), this._loadActivity()]);
     },
 
     _loadSummary: function () {
@@ -72,8 +71,7 @@ sap.ui.define([
     },
 
     onRefresh: function () {
-      this._loadSummary();
-      this._loadActivity();
+      Promise.all([this._loadSummary(), this._loadActivity()]);
       MessageToast.show("Refreshed.");
     },
 

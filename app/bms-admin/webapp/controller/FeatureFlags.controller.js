@@ -13,8 +13,7 @@ sap.ui.define([
     onInit: function () {
       this.getView().setModel(new JSONModel({ flags: [] }), "flags");
       this.getView().setModel(new JSONModel({ canManage: false }), "userScopes");
-      this._loadFlags();
-      this._checkScopes();
+      Promise.all([this._loadFlags(), this._checkScopes()]);
     },
 
     _loadFlags: function () {

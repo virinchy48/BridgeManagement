@@ -1593,8 +1593,9 @@ cds.on('bootstrap', (app) => {
       const db = await cds.connect.to('db')
       const users = await db.run(
         SELECT.from('bridge.management.UserActivity')
+          .columns('userId', 'lastSeenAt', 'sessionId', 'status', 'ipAddress')
           .orderBy('lastSeenAt desc')
-          .limit(200)
+          .limit(50)
       )
       res.json({ users: users || [] })
     } catch (error) {
@@ -1671,6 +1672,7 @@ cds.on('bootstrap', (app) => {
       const db = await cds.connect.to('db')
       const rows = await db.run(
         SELECT.from('bridge.management.DataQualityRules')
+          .columns('ID', 'name', 'enabled', 'sortOrder', 'config')
           .where({ enabled: true })
           .orderBy('sortOrder')
       )

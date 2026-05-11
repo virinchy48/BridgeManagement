@@ -1680,15 +1680,29 @@ sap.ui.define([
     // ─── GIS Config ────────────────────────────────────────────────────────────
 
     _loadGisConfig: function () {
-      return fetch("/map/api/config")
+      var self = this;
+      var configUrl = "/map/api/config";
+      var demoUrl   = "/odata/v4/admin/SystemConfig('demoModeActive')";
+
+      var configP = fetch(configUrl)
         .then(function (res) { return res.ok ? res.json() : Promise.reject(res.statusText); })
-        .then(function (cfg) {
-          this._gisConfig = cfg;
-          this._vm().setProperty("/gisConfig", cfg);
+        .catch(function () { return null; });
+
+      var demoP = fetch(demoUrl, { headers: { Accept: "application/json" } })
+        .then(function (res) { return res.ok ? res.json() : null; })
+        .catch(function () { return null; });
+
+      return Promise.all([configP, demoP]).then(function (results) {
+        var cfg            = results[0];
+        var demoModeConfig = results[1];
+
+        if (cfg) {
+          self._gisConfig = cfg;
+          self._vm().setProperty("/gisConfig", cfg);
           // SQLite returns 0/1 integers for booleans — use loose falsy check
           var on = function (val) { return val !== false && val !== 0 && val != null; };
           var off = function (val, dflt) { return val == null ? (dflt === true) : (val !== false && val !== 0); };
-          this._vm().setProperty("/features", {
+          self._vm().setProperty("/features", {
             scaleBar:         off(cfg.enableScaleBar, true),
             gps:              off(cfg.enableGps, true),
             minimap:          off(cfg.enableMinimap, true),
@@ -1705,28 +1719,22 @@ sap.ui.define([
             showLgaBoundaries:   on(cfg.showLgaBoundaries)
           });
           if (cfg.defaultBasemap && cfg.defaultBasemap !== "street") {
-            this._vm().setProperty("/basemap", cfg.defaultBasemap);
+            self._vm().setProperty("/basemap", cfg.defaultBasemap);
           }
           if (cfg.showStateBoundaries) {
-            this._vm().setProperty("/layers/refLayers/stateBoundaries", true);
+            self._vm().setProperty("/layers/refLayers/stateBoundaries", true);
           }
           if (cfg.showLgaBoundaries) {
-            this._vm().setProperty("/layers/refLayers/lgaBoundaries", true);
+            self._vm().setProperty("/layers/refLayers/lgaBoundaries", true);
           }
-        }.bind(this))
-        .catch(function () {
-          this._gisConfig = null;
-        }.bind(this));
+        } else {
+          self._gisConfig = null;
+        }
 
-      // Check demo mode flag
-      fetch("/odata/v4/admin/SystemConfig('demoModeActive')", { headers: { Accept: "application/json" } })
-        .then(function (demoModeResponse) { return demoModeResponse.ok ? demoModeResponse.json() : null; })
-        .then(function (demoModeConfig) {
-          if (demoModeConfig && demoModeConfig.value === "true") {
-            this._vm().setProperty("/demoModeActive", true);
-          }
-        }.bind(this))
-        .catch(function () { /* non-fatal */ });
+        if (demoModeConfig && demoModeConfig.value === "true") {
+          self._vm().setProperty("/demoModeActive", true);
+        }
+      });
     },
 
     _loadDynamicRefLayers: function () {
