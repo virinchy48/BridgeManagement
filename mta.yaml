@@ -19,8 +19,7 @@ modules:
     parameters:
       instances: 1
       buildpack: nodejs_buildpack
-      health-check-type: http
-      health-check-http-endpoint: /health
+      health-check-type: none
     properties:
       DEFAULT_STATE: NSW
       MULTI_STATE_ENABLED: "false"
