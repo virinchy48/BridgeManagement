@@ -1400,33 +1400,33 @@ annotate AdminService.BridgeInspections with @(
   UI.FieldGroup#InspGeneral: {
     Label: 'General',
     Data: [
-      {Value: bridge_ID,       Label: 'Bridge'},
-      {Value: inspectionRef},
-      {Value: inspectionDate},
-      {Value: inspectionType},
-      {Value: inspectionStandard},
-      {Value: inspectionScope},
-      {Value: weatherConditions},
-      {Value: accessibilityIssues},
-      {Value: inspectionNotes},
+      {Value: bridge_ID,            Label: 'Bridge'},
+      {Value: inspectionRef,        Label: 'Inspection Ref'},
+      {Value: inspectionDate,       Label: 'Inspection Date'},
+      {Value: inspectionType,       Label: 'Inspection Type'},
+      {Value: inspectionStandard,   Label: 'Inspection Standard'},
+      {Value: inspectionScope,      Label: 'Scope'},
+      {Value: weatherConditions,    Label: 'Weather Conditions'},
+      {Value: accessibilityIssues,  Label: 'Accessibility Issues'},
+      {Value: inspectionNotes,      Label: 'Inspection Notes'},
     ]
   },
   UI.FieldGroup#InspInspector: {
     Label: 'Inspector',
     Data: [
-      {Value: inspector},
-      {Value: inspectorAccreditationNumber},
-      {Value: inspectorAccreditationLevel},
-      {Value: inspectorCompany},
-      {Value: qualificationExpiry},
+      {Value: inspector,                    Label: 'Inspector'},
+      {Value: inspectorAccreditationNumber, Label: 'Accreditation Number'},
+      {Value: inspectorAccreditationLevel,  Label: 'Accreditation Level'},
+      {Value: inspectorCompany,             Label: 'Inspector Company'},
+      {Value: qualificationExpiry,          Label: 'Qualification Expiry'},
     ]
   },
   UI.FieldGroup#InspS4Links: {
     Label: 'S/4HANA Links',
     Data: [
-      {Value: s4InspectionOrderRef},
-      {Value: s4NotificationRef},
-      {Value: reportStorageRef},
+      {Value: s4InspectionOrderRef, Label: 'S/4 Inspection Order'},
+      {Value: s4NotificationRef,    Label: 'S/4 Notification'},
+      {Value: reportStorageRef,     Label: 'Report Storage Reference'},
     ]
   },
 );
@@ -1506,24 +1506,24 @@ annotate AdminService.BridgeDefects with @(
     Label: 'General',
     Data: [
       {Value: bridge_ID,         Label: 'Bridge'},
-      {Value: defectId},
-      {Value: defectType},
-      {Value: defectDescription},
-      {Value: severity},
-      {Value: urgency},
-      {Value: remediationStatus},
-      {Value: photoReferences},
-      {Value: notes},
+      {Value: defectId,          Label: 'Defect ID'},
+      {Value: defectType,        Label: 'Defect Type'},
+      {Value: defectDescription, Label: 'Description'},
+      {Value: severity,          Label: 'Severity (1–4)'},
+      {Value: urgency,           Label: 'Urgency (1–4)'},
+      {Value: remediationStatus, Label: 'Remediation Status'},
+      {Value: photoReferences,   Label: 'Photo References'},
+      {Value: notes,             Label: 'Notes'},
     ]
   },
   UI.FieldGroup#DefectLocation: {
     Label: 'Location',
     Data: [
-      {Value: bridgeElement},
-      {Value: spanNumber},
-      {Value: pierNumber},
-      {Value: face},
-      {Value: position},
+      {Value: bridgeElement,     Label: 'Bridge Element'},
+      {Value: spanNumber,        Label: 'Span Number'},
+      {Value: pierNumber,        Label: 'Pier Number'},
+      {Value: face,              Label: 'Face'},
+      {Value: position,          Label: 'Position'},
       {Value: dimensionLengthMm, Label: 'Length (mm)'},
       {Value: dimensionWidthMm,  Label: 'Width (mm)'},
       {Value: dimensionDepthMm,  Label: 'Depth (mm)'},
@@ -1532,13 +1532,13 @@ annotate AdminService.BridgeDefects with @(
   UI.FieldGroup#DefectRemediation: {
     Label: 'Remediation',
     Data: [
-      {Value: estimatedRepairCost},
-      {Value: plannedRemediationDate},
-      {Value: actualRemediationDate},
-      {Value: remediationNotes},
-      {Value: s4NotificationId,  Label: 'S/4 Notification'},
-      {Value: s4OrderId,         Label: 'S/4 Order'},
-      {Value: s4SyncStatus,      Label: 'S/4 Sync Status'},
+      {Value: estimatedRepairCost,    Label: 'Estimated Repair Cost'},
+      {Value: plannedRemediationDate, Label: 'Planned Remediation Date'},
+      {Value: actualRemediationDate,  Label: 'Actual Remediation Date'},
+      {Value: remediationNotes,       Label: 'Remediation Notes'},
+      {Value: s4NotificationId,       Label: 'S/4 Notification'},
+      {Value: s4OrderId,              Label: 'S/4 Order'},
+      {Value: s4SyncStatus,           Label: 'S/4 Sync Status'},
     ]
   },
 );
@@ -1644,41 +1644,41 @@ annotate AdminService.BridgeRiskAssessments with @(
   UI.FieldGroup#RiskGeneral: {
     Label: 'Risk',
     Data: [
-      {Value: bridge_ID,              Label: 'Bridge'},
-      {Value: assessmentId},
-      {Value: assessmentDate},
-      {Value: assessmentCycle},
-      {Value: riskType},
-      {Value: riskDescription},
-      {Value: potentialConsequence},
-      {Value: likelihood},
-      {Value: likelihoodJustification},
-      {Value: consequence},
-      {Value: consequenceJustification},
-      {Value: inherentRiskScore},
-      {Value: inherentRiskLevel},
-      {Value: existingControls},
-      {Value: controlEffectiveness},
-      {Value: residualRiskScore},
-      {Value: residualRiskLevel},
-      {Value: residualRiskAcceptable},
-      {Value: assessor},
-      {Value: assessorTitle},
-      {Value: reviewDueDate},
-      {Value: lastReviewDate},
+      {Value: bridge_ID,               Label: 'Bridge'},
+      {Value: assessmentId,            Label: 'Assessment ID'},
+      {Value: assessmentDate,          Label: 'Assessment Date'},
+      {Value: assessmentCycle,         Label: 'Assessment Cycle'},
+      {Value: riskType,                Label: 'Risk Type'},
+      {Value: riskDescription,         Label: 'Risk Description'},
+      {Value: potentialConsequence,    Label: 'Potential Consequence'},
+      {Value: likelihood,              Label: 'Likelihood (1–5)'},
+      {Value: likelihoodJustification, Label: 'Likelihood Justification'},
+      {Value: consequence,             Label: 'Consequence (1–5)'},
+      {Value: consequenceJustification,Label: 'Consequence Justification'},
+      {Value: inherentRiskScore,       Label: 'Inherent Risk Score'},
+      {Value: inherentRiskLevel,       Label: 'Inherent Risk Level'},
+      {Value: existingControls,        Label: 'Existing Controls'},
+      {Value: controlEffectiveness,    Label: 'Control Effectiveness'},
+      {Value: residualRiskScore,       Label: 'Residual Risk Score'},
+      {Value: residualRiskLevel,       Label: 'Residual Risk Level'},
+      {Value: residualRiskAcceptable,  Label: 'Residual Risk Acceptable'},
+      {Value: assessor,                Label: 'Assessor'},
+      {Value: assessorTitle,           Label: 'Assessor Title'},
+      {Value: reviewDueDate,           Label: 'Review Due Date'},
+      {Value: lastReviewDate,          Label: 'Last Review Date'},
     ]
   },
   UI.FieldGroup#RiskTreatment: {
     Label: 'Treatment',
     Data: [
-      {Value: riskTreatmentStrategy},
-      {Value: treatmentActions},
-      {Value: treatmentResponsible},
-      {Value: treatmentDeadline},
-      {Value: treatmentBudget},
-      {Value: linkedInspectionId, Label: 'Linked Inspection'},
-      {Value: linkedDefectId,     Label: 'Linked Defect'},
-      {Value: notes},
+      {Value: riskTreatmentStrategy, Label: 'Treatment Strategy'},
+      {Value: treatmentActions,      Label: 'Treatment Actions'},
+      {Value: treatmentResponsible,  Label: 'Responsible Person'},
+      {Value: treatmentDeadline,     Label: 'Treatment Deadline'},
+      {Value: treatmentBudget,       Label: 'Treatment Budget'},
+      {Value: linkedInspectionId,    Label: 'Linked Inspection'},
+      {Value: linkedDefectId,        Label: 'Linked Defect'},
+      {Value: notes,                 Label: 'Notes'},
     ]
   },
 );
@@ -1742,21 +1742,21 @@ annotate AdminService.LoadRatingCertificates with @(
   UI.FieldGroup#LRCCertificate: {
     Label: 'Certificate',
     Data: [
-      {Value: bridge_ID,          Label: 'Bridge'},
-      {Value: certificateNumber},
-      {Value: certificateVersion},
-      {Value: status},
-      {Value: ratingStandard},
-      {Value: ratingLevel},
-      {Value: certifyingEngineer},
-      {Value: engineerQualification},
-      {Value: engineerLicenseNumber},
-      {Value: engineerOrganisation},
-      {Value: certificateIssueDate},
-      {Value: certificateExpiryDate},
-      {Value: nextReviewDate},
-      {Value: governingMember},
-      {Value: governingFailureMode},
+      {Value: bridge_ID,             Label: 'Bridge'},
+      {Value: certificateNumber,     Label: 'Certificate Number'},
+      {Value: certificateVersion,    Label: 'Version'},
+      {Value: status,                Label: 'Status'},
+      {Value: ratingStandard,        Label: 'Rating Standard'},
+      {Value: ratingLevel,           Label: 'Rating Level'},
+      {Value: certifyingEngineer,    Label: 'Certifying Engineer'},
+      {Value: engineerQualification, Label: 'Qualification'},
+      {Value: engineerLicenseNumber, Label: 'License Number'},
+      {Value: engineerOrganisation,  Label: 'Organisation'},
+      {Value: certificateIssueDate,  Label: 'Issue Date'},
+      {Value: certificateExpiryDate, Label: 'Expiry Date'},
+      {Value: nextReviewDate,        Label: 'Next Review Date'},
+      {Value: governingMember,       Label: 'Governing Member'},
+      {Value: governingFailureMode,  Label: 'Governing Failure Mode'},
     ]
   },
   UI.FieldGroup#LRCLoadFactors: {
@@ -1780,11 +1780,11 @@ annotate AdminService.LoadRatingCertificates with @(
   UI.FieldGroup#LRCFatigue: {
     Label: 'Fatigue Life (AS 5100.6 §13.5)',
     Data: [
-      {Value: fatigueSensitive},
+      {Value: fatigueSensitive,     Label: 'Fatigue Sensitive'},
       {Value: consumedLifePercent,  Label: 'Consumed Life (%)'},
       {Value: remainingLifeYears,   Label: 'Remaining Life (years)'},
-      {Value: detailCategory},
-      {Value: trafficSpectrumRef},
+      {Value: detailCategory,       Label: 'Detail Category'},
+      {Value: trafficSpectrumRef,   Label: 'Traffic Spectrum Reference'},
     ]
   },
   UI.FieldGroup#LRCSupersession: {
@@ -2063,26 +2063,26 @@ annotate AdminService.BridgeConditionSurveys with @(
   UI.FieldGroup#ConSurveyGeneral: {
     Label: 'General',
     Data: [
-      { Value: bridgeRef },
-      { Value: surveyRef },
-      { Value: surveyDate },
-      { Value: surveyType },
-      { Value: surveyedBy },
-      { Value: status },
-      { Value: active },
+      { Value: bridgeRef,  Label: 'Bridge' },
+      { Value: surveyRef,  Label: 'Survey Ref' },
+      { Value: surveyDate, Label: 'Survey Date' },
+      { Value: surveyType, Label: 'Survey Type' },
+      { Value: surveyedBy, Label: 'Surveyed By' },
+      { Value: status,     Label: 'Status' },
+      { Value: active,     Label: 'Active' },
     ]
   },
   UI.FieldGroup#ConSurveyRatings: {
     Label: 'Ratings',
     Data: [
-      { Value: conditionRating },
-      { Value: structuralRating },
-      { Value: overallGrade },
+      { Value: conditionRating,  Label: 'Condition Rating (1–10)' },
+      { Value: structuralRating, Label: 'Structural Rating (1–10)' },
+      { Value: overallGrade,     Label: 'Overall Grade' },
     ]
   },
   UI.FieldGroup#ConSurveyNotes: {
     Label: 'Notes',
-    Data: [ { Value: notes }, { Value: remarks } ]
+    Data: [ { Value: notes, Label: 'Notes' }, { Value: remarks, Label: 'Remarks' } ]
   },
   UI.Identification: [
     {
@@ -2193,28 +2193,28 @@ annotate AdminService.BridgeLoadRatings with @(
   UI.FieldGroup#LrtClass: {
     Label: 'Classification',
     Data: [
-      { Value: bridgeRef },
-      { Value: ratingRef },
-      { Value: vehicleClass },
-      { Value: ratingMethod },
-      { Value: status },
-      { Value: active },
+      { Value: bridgeRef,    Label: 'Bridge' },
+      { Value: ratingRef,    Label: 'Rating Ref' },
+      { Value: vehicleClass, Label: 'Vehicle Class' },
+      { Value: ratingMethod, Label: 'Rating Method' },
+      { Value: status,       Label: 'Status' },
+      { Value: active,       Label: 'Active' },
     ]
   },
   UI.FieldGroup#LrtLimits: {
     Label: 'Limits',
     Data: [
-      { Value: ratingFactor },
-      { Value: grossMassLimit },
+      { Value: ratingFactor,   Label: 'Rating Factor' },
+      { Value: grossMassLimit, Label: 'Gross Mass Limit (t)' },
     ]
   },
   UI.FieldGroup#LrtAssessment: {
     Label: 'Assessment',
     Data: [
-      { Value: assessedBy },
-      { Value: assessmentDate },
-      { Value: validTo },
-      { Value: remarks },
+      { Value: assessedBy,     Label: 'Assessed By' },
+      { Value: assessmentDate, Label: 'Assessment Date' },
+      { Value: validTo,        Label: 'Valid To' },
+      { Value: remarks,        Label: 'Remarks' },
     ]
   },
   UI.Identification: [
@@ -2310,34 +2310,34 @@ annotate AdminService.BridgePermits with @(
   UI.FieldGroup#PrmApplication: {
     Label: 'Application',
     Data: [
-      { Value: bridgeRef },
-      { Value: permitRef },
-      { Value: permitType },
-      { Value: applicantName },
-      { Value: appliedDate },
-      { Value: validFrom },
-      { Value: validTo },
-      { Value: status },
-      { Value: active },
+      { Value: bridgeRef,    Label: 'Bridge' },
+      { Value: permitRef,    Label: 'Permit Ref' },
+      { Value: permitType,   Label: 'Permit Type' },
+      { Value: applicantName,Label: 'Applicant Name' },
+      { Value: appliedDate,  Label: 'Applied Date' },
+      { Value: validFrom,    Label: 'Valid From' },
+      { Value: validTo,      Label: 'Valid To' },
+      { Value: status,       Label: 'Status' },
+      { Value: active,       Label: 'Active' },
     ]
   },
   UI.FieldGroup#PrmVehicle: {
     Label: 'Vehicle Dimensions',
     Data: [
-      { Value: vehicleClass },
-      { Value: grossMass },
-      { Value: height },
-      { Value: width },
-      { Value: length },
+      { Value: vehicleClass, Label: 'Vehicle Class' },
+      { Value: grossMass,    Label: 'Gross Mass (t)' },
+      { Value: height,       Label: 'Height (m)' },
+      { Value: width,        Label: 'Width (m)' },
+      { Value: length,       Label: 'Length (m)' },
     ]
   },
   UI.FieldGroup#PrmDecision: {
     Label: 'Decision',
     Data: [
-      { Value: decisionBy },
-      { Value: decisionDate },
-      { Value: conditionsOfApproval },
-      { Value: remarks },
+      { Value: decisionBy,           Label: 'Decision By' },
+      { Value: decisionDate,         Label: 'Decision Date' },
+      { Value: conditionsOfApproval, Label: 'Conditions of Approval' },
+      { Value: remarks,              Label: 'Remarks' },
     ]
   },
   UI.Identification: [
