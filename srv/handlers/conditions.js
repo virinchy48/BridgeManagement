@@ -101,4 +101,22 @@ module.exports = function registerConditionHandlers (srv, { logAudit }) {
             ID, survey.surveyRef, { status: 'Approved' }, 'Survey approved')
         return Object.assign({}, survey, { status: 'Approved' })
     })
+
+    srv.on('rejectSurvey', 'BridgeConditionSurveys', async req => {
+        const { ID } = req.params[0]
+        const db = await cds.connect.to('db')
+        const survey = await db.run(
+            SELECT.one.from('bridge.management.BridgeConditionSurveys').where({ ID })
+        )
+        if (!survey) return req.error(404, 'Condition survey not found')
+        if (survey.status !== 'Submitted')
+            return req.error(422, `Cannot reject survey in status "${survey.status}" — only Submitted surveys can be rejected`)
+        await db.run(
+            UPDATE('bridge.management.BridgeConditionSurveys')
+                .set({ status: 'Rejected' }).where({ ID })
+        )
+        await logAudit(db, req, 'ACTION', 'BridgeConditionSurvey',
+            ID, survey.surveyRef, { status: 'Rejected' }, 'Survey rejected')
+        return Object.assign({}, survey, { status: 'Rejected' })
+    })
 }

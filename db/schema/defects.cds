@@ -1,6 +1,7 @@
 namespace bridge.management;
 using { cuid, managed } from '@sap/cds/common';
 using { bridge.management.Bridges } from './bridge-entity';
+using { bridge.management.BridgeElements } from './elements';
 
 // Inspection capture record — S/4 EAM owns scheduling; this captures the event data
 entity BridgeInspections : cuid, managed {
@@ -40,11 +41,14 @@ entity BridgeDefects : cuid, managed {
     bridge       : Association to Bridges      @mandatory;
     inspection   : Association to BridgeInspections;
     defectId     : String(30);
+    deteriorationMechanism : String(60);     // Corrosion | Fatigue | Impact | Scour | Overload | Chemical | Settlement | Aging
+    defectCode       : String(20);           // SIMS element defect code (e.g. BS01, SW23)
 
     defectType   : String(40)  @mandatory;
     defectDescription : String(500) @mandatory;
 
-    bridgeElement : String(40) @mandatory;
+    bridgeElement : String(40);
+    bridgeElementRef : Association to BridgeElements;  // optional VH-driven link to structured element
     spanNumber    : Integer;
     pierNumber    : Integer;
     face          : String(60);
@@ -56,7 +60,7 @@ entity BridgeDefects : cuid, managed {
     dimensionLengthMm : Decimal(8,2);
     dimensionWidthMm  : Decimal(8,2);
     dimensionDepthMm  : Decimal(8,2);
-    photoReferences   : String(1000);
+    photoReferences   : LargeString;
 
     remediationStatus      : String(20) default 'Open';
     estimatedRepairCost    : Decimal(12,2);
@@ -68,6 +72,8 @@ entity BridgeDefects : cuid, managed {
     s4NotificationId : String(40);
     s4OrderId        : String(40);
     s4SyncStatus     : String(20) default 'NOT_SYNCED';
+    s4SyncDate       : Timestamp;            // Last successful sync to S/4 HANA
+    s4SyncError      : String(500);          // Last sync error message
 
     notes   : LargeString;
     active  : Boolean default true;

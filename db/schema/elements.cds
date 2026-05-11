@@ -44,5 +44,5 @@ annotate BridgeElements with @(cds.persistence.indexes: [
 ]);
 
 extend entity Bridges with {
-    elements : Composition of many BridgeElements on elements.bridge = $self;
+    elements : Association to many BridgeElements on elements.bridge = $self;
 }

@@ -39,6 +39,10 @@ entity BridgeRiskAssessments : cuid, managed {
     assessorTitle        : String(60);
     reviewDueDate        : Date;
     lastReviewDate       : Date;
+    riskOwner            : String(111);       // Accountable risk owner (person/role)
+    s4MaintenancePlan    : String(20);        // SAP PM maintenance plan reference
+    s4FunctionalLocation : String(40);        // SAP PM functional location
+    monitoringFrequency  : String(20);        // Monthly | Quarterly | Annual | Biennial
 
     linkedInspection     : Association to BridgeInspections;
     linkedDefect         : Association to BridgeDefects;

@@ -37,6 +37,7 @@ extend entity Bridges with {
                        on scourAssessments.bridge = $self;
       documents    : Composition of many BridgeDocuments
                        on documents.bridge = $self;
+      maintenanceClass     : String(20);         // TfNSW maintenance tier (A/B/C/D)
 }
 
 /** Hierarchically organized Restrictions */
@@ -85,6 +86,10 @@ entity Restrictions : cuid, managed {
   loadLimitOrderExpiry : Date;         // Date LLO expires
   // ── NHVR Escort requirements ─────────────────────────────────────────────
   pilotVehicleCount   : Integer;       // Number of pilot/escort vehicles required (NHVR-HVNL)
+  reviewDueDate        : Date;               // When the restriction must next be reviewed
+  legalEffectiveDate   : Date;               // Date restriction has legal force (gazette effective date)
+  signRequirements     : String(255);        // AS 1742.10 sign type and placement notes
+  virtual reviewCriticality : Integer;       // 1=Overdue, 2=Due within 30d, 3=OK — computed in after READ
   parent   : Association to Restrictions;
   children : Composition of many Restrictions
                on children.parent = $self;
@@ -526,6 +531,11 @@ entity BridgeConditionSurveys : cuid, managed, ChangeTracked {
   surveyDate       : Date @mandatory;
   surveyType       : String(40);                             // Routine | Detailed | Principal | Special
   surveyedBy       : String(111);
+  inspectorAccreditationLevel : String(20);  // Austroads Level 1 | Level 2 | Level 3
+  accessMethod         : String(40);         // Visual | Under-bridge unit | Rope access | Diving
+  nextSurveyRecommended: Date;
+  estimatedRehabCost   : Decimal(12,2);      // AUD
+  actionPlan           : LargeString;
   conditionRating  : Integer @assert.range: [1,10];
   structuralRating : Integer @assert.range: [1,10];
   overallGrade     : String(20);                             // Good | Satisfactory | Poor | Critical
@@ -591,6 +601,12 @@ entity BridgePermits : cuid, managed, ChangeTracked {
   decisionBy       : String(111);
   decisionDate     : Date;
   conditionsOfApproval : LargeString;
+  permitCategory       : String(30);         // B-Double | Road Train | PBS | HML | Mass Managed
+  applicantABN         : String(11);         // Australian Business Number (11 digits)
+  applicantEmail       : String(255);
+  applicantPhone       : String(20);
+  vehicleDescription   : LargeString;
+  routeDescription     : LargeString;
 }
 
 extend entity Bridges with {

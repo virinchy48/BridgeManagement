@@ -392,6 +392,8 @@ annotate AdminService.Bridges with @(
     FieldGroup#SourceInfo: {
       Label: 'Source & Reference',
       Data: [
+        {Value: maintenanceClass,         Label: 'Maintenance Class'},
+        {Value: lifecycleStage,           Label: 'Lifecycle Stage'},
         {Value: dataSource,               Label: 'Data Source'},
         {Value: sourceReferenceUrl,       Label: 'Source Reference URL'},
         {Value: openDataReference,        Label: 'Open Data Reference'},
@@ -672,6 +674,8 @@ annotate AdminService.Bridges with {
   closureDate           @title: 'Closure Date';
   closureEndDate        @title: 'Expected Reopening Date';
   closureReason         @title: 'Closure Reason'  @UI.MultiLineText;
+  maintenanceClass      @title: 'Maintenance Class';
+  lifecycleStage        @title: 'Lifecycle Stage';
 };
 
 // ── Inspection workflow output fields — READ ONLY ──────────────────────────
@@ -1745,6 +1749,11 @@ annotate AdminService.BridgeDefects with {
     }
   );
   defectId                @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Defect ID (auto-generated)';
+  deteriorationMechanism  @title: 'Deterioration Mechanism';
+  defectCode              @title: 'SIMS Defect Code';
+  bridgeElementRef        @title: 'Linked Element';
+  s4SyncDate              @title: 'S/4 Sync Date'    @UI.Hidden;
+  s4SyncError             @title: 'S/4 Sync Error'   @UI.Hidden;
   defectType              @title: 'Defect Type';
   defectDescription       @title: 'Description'              @UI.MultiLineText;
   bridgeElement           @title: 'Bridge Element';
@@ -1785,6 +1794,7 @@ annotate AdminService.BridgeDefects with @(
     {Value: urgency,                   Label: 'Urgency (1–4)'},
     {Value: remediationStatus,         Label: 'Status'},
     {Value: estimatedRepairCost,       Label: 'Est. Cost ($)'},
+    {Value: photoReferences,           Label: 'Photo Refs'},
     {Value: s4SyncStatus,              Label: 'S/4 Sync'},
   ],
   UI.HeaderInfo: {
@@ -1807,6 +1817,8 @@ annotate AdminService.BridgeDefects with @(
       {Value: inspection_ID,         Label: 'Linked Inspection (optional)'},
       {Value: defectId,              Label: 'Defect ID'},
       {Value: defectType,            Label: 'Defect Type'},
+      {Value: deteriorationMechanism, Label: 'Deterioration Mechanism'},
+      {Value: defectCode,            Label: 'SIMS Defect Code'},
       {Value: defectDescription,     Label: 'Description'},
       {Value: severity,              Label: 'Severity (1–4)'},
       {Value: urgency,               Label: 'Urgency (1–4)'},
@@ -1861,6 +1873,22 @@ annotate AdminService.BridgeDefects with @(
 annotate AdminService.BridgeDefects with actions {
   deactivate @Common.SideEffects: { TargetProperties: ['active'] };
   reactivate @Common.SideEffects: { TargetProperties: ['active'] };
+};
+
+annotate AdminService.BridgeDefects with {
+  bridgeElementRef @(
+    Common.Text: bridgeElementRef.elementName,
+    Common.TextArrangement: #TextOnly,
+    Common.ValueList: {
+      CollectionPath: 'BridgeElements',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridgeElementRef_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly',                                         ValueListProperty: 'elementId' },
+        { $Type: 'Common.ValueListParameterDisplayOnly',                                         ValueListProperty: 'elementType' },
+        { $Type: 'Common.ValueListParameterDisplayOnly',                                         ValueListProperty: 'elementName' }
+      ]
+    }
+  );
 };
 
 // ── BridgeElements — expert council full treatment ────────────────────────
@@ -1992,6 +2020,13 @@ annotate AdminService.BridgeElements with @(
 
 // ── BridgeRiskAssessments — standalone + Bridge Details ─────────────────
 annotate AdminService.BridgeRiskAssessments with {
+  riskOwner            @title: 'Risk Owner';
+  s4MaintenancePlan    @title: 'S/4 Maintenance Plan'    @UI.Hidden;
+  s4FunctionalLocation @title: 'S/4 Functional Location' @UI.Hidden;
+  monitoringFrequency  @title: 'Monitoring Frequency';
+};
+
+annotate AdminService.BridgeRiskAssessments with {
   bridge @(
     Common.Text            : bridge.bridgeName,
     Common.TextArrangement : #TextOnly,
@@ -2112,9 +2147,11 @@ annotate AdminService.BridgeRiskAssessments with @(
       {Value: riskTreatmentStrategy, Label: 'Treatment Strategy'},
       {Value: treatmentActions,      Label: 'Treatment Actions'},
       {Value: treatmentResponsible,  Label: 'Responsible Officer'},
+      {Value: riskOwner,             Label: 'Risk Owner'},
+      {Value: monitoringFrequency,   Label: 'Monitoring Frequency'},
       {Value: treatmentDeadline,     Label: 'Treatment Deadline'},
       {Value: treatmentBudget,       Label: 'Treatment Budget ($)'},
-      {Value: linkedInspection.inspectionRef,  Label: 'Linked Inspection'},
+      {Value: linkedInspection.inspectionRef, Label: 'Linked Inspection'},
       {Value: linkedDefect.defectId,          Label: 'Linked Defect'},
       {Value: notes,                 Label: 'Notes'},
     ]
@@ -2143,6 +2180,12 @@ annotate AdminService.BridgeRiskAssessments with actions {
 };
 
 // ── LoadRatingCertificates — standalone + Bridge Details ────────────────
+annotate AdminService.LoadRatingCertificates with {
+  ratingBasis          @title: 'Rating Basis';
+  jurisdictionApproval @title: 'Jurisdiction Approval Reference';
+  approvalDate         @title: 'Approval Date';
+};
+
 annotate AdminService.LoadRatingCertificates with {
   bridge @(
     Common.Text            : bridge.bridgeName,
@@ -2254,6 +2297,9 @@ annotate AdminService.LoadRatingCertificates with @(
       {Value: previousCertId,         Label: 'Previous Certificate ID'},
       {Value: supersessionReason,     Label: 'Supersession Reason'},
       {Value: conditions,             Label: 'Conditions of Rating'},
+      {Value: ratingBasis,            Label: 'Rating Basis'},
+      {Value: jurisdictionApproval,   Label: 'Jurisdiction Approval Reference'},
+      {Value: approvalDate,           Label: 'Approval Date'},
       {Value: reportStorageRef,       Label: 'Report Storage Reference'},
       {Value: notes,                  Label: 'Notes'},
     ]
@@ -2261,6 +2307,14 @@ annotate AdminService.LoadRatingCertificates with @(
 );
 
 // ── NhvrRouteAssessments — standalone + Bridge Details ──────────────────
+annotate AdminService.NhvrRouteAssessments with {
+  iapConditions              @title: 'IAP Conditions';
+  structuralAnalysisRequired @title: 'Structural Analysis Required';
+  concessionalMass           @title: 'Concessional Mass Scheme';
+  lastReviewDate             @title: 'Last Review Date';
+  reviewFrequencyMonths      @title: 'Review Frequency (months)';
+};
+
 annotate AdminService.NhvrRouteAssessments with {
   bridge @(
     Common.Text            : bridge.bridgeName,
@@ -2336,9 +2390,14 @@ annotate AdminService.NhvrRouteAssessments with @(
   UI.FieldGroup#NhvrConditions: {
     Label: 'Approved Vehicle Classes & Conditions',
     Data: [
-      { Value: approvedVehicleClasses, Label: 'Approved Vehicle Classes' },
-      { Value: conditions,             Label: 'Conditions of Approval' },
-      { Value: notes,                  Label: 'Notes' },
+      { Value: approvedVehicleClasses,   Label: 'Approved Vehicle Classes' },
+      { Value: conditions,               Label: 'Conditions of Approval' },
+      { Value: iapConditions,            Label: 'IAP Conditions' },
+      { Value: structuralAnalysisRequired, Label: 'Structural Analysis Required' },
+      { Value: concessionalMass,         Label: 'Concessional Mass Scheme' },
+      { Value: lastReviewDate,           Label: 'Last Review Date' },
+      { Value: reviewFrequencyMonths,    Label: 'Review Frequency (months)' },
+      { Value: notes,                    Label: 'Notes' },
     ]
   },
 );
@@ -2936,13 +2995,18 @@ annotate AdminService.BridgeConditionSurveys with @(
   UI.FieldGroup#ConSurveyGeneral: {
     Label: 'General',
     Data: [
-      { Value: bridgeRef,  Label: 'Bridge' },
-      { Value: surveyRef,  Label: 'Survey Ref' },
-      { Value: surveyDate, Label: 'Survey Date' },
-      { Value: surveyType, Label: 'Survey Type' },
-      { Value: surveyedBy, Label: 'Surveyed By' },
-      { Value: status,     Label: 'Status' },
-      { Value: active,     Label: 'Active' },
+      { Value: bridgeRef,                  Label: 'Bridge' },
+      { Value: surveyRef,                  Label: 'Survey Ref' },
+      { Value: surveyDate,                 Label: 'Survey Date' },
+      { Value: surveyType,                 Label: 'Survey Type' },
+      { Value: surveyedBy,                 Label: 'Surveyed By' },
+      { Value: inspectorAccreditationLevel, Label: 'Inspector Accreditation Level' },
+      { Value: accessMethod,               Label: 'Access Method' },
+      { Value: nextSurveyRecommended,      Label: 'Next Survey Recommended' },
+      { Value: estimatedRehabCost,         Label: 'Estimated Rehab Cost (AUD)' },
+      { Value: actionPlan,                 Label: 'Action Plan' },
+      { Value: status,                     Label: 'Status' },
+      { Value: active,                     Label: 'Active' },
     ]
   },
   UI.FieldGroup#ConSurveyRatings: {
@@ -2970,6 +3034,13 @@ annotate AdminService.BridgeConditionSurveys with @(
       Action     : 'AdminService.approveSurvey',
       Label      : 'Approve',
       Criticality: #Positive,
+      ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Submitted'] } }
+    },
+    {
+      $Type      : 'UI.DataFieldForAction',
+      Action     : 'AdminService.rejectSurvey',
+      Label      : 'Reject Survey',
+      Criticality: #Negative,
       ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'status' }, 'Submitted'] } }
     },
     {
@@ -3009,6 +3080,11 @@ annotate AdminService.BridgeConditionSurveys with {
     }
   ) @title: 'Bridge';
   surveyDate @Common.FieldControl: #Mandatory  @title: 'Survey Date';
+  inspectorAccreditationLevel @title: 'Inspector Accreditation Level';
+  accessMethod                @title: 'Access Method';
+  nextSurveyRecommended       @title: 'Next Survey Recommended';
+  estimatedRehabCost          @title: 'Estimated Rehab Cost (AUD)';
+  actionPlan                  @title: 'Action Plan'  @UI.MultiLineText;
   surveyType @title: 'Survey Type';
   surveyedBy @title: 'Surveyed By';
   conditionRating @title: 'Condition Rating (1–10)'  @Common.QuickInfo: 'Valid range: 1 – 10';
@@ -3025,6 +3101,7 @@ annotate AdminService.BridgeConditionSurveys with actions {
   reactivate      @Common.SideEffects: { TargetProperties: ['active'] };
   submitForReview @Common.SideEffects: { TargetProperties: ['status'] };
   approveSurvey   @Common.SideEffects: { TargetProperties: ['status'] };
+  rejectSurvey    @Common.SideEffects: { TargetProperties: ['status'] };
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -3188,25 +3265,31 @@ annotate AdminService.BridgePermits with @(
   UI.FieldGroup#PrmApplication: {
     Label: 'Application',
     Data: [
-      { Value: bridgeRef,    Label: 'Bridge' },
-      { Value: permitRef,    Label: 'Permit Ref' },
-      { Value: permitType,   Label: 'Permit Type' },
-      { Value: applicantName,Label: 'Applicant Name' },
-      { Value: appliedDate,  Label: 'Applied Date' },
-      { Value: validFrom,    Label: 'Valid From' },
-      { Value: validTo,      Label: 'Valid To' },
-      { Value: status,       Label: 'Status' },
-      { Value: active,       Label: 'Active' },
+      { Value: bridgeRef,         Label: 'Bridge' },
+      { Value: permitRef,         Label: 'Permit Ref' },
+      { Value: permitType,        Label: 'Permit Type' },
+      { Value: permitCategory,    Label: 'Permit Category' },
+      { Value: applicantName,     Label: 'Applicant Name' },
+      { Value: applicantABN,      Label: 'Applicant ABN' },
+      { Value: applicantEmail,    Label: 'Applicant Email' },
+      { Value: applicantPhone,    Label: 'Applicant Phone' },
+      { Value: appliedDate,       Label: 'Applied Date' },
+      { Value: validFrom,         Label: 'Valid From' },
+      { Value: validTo,           Label: 'Valid To' },
+      { Value: status,            Label: 'Status' },
+      { Value: active,            Label: 'Active' },
     ]
   },
   UI.FieldGroup#PrmVehicle: {
     Label: 'Vehicle Dimensions',
     Data: [
-      { Value: vehicleClass, Label: 'Vehicle Class' },
-      { Value: grossMass,    Label: 'Gross Mass (t)' },
-      { Value: height,       Label: 'Height (m)' },
-      { Value: width,        Label: 'Width (m)' },
-      { Value: length,       Label: 'Length (m)' },
+      { Value: vehicleClass,      Label: 'Vehicle Class' },
+      { Value: vehicleDescription, Label: 'Vehicle Description' },
+      { Value: grossMass,         Label: 'Gross Mass (t)' },
+      { Value: height,            Label: 'Height (m)' },
+      { Value: width,             Label: 'Width (m)' },
+      { Value: length,            Label: 'Length (m)' },
+      { Value: routeDescription,  Label: 'Route Description' },
     ]
   },
   UI.FieldGroup#PrmDecision: {
@@ -3291,6 +3374,12 @@ annotate AdminService.BridgePermits with {
   axleConfiguration     @title: 'Axle Configuration';
   escortRequired        @title: 'Escort Required';
   pilotVehicleCount     @title: 'Pilot Vehicle Count';
+  permitCategory        @title: 'Permit Category';
+  applicantABN          @title: 'Applicant ABN';
+  applicantEmail        @title: 'Applicant Email';
+  applicantPhone        @title: 'Applicant Phone';
+  vehicleDescription    @title: 'Vehicle Description'  @UI.MultiLineText;
+  routeDescription      @title: 'Route Description'    @UI.MultiLineText;
 };
 
 annotate AdminService.BridgePermits with actions {
