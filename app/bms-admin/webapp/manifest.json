@@ -67,7 +67,8 @@
         { "pattern": "attribute-report",  "name": "attributeReport",  "target": "attributeReport" },
         { "pattern": "gis-config",        "name": "gisConfig",        "target": "gisConfig" },
 { "pattern": "api-docs",         "name": "apiDocs",         "target": "apiDocs" },
-        { "pattern": "feature-flags",    "name": "featureFlags",    "target": "featureFlags" }
+        { "pattern": "feature-flags",    "name": "featureFlags",    "target": "featureFlags" },
+        { "pattern": "demo-data",         "name": "demoData",         "target": "demoData" }
       ],
       "targets": {
         "changeDocuments": { "viewName": "ChangeDocuments",  "viewLevel": 1 },
@@ -79,7 +80,8 @@
         "attributeReport": { "viewName": "AttributeReport",  "viewLevel": 1 },
         "gisConfig":       { "viewName": "GisConfig",        "viewLevel": 1 },
 "apiDocs":         { "viewName": "ApiDocs",          "viewLevel": 1 },
-        "featureFlags":    { "viewName": "FeatureFlags",      "viewLevel": 1 }
+        "featureFlags":    { "viewName": "FeatureFlags",      "viewLevel": 1 },
+        "demoData":        { "viewName": "DemoData",          "viewLevel": 1 }
       }
     },
     "contentDensities": { "compact": true, "cozy": true }

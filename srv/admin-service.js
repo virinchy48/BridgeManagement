@@ -2,6 +2,7 @@ const cds = require('@sap/cds')
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 const { computeBhiBsi } = require('./bhi-bsi-engine')
 const { isFeatureEnabled } = require('./feature-flags')
+const { activateDemoData, clearDemoData } = require('./demo-data')
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
@@ -1790,6 +1791,18 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     }
 
     return { snapshotDate: today, statesProcessed, message: `KPI snapshot refreshed for ${statesProcessed} states` }
+  })
+
+  this.on('loadDemoData', async req => {
+    const db = await cds.connect.to('db')
+    const loaded = await activateDemoData(db)
+    return { loaded, message: `Demo data activated — ${loaded} record(s) inserted across all tiles.` }
+  })
+
+  this.on('clearDemoData', async req => {
+    const db = await cds.connect.to('db')
+    const cleared = await clearDemoData(db)
+    return { cleared, message: `Demo data cleared — ${cleared} record(s) removed.` }
   })
 
   return super.init()

@@ -176,4 +176,10 @@ service AdminService {
 
   @requires: ['admin', 'manage']
   action refreshKPISnapshots() returns { snapshotDate: Date; statesProcessed: Integer; message: String };
+
+  @requires: ['admin', 'manage']
+  action loadDemoData()  returns { loaded: Integer; message: String };
+
+  @requires: ['admin', 'manage']
+  action clearDemoData() returns { cleared: Integer; message: String };
 }

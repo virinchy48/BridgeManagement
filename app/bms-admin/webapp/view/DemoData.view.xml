@@ -1,0 +1,95 @@
+<mvc:View
+  controllerName="BridgeManagement.bmsadmin.controller.DemoData"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:l="sap.ui.layout"
+  displayBlock="true">
+
+  <Page id="demoDataPage" showHeader="true">
+
+    <customHeader>
+      <Bar>
+        <contentLeft>
+          <Title text="Demo Data" level="H3" />
+        </contentLeft>
+      </Bar>
+    </customHeader>
+
+    <content>
+      <VBox class="sapUiMediumMargin">
+
+        <MessageStrip
+          text="Demo data populates all launchpad tiles with realistic sample records (3 demo bridges: NSW, VIC, QLD). All demo records are prefixed with DEMO- and can be removed at any time."
+          type="Information" showCloseButton="false" class="sapUiSmallMarginBottom" />
+
+        <!-- Status panel -->
+        <Panel id="statusPanel" headerText="Current Status" class="sapUiSmallMarginBottom" expandable="false">
+          <content>
+            <HBox alignItems="Center" class="sapUiSmallMargin">
+              <ObjectStatus id="demoStatus" text="Checking…" state="None" class="sapUiSmallMarginEnd" />
+              <Button text="Refresh Status" type="Transparent" icon="sap-icon://refresh"
+                      press=".onCheckStatus" />
+            </HBox>
+          </content>
+        </Panel>
+
+        <!-- Action panel -->
+        <Panel headerText="Actions" class="sapUiSmallMarginBottom" expandable="false">
+          <content>
+            <VBox class="sapUiSmallMargin">
+
+              <HBox alignItems="Center" class="sapUiSmallMarginBottom">
+                <VBox class="sapUiSmallMarginEnd" width="60%">
+                  <Title text="Activate Demo Data" titleStyle="H5" />
+                  <Text text="Inserts 3 demo bridges (NSW-DEMO-001, VIC-DEMO-001, QLD-DEMO-001) with capacity, inspections, defects, condition surveys, load ratings, risk assessments, NHVR assessments, permits, scour assessments, alerts and AssetIQ scores. Already-existing demo records are skipped — safe to run multiple times."
+                        wrapping="true" class="sapUiTinyMarginTop" />
+                </VBox>
+                <Button id="activateBtn" text="Activate Demo Data" type="Success"
+                        icon="sap-icon://play" press=".onActivateDemoData"
+                        class="sapUiSmallMarginBegin" />
+              </HBox>
+
+              <HBox alignItems="Center">
+                <VBox class="sapUiSmallMarginEnd" width="60%">
+                  <Title text="Clear Demo Data" titleStyle="H5" />
+                  <Text text="Permanently deletes all records whose bridge ID starts with DEMO-. This includes all child records across every tile. A confirmation dialog will appear before deletion."
+                        wrapping="true" class="sapUiTinyMarginTop" />
+                </VBox>
+                <Button id="clearBtn" text="Clear Demo Data" type="Reject"
+                        icon="sap-icon://delete" press=".onClearDemoData"
+                        class="sapUiSmallMarginBegin" />
+              </HBox>
+
+            </VBox>
+          </content>
+        </Panel>
+
+        <!-- What gets created panel -->
+        <Panel headerText="Records Created Per Demo Bridge" expandable="true" expanded="false">
+          <content>
+            <List class="sapUiSmallMargin" noDataText="No items">
+              <items>
+                <StandardListItem title="Bridge"                   info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="Bridge Capacity"          info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="Bridge Inspections"       info="2 per demo bridge" infoState="Success" />
+                <StandardListItem title="Bridge Defects"           info="2 per demo bridge" infoState="Success" />
+                <StandardListItem title="Condition Survey"         info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="Load Rating"              info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="Risk Assessment"          info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="NHVR Route Assessment"    info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="Load Rating Certificate"  info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="Bridge Permit"            info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="Scour Assessment"         info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="AssetIQ Score"            info="1 per demo bridge" infoState="Success" />
+                <StandardListItem title="Alerts &amp; Notifications" info="2 total (expiry + overdue)" infoState="Warning" />
+              </items>
+            </List>
+          </content>
+        </Panel>
+
+      </VBox>
+    </content>
+
+  </Page>
+
+</mvc:View>
