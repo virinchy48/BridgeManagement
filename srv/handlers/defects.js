@@ -4,10 +4,6 @@ module.exports = function registerDefectHandlers (srv) {
 
     srv.before('CREATE', 'BridgeDefects', req => {
         const d = req.data
-        if (!d.inspection_ID) {
-            req.error(422, 'Defects must be created through an Inspection record. ' +
-                'Open an Inspection and add defects from the Defects tab.')
-        }
         if (!d.defectId) {
             req.error(400, 'defectId is required')
         }

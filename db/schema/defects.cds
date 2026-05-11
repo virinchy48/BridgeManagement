@@ -26,14 +26,12 @@ entity BridgeInspections : cuid, managed {
 
     reportStorageRef             : String(500);
     inspectionNotes              : LargeString;
-    defects                      : Composition of many BridgeDefects
-                                   on defects.inspection = $self;
 }
 
-// Defect capture — links optionally to S/4 notification when EAM is connected
+// Defect capture — inspection link is optional (standalone defects allowed)
 entity BridgeDefects : cuid, managed {
     bridge       : Association to Bridges      @mandatory;
-    inspection   : Association to BridgeInspections @mandatory;
+    inspection   : Association to BridgeInspections;
     defectId     : String(30)  @mandatory;
 
     defectType   : String(40)  @mandatory;

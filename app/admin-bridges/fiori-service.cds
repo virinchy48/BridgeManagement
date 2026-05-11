@@ -93,210 +93,296 @@ annotate AdminService.Bridges with @(
     },
 
     Facets: [
-      // ── S1: Bridge Identity Hub ──────────────────────────────────────────
-      // Core identification only — everything else is in sub-domain tiles
+      // ── T1: Executive Summary ─────────────────────────────────────────────
+      // Narrative + editable manager-set fields only — header KPI chips already
+      // show conditionRating / postingStatus / BSI / restrictions / lastInspected
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Bridge Identity',
+        Label : 'Executive Summary',
+        ID    : 'ExecutiveSummary',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Bridge Narrative',  Target: '@UI.FieldGroup#ExecutiveOverview'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Current Status',    Target: '@UI.FieldGroup#CurrentStatus'},
+        ]
+      },
+      // ── T2: Location & Ownership ─────────────────────────────────────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Location & Ownership',
         ID    : 'BridgeIdentity',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Asset Identity',     Target: '@UI.FieldGroup#AssetIdentity'},
           {$Type: 'UI.ReferenceFacet', Label: 'Geographic Location', Target: '@UI.FieldGroup#GeoLocation'},
           {$Type: 'UI.ReferenceFacet', Label: 'Ownership',           Target: '@UI.FieldGroup#Ownership'},
         ]
       },
-      // ── S3: Documents & Map (custom fragments anchored via manifest.json) ─
+      // ── T3: Physical Structure ────────────────────────────────────────────
       {
         $Type : 'UI.CollectionFacet',
-        Label : 'Documents & Map',
-        ID    : 'DocumentsMap',
-        Facets: []
+        Label : 'Physical Structure',
+        ID    : 'PhysicalStructure',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Structure',            Target: '@UI.FieldGroup#Structure'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Dimensions',           Target: '@UI.FieldGroup#Dimensions'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Environmental Context', Target: '@UI.FieldGroup#SiteContext'},
+        ]
       },
-      // ── S4: Administration ───────────────────────────────────────────────
+      // ── T4: Condition & Inspection ────────────────────────────────────────
+      // Read-only section = updated by Inspect Now workflow only
+      // Editable section = manager-set inspection configuration
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Condition & Inspection',
+        ID    : 'ConditionInspection',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Last Inspection Results',   Target: '@UI.FieldGroup#LastInspectionResults'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Risk & Resilience',         Target: '@UI.FieldGroup#RiskResilience'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Inspection Configuration',  Target: '@UI.FieldGroup#InspectionConfig'},
+        ]
+      },
+      // ── T5: Traffic & NHVR ───────────────────────────────────────────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Traffic & NHVR',
+        ID    : 'TrafficNHVR',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Traffic Data',         Target: '@UI.FieldGroup#TrafficData'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Route Classification',  Target: '@UI.FieldGroup#RouteClass'},
+          {$Type: 'UI.ReferenceFacet', Label: 'NHVR Approvals',       Target: '@UI.FieldGroup#NHVRApprovals'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Posting & Gazette',    Target: '@UI.FieldGroup#PostingGazette'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Closure',              Target: '@UI.FieldGroup#Closure'},
+        ]
+      },
+      // ── T6: Custom Attributes ─────────────────────────────────────────────
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Custom Attributes',
+        ID    : 'CustomAttributes',
+        Facets: [
+          {$Type: 'UI.ReferenceFacet', Label: 'Attributes', Target: 'attributes/@UI.LineItem'},
+        ]
+      },
+      // ── T7: Administration ────────────────────────────────────────────────
       {
         $Type : 'UI.CollectionFacet',
         Label : 'Administration',
         ID    : 'Administration',
         Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Source Information', Target: '@UI.FieldGroup#SourceInfo'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Audit Trail',        Target: '@UI.FieldGroup#AuditTrail'},
-          {$Type: 'UI.ReferenceFacet', Label: 'Bridge Geometry',    Target: '@UI.FieldGroup#BridgeGeometry'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Source & Reference',  Target: '@UI.FieldGroup#SourceInfo'},
+          {$Type: 'UI.ReferenceFacet', Label: 'System Information',  Target: '@UI.FieldGroup#AuditTrail'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Bridge Geometry',     Target: '@UI.FieldGroup#BridgeGeometry'},
         ]
       },
     ],
 
     // ── FieldGroups ─────────────────────────────────────────────────────────
 
-    // Tab 1 — Core Identity & Location
-    FieldGroup#AssetIdentity: {
+    // ── T1: Executive Summary ────────────────────────────────────────────────
+    // Header KPI chips already show conditionRating/BSI/postingStatus/restrictions/lastInspected
+    // T1 focuses on the narrative and manager-set status signals only
+    FieldGroup#ExecutiveOverview: {
+      Label: 'Bridge Narrative',
       Data: [
-        {Value: bridgeId},      // server-generated and read-only
-        {Value: bridgeName},
-        {Value: assetClass},
-        {Value: status},        // @Common.FieldControl #ReadOnly — lifecycle managed by actions
+        {Value: assetClass,       Label: 'Asset Class'},
+        {Value: highPriorityAsset, Label: 'High Priority Asset'},
+        {Value: descr,             Label: 'Executive Summary / Description'},
       ]
     },
-    FieldGroup#GeoLocation: {
+    FieldGroup#CurrentStatus: {
+      Label: 'Current Status',
       Data: [
-        {Value: state},
-        {Value: region},
-        {Value: lga},
-        {Value: route},
-        {Value: routeNumber},
-        {Value: latitude},
-        {Value: longitude},
-        {Value: location},
+        {Value: conditionTrend,       Label: 'Condition Trend'},
+        {Value: nextInspectionDue,    Label: 'Next Inspection Due'},
+        {Value: postingStatus,        Label: 'Posting Status'},
+        {Value: postingStatusReason,  Label: 'Posting Status Reason'},
+      ]
+    },
+
+    // ── T2: Location & Ownership ─────────────────────────────────────────────
+    // AssetIdentity sub-group removed — bridgeId/bridgeName already in ObjectPage title
+    FieldGroup#GeoLocation: {
+      Label: 'Geographic Location',
+      Data: [
+        {Value: route,        Label: 'Route'},
+        {Value: routeNumber,  Label: 'Route Number'},
+        {Value: state,        Label: 'State'},
+        {Value: region,       Label: 'Region'},
+        {Value: lga,          Label: 'Local Government Area (LGA)'},
+        {Value: precinct,     Label: 'Precinct / Zone'},
+        {Value: locality,     Label: 'Locality / Suburb'},
+        {Value: location,     Label: 'Location Description (free text)'},
+        {Value: latitude,     Label: 'Latitude (decimal degrees)'},
+        {Value: longitude,    Label: 'Longitude (decimal degrees)'},
       ]
     },
     FieldGroup#Ownership: {
+      Label: 'Ownership',
       Data: [
-        {Value: assetOwner},
-        {Value: managingAuthority},
-        {Value: descr},
+        {Value: assetOwner,        Label: 'Legal Owner'},
+        {Value: managingAuthority, Label: 'Maintaining Authority'},
+        {Value: status,            Label: 'Asset Status'},
       ]
     },
 
-    // Tab 2 — Physical Characteristics
+    // ── T3: Physical Structure ────────────────────────────────────────────────
     FieldGroup#Structure: {
+      Label: 'Structure',
       Data: [
-        {Value: structureType},
-        {Value: material},
-        {Value: yearBuilt},
-        {Value: designLoad},
-        {Value: designStandard},
+        {Value: designLoad,      Label: 'Design Load (AS 5100 class)'},
+        {Value: designStandard,  Label: 'Design Standard'},
+        {Value: structureType,   Label: 'Structure Type'},
+        {Value: material,        Label: 'Construction Material'},
+        {Value: yearBuilt,       Label: 'Year Built'},
       ]
     },
     FieldGroup#Dimensions: {
+      Label: 'Dimensions',
       Data: [
-        {Value: spanCount},
-        {Value: spanLength},
-        {Value: totalLength},
-        {Value: deckWidth},
-        {Value: clearanceHeight},
-        {Value: numberOfLanes},
+        {Value: clearanceHeight, Label: 'Clearance Height (m)'},
+        {Value: numberOfLanes,   Label: 'Number of Lanes (no.)'},
+        {Value: deckWidth,       Label: 'Deck Width (m)'},
+        {Value: spanCount,       Label: 'Span Count (no.)'},
+        {Value: spanLength,      Label: 'Span Length (m)'},
+        {Value: totalLength,     Label: 'Total Length (m)'},
       ]
     },
-    // Tab 5 — Site Context (AS 5100.7 §6.2; AP-G71.8 §3.1)
+    // Environmental Context = former Site Context + spansOver/facilityTypeCode from T2
+    // seismicZone/asBuiltDrawingReference moved to T7 Administration
     FieldGroup#SiteContext: {
+      Label: 'Environmental Context',
       Data: [
-        {Value: surfaceType},
-        {Value: substructureType},
-        {Value: foundationType},
-        {Value: waterwayType},
-        {Value: seismicZone},
-        {Value: asBuiltDrawingReference},
+        {Value: spansOver,        Label: 'Spans Over (crossing)'},
+        {Value: waterwayType,     Label: 'Waterway Type'},
+        {Value: facilityTypeCode, Label: 'Facility Type'},
+        {Value: surfaceType,      Label: 'Road Surface Type'},
+        {Value: substructureType, Label: 'Substructure Type (e.g. Abutment, Pier)'},
+        {Value: foundationType,   Label: 'Foundation Type (e.g. Pile, Spread Footing)'},
       ]
     },
 
-    // Tab 3 — Condition & Inspection
-    FieldGroup#ConditionAssessment: {
+    // ── T4: Condition & Inspection ────────────────────────────────────────────
+    // IMPORTANT: "Last Inspection Results" fields are READ-ONLY here.
+    // They are populated exclusively by the "Inspect Now" (CaptureCondition) workflow.
+    // @Core.Computed annotations applied via field-level annotate block below.
+    FieldGroup#LastInspectionResults: {
+      Label: 'Last Inspection Results — updated via Inspect Now only',
       Data: [
-        {Value: conditionRating},
-        {Value: conditionSummary},
-        {Value: structuralAdequacy},
-        {Value: structuralAdequacyRating},
-        {Value: conditionStandard},
-        {Value: highPriorityAsset},
-        {Value: conditionNotes},
+        {Value: conditionRating,          Label: 'Condition Rating (1–10)'},
+        {Value: condition,                Label: 'Condition Grade'},
+        {Value: conditionTrend,           Label: 'Condition Trend'},
+        {Value: conditionSummary,         Label: 'Condition Summary'},
+        {Value: structuralAdequacy,       Label: 'Structural Adequacy'},
+        {Value: structuralAdequacyRating, Label: 'Structural Adequacy Rating (1–10)'},
+        {Value: conditionAssessor,        Label: 'Assessor / Inspector'},
+        {Value: lastInspectionDate,       Label: 'Date of Last Inspection'},
+        {Value: conditionReportRef,       Label: 'Condition Report Reference'},
+        {Value: conditionNotes,           Label: 'Condition Notes'},
       ]
     },
     FieldGroup#RiskResilience: {
+      Label: 'Risk & Resilience',
       Data: [
-        {Value: scourRisk},
-        {Value: scourDepthLastMeasured},
-        {Value: seismicZone},
-        {Value: floodImmunityAriYears},
-        {Value: floodImpacted},
+        {Value: scourRisk,              Label: 'Scour Risk Level'},
+        {Value: scourDepthLastMeasured, Label: 'Scour Depth Last Measured (m)'},
+        {Value: floodImmunityAriYears,  Label: 'Flood Immunity ARI (years)'},
+        {Value: floodImpacted,          Label: 'Flood Impacted'},
+        {Value: deficiencyComments,     Label: 'Deficiency Comments'},
+        {Value: remarks,                Label: 'Field Remarks'},
       ]
     },
-    FieldGroup#FieldNotes: {
+    // Editable — manager-set inspection schedule configuration
+    FieldGroup#InspectionConfig: {
+      Label: 'Inspection Configuration — editable by manager',
       Data: [
-        {Value: remarks},
-      ]
-    },
-
-    // Tab 3 — Inspection Scheduling (TfNSW-BIM §4.1–4.2)
-    FieldGroup#InspectionScheduling: {
-      Data: [
-        {Value: inspectionType},
-        {Value: lastInspectionDate},
-        {Value: nextInspectionDue},
-        {Value: inspectionFrequencyYears},
-        {Value: conditionTrend},
-        {Value: conditionAssessor},
-        {Value: conditionReportRef},
+        {Value: inspectionType,           Label: 'Required Inspection Type'},
+        {Value: inspectionFrequencyYears, Label: 'Inspection Frequency (years)'},
+        {Value: nextInspectionDue,        Label: 'Next Inspection Due'},
+        {Value: conditionStandard,        Label: 'Condition Rating Standard'},
       ]
     },
 
-    // Tab 4 — NHVR & Traffic Approvals
+    // ── T5: Traffic & NHVR ────────────────────────────────────────────────────
     FieldGroup#TrafficData: {
+      Label: 'Traffic Data',
       Data: [
-        {Value: averageDailyTraffic},
-        {Value: heavyVehiclePercent},
-        {Value: importanceLevel},
+        {Value: loadLimitTruck,        Label: 'Truck Load Limit (t)'},
+        {Value: loadLimitSemitrailer,  Label: 'Semi-Trailer Load Limit (t)'},
+        {Value: averageDailyTraffic,   Label: 'Average Daily Traffic (vehicles/day)'},
+        {Value: heavyVehiclePercent,   Label: 'Heavy Vehicle Proportion (%)'},
+        {Value: importanceLevel,       Label: 'Bridge Importance Level (1=Critical–4=Ordinary)'},
       ]
     },
+    // hmlApproved moved here from RouteClass to sit next to its date fields
     FieldGroup#RouteClass: {
+      Label: 'Route Classification',
       Data: [
-        {Value: loadRating},
-        {Value: pbsApprovalClass},
-        {Value: freightRoute},
-        {Value: overMassRoute},
-        {Value: hmlApproved},
-        {Value: bDoubleApproved},
+        {Value: loadRating,      Label: 'Published Load Rating (t)'},
+        {Value: freightRoute,    Label: 'Freight Route'},
+        {Value: overMassRoute,   Label: 'Over Mass Route'},
+        {Value: bDoubleApproved, Label: 'B-Double Approved (Performance-Based Standards)'},
       ]
     },
     FieldGroup#NHVRApprovals: {
+      Label: 'NHVR Approvals',
       Data: [
-        {Value: nhvrAssessed},
-        {Value: nhvrAssessmentDate},
-        {Value: pbsApprovalClass},
-        {Value: pbsApprovalDate},
-        {Value: pbsApprovalExpiry},
-        {Value: hmlApproved},
-        {Value: hmlApprovalDate},
-        {Value: hmlApprovalExpiry},
-        {Value: bDoubleApproved},
-        {Value: nhvrReferenceUrl},
+        {Value: nhvrAssessed,       Label: 'NHVR Assessed'},
+        {Value: nhvrAssessmentDate, Label: 'NHVR Assessment Date'},
+        {Value: pbsApprovalClass,   Label: 'PBS Approval Class (Performance-Based Standards)'},
+        {Value: pbsApprovalDate,    Label: 'PBS Approval Date'},
+        {Value: pbsApprovalExpiry,  Label: 'PBS Approval Expiry'},
+        {Value: hmlApproved,        Label: 'HML Approved (Higher Mass Limits)'},
+        {Value: hmlApprovalDate,    Label: 'HML Approval Date'},
+        {Value: hmlApprovalExpiry,  Label: 'HML Approval Expiry'},
+        {Value: nhvrReferenceUrl,   Label: 'NHVR Reference URL'},
+      ]
+    },
+    // Split from GazetteLegal — Posting + gazette publication details
+    FieldGroup#PostingGazette: {
+      Label: 'Posting & Gazette',
+      Data: [
+        {Value: postingStatus,        Label: 'Posting Status'},
+        {Value: postingStatusReason,  Label: 'Posting Status Reason'},
+        {Value: gazetteReference,     Label: 'Gazette Reference Number'},
+        {Value: gazetteEffectiveDate, Label: 'Gazette Effective Date'},
+        {Value: gazetteExpiryDate,    Label: 'Gazette Expiry Date'},
+      ]
+    },
+    // Operational closure events (separate from standing gazette/posting)
+    FieldGroup#Closure: {
+      Label: 'Closure',
+      Data: [
+        {Value: closureDate,    Label: 'Closure From'},
+        {Value: closureEndDate, Label: 'Closure To'},
+        {Value: closureReason,  Label: 'Closure Reason'},
       ]
     },
 
-    // Tab 4 — Gazette & Legal (Roads Act 1993 NSW §§121–124)
-    FieldGroup#GazetteLegal: {
-      Data: [
-        {Value: gazetteReference},
-        {Value: gazetteEffectiveDate},
-        {Value: gazetteExpiryDate},
-        {Value: postingStatus},
-        {Value: postingStatusReason},
-        {Value: closureDate},
-        {Value: closureEndDate},
-        {Value: closureReason},
-      ]
-    },
-
-    // Tab 8 — Data Provenance
+    // ── T7: Administration ────────────────────────────────────────────────────
     FieldGroup#SourceInfo: {
+      Label: 'Source & Reference',
       Data: [
-        {Value: dataSource},
-        {Value: sourceReferenceUrl},
-        {Value: openDataReference},
-        {Value: sourceRecordId},
+        {Value: dataSource,               Label: 'Data Source'},
+        {Value: sourceReferenceUrl,       Label: 'Source Reference URL'},
+        {Value: openDataReference,        Label: 'Open Data Reference'},
+        {Value: sourceRecordId,           Label: 'Source Record ID'},
+        {Value: asBuiltDrawingReference,  Label: 'As-Built Drawing Reference'},
+        {Value: seismicZone,              Label: 'Seismic Zone'},
+        {Value: operationalStatusCode,    Label: 'Operational Status Code'},
+        {Value: structuralDeficiencyCode, Label: 'Structural Deficiency Code'},
       ]
     },
     FieldGroup#AuditTrail: {
+      Label: 'System Information — read only',
       Data: [
-        {Value: createdBy},
-        {Value: createdAt},
-        {Value: modifiedBy},
-        {Value: modifiedAt},
+        {Value: createdBy,  Label: 'Created By'},
+        {Value: createdAt,  Label: 'Created At'},
+        {Value: modifiedBy, Label: 'Last Modified By'},
+        {Value: modifiedAt, Label: 'Last Modified At'},
       ]
     },
-
-    // Tab 9 — Bridge Geometry
     FieldGroup#BridgeGeometry: {
+      Label: 'Bridge Geometry (GeoJSON)',
       Data: [
-        {Value: geoJson},
+        {Value: geoJson, Label: 'GeoJSON Geometry'},
       ]
     },
 
@@ -367,7 +453,7 @@ annotate AdminService.Bridges with {
       { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
     ]}
   ) @title: 'Posting Status';
-  conditionRating @Common.FieldControl: #Mandatory  @title: 'Condition Rating (1–10)';
+  conditionRating @Common.FieldControl: #ReadOnly  @title: 'Condition Rating (1–10)'  @Common.QuickInfo: 'Set by Inspect Now workflow — not directly editable';
 
   // Value lists
   assetClass @(
@@ -451,7 +537,7 @@ annotate AdminService.Bridges with {
   numberOfLanes          @title: 'Number of Lanes';
   conditionStandard      @title: 'Condition Rating Standard';
   structuralAdequacyRating @title: 'Structural Adequacy Rating (1–10)';
-  lastInspectionDate     @Common.FieldControl: #Mandatory  @title: 'Last Inspection Date';
+  lastInspectionDate     @Common.FieldControl: #ReadOnly  @title: 'Last Inspection Date'  @Common.QuickInfo: 'Set by Inspect Now workflow — not directly editable';
   highPriorityAsset      @title: 'High Priority Asset';
   asBuiltDrawingReference @title: 'As-Built Drawing Reference';
   seismicZone            @title: 'Seismic Zone';
@@ -470,7 +556,7 @@ annotate AdminService.Bridges with {
   nhvrAssessed           @title: 'NHVR Assessed';
   nhvrAssessmentDate     @title: 'NHVR Assessment Date';
   gazetteReference       @title: 'Gazette Reference';
-  nhvrReferenceUrl       @title: 'NHVR Reference URL';
+  nhvrReferenceUrl       @title: 'NHVR Reference URL'  @UI.IsURL;
   dataSource             @title: 'Data Source';
   sourceReferenceUrl     @title: 'Source Reference URL';
   openDataReference      @title: 'Open Data Reference';
@@ -554,6 +640,21 @@ annotate AdminService.Bridges with {
   closureDate           @title: 'Closure Date';
   closureEndDate        @title: 'Expected Reopening Date';
   closureReason         @title: 'Closure Reason'  @UI.MultiLineText;
+};
+
+// ── Inspection workflow output fields — READ ONLY ──────────────────────────
+// These fields are exclusively populated by the "Inspect Now" / CaptureCondition
+// workflow action. Making them read-only here prevents managers bypassing the
+// inspection record lifecycle by directly patching Bridge fields.
+annotate AdminService.Bridges with {
+  condition                @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Derived from conditionRating via Inspect Now workflow';
+  conditionTrend           @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Set by Inspect Now workflow — not directly editable';
+  conditionSummary         @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Set by Inspect Now workflow — not directly editable';
+  structuralAdequacy       @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Set by Inspect Now workflow — not directly editable';
+  structuralAdequacyRating @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Set by Inspect Now workflow — not directly editable';
+  conditionAssessor        @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Recorded by Inspect Now workflow';
+  conditionReportRef       @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Linked to inspection record — set by Inspect Now workflow';
+  conditionNotes           @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Recorded by Inspect Now workflow';
 };
 
 // Hide the ID on the Restrictions VH so it doesn't appear as a column
@@ -1240,15 +1341,68 @@ annotate AdminService.BridgeDocuments with @(
 );
 
 ////////////////////////////////////////////////////////////////////////////
-//  BridgeAttributes — hidden from Bridge ObjectPage (superseded by Custom
-//  Attributes EAV pattern). Annotations kept for OData navigability only.
+//  BridgeAttributes — editable EAV sub-table on Bridge Details T6
 ////////////////////////////////////////////////////////////////////////////
 
 annotate AdminService.BridgeAttributes with {
-  ID     @UI.Hidden;
-  bridge @UI.Hidden;
-  createdAt @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
+  ID            @UI.Hidden;
+  bridge        @UI.Hidden;
+  createdAt     @UI.Hidden;  createdBy @UI.Hidden;
+  modifiedAt    @UI.Hidden;  modifiedBy @UI.Hidden;
+  attributeGroup @title: 'Group';
+  attributeName  @title: 'Attribute Name';
+  attributeValue @title: 'Value';
+  unit           @title: 'Unit';
+  source         @title: 'Source';
+  effectiveFrom  @title: 'Effective From';
+  effectiveTo    @title: 'Effective To';
+  remarks        @title: 'Remarks'  @UI.MultiLineText;
 };
+
+annotate AdminService.BridgeAttributes with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : true,
+  UI.HeaderInfo: {
+    TypeName      : 'Custom Attribute',
+    TypeNamePlural: 'Custom Attributes',
+    Title         : {Value: attributeName},
+    Description   : {Value: attributeGroup},
+  },
+  UI.LineItem: [
+    {Value: attributeGroup, Label: 'Group'},
+    {Value: attributeName,  Label: 'Attribute'},
+    {Value: attributeValue, Label: 'Value'},
+    {Value: unit,           Label: 'Unit'},
+    {Value: source,         Label: 'Source'},
+    {Value: effectiveFrom,  Label: 'From'},
+    {Value: effectiveTo,    Label: 'To'},
+  ],
+  UI.Facets: [
+    { $Type: 'UI.CollectionFacet', Label: 'Attribute Detail', ID: 'AttrDetail', Facets: [
+      { $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#AttrGeneral' },
+      { $Type: 'UI.ReferenceFacet', Target: '@UI.FieldGroup#AttrValidity' },
+    ]}
+  ],
+  UI.FieldGroup#AttrGeneral: {
+    Label: 'Attribute',
+    Data: [
+      {Value: attributeGroup, Label: 'Group'},
+      {Value: attributeName,  Label: 'Attribute Name'},
+      {Value: attributeValue, Label: 'Value'},
+      {Value: unit,           Label: 'Unit'},
+      {Value: source,         Label: 'Source'},
+      {Value: remarks,        Label: 'Remarks'},
+    ]
+  },
+  UI.FieldGroup#AttrValidity: {
+    Label: 'Validity',
+    Data: [
+      {Value: effectiveFrom, Label: 'Effective From'},
+      {Value: effectiveTo,   Label: 'Effective To'},
+    ]
+  },
+);
 
 ////////////////////////////////////////////////////////////////////////////
 //  Validation constraints — numeric range & positive-value rules
@@ -1328,6 +1482,8 @@ annotate bridge.management.BridgeLoadRatings     with @fiori.draft.enabled;
 annotate AdminService.BridgeLoadRatings          with @odata.draft.enabled;
 annotate bridge.management.BridgePermits         with @fiori.draft.enabled;
 annotate AdminService.BridgePermits              with @odata.draft.enabled;
+annotate bridge.management.BridgeDefects         with @fiori.draft.enabled;
+annotate AdminService.BridgeDefects              with @odata.draft.enabled;
 
 // Virtual fields are internal — hide from all form layouts
 annotate AdminService.Bridges with {
@@ -1415,7 +1571,6 @@ annotate AdminService.BridgeInspections with @(
         {$Type: 'UI.ReferenceFacet', Label: 'S/4HANA',    Target: '@UI.FieldGroup#InspS4Links'},
       ]
     },
-    {$Type: 'UI.ReferenceFacet', Label: 'Defects', Target: 'defects/@UI.LineItem'},
   ],
   UI.FieldGroup#InspGeneral: {
     Label: 'General',
@@ -1451,7 +1606,7 @@ annotate AdminService.BridgeInspections with @(
   },
 );
 
-// ── BridgeDefects — standalone list + BridgeInspections ObjectPage ──────
+// ── BridgeDefects — fully standalone; inspection link is optional ─────────
 annotate AdminService.BridgeDefects with {
   bridge @(
     Common.Text            : bridge.bridgeName,
@@ -1465,6 +1620,21 @@ annotate AdminService.BridgeDefects with {
         { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: bridge_ID,     ValueListProperty: 'ID' },
         { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeName' },
         { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'bridgeId' }
+      ]
+    }
+  );
+  inspection @(
+    Common.Text            : inspection.inspectionRef,
+    Common.TextArrangement : #TextOnly,
+    title                  : 'Linked Inspection (optional)',
+    Common.ValueList: {
+      CollectionPath : 'BridgeInspections',
+      SearchSupported: true,
+      Parameters: [
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: inspection_ID, ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'inspectionRef' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'inspectionDate' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'inspectionType' }
       ]
     }
   );
@@ -1496,18 +1666,19 @@ annotate AdminService.BridgeDefects with @(
   Capabilities.InsertRestrictions.Insertable : true,
   Capabilities.UpdateRestrictions.Updatable  : true,
   Capabilities.DeleteRestrictions.Deletable  : false,
-  UI.SelectionFields: [bridge_ID, severity, remediationStatus, defectType],
+  UI.SelectionFields: [bridge_ID, inspection_ID, severity, remediationStatus, defectType],
   UI.LineItem: [
-    {Value: bridge.bridgeId,       Label: 'Bridge ID'},
-    {Value: bridge.bridgeName,     Label: 'Bridge'},
-    {Value: defectId,              Label: 'Defect ID'},
-    {Value: defectType,            Label: 'Type'},
-    {Value: bridgeElement,         Label: 'Element'},
-    {Value: severity,              Label: 'Severity (1–4)'},
-    {Value: urgency,               Label: 'Urgency (1–4)'},
-    {Value: remediationStatus,     Label: 'Status'},
-    {Value: estimatedRepairCost,   Label: 'Est. Cost ($)'},
-    {Value: s4SyncStatus,          Label: 'S/4 Sync'},
+    {Value: bridge.bridgeId,           Label: 'Bridge ID'},
+    {Value: bridge.bridgeName,         Label: 'Bridge'},
+    {Value: inspection.inspectionRef,  Label: 'Inspection Ref'},
+    {Value: defectId,                  Label: 'Defect ID'},
+    {Value: defectType,                Label: 'Type'},
+    {Value: bridgeElement,             Label: 'Element'},
+    {Value: severity,                  Label: 'Severity (1–4)'},
+    {Value: urgency,                   Label: 'Urgency (1–4)'},
+    {Value: remediationStatus,         Label: 'Status'},
+    {Value: estimatedRepairCost,       Label: 'Est. Cost ($)'},
+    {Value: s4SyncStatus,              Label: 'S/4 Sync'},
   ],
   UI.HeaderInfo: {
     TypeName      : 'Defect',
@@ -1525,15 +1696,16 @@ annotate AdminService.BridgeDefects with @(
   UI.FieldGroup#DefectGeneral: {
     Label: 'General',
     Data: [
-      {Value: bridge_ID,         Label: 'Bridge'},
-      {Value: defectId,          Label: 'Defect ID'},
-      {Value: defectType,        Label: 'Defect Type'},
-      {Value: defectDescription, Label: 'Description'},
-      {Value: severity,          Label: 'Severity (1–4)'},
-      {Value: urgency,           Label: 'Urgency (1–4)'},
-      {Value: remediationStatus, Label: 'Remediation Status'},
-      {Value: photoReferences,   Label: 'Photo References'},
-      {Value: notes,             Label: 'Notes'},
+      {Value: bridge_ID,             Label: 'Bridge'},
+      {Value: inspection_ID,         Label: 'Linked Inspection (optional)'},
+      {Value: defectId,              Label: 'Defect ID'},
+      {Value: defectType,            Label: 'Defect Type'},
+      {Value: defectDescription,     Label: 'Description'},
+      {Value: severity,              Label: 'Severity (1–4)'},
+      {Value: urgency,               Label: 'Urgency (1–4)'},
+      {Value: remediationStatus,     Label: 'Remediation Status'},
+      {Value: photoReferences,       Label: 'Photo References'},
+      {Value: notes,                 Label: 'Notes'},
     ]
   },
   UI.FieldGroup#DefectLocation: {

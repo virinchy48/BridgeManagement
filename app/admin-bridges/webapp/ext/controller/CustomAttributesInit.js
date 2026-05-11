@@ -1,6 +1,6 @@
-(function () {
+sap.ui.define([], function () {
   'use strict';
-
+  (function () {
   var API_BASE = '/attributes/api';
   var OBJECT_TYPE = 'bridge';
 
@@ -347,4 +347,6 @@
     if (n < 20) setTimeout(function () { _boot(n + 1); }, 300);
   }(0));
 
-}());
+  }());
+  return {};
+});

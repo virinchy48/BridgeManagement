@@ -156,6 +156,11 @@
           "target": "BridgePermitsDetails"
         },
         {
+          "name": "BridgeAttributesDetails",
+          "pattern": "Bridges({key})/attributes({key2}):?query:",
+          "target": "BridgeAttributesDetails"
+        },
+        {
           "pattern": "BridgeCapacities:?query:",
           "name": "BridgeCapacitiesList",
           "target": "BridgeCapacitiesList"
@@ -378,6 +383,11 @@
                   "detail": {
                     "route": "BridgePermitsDetails"
                   }
+                },
+                "attributes": {
+                  "detail": {
+                    "route": "BridgeAttributesDetails"
+                  }
                 }
               },
               "controlConfiguration": {
@@ -483,6 +493,14 @@
                       "name": "NewPage"
                     }
                   }
+                },
+                "attributes/@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "enablePaste": false,
+                    "creationMode": {
+                      "name": "NewPage"
+                    }
+                  }
                 }
               },
               "content": {
@@ -523,7 +541,7 @@
                       "title": "Documents & Attachments",
                       "position": {
                         "placement": "Before",
-                        "anchor": "DocumentsMap"
+                        "anchor": "Administration"
                       }
                     },
                     "mapSection": {
@@ -531,23 +549,7 @@
                       "title": "Map",
                       "position": {
                         "placement": "After",
-                        "anchor": "BridgeIdentity"
-                      }
-                    },
-                    "customAttributesSection": {
-                      "template": "BridgeManagement.adminbridges.ext.fragment.CustomAttributes",
-                      "title": "Custom Attributes",
-                      "position": {
-                        "placement": "After",
-                        "anchor": "mapSection"
-                      }
-                    },
-                    "executiveKpiSection": {
-                      "template": "BridgeManagement.adminbridges.ext.fragment.ExecutiveKpiPanel",
-                      "title": "Executive Summary",
-                      "position": {
-                        "placement": "Before",
-                        "anchor": "BridgeIdentity"
+                        "anchor": "PhysicalStructure"
                       }
                     },
                     "inspectionRegisterSection": {
@@ -555,7 +557,7 @@
                       "title": "Inspection & Defect Register",
                       "position": {
                         "placement": "After",
-                        "anchor": "ConditionInspections"
+                        "anchor": "ConditionInspection"
                       }
                     }
                   }
@@ -568,6 +570,7 @@
         "BridgeCapacitiesDetails": {
           "type": "Component",
           "id": "BridgeCapacitiesDetails",
+          "title": "Bridge Capacity",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -579,6 +582,7 @@
         "BridgeRestrictionsDetails": {
           "type": "Component",
           "id": "BridgeRestrictionsDetails",
+          "title": "Restrictions",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -590,6 +594,7 @@
         "BridgeInspectionsDetails": {
           "type": "Component",
           "id": "BridgeInspectionsDetails",
+          "title": "Inspections",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -601,6 +606,7 @@
         "BridgeRiskAssessmentsDetails": {
           "type": "Component",
           "id": "BridgeRiskAssessmentsDetails",
+          "title": "Risk Assessments",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -612,6 +618,7 @@
         "LoadRatingCertificatesDetails": {
           "type": "Component",
           "id": "LoadRatingCertificatesDetails",
+          "title": "Load Rating Certificates",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -623,6 +630,7 @@
         "BridgeElementsDetails": {
           "type": "Component",
           "id": "BridgeElementsDetails",
+          "title": "Bridge Elements",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -634,6 +642,7 @@
         "NhvrRouteAssessmentsDetails": {
           "type": "Component",
           "id": "NhvrRouteAssessmentsDetails",
+          "title": "NHVR Route Assessments",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -645,6 +654,7 @@
         "AlertsAndNotificationsDetails": {
           "type": "Component",
           "id": "AlertsAndNotificationsDetails",
+          "title": "Alerts & Notifications",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -656,6 +666,7 @@
         "BridgeInspectionElementsDetails": {
           "type": "Component",
           "id": "BridgeInspectionElementsDetails",
+          "title": "Inspection Elements",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -667,6 +678,7 @@
         "BridgeCarriagewaysDetails": {
           "type": "Component",
           "id": "BridgeCarriagewaysDetails",
+          "title": "Carriageways",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -678,6 +690,7 @@
         "BridgeContactsDetails": {
           "type": "Component",
           "id": "BridgeContactsDetails",
+          "title": "Contacts",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -689,6 +702,7 @@
         "BridgeMehComponentsDetails": {
           "type": "Component",
           "id": "BridgeMehComponentsDetails",
+          "title": "MEH Components",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -700,6 +714,7 @@
         "BridgeConditionSurveysDetails": {
           "type": "Component",
           "id": "BridgeConditionSurveysDetails",
+          "title": "Condition Surveys",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -711,6 +726,7 @@
         "BridgeLoadRatingsDetails": {
           "type": "Component",
           "id": "BridgeLoadRatingsDetails",
+          "title": "Load Ratings",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -722,6 +738,7 @@
         "BridgePermitsDetails": {
           "type": "Component",
           "id": "BridgePermitsDetails",
+          "title": "Permits",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -730,9 +747,22 @@
             }
           }
         },
+        "BridgeAttributesDetails": {
+          "type": "Component",
+          "id": "BridgeAttributesDetails",
+          "title": "Custom Attribute",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeAttributes",
+              "editableHeaderContent": false
+            }
+          }
+        },
         "BridgeCapacitiesList": {
           "type": "Component",
           "id": "BridgeCapacitiesList",
+          "title": "Bridge Capacity",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -750,6 +780,7 @@
         "BridgeConditionSurveysList": {
           "type": "Component",
           "id": "BridgeConditionSurveysList",
+          "title": "Condition Surveys",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -767,6 +798,7 @@
         "BridgeInspectionsList": {
           "type": "Component",
           "id": "BridgeInspectionsList",
+          "title": "Inspections",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -784,6 +816,7 @@
         "BridgeDefectsList": {
           "type": "Component",
           "id": "BridgeDefectsList",
+          "title": "Defects",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -801,6 +834,7 @@
         "BridgeLoadRatingsList": {
           "type": "Component",
           "id": "BridgeLoadRatingsList",
+          "title": "Load Ratings",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -818,6 +852,7 @@
         "BridgeRiskAssessmentsList": {
           "type": "Component",
           "id": "BridgeRiskAssessmentsList",
+          "title": "Risk Assessments",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -835,6 +870,7 @@
         "NhvrRouteAssessmentsList": {
           "type": "Component",
           "id": "NhvrRouteAssessmentsList",
+          "title": "NHVR Route Assessments",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -852,6 +888,7 @@
         "LoadRatingCertificatesList": {
           "type": "Component",
           "id": "LoadRatingCertificatesList",
+          "title": "Load Rating Certificates",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -869,6 +906,7 @@
         "BridgePermitsList": {
           "type": "Component",
           "id": "BridgePermitsList",
+          "title": "Permits",
           "name": "sap.fe.templates.ListReport",
           "options": {
             "settings": {
@@ -886,6 +924,7 @@
         "BridgeInspectionsObjectPage": {
           "type": "Component",
           "id": "BridgeInspectionsObjectPage",
+          "title": "Inspections",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -897,6 +936,7 @@
         "BridgeCapacitiesObjectPage": {
           "type": "Component",
           "id": "BridgeCapacitiesObjectPage",
+          "title": "Bridge Capacity",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -908,6 +948,7 @@
         "BridgeRiskAssessmentsObjectPage": {
           "type": "Component",
           "id": "BridgeRiskAssessmentsObjectPage",
+          "title": "Risk Assessments",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -919,6 +960,7 @@
         "LoadRatingCertificatesObjectPage": {
           "type": "Component",
           "id": "LoadRatingCertificatesObjectPage",
+          "title": "Load Rating Certificates",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -930,6 +972,7 @@
         "NhvrRouteAssessmentsObjectPage": {
           "type": "Component",
           "id": "NhvrRouteAssessmentsObjectPage",
+          "title": "NHVR Route Assessments",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -941,6 +984,7 @@
         "BridgeConditionSurveysObjectPage": {
           "type": "Component",
           "id": "BridgeConditionSurveysObjectPage",
+          "title": "Condition Surveys",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -952,6 +996,7 @@
         "BridgeLoadRatingsObjectPage": {
           "type": "Component",
           "id": "BridgeLoadRatingsObjectPage",
+          "title": "Load Ratings",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -963,6 +1008,7 @@
         "BridgePermitsObjectPage": {
           "type": "Component",
           "id": "BridgePermitsObjectPage",
+          "title": "Permits",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
@@ -974,6 +1020,7 @@
         "BridgeDefectsObjectPage": {
           "type": "Component",
           "id": "BridgeDefectsObjectPage",
+          "title": "Defects",
           "name": "sap.fe.templates.ObjectPage",
           "options": {
             "settings": {
