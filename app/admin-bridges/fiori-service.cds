@@ -1709,7 +1709,7 @@ annotate AdminService.BridgeDefects with {
       ]
     }
   );
-  defectId                @title: 'Defect ID';
+  defectId                @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Defect ID (auto-generated)';
   defectType              @title: 'Defect Type';
   defectDescription       @title: 'Description'              @UI.MultiLineText;
   bridgeElement           @title: 'Bridge Element';
@@ -1950,7 +1950,7 @@ annotate AdminService.BridgeRiskAssessments with {
       ]
     }
   );
-  assessmentId              @title: 'Assessment ID'                    @Common.FieldControl: #ReadOnly;
+  assessmentId              @Core.Computed  @Common.FieldControl: #ReadOnly  @title: 'Assessment ID (auto-generated)';
   assessmentDate            @title: 'Assessment Date';
   assessmentCycle           @title: 'Assessment Cycle';
   riskType                  @title: 'Risk Type';

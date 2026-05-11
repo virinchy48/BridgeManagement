@@ -2,8 +2,19 @@ const cds = require('@sap/cds')
 
 module.exports = function registerRiskAssessmentHandlers (srv) {
 
-    srv.before(['CREATE', 'UPDATE'], 'BridgeRiskAssessments', req => {
+    srv.before(['CREATE', 'UPDATE'], 'BridgeRiskAssessments', async req => {
+        const db = await cds.connect.to('db')
         const d = req.data
+
+        if (req.event === 'CREATE' && !d.assessmentId) {
+            const [last] = await db.run(
+                SELECT.from('bridge.management.BridgeRiskAssessments')
+                    .columns('assessmentId').orderBy('assessmentId desc').limit(1)
+            )
+            const seq = last?.assessmentId ? parseInt(last.assessmentId.replace('RSK-', ''), 10) + 1 : 1
+            d.assessmentId = `RSK-${String(seq).padStart(4, '0')}`
+        }
+
         if (d.likelihood && d.consequence) {
             d.inherentRiskScore = d.likelihood * d.consequence
             d.inherentRiskLevel = scoreToLevel(d.inherentRiskScore)

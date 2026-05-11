@@ -4,7 +4,7 @@ using { bridge.management.Bridges } from './bridge-entity';
 
 entity BridgeRiskAssessments : cuid, managed {
     bridge               : Association to Bridges @mandatory;
-    assessmentId         : String(40)  @mandatory;
+    assessmentId         : String(40);
     assessmentDate       : Date        @mandatory;
     assessmentCycle      : String(20);
 
