@@ -389,6 +389,12 @@
               <content>
                 <VBox class="nhvrFilterSection">
                   <Text text="Find bridges within a radius of a point." class="nhvrLayerHint sapUiSmallMarginBottom" />
+                  <Button icon="sap-icon://locate-me"
+                          text="Near Me"
+                          tooltip="Use your current device location"
+                          press=".onGeolocate"
+                          busy="{view>/proximity/geolocating}"
+                          class="sapUiTinyMarginBottom" />
                   <Label text="Latitude" class="nhvrFilterLabel" />
                   <Input id="proxLat" value="{view>/proximity/lat}" placeholder="-33.8688" width="100%" />
                   <Label text="Longitude" class="nhvrFilterLabel nhvrFilterLabelTop" />
@@ -520,6 +526,7 @@
               <Button icon="sap-icon://full-screen" tooltip="{i18n>centerMap}" press=".onZoomAll" type="Transparent" />
               <Button icon="sap-icon://resize" tooltip="Zoom to selection" press=".onZoomSelected" enabled="{view>/selectionActive}" type="Transparent" />
               <Button icon="sap-icon://refresh" tooltip="{i18n>refresh}" press=".onRefresh" type="Transparent" />
+              <Button icon="sap-icon://share-2" text="Share" tooltip="Copy a link to the current map view" press=".onShareMap" type="Transparent" />
               <Button icon="sap-icon://information" tooltip="How map controls work" press=".onMapControlsHelp" type="Transparent" class="nhvrInfoBtn" />
             </contentRight>
           </Bar>

@@ -429,6 +429,15 @@ entity ChangeLog {
   batchId          : String(111);  // groups all fields changed in one save
 }
 
+annotate ChangeLog with @(cds.persistence.indexes: [
+  { name: 'idx_cl_changedat',  columns: ['changedAt'] },
+  { name: 'idx_cl_objecttype', columns: ['objectType'] },
+  { name: 'idx_cl_objectid',   columns: ['objectId'] },
+  { name: 'idx_cl_changedby',  columns: ['changedBy'] },
+  { name: 'idx_cl_batchid',    columns: ['batchId'] },
+  { name: 'idx_cl_composite',  columns: ['objectType', 'objectId', 'changedAt'] }
+]);
+
 entity UserActivity {
   key userId      : String(111);
   displayName     : String(255);

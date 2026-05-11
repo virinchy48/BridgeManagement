@@ -1517,14 +1517,16 @@ cds.on('bootstrap', (app) => {
   auditRouter.get('/changes', async (req, res) => {
     try {
       const db = await cds.connect.to('db')
-      const { objectType, objectId, user: changedBy, source, from, to, batchId } = req.query
+      const { objectType, objectId, user: changedBy, source, from, to, batchId, fieldName, offset: offsetStr, limit: limitStr } = req.query
 
-      const maxRows = await getConfigInt('maxExportRows', 5000)
+      const pageLimit  = Math.min(parseInt(limitStr)  || 200, 1000)
+      const pageOffset = Math.max(parseInt(offsetStr) || 0,   0)
+
       let query = SELECT.from('bridge.management.ChangeLog')
         .columns('ID','changedAt','changedBy','objectType','objectId','objectName',
                  'fieldName','oldValue','newValue','changeSource','batchId')
         .orderBy('changedAt desc', 'objectType', 'objectId', 'batchId')
-        .limit(maxRows)
+        .limit(pageLimit, pageOffset)
 
       const filters = []
       if (objectType) filters.push({ objectType })
@@ -1532,6 +1534,7 @@ cds.on('bootstrap', (app) => {
       if (changedBy)  filters.push({ changedBy })
       if (source)     filters.push({ changeSource: source })
       if (batchId)    filters.push({ batchId })
+      if (fieldName)  filters.push({ fieldName })
 
       for (const filter of filters) {
         query = query.where(filter)
@@ -1547,7 +1550,14 @@ cds.on('bootstrap', (app) => {
       }
 
       const rows = await db.run(query)
-      res.json({ changes: rows || [] })
+      res.json({
+        changes: rows || [],
+        value:   rows || [],
+        count:   (rows || []).length,
+        offset:  pageOffset,
+        limit:   pageLimit,
+        hasMore: (rows || []).length === pageLimit
+      })
     } catch (error) {
       res.status(500).json({ error: { message: error.message || 'Failed to load change log' } })
     }

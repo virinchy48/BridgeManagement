@@ -75,6 +75,13 @@
                         placeholder="{i18n>noFileSelected}"
                         width="100%" />
                       <Text text="{view>/uploadReadyText}" class="sapUiTinyMarginTop" />
+                      <Text text="Maximum file size: 50 MB. Supported formats: .csv, .xlsx" class="sapUiTinyMarginTop" wrapping="true" />
+                      <MessageStrip
+                        text="{view>/fileSizeError}"
+                        type="Error"
+                        showIcon="true"
+                        visible="{= !!${view>/fileSizeError} }"
+                        class="sapUiSmallMarginTop" />
                     </VBox>
                   </WizardStep>
 
@@ -86,6 +93,12 @@
                         type="{view>/previewMessageType}"
                         showIcon="true"
                         enableFormattedText="false"
+                        class="sapUiSmallMarginBottom" />
+                      <MessageStrip
+                        text="{view>/previewTruncationMsg}"
+                        type="Warning"
+                        showIcon="true"
+                        visible="{= !!${view>/previewTruncated} }"
                         class="sapUiSmallMarginBottom" />
                       <Table
                         id="previewTable"

@@ -162,7 +162,58 @@ sap.ui.define([
       this._loadEntityData();
     },
 
-    onSave: async function () {
+    onOpenChangeHistory: function () {
+      window.location.hash = "#BmsAdmin-manage&/changeDocuments?source=MassEdit";
+    },
+
+    onSave: function () {
+      const vm      = this._vm();
+      const config  = this._config();
+      const allRows = vm.getProperty("/allItems") || [];
+
+      const diffs = [];
+      allRows.forEach(function (row, i) {
+        if (!row._dirty) { return; }
+        const base = this._baselineRows[i] || {};
+        const fieldDiffs = [];
+        config.fields.filter(function (f) { return f.editable; }).forEach(function (f) {
+          const oldVal = String(base[f.key] != null ? base[f.key] : "");
+          const newVal = String(row[f.key]  != null ? row[f.key]  : "");
+          if (oldVal !== newVal) {
+            fieldDiffs.push({ field: this._t(f.labelKey || f.key), old: oldVal, new: newVal });
+          }
+        }.bind(this));
+        if (fieldDiffs.length) {
+          diffs.push({
+            id:     row[config.key] || row.ID,
+            name:   row.bridgeName || row.bridgeRef || String(row.ID),
+            fields: fieldDiffs
+          });
+        }
+      }.bind(this));
+
+      if (!diffs.length) { MessageToast.show("No changes to save"); return; }
+
+      const summary = diffs.slice(0, 5).map(function (d) {
+        return "• " + d.name + ": " + d.fields.map(function (f) {
+          return f.field + " (" + (f.old || "(empty)") + " → " + (f.new || "(empty)") + ")";
+        }).join(", ");
+      }).join("\n") + (diffs.length > 5 ? "\n…and " + (diffs.length - 5) + " more record(s)" : "");
+
+      MessageBox.confirm(
+        "Save " + diffs.length + " record(s)?\n\n" + summary,
+        {
+          title:            "Confirm Save",
+          actions:          [MessageBox.Action.OK, MessageBox.Action.CANCEL],
+          emphasizedAction: MessageBox.Action.OK,
+          onClose: function (sAction) {
+            if (sAction === MessageBox.Action.OK) { this._doSave(); }
+          }.bind(this)
+        }
+      );
+    },
+
+    _doSave: async function () {
       const vm    = this._vm();
       const dirty = (vm.getProperty("/allItems") || []).filter(function (bridgeRow) { return bridgeRow._dirty; });
       if (!dirty.length) { return; }
@@ -197,6 +248,19 @@ sap.ui.define([
           this._applyFilters();
         }.bind(this)
       });
+    },
+
+    onRevertRow: function (oEvent) {
+      const vm      = this._vm();
+      const allRows = vm.getProperty("/allItems") || [];
+      const ctx     = oEvent.getSource().getBindingContext("view");
+      if (!ctx) { return; }
+      const rowPath = ctx.getPath();
+      const idx     = parseInt(rowPath.split("/").pop(), 10);
+      if (!this._baselineRows[idx]) { return; }
+      allRows[idx] = Object.assign({}, this._baselineRows[idx], { _dirty: false });
+      vm.setProperty("/allItems", allRows);
+      this._updateDirtyStats();
     },
 
     /* ─── Entity / filter controls ──────────────────────────────────────── */
@@ -357,6 +421,18 @@ sap.ui.define([
         }));
       }.bind(this));
 
+      table.addColumn(new Column({
+        width:    "3.5rem",
+        label:    new Text({ text: "" }),
+        template: new Button({
+          icon:    "sap-icon://undo",
+          type:    "Transparent",
+          tooltip: "Revert this row",
+          visible: { path: "view>_dirty", mode: "OneWay" },
+          press:   this.onRevertRow.bind(this)
+        })
+      }));
+
       this._applyColumnVisibility();
       // Force a synchronous DOM update so the DynamicPage measures the new
       // column count immediately, avoiding a transient zero-height layout.
@@ -418,10 +494,24 @@ sap.ui.define([
     /* ─── Inline cell editing ────────────────────────────────────────────── */
 
     _onValueChange: function (field, oEvent) {
-      const src = oEvent.getSource();
-      const ctx = src.getBindingContext("view");
+      const src   = oEvent.getSource();
+      const ctx   = src.getBindingContext("view");
       if (!ctx) { return; }
-      this._writeField(ctx.getPath(), field, this._extractValue(field, src));
+      const rawValue = this._extractValue(field, src);
+      this._validateCell(src, field.type, rawValue);
+      this._writeField(ctx.getPath(), field, rawValue);
+    },
+
+    _validateCell: function (oCtrl, sType, sValue) {
+      if (!oCtrl || typeof oCtrl.setValueState !== "function") { return true; }
+      if ((sType === "number" || sType === "integer" || sType === "decimal") &&
+          sValue !== "" && sValue != null && isNaN(parseFloat(sValue))) {
+        oCtrl.setValueState("Error");
+        oCtrl.setValueStateText("Must be a number");
+        return false;
+      }
+      oCtrl.setValueState("None");
+      return true;
     },
 
     _writeField: function (rowPath, field, rawValue) {

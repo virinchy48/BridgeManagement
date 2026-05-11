@@ -52,6 +52,9 @@ sap.ui.define([
         previewColHdr4: "",
         previewColHdr5: "",
         previewValidCount: 0,
+        previewTruncated: false,
+        previewTruncationMsg: "",
+        fileSizeError: "",
         fileName: "",
         uploadSummaries: [],
         uploadWarnings: [],
@@ -228,7 +231,17 @@ sap.ui.define([
 
     onFileChange: function (oEvent) {
       const files = oEvent.getParameter("files") || [];
-      this._setSelectedFile(files[0] || null);
+      const file = files[0] || null;
+      if (file && file.size > 50 * 1024 * 1024) {
+        this._getViewModel().setProperty("/fileSizeError",
+          `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 50 MB.`);
+        this._getViewModel().setProperty("/canUpload", false);
+        const uploader = this.byId("fileUploader");
+        if (uploader) { uploader.clear(); }
+        return;
+      }
+      this._getViewModel().setProperty("/fileSizeError", "");
+      this._setSelectedFile(file);
       if (this._file) {
         this.onPreviewUpload();
       }
@@ -268,7 +281,15 @@ sap.ui.define([
         model.setProperty("/previewValidated", true);
         model.setProperty("/previewMessage", payload.message || "Validation complete.");
         model.setProperty("/previewMessageType", payload.errorCount > 0 ? (payload.validCount > 0 ? "Warning" : "Error") : "Success");
-        model.setProperty("/previewRows", payload.previewRows || []);
+        const previewRows = payload.previewRows || [];
+        model.setProperty("/previewRows", previewRows);
+        const truncated = !!payload.previewTruncated;
+        const shownCount = previewRows.length;
+        const totalCount = Number(payload.totalCount || 0);
+        model.setProperty("/previewTruncated", truncated);
+        model.setProperty("/previewTruncationMsg", truncated
+          ? `Showing ${shownCount} of ${totalCount} rows. Fix the displayed errors and re-validate to see more.`
+          : `Showing all ${totalCount} row(s).`);
         model.setProperty("/previewTitle", payload.previewTitle || "");
         model.setProperty("/previewColHdr1", previewColumns[0] || "");
         model.setProperty("/previewColHdr2", previewColumns[1] || "");
@@ -549,6 +570,9 @@ sap.ui.define([
       model.setProperty("/previewColHdr4", "");
       model.setProperty("/previewColHdr5", "");
       model.setProperty("/previewValidCount", 0);
+      model.setProperty("/previewTruncated", false);
+      model.setProperty("/previewTruncationMsg", "");
+      model.setProperty("/fileSizeError", "");
     },
 
     _toggleDropzoneState: function (hasFile) {
@@ -610,6 +634,15 @@ sap.ui.define([
         MessageBox.warning("Only CSV (.csv) and Excel (.xlsx) files are supported for upload.");
         return;
       }
+
+      if (file.size > 50 * 1024 * 1024) {
+        this.byId("dropZone").toggleStyleClass("is-dragover", false);
+        this._getViewModel().setProperty("/fileSizeError",
+          `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 50 MB.`);
+        this._getViewModel().setProperty("/canUpload", false);
+        return;
+      }
+      this._getViewModel().setProperty("/fileSizeError", "");
 
       this._setSelectedFile(file);
       this._invisibleMessage.announce(`Selected file ${file.name}`, InvisibleMessageMode.Assertive);

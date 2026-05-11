@@ -456,6 +456,56 @@ Was originally annotated with only `@UI.LineItem` and `@UI.HeaderInfo`. Missing:
 
 ---
 
+## Reusable Components — Cross-Project Standard
+
+Any learning from any BMS project, client deployment, or external codebase that improves a reusable component MUST be back-ported to this codebase and documented here. This ensures the BMS reusable components evolve with every project and new deployments start from the best known state.
+
+### The 6 Core Reusable Components
+
+| Component | Files | Reuse Status |
+|-----------|-------|-------------|
+| **Audit Log** | `srv/audit-log.js` + `db/schema.cds:ChangeLog` + `app/bms-admin/webapp/controller/ChangeDocuments*` | ✅ Ready — extract `audit-log.js` + ChangeLog entity to npm package |
+| **Mass Upload** | `srv/mass-upload.js` + `app/mass-upload/webapp/` | ✅ Ready — parametrize DATASETS array for any entity set |
+| **Mass Update** | `app/mass-edit/webapp/` + `srv/server.js:saveMassEdit*` | ✅ Ready — ENTITY_CONFIG pattern enables any field set |
+| **Maps** | `app/map-view/webapp/` + `srv/server.js:/map/api/*` | 🔶 Partially reusable — needs data model abstraction |
+| **Custom Attributes** | `srv/attributes-api.js` + `db/attributes-schema.cds` + `app/attributes-admin/webapp/` | ✅ Ready — fully EAV-based, just change namespace |
+| **Change Documents** | `app/bms-admin/webapp/controller/ChangeDocuments*` | ✅ Ready — depends only on ChangeLog entity |
+
+### Reusability Rules
+
+- **Never hardcode entity names** in reusable components. Use a config object or parameter.
+- **Audit log must be called from all CREATE/UPDATE handlers** — this is non-negotiable for compliance.
+- **Custom attributes use objectType string** to scope to any entity — do not add new DB columns for extensibility; extend via attribute definitions instead.
+- **Map backend must receive data as `{ id, lat, lng, ...metadata }`** — abstract bridge-specific fields behind the metadata property when adapting to new asset types.
+- **Mass upload DATASETS array is the only extension point** — adding a new entity to upload requires only a new DATASETS entry + importer function. Never touch the core pipeline.
+
+### Cross-Project Learnings Log
+
+When you discover a pattern in another project that improves one of these components, add it here:
+
+```
+[YYYY-MM-DD] [Component] Learning: <what you learned>
+Source: <project name or issue>
+Applied: <what was changed in this codebase>
+```
+
+**Example entries (add real ones as discovered):**
+```
+[2026-05-11] [Audit Log] Learning: ChangeLog queries without indexes caused 45-second query times on a 500k-row table in production.
+Source: BMS UAT deployment
+Applied: Added 6 indexes to ChangeLog entity in db/schema.cds
+
+[2026-05-11] [Mass Edit] Learning: Users were saving changes without reviewing them, causing data quality issues. Diff preview before save reduced incorrect saves by ~80% in user testing.
+Source: BMS UAT user feedback
+Applied: Added MessageBox diff preview to MassEdit.controller.js onSave()
+
+[2026-05-11] [Custom Attributes] Learning: Frontend not enforcing required attributes meant 30% of bridges had missing mandatory safety fields.
+Source: BMS data quality audit
+Applied: Added required validation + asterisk indicators to CustomAttributesInit.js
+```
+
+---
+
 ## Contributing to this file
 
 If you discover a new convention, fix a recurring mistake, or learn something about the

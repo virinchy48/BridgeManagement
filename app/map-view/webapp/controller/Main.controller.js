@@ -219,7 +219,7 @@ sap.ui.define([
         stats: { total: 0, avgCondition: "-", poor: 0, restricted: 0, closed: 0 },
         mgaCoords: { zone: 0, easting: 0, northing: 0, text: "" },
         proximity: {
-          active: false, loading: false, lat: "", lng: "", radius: 10,
+          active: false, loading: false, geolocating: false, lat: "", lng: "", radius: 10,
           results: [], count: 0
         },
         timeSlider: {
@@ -947,6 +947,19 @@ sap.ui.define([
           }
           setTimeout(function () { this._selectFeature("bridge", bridge); }.bind(this), 80);
         }
+      }
+
+      // Restore shared map view (lat/lng/zoom from permalink)
+      const urlParams = hashPart ? hashParams : searchParams;
+      const sharedLat = parseFloat(urlParams.get("lat"));
+      const sharedLng = parseFloat(urlParams.get("lng"));
+      const sharedZoom = parseInt(urlParams.get("zoom"), 10);
+      if (!isNaN(sharedLat) && !isNaN(sharedLng) && !isNaN(sharedZoom) && !bridgeId) {
+        setTimeout(function () {
+          if (this._leafletMap) {
+            this._leafletMap.setView([sharedLat, sharedLng], sharedZoom, { animate: false });
+          }
+        }.bind(this), 200);
       }
     },
 
@@ -2322,6 +2335,73 @@ sap.ui.define([
         } else {
           this._minimapControl._minimize && this._minimapControl._minimize();
         }
+      }
+    },
+
+    // ─── Geolocation "Near Me" ────────────────────────────────────────────────
+
+    onGeolocate: function () {
+      var that = this;
+      if (!navigator.geolocation) {
+        MessageToast.show("Geolocation is not supported by your browser");
+        return;
+      }
+      var oModel = this._vm();
+      oModel.setProperty("/proximity/geolocating", true);
+      navigator.geolocation.getCurrentPosition(
+        function (pos) {
+          oModel.setProperty("/proximity/geolocating", false);
+          oModel.setProperty("/proximity/lat", pos.coords.latitude.toFixed(6));
+          oModel.setProperty("/proximity/lng", pos.coords.longitude.toFixed(6));
+          MessageToast.show("Location detected — enter a radius and click Find Bridges");
+        },
+        function (err) {
+          oModel.setProperty("/proximity/geolocating", false);
+          MessageToast.show("Could not get location: " + (err.message || "Permission denied"));
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
+      );
+    },
+
+    // ─── Map Permalink ────────────────────────────────────────────────────────
+
+    onShareMap: function () {
+      if (!this._leafletMap) return;
+      var center = this._leafletMap.getCenter();
+      var zoom = this._leafletMap.getZoom();
+      var filters = this._vm().getProperty("/filters") || {};
+      var options = this._vm().getProperty("/filterOptions") || {};
+      var selectedStates = (options.states || []).filter(function (s) { return s.selected; }).map(function (s) { return s.key; });
+      var selectedStatuses = (options.postingStatuses || []).filter(function (s) { return s.selected; }).map(function (s) { return s.key; });
+
+      var params = new URLSearchParams({
+        lat: center.lat.toFixed(5),
+        lng: center.lng.toFixed(5),
+        zoom: String(zoom),
+        state: selectedStates.join(","),
+        postingStatus: selectedStatuses.join(","),
+        condMin: String(filters.minCondition || ""),
+        condMax: String(filters.maxCondition || "")
+      });
+
+      var keysToDelete = [];
+      params.forEach(function (value, key) {
+        if (!value || value === ",") keysToDelete.push(key);
+      });
+      keysToDelete.forEach(function (key) { params.delete(key); });
+
+      var base = window.location.href.split("?")[0];
+      var hashBase = (window.location.hash || "").split("?")[0];
+      var shareUrl = base + hashBase + "?" + params.toString();
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(function () {
+          MessageToast.show("Map link copied to clipboard!");
+        }).catch(function () {
+          prompt("Copy this link:", shareUrl);
+        });
+      } else {
+        prompt("Copy this link:", shareUrl);
       }
     }
   });

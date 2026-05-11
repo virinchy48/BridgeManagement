@@ -33,7 +33,10 @@
         var val = values[attr.internalKey];
         var displayVal = displayValue(val);
         html += '<div style="display:flex;flex-direction:column;gap:3px">';
-        html += '<label style="font-size:12px;color:#6a7a8b;font-weight:500">' + esc(attr.name) + (attr.required ? ' <span style="color:#bb0000">*</span>' : '') + (attr.unit ? ' <span style="color:#aaa;font-weight:400">(' + esc(attr.unit) + ')</span>' : '') + '</label>';
+        var helpIcon = attr.helpText
+              ? '<span title="' + attr.helpText.replace(/"/g, '&quot;') + '" style="cursor:help;color:var(--sapNeutralColor,#6a6d70);margin-left:0.25rem;font-size:0.75rem">ⓘ</span>'
+              : '';
+        html += '<label style="font-size:12px;color:#6a7a8b;font-weight:500">' + esc(attr.name) + (attr.required ? ' <span style="color:#bb0000">*</span>' : '') + (attr.unit ? ' <span style="color:#aaa;font-weight:400">(' + esc(attr.unit) + ')</span>' : '') + helpIcon + '</label>';
         if (editMode) {
           html += renderInput(attr, val);
         } else {
@@ -131,6 +134,21 @@
     var id = getRestrictionId();
     if (!id) return;
     var values = collectValues(_state.groups);
+
+    var requiredErrors = [];
+    _state.groups.forEach(function (group) {
+      (group.attributes || []).forEach(function (attr) {
+        if (!attr.required) return;
+        var val = values[attr.internalKey];
+        var isEmpty = val === null || val === undefined || val === '' || (Array.isArray(val) && val.length === 0);
+        if (isEmpty) requiredErrors.push(attr.name);
+      });
+    });
+    if (requiredErrors.length > 0) {
+      alert('Required attributes missing: ' + requiredErrors.join(', '));
+      return;
+    }
+
     fetch(API_BASE + '/values/' + OBJECT_TYPE + '/' + id, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
