@@ -640,6 +640,46 @@ Applied: srv/admin-service.js
 Source: Code cleanup sprint
 Applied: app/services.cds, mta.yaml, deleted directories
 
+[2026-05-12] [BTP / Deploy / CSV] Learning: HANA HDI deployer `hdbtabledata` import fails with "record has more than expected N fields" when CSV data rows have trailing commas, even if those trailing commas represent empty columns. Root cause: CSV rows with 13 fields vs 12-column `import_columns` definition. Fix: use `csv.writer` (Python csv module) to re-write rows with exactly N fields, padding short rows and truncating long rows. NEVER fix by simply removing trailing `,` characters — that strips data from rows that legitimately end with empty fields and produces rows shorter than expected. Always count the `import_columns` array length in the corresponding `.hdbtabledata` file and ensure every data row has exactly that many fields.
+Source: BTP deploy failure — bridge.management-BridgeInspections.csv
+Applied: db/data/bridge.management-BridgeInspections.csv fixed to exactly 12 fields
+
+[2026-05-12] [BTP / Deploy / CSV] Learning: Lookup CSVs with unquoted commas in text fields silently split into extra columns and cause HDI deploy failures ("more than expected N fields"). Fix: identify the offending row by field count (awk -F',' '{print NF, $0}' file.csv | awk '$1 != N'), then quote the field containing the comma. Always run `awk -F',' '{print NF}' db/data/bridge.management-*.csv | sort -u` after any CSV edit to confirm uniform field counts across all rows.
+Source: BTP deploy failure — bridge.management-WaterwayTypes.csv row 8 "No waterway — spanning road, rail, or infrastructure corridor"
+Applied: db/data/bridge.management-WaterwayTypes.csv row 8 description field quoted
+
+[2026-05-12] [BTP / Deploy / MTAR] Learning: `cf deploy` prompts "There is an ongoing operation, abort? y/n" when a previous deploy was interrupted mid-flight. Pass `printf 'y\n' | cf deploy` to auto-confirm the abort-and-retry. The operation ID is logged by the CLI (e.g. `Operation ID: 355a95c2-...`). After abort, monitor with `cf mta-ops` (shows RUNNING/FAILED/FINISHED) and download logs with `cf dmol -i <operation-id>` to get full OPERATION.log details including HANA deployer output.
+Source: BTP deploy session — stuck operation from 2026-05-10
+Applied: Documented; pattern used throughout deploy session
+
+[2026-05-12] [BTP / Demo Data] Learning: Demo data for BMS uses integer PKs starting at 90001 for Bridges (to avoid collision with seed data). Demo bridges: DEMO-NSW-001 (Parramatta River), DEMO-VIC-001 (Yarra), DEMO-QLD-001 (Brisbane). The `activateDemoData`/`clearDemoData` functions in `srv/demo-data.js` use `startswith(bridgeId,'DEMO-')` pattern to identify demo records. Auto-refs use `DEMO-` prefix pattern (e.g. `CS-DEMO-0001`) so demo records are distinguishable from real records in every sub-domain tile. `activateDemoData` is idempotent — checks for existing demo bridge by bridgeId before inserting.
+Source: UAT demo data creation
+Applied: srv/demo-data.js, srv/admin-service.cds, srv/admin-service.js, app/bms-admin/webapp/
+
+[2026-05-12] [FLP / Config] Learning: A single trailing comma after the last object in a JSON array in `fioriSandboxConfig.json` silently breaks ALL FLP navigation intents — the sandbox.js fails to parse the config and no tiles work. `#BmsAdmin-manage` and all 18 other tiles show "App could not be opened". The fix is a 1-character removal. Always validate `fioriSandboxConfig.json` with `node -e "require('./app/appconfig/fioriSandboxConfig.json')"` after any tile or intent change.
+Source: User report — #BmsAdmin-manage "App could not be opened"
+Applied: app/appconfig/fioriSandboxConfig.json — removed trailing comma on line 63
+
+[2026-05-12] [CAP / Draft Actions] Learning: Bound actions on draft-enabled entities require the `IsActiveEntity=true` key in addition to the primary key UUID. The correct OData URL format is: `EntitySet(ID='uuid',IsActiveEntity=true)/actionName`. Calling `EntitySet(ID='uuid')/actionName` returns HTTP 400 "Key IsActiveEntity is missing". This applies to all actions declared in service CDS files on draft-enabled entities: `deactivate`, `reactivate`, `complete`, `approve`, `submitForReview`, `approveSurvey`, etc.
+Source: UAT testing — deactivate action returning 400
+Applied: Documented; all curl test commands updated to use IsActiveEntity=true
+
+[2026-05-12] [Security / UI5 CSP] Learning: UI5 1.145 `requireSync` loader uses `eval()` to execute controller modules synchronously. Helmet CSP with only `'unsafe-inline'` blocks this — the browser throws `EvalError: Evaluating a string as JavaScript violates CSP`. Fix: add `'unsafe-eval'` to Helmet's `script-src` directive. This is required for all UI5 1.145+ apps served through a Node.js Express/CAP backend with Helmet security headers.
+Source: BMS Admin tile failing with "Failed to load UI5 component" (UAT 2026-05-12)
+Applied: srv/server.js — added `"'unsafe-eval'"` to script-src array
+
+[2026-05-12] [UAT / Worktree Pattern] Learning: The Claude preview server always runs from the git WORKTREE (`.claude/worktrees/<name>/`), not from the main project directory. Code fixes applied to the main project are NOT automatically in the worktree. Before any UAT session that uses a worktree, verify the worktree has parity with main for the key files being tested. Four P1/P2 bugs were initially missed because a background audit agent checked the main project and reported false positives. Always use `diff worktree/file ../file` to confirm before marking as passing.
+Source: UAT 2026-05-12 session — 4 out of 5 bugs existed in worktree but not main
+Applied: Documented; worktree files corrected to match main project
+
+[2026-05-12] [Fiori Annotations / LRC] Learning: `LoadRatingCertificates` entity stores per-vehicle-class rating factors as named fields (`rfT44`, `rfSM1600`, `rfHLP400`, etc.) — NOT as a single `ratingFactor` field. `ratingFactor` exists only on `BridgeCapacities` and `BridgeLoadRatings`. Any `@UI.LineItem` or `@UI.FieldGroup` on `LoadRatingCertificates` that references `ratingFactor` produces an OData `Invalid (navigation) property` error and prevents the list from loading. Use `rfT44` for the T44 rating factor column.
+Source: UAT 2026-05-12 — LRC list silent OData error
+Applied: app/admin-bridges/fiori-service.cds line 2407 — `ratingFactor` → `rfT44`
+
+[2026-05-12] [Manifest / FLP Routes] Learning: Every FLP tile that targets `#AppId&/EntityRoute` MUST have a corresponding route entry (`"pattern": "EntityRoute:?query:"`) AND a corresponding target (ListReport or ObjectPage) in `manifest.json`. Without the route, FE4 silently falls back to the last-rendered route and shows stale content — no error dialog and no console warning. The only symptom is that the page title and columns are wrong. Always validate new FLP tiles by checking manifest.json for both the list route and object page route.
+Source: UAT 2026-05-12 — AssetIQScores tile showing Permits list
+Applied: app/admin-bridges/webapp/manifest.json — added AssetIQScoresList + AssetIQScoresObjectPage
+
 ---
 
 ## Contributing to this file
