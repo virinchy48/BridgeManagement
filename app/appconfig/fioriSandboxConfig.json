@@ -60,7 +60,7 @@
                     "icon": "sap-icon://bar-chart",
                     "targetURL": "#Bridges-manage&/NetworkReports"
                   }
-                },
+                }
               ]
             },
             {

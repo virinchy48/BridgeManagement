@@ -661,17 +661,20 @@ function lookupDataset(name, label, description) {
     entity: `bridge.management.${name}`,
     columns: LOOKUP_COLUMNS,
     orderBy: 'code',
-    importer: importLookupRows
+    importer: importLookupRows,
+    templateOnly: true
   }
 }
 
 function getDatasets() {
-  return DATASETS.map((dataset) => ({
-    name: dataset.name,
-    label: dataset.label,
-    description: dataset.description,
-    csvFileName: `${dataset.name}.csv`
-  }))
+  return DATASETS
+    .filter((dataset) => !dataset.templateOnly)
+    .map((dataset) => ({
+      name: dataset.name,
+      label: dataset.label,
+      description: dataset.description,
+      csvFileName: `${dataset.name}.csv`
+    }))
 }
 
 async function buildWorkbookTemplate() {

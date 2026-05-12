@@ -206,6 +206,16 @@
           "target": "BridgePermitsList"
         },
         {
+          "pattern": "AssetIQScores:?query:",
+          "name": "AssetIQScoresList",
+          "target": "AssetIQScoresList"
+        },
+        {
+          "pattern": "AssetIQScores({key}):?query:",
+          "name": "AssetIQScoresObjectPage",
+          "target": "AssetIQScoresObjectPage"
+        },
+        {
           "pattern": "BridgeInspections({key}):?query:",
           "name": "BridgeInspectionsObjectPage",
           "target": "BridgeInspectionsObjectPage"
@@ -919,6 +929,37 @@
                 }
               },
               "initialLoad": "Enabled"
+            }
+          }
+        },
+        "AssetIQScoresList": {
+          "type": "Component",
+          "id": "AssetIQScoresList",
+          "title": "AssetIQ — Risk Intelligence",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "AssetIQScores",
+              "navigation": {
+                "AssetIQScores": {
+                  "detail": {
+                    "route": "AssetIQScoresObjectPage"
+                  }
+                }
+              },
+              "initialLoad": "Enabled"
+            }
+          }
+        },
+        "AssetIQScoresObjectPage": {
+          "type": "Component",
+          "id": "AssetIQScoresObjectPage",
+          "title": "AssetIQ Score",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "AssetIQScores",
+              "editableHeaderContent": false
             }
           }
         },

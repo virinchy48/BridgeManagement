@@ -88,15 +88,6 @@ annotate AdminService.Bridges with @(
       Title: 'Posting Status',
       Criticality: postingStatusCriticality
     },
-    DataPoint#AssetIQScore: {
-      Value: assetiqScore.overallScore,
-      Title: 'AssetIQ Score',
-      CriticalityCalculation: {
-        ImprovementDirection  : #Minimize,
-        ToleranceRangeLowValue: 35,
-        DeviationRangeLowValue: 60
-      }
-    },
     DataPoint#LastInspection: {
       Value: lastInspectionDate,
       Title: 'Last Inspected'
@@ -181,15 +172,6 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'NHVR Approvals',       Target: '@UI.FieldGroup#NHVRApprovals'},
           {$Type: 'UI.ReferenceFacet', Label: 'Posting & Gazette',    Target: '@UI.FieldGroup#PostingGazette'},
           {$Type: 'UI.ReferenceFacet', Label: 'Closure',              Target: '@UI.FieldGroup#Closure'},
-        ]
-      },
-      // ── T6: Risk Intelligence (AssetIQ) ─────────────────────────────────────
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Risk Intelligence (AssetIQ)',
-        ID    : 'RiskIntelligence',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Risk Intelligence (AssetIQ)', Target: 'assetiqScore/@UI.FieldGroup#AiqScore', ID: 'AiqRisk'},
         ]
       },
       // ── T7: External System References ───────────────────────────────────
@@ -2422,7 +2404,7 @@ annotate AdminService.LoadRatingCertificates with @(
     {Value: engineerOrganisation,  Label: 'Organisation'},
     {Value: certificateIssueDate,  Label: 'Issued'},
     {Value: certificateExpiryDate, Label: 'Expires'},
-    {Value: ratingFactor,          Label: 'RF (T44)'},
+    {Value: rfT44,                  Label: 'RF (T44)'},
   ],
   UI.HeaderInfo: {
     TypeName      : 'Load Rating Certificate',
