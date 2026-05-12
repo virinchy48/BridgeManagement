@@ -2404,7 +2404,7 @@ annotate AdminService.LoadRatingCertificates with @(
     {Value: engineerOrganisation,  Label: 'Organisation'},
     {Value: certificateIssueDate,  Label: 'Issued'},
     {Value: certificateExpiryDate, Label: 'Expires'},
-    {Value: ratingFactor,          Label: 'RF (T44)'},
+    {Value: rfT44,                  Label: 'RF (T44)'},
   ],
   UI.HeaderInfo: {
     TypeName      : 'Load Rating Certificate',
