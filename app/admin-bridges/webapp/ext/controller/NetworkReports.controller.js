@@ -14,10 +14,12 @@ sap.ui.define([
       const model = new JSONModel({
         busy: false,
         selectedTab: "health",
-        health:       { loaded: false, kpis: {}, conditionDistribution: {}, conditionByState: [], worstBridges: [] },
+        health:       { loaded: false, kpis: {}, conditionDistribution: {}, conditionByState: [], worstBridges: [], ageProfile: {}, structureTypeBreakdown: [], importanceBreakdown: {} },
         inspection:   { loaded: false, kpis: {}, overdueByState: [], overdueInspections: [], upcomingInspections: [] },
+        defects:      { loaded: false, kpis: {}, bySeverity: [], topBridges: [], elementBreakdown: [], byPriority: [] },
         regulatory:   { loaded: false, kpis: {}, gazetteBreakdown: [], restrictionsByType: [], urgentBridges: [] },
-        risk:         { loaded: false, kpis: {}, scourDistribution: [], riskByState: [], topRiskBridges: [] },
+        risk:         { loaded: false, kpis: {}, formalRisk: {}, scourDistribution: [], riskByState: [], topRiskBridges: [] },
+        maintenance:  { loaded: false, kpis: {}, programmeByYear: [], priorityBreakdown: [] },
         restrictions: { loaded: false, kpis: {}, postingBreakdown: [], massRestrictedBridges: [], heightRestrictedBridges: [], fullCapacityBridges: [] },
         quality:      { loaded: false, kpis: {}, scoreDistribution: [], lowestBridges: [] }
       });
@@ -93,8 +95,10 @@ sap.ui.define([
       const endpoints = {
         health:       "/reports/api/network-health",
         inspection:   "/reports/api/inspection-compliance",
+        defects:      "/reports/api/defects",
         regulatory:   "/reports/api/regulatory-compliance",
         risk:         "/reports/api/risk-register",
+        maintenance:  "/reports/api/maintenance",
         restrictions: "/reports/api/bridges-restrictions",
         quality:      "/reports/api/data-quality"
       };
@@ -119,8 +123,10 @@ sap.ui.define([
       const render = {
         health:       () => this._renderHealth(data),
         inspection:   () => this._renderInspection(data),
+        defects:      () => this._renderDefects(data),
         regulatory:   () => this._renderRegulatory(data),
         risk:         () => this._renderRisk(data),
+        maintenance:  () => this._renderMaintenance(data),
         restrictions: () => this._renderRestrictions(data),
         quality:      () => this._renderQuality(data)
       };
@@ -172,11 +178,27 @@ sap.ui.define([
       const dist = d.conditionDistribution || {};
       const total = dist.total || 1;
 
+      const saLabel = k.ratedCount > 0 ? (k.structuralAdequacyPct || 0) + "%" : "—";
+      const saSubtext = k.ratedCount > 0 ? k.ratedCount + " rated" : "No rating data";
+      const saClass = k.ratedCount === 0 ? "rptKpiNeutral"
+        : k.structuralAdequacyPct >= 70 ? "rptKpiGood"
+        : k.structuralAdequacyPct >= 50 ? "rptKpiWarn" : "rptKpiError";
+
+      const bsiLabel = k.avgBsi != null ? k.avgBsi : "—";
+      const bsiClass = k.avgBsi == null ? "rptKpiNeutral"
+        : k.avgBsi >= 70 ? "rptKpiGood"
+        : k.avgBsi >= 50 ? "rptKpiWarn" : "rptKpiError";
+
+      const deficiencyValue = (k.deficiencyCount || 0) + " (" + (k.deficiencyRate || 0) + "%)";
+      const deficiencyClass = (k.deficiencyRate || 0) > 15 ? "rptKpiError"
+        : (k.deficiencyRate || 0) > 5 ? "rptKpiWarn" : "rptKpiGood";
+
       const kpiHtml = this._kpiStrip([
-        { label: "Total Bridges",           value: k.totalBridges || 0,              cls: "rptKpiNeutral",  nav: "#Bridges-manage" },
-        { label: "Network Condition Index",  value: (k.networkConditionIndex || 0) + "%", cls: this._nciClass(k.networkConditionIndex), scroll: "worstBridgesTable" },
-        { label: "Deficiency Rate",          value: (k.deficiencyRate || 0) + "%",    cls: k.deficiencyRate > 15 ? "rptKpiError" : k.deficiencyRate > 5 ? "rptKpiWarn" : "rptKpiGood", scroll: "worstBridgesTable" },
-        { label: "Structural Adequacy",      value: (k.structuralAdequacyPct || 0) + "%", cls: k.structuralAdequacyPct >= 70 ? "rptKpiGood" : k.structuralAdequacyPct >= 50 ? "rptKpiWarn" : "rptKpiError", scroll: "worstBridgesTable" }
+        { label: "Total Bridges",          value: k.totalBridges || 0,              cls: "rptKpiNeutral", nav: "#Bridges-manage" },
+        { label: "Network Condition Index", value: (k.networkConditionIndex || 0) + "%", cls: this._nciClass(k.networkConditionIndex), scroll: "worstBridgesTable" },
+        { label: "Deficiency",             value: deficiencyValue,                  cls: deficiencyClass, scroll: "worstBridgesTable" },
+        { label: "Structural Adequacy",    value: saLabel,                          cls: saClass, scroll: "worstBridgesTable" },
+        { label: "Avg BSI",                value: bsiLabel,                         cls: bsiClass, scroll: "worstBridgesTable" }
       ]);
 
       const chartHtml = `
@@ -202,6 +224,42 @@ sap.ui.define([
             </div>`).join("")}
         </div>` : "";
       this._setHtml("healthStateChart", stateHtml);
+
+      const age = d.ageProfile || {};
+      const ageBands = [
+        { label: "Pre-1940",  key: "pre1940", color: "#6E0000" },
+        { label: "1940–1959", key: "d1940s",  color: "#BB0000" },
+        { label: "1960–1979", key: "d1960s",  color: "#E76500" },
+        { label: "1980–1999", key: "d1980s",  color: "#E9730C" },
+        { label: "2000+",     key: "d2000s",  color: "#107E3E" },
+        { label: "Unknown",   key: "unknown", color: "#999" }
+      ].filter(b => age[b.key] > 0);
+      const maxAge = Math.max(...ageBands.map(b => age[b.key]), 1);
+      const ageHtml = ageBands.length ? `
+        <div class="rptChartSection">
+          <div class="rptChartTitle">Age Profile by Decade</div>
+          <div class="rptBarGrid">
+            ${ageBands.map(b => `
+              <div class="rptBarLabel">${b.label}</div>
+              <div class="rptBarTrack"><div class="rptBarFill" style="width:${Math.round(age[b.key] / maxAge * 100)}%;background:${b.color}"></div></div>
+              <div class="rptBarCount">${age[b.key]}</div>`).join("")}
+          </div>
+        </div>` : "";
+      this._setHtml("healthAgeChart", ageHtml);
+
+      const types = d.structureTypeBreakdown || [];
+      const maxType = Math.max(...types.map(t => t.count), 1);
+      const typeHtml = types.length ? `
+        <div class="rptChartSection">
+          <div class="rptChartTitle">Structure Type Breakdown</div>
+          <div class="rptBarGrid">
+            ${types.slice(0, 10).map(t => `
+              <div class="rptBarLabel">${t.type}</div>
+              <div class="rptBarTrack"><div class="rptBarFill" style="width:${Math.round(t.count / maxType * 100)}%"></div></div>
+              <div class="rptBarCount">${t.count}</div>`).join("")}
+          </div>
+        </div>` : "";
+      this._setHtml("healthTypeChart", typeHtml);
     },
 
     _renderInspection: function (d) {
@@ -270,11 +328,14 @@ sap.ui.define([
 
     _renderRisk: function (d) {
       const k = d.kpis || {};
+      const fr = d.formalRisk || {};
       const kpiHtml = this._kpiStrip([
         { label: "Poor/Critical Condition",  value: k.criticalCondition || 0, cls: k.criticalCondition > 0 ? "rptKpiError" : "rptKpiGood",  scroll: "topRiskTable" },
         { label: "High/VeryHigh Scour Risk", value: k.highScour || 0,         cls: k.highScour > 0 ? "rptKpiError" : "rptKpiGood",          scroll: "topRiskTable" },
         { label: "Critical Defects",         value: k.criticalDefects || 0,   cls: k.criticalDefects > 0 ? "rptKpiCritical" : "rptKpiGood", scroll: "topRiskTable" },
-        { label: "High Priority Assets",     value: k.highPriority || 0,      cls: "rptKpiWarn",                                            scroll: "topRiskTable" }
+        { label: "High Priority Assets",     value: k.highPriority || 0,      cls: "rptKpiWarn",                                            scroll: "topRiskTable" },
+        { label: "Formal Risks (Open)",      value: fr.open != null ? fr.open + " / " + (fr.total || 0) : "—", cls: (fr.open || 0) > 0 ? "rptKpiWarn" : "rptKpiNeutral", scroll: "topRiskTable" },
+        { label: "Extreme Risk",             value: fr.extreme || 0,          cls: (fr.extreme || 0) > 0 ? "rptKpiCritical" : "rptKpiGood", scroll: "topRiskTable" }
       ]);
 
       const scour = d.scourDistribution || [];
@@ -305,8 +366,111 @@ sap.ui.define([
             </div>`).join("")}
         </div>` : "";
 
+      const formalRiskBands = [
+        { label: "Extreme", count: fr.extreme || 0, color: "#6E0000" },
+        { label: "High",    count: fr.high    || 0, color: "#BB0000" },
+        { label: "Medium",  count: fr.medium  || 0, color: "#E76500" },
+        { label: "Low",     count: fr.low     || 0, color: "#107E3E" }
+      ].filter(b => b.count > 0);
+      const maxFR = Math.max(...formalRiskBands.map(b => b.count), 1);
+      const formalRiskHtml = formalRiskBands.length ? `
+        <div class="rptChartSection">
+          <div class="rptChartTitle">Formal Risk Register — Inherent Risk Levels (${fr.total || 0} assessments)</div>
+          <div class="rptBarGrid">
+            ${formalRiskBands.map(b => `
+              <div class="rptBarLabel">${b.label}</div>
+              <div class="rptBarTrack"><div class="rptBarFill" style="width:${Math.round(b.count / maxFR * 100)}%;background:${b.color}"></div></div>
+              <div class="rptBarCount">${b.count}</div>`).join("")}
+          </div>
+        </div>` : "";
+
       this._setHtml("riskKpiChart", kpiHtml);
-      this._setHtml("riskCharts", scourHtml + stateRiskHtml);
+      this._setHtml("riskCharts", formalRiskHtml + scourHtml + stateRiskHtml);
+    },
+
+    _renderDefects: function (d) {
+      const k = d.kpis || {};
+
+      const fmtAud = v => v > 0 ? "$" + v.toLocaleString("en-AU") : "$0";
+
+      const kpiHtml = this._kpiStrip([
+        { label: "Total Open Defects",     value: k.total || 0,              cls: (k.total || 0) > 0 ? "rptKpiWarn" : "rptKpiGood",    scroll: "topDefectBridgesTable" },
+        { label: "Critical (Severity 4)",  value: k.criticalDefects || 0,    cls: (k.criticalDefects || 0) > 0 ? "rptKpiCritical" : "rptKpiGood", scroll: "topDefectBridgesTable" },
+        { label: "Require Load Restriction", value: k.requiresRestriction || 0, cls: (k.requiresRestriction || 0) > 0 ? "rptKpiWarn" : "rptKpiGood", scroll: "topDefectBridgesTable" },
+        { label: "Est. Total Repair Cost", value: fmtAud(k.totalRepairValue || 0), cls: "rptKpiNeutral" }
+      ]);
+      this._setHtml("defectsKpiChart", kpiHtml);
+
+      const sevs = d.bySeverity || [];
+      const maxSev = Math.max(...sevs.map(s => s.count), 1);
+      const sevHtml = sevs.length ? `
+        <div class="rptChartSection">
+          <div class="rptChartTitle">Defects by Severity</div>
+          <div class="rptBarGrid">
+            ${sevs.map(s => `
+              <div class="rptBarLabel">${s.label}</div>
+              <div class="rptBarTrack"><div class="rptBarFill" style="width:${Math.round(s.count / maxSev * 100)}%;background:${s.color}"></div></div>
+              <div class="rptBarCount">${s.count}</div>`).join("")}
+          </div>
+        </div>` : "";
+
+      const elems = d.elementBreakdown || [];
+      const maxElem = Math.max(...elems.map(e => e.count), 1);
+      const elemHtml = elems.length ? `
+        <div class="rptChartSection">
+          <div class="rptChartTitle">Defects by Element Type (Top 10)</div>
+          <div class="rptBarGrid">
+            ${elems.map(e => `
+              <div class="rptBarLabel">${e.type}</div>
+              <div class="rptBarTrack"><div class="rptBarFill" style="width:${Math.round(e.count / maxElem * 100)}%"></div></div>
+              <div class="rptBarCount">${e.count}</div>`).join("")}
+          </div>
+        </div>` : "";
+
+      this._setHtml("defectsSeverityChart", sevHtml + elemHtml);
+    },
+
+    _renderMaintenance: function (d) {
+      const k = d.kpis || {};
+
+      const fmtAud = v => v > 0 ? "$" + Math.round(v).toLocaleString("en-AU") : "$0";
+
+      const kpiHtml = this._kpiStrip([
+        { label: "Open Defects",              value: k.openDefects || 0,             cls: (k.openDefects || 0) > 0 ? "rptKpiWarn" : "rptKpiGood" },
+        { label: "Restrictions with Repairs", value: k.restrictionsWithRepairs || 0, cls: "rptKpiNeutral" },
+        { label: "Defect Backlog Cost",        value: fmtAud(k.defectBacklogCost || 0), cls: (k.defectBacklogCost || 0) > 0 ? "rptKpiWarn" : "rptKpiGood" },
+        { label: "Total Maintenance Value",    value: fmtAud(k.totalMaintenanceValue || 0), cls: "rptKpiNeutral" }
+      ]);
+      this._setHtml("maintenanceKpiChart", kpiHtml);
+
+      const byYear = d.programmeByYear || [];
+      const maxYear = Math.max(...byYear.map(y => y.count), 1);
+      const yearHtml = byYear.length ? `
+        <div class="rptChartSection">
+          <div class="rptChartTitle">Maintenance Programme by Year</div>
+          <div class="rptBarGrid">
+            ${byYear.map(y => `
+              <div class="rptBarLabel">${y.year}</div>
+              <div class="rptBarTrack"><div class="rptBarFill" style="width:${Math.round(y.count / maxYear * 100)}%"></div></div>
+              <div class="rptBarCount">${y.count} items — ${fmtAud(y.cost)}</div>`).join("")}
+          </div>
+        </div>` : "";
+
+      const priorities = d.priorityBreakdown || [];
+      const priorityColors = { P1: "#BB0000", P2: "#E76500", P3: "#E9730C", P4: "#107E3E", Unknown: "#999" };
+      const maxPri = Math.max(...priorities.map(p => p.count), 1);
+      const priHtml = priorities.length ? `
+        <div class="rptChartSection">
+          <div class="rptChartTitle">Open Defects by Maintenance Priority</div>
+          <div class="rptBarGrid">
+            ${priorities.map(p => `
+              <div class="rptBarLabel">${p.priority}</div>
+              <div class="rptBarTrack"><div class="rptBarFill" style="width:${Math.round(p.count / maxPri * 100)}%;background:${priorityColors[p.priority] || "#999"}"></div></div>
+              <div class="rptBarCount">${p.count}</div>`).join("")}
+          </div>
+        </div>` : "";
+
+      this._setHtml("maintenanceProgrammeChart", yearHtml + priHtml);
     },
 
     _renderRestrictions: function (d) {
@@ -498,6 +662,18 @@ sap.ui.define([
       if (h < 4.6) return "Error";
       if (h < 5.0) return "Warning";
       return "None";
+    },
+
+    fmtDefectCountState: function (v) {
+      if (!v) return "Success";
+      if (v >= 5) return "Error";
+      if (v >= 2) return "Warning";
+      return "None";
+    },
+
+    fmtCriticalState: function (v) {
+      if (!v || v === 0) return "None";
+      return "Error";
     }
 
   });

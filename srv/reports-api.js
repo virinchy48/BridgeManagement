@@ -28,6 +28,15 @@ function conditionKey(c) {
   return 'good'
 }
 
+function computeBsi(b) {
+  if (!b.conditionRating) return null
+  const struct = (b.conditionRating / 10) * 55
+  const dw = b.deckWidth || 0
+  const wr = dw >= 7.3 ? 9 : dw >= 4.5 ? 5 : 2
+  const width = (wr / 10) * 15
+  return Math.min(100, Math.round(struct + width + 15))
+}
+
 function mountReportsApi(app, requiresAuthentication) {
   const router = express.Router()
   router.use(express.json())
@@ -40,7 +49,7 @@ function mountReportsApi(app, requiresAuthentication) {
         SELECT.from('bridge.management.Bridges').columns(
           'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'condition',
           'conditionRating', 'structuralAdequacyRating', 'postingStatus',
-          'importanceLevel', 'yearBuilt', 'structureType'
+          'importanceLevel', 'yearBuilt', 'structureType', 'deckWidth'
         )
       )
       if (state) bridges = bridges.filter(b => b.state === state)
@@ -49,14 +58,14 @@ function mountReportsApi(app, requiresAuthentication) {
       const dist = { good: 0, fair: 0, poor: 0, critical: 0 }
       for (const b of bridges) dist[conditionKey(b.condition)]++
 
-      const weightMap = { good: 100, fair: 75, poor: 40, critical: 10 }
       const nci = total > 0
         ? Math.round(
             (dist.good * 100 + dist.fair * 75 + dist.poor * 40 + dist.critical * 10) / total
           )
         : 0
+      const deficiencyCount = dist.poor + dist.critical
       const deficiencyRate = total > 0
-        ? Math.round(((dist.poor + dist.critical) / total) * 100)
+        ? Math.round((deficiencyCount / total) * 100)
         : 0
 
       const ratedBridges = bridges.filter(b => b.structuralAdequacyRating > 0)
@@ -65,7 +74,13 @@ function mountReportsApi(app, requiresAuthentication) {
             ratedBridges.reduce((s, b) => s + b.structuralAdequacyRating, 0) /
             ratedBridges.length / 10 * 100
           )
-        : 0
+        : null
+      const ratedCount = ratedBridges.length
+
+      const bridgesWithBsi = bridges.map(b => ({ ...b, bsi: computeBsi(b) })).filter(b => b.bsi != null)
+      const avgBsi = bridgesWithBsi.length > 0
+        ? Math.round(bridgesWithBsi.reduce((s, b) => s + b.bsi, 0) / bridgesWithBsi.length)
+        : null
 
       const byState = {}
       for (const b of bridges) {
@@ -75,6 +90,39 @@ function mountReportsApi(app, requiresAuthentication) {
         byState[st].total++
       }
       const conditionByState = Object.values(byState).sort((a, b) => b.total - a.total)
+
+      // Age profile by decade
+      const ageProfile = { pre1940: 0, d1940s: 0, d1960s: 0, d1980s: 0, d2000s: 0, unknown: 0 }
+      for (const b of bridges) {
+        const y = b.yearBuilt
+        if (!y) ageProfile.unknown++
+        else if (y < 1940) ageProfile.pre1940++
+        else if (y < 1960) ageProfile.d1940s++
+        else if (y < 1980) ageProfile.d1960s++
+        else if (y < 2000) ageProfile.d1980s++
+        else ageProfile.d2000s++
+      }
+
+      // Structure type breakdown
+      const typeMap = {}
+      for (const b of bridges) {
+        const t = b.structureType || 'Unknown'
+        typeMap[t] = (typeMap[t] || 0) + 1
+      }
+      const structureTypeBreakdown = Object.entries(typeMap)
+        .map(([type, count]) => ({ type, count }))
+        .sort((a, b) => b.count - a.count)
+
+      // Importance breakdown
+      const importanceBreakdown = { critical: 0, essential: 0, important: 0, ordinary: 0, unknown: 0 }
+      for (const b of bridges) {
+        const il = b.importanceLevel
+        if (il === 1) importanceBreakdown.critical++
+        else if (il === 2) importanceBreakdown.essential++
+        else if (il === 3) importanceBreakdown.important++
+        else if (il === 4) importanceBreakdown.ordinary++
+        else importanceBreakdown.unknown++
+      }
 
       const worstBridges = bridges
         .filter(b => b.conditionRating != null)
@@ -93,9 +141,22 @@ function mountReportsApi(app, requiresAuthentication) {
         }))
 
       res.json({
-        kpis: { totalBridges: total, networkConditionIndex: nci, deficiencyRate, structuralAdequacyPct },
+        kpis: {
+          totalBridges: total,
+          networkConditionIndex: nci,
+          deficiencyCount,
+          deficiencyRate,
+          structuralAdequacyPct,
+          ratedCount,
+          avgBsi,
+          criticalOrPoor: dist.critical + dist.poor,
+          bridgesWithCondition: bridges.filter(b => b.condition).length
+        },
         conditionDistribution: { ...dist, total },
         conditionByState,
+        ageProfile,
+        structureTypeBreakdown,
+        importanceBreakdown,
         worstBridges
       })
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
@@ -259,17 +320,32 @@ function mountReportsApi(app, requiresAuthentication) {
     try {
       const { state } = req.query
       const db = await cds.connect.to('db')
-      let bridges = await db.run(
-        SELECT.from('bridge.management.Bridges').columns(
-          'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'condition',
-          'conditionRating', 'scourRisk', 'highPriorityAsset',
-          'importanceLevel', 'postingStatus', 'yearBuilt'
+      let [bridges, riskAssessments] = await Promise.all([
+        db.run(
+          SELECT.from('bridge.management.Bridges').columns(
+            'ID', 'bridgeId', 'bridgeName', 'state', 'region', 'condition',
+            'conditionRating', 'scourRisk', 'highPriorityAsset',
+            'importanceLevel', 'postingStatus', 'yearBuilt'
+          )
+        ),
+        db.run(
+          SELECT.from('bridge.management.BridgeRiskAssessments')
+            .columns('bridge_ID', 'inherentRiskLevel', 'inherentRiskScore', 'residualRiskLevel', 'riskRegisterStatus', 'active')
+            .where({ active: true })
         )
-      )
+      ])
       if (state) bridges = bridges.filter(b => b.state === state)
 
+      const bridgeIdSet = new Set(bridges.map(b => b.ID))
+      riskAssessments = riskAssessments.filter(r => bridgeIdSet.has(r.bridge_ID))
+
+      const formalExtreme = riskAssessments.filter(r => r.inherentRiskLevel === 'Extreme').length
+      const formalHigh    = riskAssessments.filter(r => r.inherentRiskLevel === 'High').length
+      const formalMedium  = riskAssessments.filter(r => r.inherentRiskLevel === 'Medium').length
+      const formalLow     = riskAssessments.filter(r => r.inherentRiskLevel === 'Low').length
+      const openRisks     = riskAssessments.filter(r => ['Open', 'Escalated'].includes(r.riskRegisterStatus)).length
+
       let criticalCondition = 0, highScour = 0, criticalDefects = 0, highPriority = 0
-      // criticalDefects: proxy using conditionRating >= 4 (no criticalDefectFlag on bridge.management.Bridges)
       const riskByStateMap = {}
       const scourMap = {}
 
@@ -278,11 +354,10 @@ function mountReportsApi(app, requiresAuthentication) {
         const condScore = ck === 'critical' ? 40 : ck === 'poor' ? 25 : ck === 'fair' ? 10 : 0
         const scour = (b.scourRisk || '').replace(/\s/g, '')
         const scourScore = scour === 'VeryHigh' ? 35 : scour === 'High' ? 30 : scour === 'Medium' ? 15 : scour === 'Low' ? 5 : 0
-        const defectScore = 0
         const priorityScore = b.highPriorityAsset ? 5 : 0
         const il = b.importanceLevel
         const ilScore = il === 'Critical' || il === 1 ? 10 : il === 'Essential' || il === 2 ? 7 : il === 'Important' || il === 3 ? 4 : il === 'Ordinary' || il === 4 ? 1 : 0
-        const riskScore = condScore + scourScore + defectScore + priorityScore + ilScore
+        const riskScore = condScore + scourScore + priorityScore + ilScore
 
         if (ck === 'critical' || ck === 'poor') criticalCondition++
         const scourNorm = (b.scourRisk || '').replace(/\s/g, '')
@@ -317,9 +392,147 @@ function mountReportsApi(app, requiresAuthentication) {
 
       res.json({
         kpis: { criticalCondition, highScour, criticalDefects, highPriority },
+        formalRisk: { extreme: formalExtreme, high: formalHigh, medium: formalMedium, low: formalLow, total: riskAssessments.length, open: openRisks },
         scourDistribution,
         riskByState,
         topRiskBridges
+      })
+    } catch (err) { res.status(500).json({ error: { message: err.message } }) }
+  })
+
+  router.get('/defects', async (req, res) => {
+    try {
+      const { state } = req.query
+      const db = await cds.connect.to('db')
+
+      let [defects, bridgesMap] = await Promise.all([
+        db.run(SELECT.from('bridge.management.BridgeDefects')
+          .columns('ID', 'bridge_ID', 'severity', 'elementType', 'defectType', 'active',
+                   'requiresLoadRestriction', 'estimatedRepairCost', 'maintenancePriority', 'remediationStatus')
+          .where({ active: true })),
+        db.run(SELECT.from('bridge.management.Bridges')
+          .columns('ID', 'bridgeId', 'bridgeName', 'state', 'region')
+          .where({ isActive: true }))
+          .then(rows => Object.fromEntries(rows.map(b => [b.ID, b])))
+      ])
+
+      defects = defects.map(d => ({ ...d, ...(bridgesMap[d.bridge_ID] || {}) }))
+      if (state) defects = defects.filter(d => d.state === state)
+
+      const total = defects.length
+      const bySeverity = { 1: 0, 2: 0, 3: 0, 4: 0 }
+      let requiresRestriction = 0, criticalDefects = 0
+      let totalRepairCost = 0, repairCostCount = 0
+
+      for (const d of defects) {
+        bySeverity[d.severity] = (bySeverity[d.severity] || 0) + 1
+        if (d.severity >= 4) criticalDefects++
+        if (d.requiresLoadRestriction) requiresRestriction++
+        if (d.estimatedRepairCost > 0) { totalRepairCost += d.estimatedRepairCost; repairCostCount++ }
+      }
+
+      const byBridgeMap = {}
+      for (const d of defects) {
+        const bid = d.bridge_ID
+        if (!byBridgeMap[bid]) byBridgeMap[bid] = { bridgeId: d.bridgeId, bridgeName: d.bridgeName, state: d.state, count: 0, critical: 0 }
+        byBridgeMap[bid].count++
+        if (d.severity >= 4) byBridgeMap[bid].critical++
+      }
+      const topBridges = Object.values(byBridgeMap).sort((a, b) => b.count - a.count).slice(0, 15)
+
+      const byPriority = {}
+      for (const d of defects) {
+        const p = d.maintenancePriority || 'Unset'
+        byPriority[p] = (byPriority[p] || 0) + 1
+      }
+
+      const byElement = {}
+      for (const d of defects) {
+        const e = d.elementType || 'Unknown'
+        byElement[e] = (byElement[e] || 0) + 1
+      }
+      const elementBreakdown = Object.entries(byElement).map(([type, count]) => ({ type, count })).sort((a, b) => b.count - a.count).slice(0, 10)
+
+      const avgRepairCost = repairCostCount > 0 ? Math.round(totalRepairCost / repairCostCount) : 0
+      const totalRepairValue = Math.round(totalRepairCost)
+
+      res.json({
+        kpis: { total, criticalDefects, requiresRestriction, avgRepairCost, totalRepairValue },
+        bySeverity: [
+          { severity: 4, label: 'Critical (P1)', count: bySeverity[4] || 0, color: '#BB0000' },
+          { severity: 3, label: 'High (P2)',     count: bySeverity[3] || 0, color: '#E76500' },
+          { severity: 2, label: 'Medium (P3)',   count: bySeverity[2] || 0, color: '#E9730C' },
+          { severity: 1, label: 'Low (P4)',      count: bySeverity[1] || 0, color: '#107E3E' }
+        ],
+        elementBreakdown,
+        byPriority: Object.entries(byPriority).map(([p, c]) => ({ priority: p, count: c })).sort((a, b) => b.count - a.count),
+        topBridges
+      })
+    } catch (err) { res.status(500).json({ error: { message: err.message } }) }
+  })
+
+  router.get('/maintenance', async (req, res) => {
+    try {
+      const { state } = req.query
+      const db = await cds.connect.to('db')
+
+      let [restrictions, defects, bridges] = await Promise.all([
+        db.run(
+          SELECT.from('bridge.management.Restrictions')
+            .columns('ID', 'bridge_ID', 'restrictionRef', 'restrictionType',
+                     'repairsProposal', 'estimatedRepairCost', 'programmeYear',
+                     'maintenancePriority', 'active')
+            .where({ active: true })
+        ).catch(() => []),
+        db.run(
+          SELECT.from('bridge.management.BridgeDefects')
+            .columns('ID', 'bridge_ID', 'severity', 'estimatedRepairCost',
+                     'maintenancePriority', 'plannedRemediationDate', 'actualRemediationDate', 'active')
+            .where({ active: true })
+        ),
+        db.run(
+          SELECT.from('bridge.management.Bridges')
+            .columns('ID', 'bridgeId', 'bridgeName', 'state', 'region')
+            .where({ isActive: true })
+        )
+      ])
+
+      const bridgesMap = Object.fromEntries(bridges.map(b => [b.ID, b]))
+      if (state) {
+        restrictions = restrictions.filter(r => (bridgesMap[r.bridge_ID] || {}).state === state)
+        defects      = defects.filter(d => (bridgesMap[d.bridge_ID] || {}).state === state)
+      }
+
+      const byYear = {}
+      for (const r of restrictions) {
+        if (r.programmeYear) {
+          if (!byYear[r.programmeYear]) byYear[r.programmeYear] = { year: r.programmeYear, count: 0, cost: 0 }
+          byYear[r.programmeYear].count++
+          byYear[r.programmeYear].cost += r.estimatedRepairCost || 0
+        }
+      }
+
+      const defectBacklogCost     = defects.reduce((s, d) => s + (d.estimatedRepairCost || 0), 0)
+      const restrictionRepairCost = restrictions.reduce((s, r) => s + (r.estimatedRepairCost || 0), 0)
+
+      const byPriority = { P1: 0, P2: 0, P3: 0, P4: 0, Unknown: 0 }
+      for (const d of defects) {
+        const p = d.maintenancePriority || 'Unknown'
+        if (byPriority[p] !== undefined) byPriority[p]++
+        else byPriority['Unknown']++
+      }
+
+      res.json({
+        kpis: {
+          openDefects: defects.length,
+          restrictionsWithRepairs: restrictions.filter(r => r.repairsProposal).length,
+          defectBacklogCost,
+          restrictionRepairCost,
+          totalMaintenanceValue: defectBacklogCost + restrictionRepairCost,
+          programmeYears: Object.keys(byYear).length
+        },
+        programmeByYear: Object.values(byYear).sort((a, b) => a.year - b.year),
+        priorityBreakdown: Object.entries(byPriority).map(([p, c]) => ({ priority: p, count: c })).filter(x => x.count > 0)
       })
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })

@@ -34,6 +34,8 @@
                 <MessageStrip id="healthFilterBanner" text="" type="Information" showIcon="true" showCloseButton="true" visible="false" class="sapUiSmallMarginBottom" close=".onFilterBannerClose"/>
                 <core:HTML id="healthKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
                 <core:HTML id="healthStateChart" content=""/>
+                <core:HTML id="healthAgeChart" content=""/>
+                <core:HTML id="healthTypeChart" content=""/>
                 <VBox class="rptSection">
                   <Label text="Worst Condition Bridges" class="rptSectionHeader"/>
                   <Table id="worstBridgesTable" items="{view>/health/worstBridges}" noDataText="No bridge data" growing="true" growingThreshold="10">
@@ -127,7 +129,40 @@
             </content>
           </IconTabFilter>
 
-          <IconTabFilter key="regulatory" icon="sap-icon://official-service" text="Compliance" id="tabRegulatory">
+          <IconTabFilter key="defects" icon="sap-icon://warning2" text="Defects Register" id="tabDefects">
+            <content>
+              <VBox class="rptTabContent">
+                <MessageStrip id="defectsFilterBanner" text="" type="Information" showIcon="true" showCloseButton="true" visible="false" class="sapUiSmallMarginBottom" close=".onFilterBannerClose"/>
+                <core:HTML id="defectsKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="defectsSeverityChart" content=""/>
+                <VBox class="rptSection">
+                  <Label text="Bridges with Most Open Defects" class="rptSectionHeader"/>
+                  <Table id="topDefectBridgesTable" items="{view>/defects/topBridges}" noDataText="No defect data available" growing="true" growingThreshold="15">
+                    <columns>
+                      <Column><Text text="Bridge ID"/></Column>
+                      <Column><Text text="Name"/></Column>
+                      <Column><Text text="State"/></Column>
+                      <Column><Text text="Open Defects"/></Column>
+                      <Column><Text text="Critical (Sev 4)"/></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem type="Active" press="onBridgeRowPress">
+                        <cells>
+                          <Text text="{view>bridgeId}"/>
+                          <Text text="{view>bridgeName}"/>
+                          <Text text="{view>state}"/>
+                          <ObjectNumber number="{view>count}" state="{path:'view>count', formatter:'.fmtDefectCountState'}"/>
+                          <ObjectNumber number="{view>critical}" state="{path:'view>critical', formatter:'.fmtCriticalState'}"/>
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="regulatory" icon="sap-icon://official-service" text="Compliance &amp; NHVR" id="tabRegulatory">
             <content>
               <VBox class="rptTabContent">
                 <MessageStrip id="regulatoryFilterBanner" text="" type="Information" showIcon="true" showCloseButton="true" visible="false" class="sapUiSmallMarginBottom" close=".onFilterBannerClose"/>
@@ -201,7 +236,16 @@
             </content>
           </IconTabFilter>
 
-          <IconTabFilter key="restrictions" icon="sap-icon://restriction" text="Bridges &amp; Restrictions" id="tabRestrictions">
+          <IconTabFilter key="maintenance" icon="sap-icon://tools-opportunity" text="Maintenance" id="tabMaintenance">
+            <content>
+              <VBox class="rptTabContent">
+                <core:HTML id="maintenanceKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+                <core:HTML id="maintenanceProgrammeChart" content=""/>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
+          <IconTabFilter key="restrictions" icon="sap-icon://restriction" text="Restrictions" id="tabRestrictions">
             <content>
               <VBox class="rptTabContent">
                 <core:HTML id="restrictionsKpiChart" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
