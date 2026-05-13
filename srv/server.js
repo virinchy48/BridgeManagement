@@ -19,6 +19,7 @@ const {
 const mountAttributesApi = require('./attributes-api')
 const mountReportsApi = require('./reports-api')
 const mountBhiBsiApi = require('./bhi-bsi-api')
+const mountExternalApi = require('./external-api')
 const qrApi = require('./qr-api')
 
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
@@ -2677,6 +2678,7 @@ cds.on('bootstrap', (app) => {
 
   mountReportsApi(app, requiresAuthentication)
   mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken)
+  mountExternalApi(app, apiLimiter)
 
   app.use('/bnac/api', apiLimiter, requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
 })
