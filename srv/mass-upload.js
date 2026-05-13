@@ -274,50 +274,72 @@ const LRC_COLUMNS = [
 ]
 
 const CONDITION_SURVEY_COLUMNS = [
-  column('bridgeRef',        'string',  { required: true }),
-  column('surveyRef',        'string',  { required: true }),
-  column('surveyDate',       'date',    { required: true }),
-  column('surveyType',       'string',  { required: true }),
-  column('surveyedBy',       'string',  { required: true }),
-  column('conditionRating',  'integer', { required: true }),
-  column('structuralRating', 'integer'),
-  column('overallGrade',     'string'),
-  column('status',           'string'),
-  column('notes',            'string'),
-  column('active',           'boolean'),
+  column('bridgeRef',                  'string',  { required: true }),
+  column('surveyRef',                  'string'),
+  column('surveyDate',                 'date',    { required: true }),
+  column('surveyType',                 'string',  { required: true }),
+  column('surveyedBy',                 'string',  { required: true }),
+  column('conditionRating',            'integer', { required: true }),
+  column('structuralRating',           'integer'),
+  column('overallGrade',               'string'),
+  column('inspectorAccreditationLevel','string'),
+  column('accessMethod',               'string'),
+  column('nextSurveyRecommended',      'date'),
+  column('estimatedRehabCost',         'decimal'),
+  column('actionPlan',                 'string'),
+  column('linkedInspectionRef',        'string'),
+  column('programmeYear',              'integer'),
+  column('status',                     'string'),
+  column('notes',                      'string'),
+  column('remarks',                    'string'),
+  column('active',                     'boolean'),
 ]
 
 const LOAD_RATING_COLUMNS = [
-  column('bridgeRef',       'string',  { required: true }),
-  column('ratingRef',       'string',  { required: true }),
-  column('vehicleClass',    'string',  { required: true }),
-  column('ratingMethod',    'string',  { required: true }),
-  column('ratingFactor',    'decimal'),
-  column('grossMassLimit',  'decimal'),
-  column('assessedBy',      'string',  { required: true }),
-  column('assessmentDate',  'date',    { required: true }),
-  column('validTo',         'date'),
-  column('status',          'string'),
-  column('ratingBasis',     'string'),
-  column('active',          'boolean'),
+  column('bridgeRef',              'string',  { required: true }),
+  column('ratingRef',              'string'),
+  column('vehicleClass',           'string',  { required: true }),
+  column('ratingMethod',           'string',  { required: true }),
+  column('ratingFactor',           'decimal'),
+  column('grossMassLimit',         'decimal'),
+  column('assessedBy',             'string',  { required: true }),
+  column('assessmentDate',         'date',    { required: true }),
+  column('validTo',                'date',    { required: true }),
+  column('ratingEngineerNer',      'string'),
+  column('governingMember',        'string'),
+  column('governingFailureMode',   'string'),
+  column('dynamicLoadAllowance',   'decimal'),
+  column('reportRef',              'string'),
+  column('status',                 'string'),
+  column('remarks',                'string'),
+  column('active',                 'boolean'),
 ]
 
 const PERMIT_COLUMNS = [
-  column('bridgeRef',            'string',  { required: true }),
-  column('permitRef',            'string',  { required: true }),
-  column('permitType',           'string',  { required: true }),
-  column('applicantName',        'string',  { required: true }),
-  column('vehicleClass',         'string'),
-  column('grossMass',            'decimal'),
-  column('height',               'decimal'),
-  column('width',                'decimal'),
-  column('length',               'decimal'),
-  column('appliedDate',          'date'),
-  column('validFrom',            'date'),
-  column('validTo',              'date'),
-  column('status',               'string'),
-  column('conditionsOfApproval', 'string'),
-  column('active',               'boolean'),
+  column('bridgeRef',             'string',  { required: true }),
+  column('permitRef',             'string'),
+  column('permitType',            'string',  { required: true }),
+  column('applicantName',         'string',  { required: true }),
+  column('nhvrPermitNumber',      'string'),
+  column('nhvrApplicationNumber', 'string'),
+  column('vehicleClass',          'string'),
+  column('grossMass',             'decimal'),
+  column('height',                'decimal'),
+  column('width',                 'decimal'),
+  column('length',                'decimal'),
+  column('tripCount',             'integer'),
+  column('axleConfiguration',     'string'),
+  column('escortRequired',        'boolean'),
+  column('pilotVehicleCount',     'integer'),
+  column('appliedDate',           'date'),
+  column('validFrom',             'date'),
+  column('validTo',               'date'),
+  column('status',                'string'),
+  column('decisionBy',            'string'),
+  column('decisionDate',          'date'),
+  column('conditionsOfApproval',  'string'),
+  column('remarks',               'string'),
+  column('active',                'boolean'),
 ]
 
 const DATASETS = Object.freeze([
@@ -593,7 +615,7 @@ const DATASETS = Object.freeze([
   {
     name: 'BridgeConditionSurveys',
     label: 'Condition Surveys',
-    description: 'Bulk upload condition survey records linked to bridges',
+    description: 'Condition survey records. Leave surveyRef blank for new records (auto-assigned CS-0001…); provide surveyRef to update existing records.',
     entity: 'bridge.management.BridgeConditionSurveys',
     columns: CONDITION_SURVEY_COLUMNS,
     orderBy: 'surveyRef',
@@ -602,7 +624,7 @@ const DATASETS = Object.freeze([
   {
     name: 'BridgeLoadRatings',
     label: 'Load Ratings',
-    description: 'Bulk upload per-vehicle-class load rating assessments',
+    description: 'Per-vehicle-class load rating assessments. Leave ratingRef blank for new records (auto-assigned LR-0001…); provide ratingRef to update existing records.',
     entity: 'bridge.management.BridgeLoadRatings',
     columns: LOAD_RATING_COLUMNS,
     orderBy: 'ratingRef',
@@ -611,7 +633,7 @@ const DATASETS = Object.freeze([
   {
     name: 'BridgePermits',
     label: 'Permits',
-    description: 'Bulk upload permit applications and approvals',
+    description: 'Permit applications and approvals. Leave permitRef blank for new records (auto-assigned PM-0001…); provide permitRef to update existing records.',
     entity: 'bridge.management.BridgePermits',
     columns: PERMIT_COLUMNS,
     orderBy: 'permitRef',
@@ -1531,6 +1553,27 @@ async function enrichRowsWithBridgeId(tx, rows, datasetName) {
   }
 }
 
+async function batchGenerateRefs(tx, entityName, refField, prefix, rows) {
+  const blanks = rows.filter(r => !r[refField])
+  if (!blanks.length) return
+  const existing = await tx.run(SELECT.from(entityName).columns(refField))
+  const pattern = new RegExp(`^${prefix}(\\d+)$`)
+  let maxSeq = 0
+  for (const rec of existing) {
+    const m = rec[refField]?.match(pattern)
+    if (m) maxSeq = Math.max(maxSeq, parseInt(m[1], 10))
+  }
+  for (const row of rows.filter(r => r[refField])) {
+    const m = row[refField]?.match(pattern)
+    if (m) maxSeq = Math.max(maxSeq, parseInt(m[1], 10))
+  }
+  let seq = maxSeq + 1
+  for (const row of blanks) {
+    row[refField] = `${prefix}${String(seq).padStart(4, '0')}`
+    seq++
+  }
+}
+
 async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, { naturalKey, objectType, getName }) {
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
@@ -1684,6 +1727,7 @@ async function importConditionSurveyRows(tx, dataset, rows, warnings, auditConte
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  await batchGenerateRefs(tx, 'bridge.management.BridgeConditionSurveys', 'surveyRef', 'CS-', normalized)
   for (const row of normalized) {
     if (!row.status) row.status = 'Draft'
     if (row.active === null || row.active === undefined) row.active = true
@@ -1699,6 +1743,7 @@ async function importLoadRatingRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  await batchGenerateRefs(tx, 'bridge.management.BridgeLoadRatings', 'ratingRef', 'LR-', normalized)
   for (const row of normalized) {
     if (!row.status) row.status = 'Active'
     if (row.active === null || row.active === undefined) row.active = true
@@ -1714,6 +1759,7 @@ async function importPermitRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  await batchGenerateRefs(tx, 'bridge.management.BridgePermits', 'permitRef', 'PM-', normalized)
   for (const row of normalized) {
     if (!row.status) row.status = 'Pending'
     if (row.active === null || row.active === undefined) row.active = true
@@ -1952,6 +1998,9 @@ function getDedupeKey(dataset, row) {
   if (dataset.name === 'BridgeRestrictions') return row.ID ?? `${row.bridgeRef}|${row.restrictionRef}`
   if (dataset.name === 'LoadRatingCertificates') return row.ID ?? `${row.bridgeRef}|${row.certificateNumber}`
   if (dataset.name === 'BridgeRestrictionProvisions') return row.ID ?? `${row.restrictionRef}|${row.provisionNumber}`
+  if (dataset.name === 'BridgeConditionSurveys') return row.ID ?? (row.surveyRef ? `surveyRef:${row.surveyRef}` : `${row.bridgeRef}|${row.surveyDate}|${row.surveyType}`)
+  if (dataset.name === 'BridgeLoadRatings') return row.ID ?? (row.ratingRef ? `ratingRef:${row.ratingRef}` : `${row.bridgeRef}|${row.vehicleClass}|${row.assessmentDate}`)
+  if (dataset.name === 'BridgePermits') return row.ID ?? (row.permitRef ? `permitRef:${row.permitRef}` : `${row.bridgeRef}|${row.permitType}|${row.applicantName}|${row.appliedDate}`)
   return JSON.stringify(row)
 }
 
