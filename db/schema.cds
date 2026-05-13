@@ -678,6 +678,7 @@ extend entity Bridges with {
 entity UploadSessions : cuid, managed {
   fileName        : String(255);
   datasetName     : String(100) default 'All';
+  mode            : String(20)  default 'upsert';      // create | update | upsert
   status          : String(20)  default 'Completed';   // Completed | PartialSuccess | Failed
   totalRows       : Integer     default 0;
   insertedRows    : Integer     default 0;

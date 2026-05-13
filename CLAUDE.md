@@ -732,6 +732,22 @@ Applied: srv/mass-upload.js — active column in BRIDGE_COLUMNS, RESTRICTION_COL
 Source: Upload log/report feature
 Applied: db/schema.cds (UploadSessions entity), srv/admin-service.cds (projection), srv/mass-upload.js (recordUploadSession, getUploadHistory, getUploadSessionById), srv/server.js (/history routes + recordUploadSession wired into /upload), app/mass-upload/webapp/controller/Main.controller.js (_loadHistoryFromServer, onDownloadSessionReport), app/mass-upload/webapp/view/Main.view.xml (Report column)
 
+[2026-05-13] [Mass Upload / Lookup Values admin] Learning: All 26 `sap.common.CodeList` lookup entities (States, Regions, VehicleClasses, ConditionStates, etc.) now have `active: Boolean default true`. The BMS Admin "Lookup Values" screen (`app/bms-admin/webapp/view/LookupValues.view.xml` + `controller/LookupValues.controller.js`) allows per-row activate/deactivate via OData PATCH with CSRF token. Mass upload supports `active=false` in AllowedValues CSV rows to bulk-deactivate lookup values. The `_openEditDialog` handles the `DefectCodes` entity having a `description` field instead of `name` (uses `code/description/name` fallback).
+Source: Lookup values admin + active field feature
+Applied: db/schema.cds (active field on 26 CodeList entities), app/bms-admin/webapp/view/LookupValues.view.xml, app/bms-admin/webapp/controller/LookupValues.controller.js, app/bms-admin/webapp/manifest.json, app/bms-admin/webapp/view/Shell.view.xml
+
+[2026-05-13] [Mass Upload / mode field] Learning: `UploadSessions` now has a `mode: String(20) default 'upsert'` field (create | update | upsert). The `/upload` endpoint passes `mode` from the request body → `importUpload` auditContext → `recordUploadSession`. The history UI and `GET /mass-upload/api/history` show the mode per session, making it easy to audit what kind of operation was performed.
+Source: Upload mode tracking feature
+Applied: db/schema.cds (UploadSessions.mode field), srv/mass-upload.js (recordUploadSession signature), srv/server.js (recordUploadSession call)
+
+[2026-05-13] [Mass Upload / template double-asterisk bug] Learning: `buildHeaderRow()` in `srv/mass-upload.js` was appending `*` unconditionally to all required columns — but display-name datasets (BridgeCarriageways, BridgeContacts, BridgeMehComponents, BridgeInspectionElements) have `header: 'Bridge ID *'` (already with `*`). The output was `Bridge ID **` (double asterisk). `parseSheetRows` strips only ONE trailing `*`, so it looked for `bridge id *` in the normalizedHeaders map but the `headerKey` was `bridge id` — mismatch. Fix: check `!label.endsWith('*')` before appending. The corrected template CSVs now have `Bridge ID *` (single asterisk) and uploads succeed.
+Source: Mass upload test — BridgeCarriageways, BridgeContacts, BridgeMehComponents returning 422 "must contain 'Bridge ID *' column"
+Applied: srv/mass-upload.js `buildHeaderRow` function
+
+[2026-05-13] [Mass Upload / CSV importer dispatch bug] Learning: The single-dataset CSV upload path (line ~1372 in `srv/mass-upload.js`) called `dataset.importer(...)` directly without falling back to `dataset.importRows(...)`. Four datasets (BridgeCarriageways, BridgeContacts, BridgeMehComponents, BridgeInspectionElements) define inline `async importRows(rows, tx)` method syntax instead of a named `importer` reference — so `dataset.importer` was `undefined` and threw "dataset.importer is not a function". Fix: use `dataset.importer ? dataset.importer(...) : dataset.importRows(rows, tx)` in both the single-dataset path and the workbook path (which already had the fallback).
+Source: Mass upload test — Carriageways/Contacts/MEH/InspectionElements returning 422
+Applied: srv/mass-upload.js single-dataset CSV dispatch (line ~1372)
+
 ---
 
 ## Contributing to this file

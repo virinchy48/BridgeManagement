@@ -1260,6 +1260,7 @@ cds.on('bootstrap', (app) => {
         fileName,
         datasetName: dataset,
         uploadedBy: req.user?.id || 'system',
+        mode,
         summaries: result.summaries || [],
         warnings:  result.warnings  || []
       })

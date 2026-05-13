@@ -1369,7 +1369,9 @@ async function importCsv(tx, buffer, datasetName, auditContext) {
 
   const warnings = []
   const rows = parseSheetRows(sheet, dataset)
-  const summary = await dataset.importer(tx, dataset, rows, warnings, auditContext)
+  const summary = await (dataset.importer
+    ? dataset.importer(tx, dataset, rows, warnings, auditContext)
+    : dataset.importRows(rows, tx))
   return { summary, warnings }
 }
 
@@ -2416,7 +2418,8 @@ function stripMetadata(row) {
 function buildHeaderRow(dataset) {
   return dataset.columns.map((columnDef) => {
     const label = columnDef.name || columnDef.header || ''
-    return `${label}${columnDef.required ? '*' : ''}`
+    if (columnDef.required && !label.endsWith('*')) return `${label}*`
+    return label
   })
 }
 
@@ -2502,7 +2505,7 @@ function resolveWorkbookDatasets(datasetName) {
 }
 
 // ── Upload session recording ─────────────────────────────────────────────────
-async function recordUploadSession(db, { fileName, datasetName, uploadedBy, summaries, warnings }) {
+async function recordUploadSession(db, { fileName, datasetName, uploadedBy, mode, summaries, warnings }) {
   const totalRows       = summaries.reduce((s, x) => s + (x.processed || 0), 0)
   const insertedRows    = summaries.reduce((s, x) => s + (x.inserted  || 0), 0)
   const updatedRows     = summaries.reduce((s, x) => s + (x.updated   || 0), 0)
@@ -2512,6 +2515,7 @@ async function recordUploadSession(db, { fileName, datasetName, uploadedBy, summ
     ID:             cds.utils.uuid(),
     fileName,
     datasetName:    datasetName || 'All',
+    mode:           mode || 'upsert',
     status:         hasErrors ? 'PartialSuccess' : 'Completed',
     totalRows,
     insertedRows,
@@ -2535,8 +2539,8 @@ async function getUploadHistory(limit = 50) {
   const db = await cds.connect.to('db')
   return db.run(
     SELECT.from('bridge.management.UploadSessions')
-      .columns('ID', 'fileName', 'datasetName', 'status', 'totalRows', 'insertedRows', 'updatedRows',
-               'deactivatedRows', 'warningCount', 'errorCount', 'createdAt', 'createdBy')
+      .columns('ID', 'fileName', 'datasetName', 'mode', 'status', 'totalRows', 'insertedRows', 'updatedRows',
+               'deactivatedRows', 'warningCount', 'errorCount', 'summaryJson', 'createdAt', 'createdBy')
       .orderBy('createdAt desc')
       .limit(limit)
   )
