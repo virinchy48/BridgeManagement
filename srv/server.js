@@ -19,6 +19,7 @@ const {
 const mountAttributesApi = require('./attributes-api')
 const mountReportsApi = require('./reports-api')
 const mountBhiBsiApi = require('./bhi-bsi-api')
+const qrApi = require('./qr-api')
 
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 
@@ -2527,6 +2528,9 @@ cds.on('bootstrap', (app) => {
   })
 
   app.use('/admin-bridges/api', apiLimiter, requiresAuthentication, requireScope('admin', 'manage', 'inspect'), validateCsrfToken, adminBridgeRouter)
+
+  // QR codes + PDF inspection reports
+  app.use('/admin-bridges/api', requiresAuthentication, qrApi)
 
   // ── BNAC Integration Config ─────────────────────────────────────────────
   const bnacRouter = express.Router()

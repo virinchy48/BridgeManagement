@@ -21,6 +21,7 @@
           <Button text="{i18n>admin.featureFlags.refresh}"
                   icon="sap-icon://refresh"
                   press=".onRefreshFlags"/>
+          <Button icon="sap-icon://information" tooltip="About this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin"/>
         </f:actions>
       </f:DynamicPageTitle>
     </f:title>
@@ -110,5 +111,14 @@
       </VBox>
     </f:content>
   </f:DynamicPage>
+
+  <mvc:dependents>
+    <Dialog id="infoDialog" contentWidth="520px">
+      <content>
+        <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
+      </content>
+      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
+    </Dialog>
+  </mvc:dependents>
 
 </mvc:View>

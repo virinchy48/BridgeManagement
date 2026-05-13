@@ -257,6 +257,32 @@ sap.ui.define([
       })
       this.getView().addDependent(dialog)
       dialog.open()
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<p><strong>Purpose:</strong> Lookup values are the dropdown options that appear throughout BMS forms — for example, the list of restriction types, ",
+        "defect categories, structure types, and material codes.</p>",
+        "<p><strong>How to use:</strong> Select an entity type from the dropdown (e.g. Structure Types). The table shows all the current values for that lookup. ",
+        "Each value has a Code (stored in the database), a Label (shown to users), and an optional Description.</p>",
+        "<p><strong>Adding a value:</strong> Click Add Value, enter the code, label, and description, then click Save.</p>",
+        "<p><strong>Deactivating a value:</strong> Click the Deactivate button on any row to hide that option from forms. ",
+        "The value is not deleted — it remains on existing records but will not appear in new dropdowns.</p>",
+        "<p><strong>Reactivating a value:</strong> Click Reactivate to restore a previously deactivated option.</p>",
+        "<p><strong>Important:</strong> Do not change the Code of an existing lookup value. Codes are stored on bridge and restriction records — ",
+        "changing a code can make existing records appear with a blank field.</p>"
+      ].join("");
+      this._openInfoDialog("Lookup Values — Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
   })
 })

@@ -121,6 +121,28 @@ sap.ui.define([
           }
         }
       );
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<p><strong>Purpose:</strong> Load a set of sample bridges and related records so that new users can explore BMS without affecting real bridge data.</p>",
+        "<p><strong>Activate:</strong> Click Activate Demo Data to load 3 sample bridges (one from NSW, VIC, and QLD) with inspections, defects, restrictions, ",
+        "and risk assessments pre-populated.</p>",
+        "<p><strong>Clear:</strong> Click Clear Demo Data to remove all demo records. This only removes records with a DEMO- prefix — your real bridge data is never affected.</p>",
+        "<p><strong>When to use:</strong> During training sessions, stakeholder demonstrations, or when testing new workflows on a fresh environment.</p>",
+        "<p><strong>Important:</strong> Demo mode does not affect production data. All demo records are clearly labelled with a DEMO- prefix so they are easily distinguishable.</p>"
+      ].join("");
+      this._openInfoDialog("Demo Data — Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
 
   });

@@ -7,6 +7,7 @@
   <Page title="{i18n>lookupValuesTitle}" showNavButton="true" navButtonPress=".onNavBack">
     <headerContent>
       <Button icon="sap-icon://add" text="{i18n>lookupAddValue}" press=".onAddValue" type="Emphasized"/>
+      <Button icon="sap-icon://information" tooltip="About this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin"/>
     </headerContent>
     <subHeader>
       <Toolbar>
@@ -49,5 +50,12 @@
         </items>
       </Table>
     </content>
+
+    <Dialog id="infoDialog" contentWidth="520px">
+      <content>
+        <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
+      </content>
+      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
+    </Dialog>
   </Page>
 </mvc:View>

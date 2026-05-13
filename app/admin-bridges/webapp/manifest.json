@@ -259,6 +259,16 @@
           "pattern": "BridgeDefects({key}):?query:",
           "name": "BridgeDefectsObjectPage",
           "target": "BridgeDefectsObjectPage"
+        },
+        {
+          "pattern": "WorkOrdersList",
+          "name": "WorkOrdersList",
+          "target": "WorkOrdersList"
+        },
+        {
+          "pattern": "WorkOrdersList/{key}:?query:",
+          "name": "WorkOrdersObjectPage",
+          "target": "WorkOrdersObjectPage"
         }
       ],
       "targets": {
@@ -1030,8 +1040,7 @@
                     }
                   }
                 }
-              },
-              "controllerName": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt"
+              }
             }
           }
         },
@@ -1104,6 +1113,30 @@
             "settings": {
               "entitySet": "BridgeDefects",
               "editableHeaderContent": false
+            }
+          }
+        },
+        "WorkOrdersList": {
+          "type": "Component",
+          "id": "WorkOrdersList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeMaintenanceActions",
+              "variantManagement": "Page",
+              "initialLoad": true,
+              "title": "Work Orders"
+            }
+          }
+        },
+        "WorkOrdersObjectPage": {
+          "type": "Component",
+          "id": "WorkOrdersObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeMaintenanceActions",
+              "title": "Work Order"
             }
           }
         }

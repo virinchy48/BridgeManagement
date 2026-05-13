@@ -439,7 +439,32 @@ async function activateDemoData(db) {
       loaded++
     }
 
-    // ── 12. AssetIQScores ────────────────────────────────────────────────────
+    // ── 12. BridgeMaintenanceActions ─────────────────────────────────────────
+    try {
+      const maExisting = await db.run(
+        SELECT.one.from('bridge.management.BridgeMaintenanceActions').where({ bridge_ID: bID })
+      )
+      if (!maExisting) {
+        const maseq = bID - DEMO_BRIDGE_ID_OFFSET + 1
+        await db.run(INSERT.into('bridge.management.BridgeMaintenanceActions').entries({
+          ID:                cds.utils.uuid(),
+          bridge_ID:         bID,
+          actionRef:         `MA-DEMO-${String(maseq).padStart(4,'0')}`,
+          bridgeRef:         bridge.bridgeId,
+          actionType:        'Repair',
+          priority:          'P2',
+          status:            'Planned',
+          actionTitle:       'Demo — Deck joint replacement',
+          actionDescription: 'Replacement of expansion joints in deck slab — demo maintenance action for demonstration purposes.',
+          estimatedCostAUD:  45000,
+          scheduledDate:     '2026-09-01',
+          active:            true
+        }))
+        loaded++
+      }
+    } catch (_) {}
+
+    // ── 13. AssetIQScores ────────────────────────────────────────────────────
     const aiqExisting = await db.run(
       SELECT.one.from('bridge.management.AssetIQScores').where({ bridge_ID: bID })
     )
@@ -540,6 +565,7 @@ async function clearDemoData(db) {
   await deleteFrom('bridge.management.BridgeConditionSurveys')
   await deleteFrom('bridge.management.BridgeScourAssessments')
   await deleteFrom('bridge.management.BridgeCapacities')
+  await deleteFrom('bridge.management.BridgeMaintenanceActions')
   await deleteFrom('bridge.management.BridgeDefects')
   await deleteFrom('bridge.management.BridgeInspections')
   await deleteFrom('bridge.management.BridgeRestrictions')

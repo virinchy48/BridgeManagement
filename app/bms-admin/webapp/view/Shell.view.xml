@@ -36,6 +36,7 @@
 <tnt:NavigationListItem text="Feature Flags"     key="featureFlags"    icon="sap-icon://switch-views"  />
             <tnt:NavigationListItem text="Demo Data"         key="demoData"        icon="sap-icon://simulate"      />
             <tnt:NavigationListItem text="Lookup Values"    key="lookupValues"    icon="sap-icon://value-help"    />
+            <tnt:NavigationListItem text="Help &amp; Docs"  key="help"            icon="sap-icon://sys-help"       />
           </tnt:NavigationList>
         </tnt:item>
       </tnt:SideNavigation>

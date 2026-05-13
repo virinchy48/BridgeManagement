@@ -85,3 +85,21 @@ type NhvrAssessmentMethodology : String enum {
   LoadTesting     = 'Load Testing';
   Combined        = 'Combined';
 }
+
+type MaintenanceActionType : String enum {
+  Repair          = 'Repair';
+  Preventive      = 'Preventive';
+  Emergency       = 'Emergency';
+  Inspection      = 'Inspection';
+  Rehabilitation  = 'Rehabilitation';
+  Replacement     = 'Replacement';
+}
+
+type MaintenanceStatus : String enum {
+  Planned    = 'Planned';
+  Scheduled  = 'Scheduled';
+  InProgress = 'InProgress';
+  Completed  = 'Completed';
+  Deferred   = 'Deferred';
+  Cancelled  = 'Cancelled';
+}

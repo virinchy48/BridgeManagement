@@ -1,0 +1,49 @@
+<mvc:View
+  controllerName="BridgeManagement.bmsadmin.controller.Help"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+  <Page id="helpPage" showHeader="false">
+    <customHeader>
+      <OverflowToolbar>
+        <Title text="Help &amp; Documentation" level="H2"/>
+        <ToolbarSpacer/>
+      </OverflowToolbar>
+    </customHeader>
+    <content>
+      <IconTabBar id="helpTabs" expanded="true" stretchContentHeight="true">
+        <items>
+          <IconTabFilter icon="sap-icon://learning-assistant" text="User Guide" key="userGuide">
+            <content>
+              <ScrollContainer height="100%" vertical="true" horizontal="false">
+                <FormattedText id="userGuideText" width="100%" class="sapUiMediumMargin" htmlText="{view>/userGuide}"/>
+              </ScrollContainer>
+            </content>
+          </IconTabFilter>
+          <IconTabFilter icon="sap-icon://process" text="Operations Manual" key="operations">
+            <content>
+              <ScrollContainer height="100%" vertical="true" horizontal="false">
+                <FormattedText id="opsText" width="100%" class="sapUiMediumMargin" htmlText="{view>/operations}"/>
+              </ScrollContainer>
+            </content>
+          </IconTabFilter>
+          <IconTabFilter icon="sap-icon://wrench" text="Troubleshooting" key="troubleshooting">
+            <content>
+              <ScrollContainer height="100%" vertical="true" horizontal="false">
+                <FormattedText id="troubleshootText" width="100%" class="sapUiMediumMargin" htmlText="{view>/troubleshooting}"/>
+              </ScrollContainer>
+            </content>
+          </IconTabFilter>
+          <IconTabFilter icon="sap-icon://locked" text="Deployment &amp; Security" key="deployment">
+            <content>
+              <ScrollContainer height="100%" vertical="true" horizontal="false">
+                <FormattedText id="deployText" width="100%" class="sapUiMediumMargin" htmlText="{view>/deployment}"/>
+              </ScrollContainer>
+            </content>
+          </IconTabFilter>
+        </items>
+      </IconTabBar>
+    </content>
+  </Page>
+</mvc:View>

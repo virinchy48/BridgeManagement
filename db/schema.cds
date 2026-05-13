@@ -17,6 +17,7 @@ using from './schema/nhvr-compliance';
 using from './schema/elements';
 using from './schema/defects';
 using from './schema/alerts';
+using from './schema/maintenance';
 using from './schema/gap-entities';
 using {
   Currency,
