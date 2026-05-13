@@ -149,7 +149,7 @@ sap.ui.define([
     }
 
     Fragment.load({
-      id:         (_oView ? _oView.getId() : "") + "--riskMatrixFrag",
+      id:         "riskMatrixAssessmentsFrag",
       name:       "BridgeManagement.adminbridges.ext.view.RiskMatrix",
       controller: _fragmentController
     }).then(function (oFrag) {

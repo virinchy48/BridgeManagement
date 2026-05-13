@@ -39,7 +39,7 @@ extend entity Bridges with {
                        on restrictions.bridge = $self;
       attributes   : Composition of many BridgeAttributes
                        on attributes.bridge = $self;
-      scourAssessments : Composition of many BridgeScourAssessments
+      scourAssessments : Association to many BridgeScourAssessments
                        on scourAssessments.bridge = $self;
       documents    : Composition of many BridgeDocuments
                        on documents.bridge = $self;

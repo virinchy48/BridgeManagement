@@ -1085,6 +1085,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   })
 
   // ── BridgeRiskAssessments ────────────────────────────────────────────────
+  this.on('deactivate',  BridgeRiskAssessments.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',  BridgeRiskAssessments.drafts, req => req.error(409, 'Save or discard your changes before reactivating.'))
+
   this.before('NEW', BridgeRiskAssessments.drafts, async (req) => {
     if (!req.data.assessmentId) {
       const last = await SELECT.one.from(BridgeRiskAssessments).columns('assessmentId').orderBy('assessmentId desc').limit(1)
@@ -1095,29 +1098,34 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (req.data.active === undefined) req.data.active = true
   })
 
-  this.before(['CREATE', 'UPDATE'], BridgeRiskAssessments, async (req) => {
+  const _computeRiskScore = async (req, db) => {
     const d = req.data
-    const db = await cds.connect.to('db')
-    const likelihood = d.likelihood ?? null
-    const consequence = d.consequence ?? null
+    let likelihood = d.likelihood ?? null
+    let consequence = d.consequence ?? null
+    // During draftActivate, req.data only has {IsActiveEntity:true} — fetch from draft
+    if ((likelihood === null || consequence === null) && d.ID) {
+      const draft = await db.run(
+        SELECT.one.from('bridge.management.BridgeRiskAssessments.drafts').columns('likelihood', 'consequence').where({ ID: d.ID })
+      ).catch(() => null)
+      likelihood = likelihood ?? draft?.likelihood ?? null
+      consequence = consequence ?? draft?.consequence ?? null
+    }
     if (likelihood !== null && consequence !== null) {
       d.inherentRiskScore = likelihood * consequence
       const score = d.inherentRiskScore
       d.inherentRiskLevel = score >= 15 ? 'Extreme' : score >= 10 ? 'High' : score >= 5 ? 'Medium' : 'Low'
-    } else if (req.event === 'UPDATE' && (likelihood !== null || consequence !== null)) {
-      const existing = await db.run(
-        SELECT.one.from('bridge.management.BridgeRiskAssessments')
-          .columns('likelihood', 'consequence').where({ ID: d.ID })
-      )
-      const l = likelihood ?? existing?.likelihood
-      const c = consequence ?? existing?.consequence
-      if (l && c) {
-        d.inherentRiskScore = l * c
-        const score = d.inherentRiskScore
-        d.inherentRiskLevel = score >= 15 ? 'Extreme' : score >= 10 ? 'High' : score >= 5 ? 'Medium' : 'Low'
-      }
     }
+  }
+
+  this.before(['CREATE', 'UPDATE'], BridgeRiskAssessments, async (req) => {
+    await _computeRiskScore(req, await cds.connect.to('db'))
   })
+
+  if (BridgeRiskAssessments?.drafts) {
+    this.before('UPDATE', BridgeRiskAssessments.drafts, async (req) => {
+      await _computeRiskScore(req, await cds.connect.to('db'))
+    })
+  }
 
   this.on('deactivate', BridgeRiskAssessments, async (req) => {
     const { ID } = req.params[0]
