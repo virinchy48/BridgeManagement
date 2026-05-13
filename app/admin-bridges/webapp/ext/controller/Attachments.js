@@ -180,6 +180,16 @@ sap.ui.define([
       var bridgeId = await resolveBridgeId(host);
       if (bridgeId && bridgeId !== model.getProperty("/bridgeId")) {
         load(host);
+      } else if (!bridgeId) {
+        // Context not yet bound — retry once after the FE4 lazy render completes
+        var self = this;
+        setTimeout(function () {
+          resolveBridgeId(host).then(function (id) {
+            if (id && id !== model.getProperty("/bridgeId")) {
+              load(host);
+            }
+          });
+        }, 500);
       }
     },
 

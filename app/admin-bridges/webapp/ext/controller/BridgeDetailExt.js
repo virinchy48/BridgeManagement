@@ -1,8 +1,9 @@
 sap.ui.define([
   "sap/fe/core/PageController",
   "sap/ui/model/json/JSONModel",
-  "sap/m/MessageToast"
-], function (PageController, JSONModel, MessageToast) {
+  "sap/m/MessageToast",
+  "BridgeManagement/adminbridges/ext/controller/CaptureCondition"
+], function (PageController, JSONModel, MessageToast, CaptureCondition) {
   "use strict";
 
   /**
@@ -247,6 +248,28 @@ sap.ui.define([
         var isExecutive = this._scopes.includes("executive_view");
         this._hideSections(this._scopes, isExecutive);
       }
+    },
+
+    // ── CaptureCondition delegations ─────────────────────────────────────────
+
+    onCaptureConditionOpen: function (oEvent) {
+      return CaptureCondition.onCaptureConditionOpen.call(this, oEvent);
+    },
+
+    onConditionRatingChange: function (oEvent) {
+      return CaptureCondition.onConditionRatingChange.call(this, oEvent);
+    },
+
+    onCaptureConditionSave: function (oEvent) {
+      return CaptureCondition.onCaptureConditionSave.call(this, oEvent);
+    },
+
+    onCaptureConditionCancel: function (oEvent) {
+      return CaptureCondition.onCaptureConditionCancel.call(this, oEvent);
+    },
+
+    onExportCard: function (oEvent) {
+      return CaptureCondition.onExportCard.call(this, oEvent);
     }
   });
 });

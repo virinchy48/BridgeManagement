@@ -517,7 +517,7 @@
                 "header": {
                   "actions": {
                     "captureConditionAction": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.CaptureCondition.onCaptureConditionOpen",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onCaptureConditionOpen",
                       "text": "Inspect Now",
                       "enabled": true,
                       "requiresSelection": false,
@@ -539,7 +539,7 @@
                     },
                     "exportCardAction": {
                       "text": "Export Card",
-                      "press": "BridgeManagement.adminbridges.ext.controller.CaptureCondition.onExportCard",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onExportCard",
                       "enabled": true
                     }
                   }

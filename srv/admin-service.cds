@@ -14,6 +14,9 @@ service AdminService {
     action reactivate() returns BridgeRestrictions;
   };
   entity BridgeRestrictionProvisions as projection on my.BridgeRestrictionProvisions;
+  entity RestrictionProvisions as projection on my.RestrictionProvisions;
+  entity ProvisionTypes        as projection on my.ProvisionTypes;
+  entity RepairsProposalTypes  as projection on my.RepairsProposalTypes;
   entity BridgeCapacities as projection on my.BridgeCapacities actions {
     action deactivate() returns BridgeCapacities;
     action reactivate() returns BridgeCapacities;

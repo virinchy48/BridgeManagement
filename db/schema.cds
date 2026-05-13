@@ -95,9 +95,45 @@ entity Restrictions : cuid, managed {
   legalEffectiveDate   : Date;               // Date restriction has legal force (gazette effective date)
   signRequirements     : String(255);        // AS 1742.10 sign type and placement notes
   virtual reviewCriticality : Integer;       // 1=Overdue, 2=Due within 30d, 3=OK — computed in after READ
+  // ── Provisions & Detour (legacy BIS Temporary Provision fields) ──────────
+  dateCorrected          : Date;                  // Date Deficiency Corrected
+  postedLoadLimitRigid   : Decimal(9,2);          // Posted Load Limit — Rigid Trucks (t)
+  postedLoadLimitSemi    : Decimal(9,2);          // Posted Load Limit — Semitrailers (t)
+  detourLengthKm         : Decimal(9,2);          // Detour Length (km)
+  detourCapable42t       : Boolean default false; // Detour capable of carrying >42.5t gross
+  detourMaxAxleLoad      : Decimal(9,2);          // Max axle load on detour for vehicles >42.5t
+  detourRouteDetails     : LargeString;           // Details of route for vehicles >42.5t
+  repairsProposal        : String(10);            // Repairs proposal code (e.g. REPR)
+  estimatedRepairCost    : Decimal(15,2);         // Estimated repair cost (AUD)
+  programmeYear          : String(10);            // Programme Year e.g. "2026/27"
+  restrictionComments    : LargeString;           // Comments / additional notes
+  restrProvisions : Composition of many RestrictionProvisions on restrProvisions.restriction = $self;
   parent   : Association to Restrictions;
   children : Composition of many Restrictions
                on children.parent = $self;
+}
+
+// Temporary Provisions attached to a standalone Restriction (legacy BIS "Temporary Provision" block)
+entity RestrictionProvisions : cuid, managed {
+  restriction    : Association to Restrictions;
+  provisionCode  : String(10);  // e.g. CWRS, DETR, SUBB, CLTT, HMLL, RPBL
+  description    : String(255); // Auto-resolved from ProvisionTypes lookup
+  sortOrder      : Integer default 1;
+  active         : Boolean default true;
+}
+
+// Lookup: Temporary Provision Types (CWRS, DETR, SUBB, etc.)
+entity ProvisionTypes : sap.common.CodeList {
+  key code        : String(10);
+  description     : String(255);
+  active          : Boolean default true;
+}
+
+// Lookup: Repairs Proposal Types (REPR, REPL, PATC, MNTN, etc.)
+entity RepairsProposalTypes : sap.common.CodeList {
+  key code        : String(10);
+  description     : String(255);
+  active          : Boolean default true;
 }
 
 entity BridgeRestrictions : cuid, managed {

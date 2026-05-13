@@ -116,7 +116,18 @@ annotate AdminService.Restrictions with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Enforcement',         Target: '@UI.FieldGroup#RstEnforcement'},
         ]
       },
-      // ── Tab 4: Sub-Restrictions ───────────────────────────────────────────
+      // ── Tab 4: Provisions & Detour (legacy BIS Temporary Provision block) ──
+      {
+        $Type : 'UI.CollectionFacet',
+        Label : 'Provisions & Detour',
+        ID    : 'RstProvisions',
+        Facets: [
+          { $Type: 'UI.ReferenceFacet', Label: 'Temporary Provisions', Target: 'restrProvisions/@UI.LineItem' },
+          { $Type: 'UI.ReferenceFacet', Label: 'Detour Details',       Target: '@UI.FieldGroup#DetourDetails' },
+          { $Type: 'UI.ReferenceFacet', Label: 'Repairs Programme',    Target: '@UI.FieldGroup#RepairsProgramme' },
+        ]
+      },
+      // ── Tab 5: Sub-Restrictions ───────────────────────────────────────────
       {
         $Type : 'UI.CollectionFacet',
         Label : 'Sub-Restrictions',
@@ -125,7 +136,7 @@ annotate AdminService.Restrictions with @(
           { $Type: 'UI.ReferenceFacet', Label: 'Child Restrictions', Target: 'children/@UI.LineItem' }
         ]
       },
-      // ── Tab 5: Notes ─────────────────────────────────────────────────────
+      // ── Tab 6: Notes ─────────────────────────────────────────────────────
       {$Type: 'UI.ReferenceFacet', Label: 'Notes', Target: '@UI.FieldGroup#RstNotes'},
     ],
 
@@ -218,11 +229,34 @@ annotate AdminService.Restrictions with @(
       ]
     },
 
-    // Tab 4 — Notes
+    // Tab 6 — Notes
     FieldGroup#RstNotes: {
       Data: [
         {Value: remarks},
         {Value: descr},
+      ]
+    },
+
+    // Tab 4 — Provisions & Detour
+    FieldGroup#DetourDetails: {
+      Label: 'Detour Details',
+      Data: [
+        { Value: dateCorrected,        Label: 'Date Deficiency Corrected' },
+        { Value: detourLengthKm,       Label: 'Detour Length (km)' },
+        { Value: postedLoadLimitRigid, Label: 'Posted Load Limit – Rigid Trucks (t)' },
+        { Value: postedLoadLimitSemi,  Label: 'Posted Load Limit – Semitrailers (t)' },
+        { Value: detourCapable42t,     Label: 'Detour Capable of Carrying Vehicles >42.5t Gross' },
+        { Value: detourMaxAxleLoad,    Label: 'Max Axle Load on Detour for Vehicles >42.5t (t)' },
+        { Value: detourRouteDetails,   Label: 'Details of Route for Vehicles >42.5t Gross' },
+      ]
+    },
+    FieldGroup#RepairsProgramme: {
+      Label: 'Repairs Programme',
+      Data: [
+        { Value: repairsProposal,      Label: 'Repairs Proposal' },
+        { Value: estimatedRepairCost,  Label: 'Estimated Cost (AUD)' },
+        { Value: programmeYear,        Label: 'Programme Year (YYYY/YY)' },
+        { Value: restrictionComments,  Label: 'Comments' },
       ]
     },
   }
@@ -324,6 +358,28 @@ annotate AdminService.Restrictions with {
   reviewDueDate        @title: 'Review Due Date';
   legalEffectiveDate   @title: 'Legal Effective Date';
   signRequirements     @title: 'Sign Requirements (AS 1742.10)';
+
+  // ── New BIS Provisions & Detour fields ──────────────────────────────────
+  dateCorrected        @title: 'Date Deficiency Corrected';
+  postedLoadLimitRigid @title: 'Posted Load Limit – Rigid Trucks (t)'    @assert.range: [0, 1000];
+  postedLoadLimitSemi  @title: 'Posted Load Limit – Semitrailers (t)'    @assert.range: [0, 1000];
+  detourLengthKm       @title: 'Detour Length (km)'                      @assert.range: [0, 9999];
+  detourCapable42t     @title: 'Detour Capable of Carrying Vehicles >42.5t Gross';
+  detourMaxAxleLoad    @title: 'Max Axle Load on Detour for Vehicles >42.5t (t)' @assert.range: [0, 500];
+  detourRouteDetails   @title: 'Route Details for Vehicles >42.5t'       @UI.MultiLineText;
+  repairsProposal      @title: 'Repairs Proposal' @(
+    Common.ValueList: {
+      CollectionPath: 'RepairsProposalTypes',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterInOut', LocalDataProperty: repairsProposal, ValueListProperty: 'code' },
+        { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'description' }
+      ]
+    },
+    Common.ValueListWithFixedValues
+  );
+  estimatedRepairCost  @title: 'Estimated Cost (AUD)'                    @assert.range: [0, 999999999];
+  programmeYear        @title: 'Programme Year (YYYY/YY)'                @Common.QuickInfo: 'e.g. 2026/27';
+  restrictionComments  @title: 'Comments'                                @UI.MultiLineText;
 };
 
 ////////////////////////////////////////////////////////////////////////////
@@ -345,6 +401,75 @@ annotate AdminService.Restrictions with {
 
 annotate AdminService.Restrictions with @odata.draft.enabled;
 annotate bridge.management.Restrictions with @fiori.draft.enabled;
+
+////////////////////////////////////////////////////////////////////////////
+//  RestrictionProvisions — annotations
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.RestrictionProvisions with @(
+  Capabilities.InsertRestrictions.Insertable : true,
+  Capabilities.UpdateRestrictions.Updatable  : true,
+  Capabilities.DeleteRestrictions.Deletable  : false,
+  UI.HeaderInfo: {
+    TypeName      : 'Provision',
+    TypeNamePlural: 'Provisions',
+    Title         : { Value: provisionCode },
+    Description   : { Value: description }
+  },
+  UI.LineItem: [
+    { Value: provisionCode, Label: 'Code' },
+    { Value: description,   Label: 'Description' },
+    { Value: sortOrder,     Label: '#' },
+    { Value: active,        Label: 'Active' },
+  ],
+  UI.Facets: [
+    { $Type: 'UI.ReferenceFacet', Label: 'Provision', Target: '@UI.FieldGroup#ProvIdentity' }
+  ],
+  UI.FieldGroup#ProvIdentity: {
+    Label: 'Provision',
+    Data: [
+      { Value: provisionCode, Label: 'Code' },
+      { Value: description,   Label: 'Description' },
+      { Value: sortOrder,     Label: 'Sort Order' },
+      { Value: active,        Label: 'Active' },
+    ]
+  }
+);
+
+annotate AdminService.RestrictionProvisions with {
+  ID           @Core.Computed;
+  createdBy    @UI.Hidden;
+  createdAt    @UI.Hidden;
+  modifiedBy   @UI.Hidden;
+  modifiedAt   @UI.Hidden;
+  restriction  @UI.Hidden;
+  active       @title: 'Active';
+  sortOrder    @title: 'Sort Order'    @Common.QuickInfo: 'Display order within this restriction';
+  provisionCode @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueList: {
+      CollectionPath: 'ProvisionTypes',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterInOut',      LocalDataProperty: provisionCode, ValueListProperty: 'code' },
+        { $Type: 'Common.ValueListParameterOut',         LocalDataProperty: description,   ValueListProperty: 'description' }
+      ]
+    },
+    Common.ValueListWithFixedValues
+  )  @title: 'Provision Code';
+  description @title: 'Description';
+};
+
+////////////////////////////////////////////////////////////////////////////
+//  ProvisionTypes / RepairsProposalTypes — minimal annotations
+////////////////////////////////////////////////////////////////////////////
+
+annotate AdminService.ProvisionTypes with @(
+  UI.HeaderInfo: { TypeName: 'Provision Type', TypeNamePlural: 'Provision Types' }
+);
+
+annotate AdminService.RepairsProposalTypes with @(
+  UI.HeaderInfo: { TypeName: 'Repairs Proposal Type', TypeNamePlural: 'Repairs Proposal Types' }
+);
 
 ////////////////////////////////////////////////////////////////////////////
 //  Tree Views and Value Helps (defined in separate files)
