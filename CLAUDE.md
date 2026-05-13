@@ -704,6 +704,18 @@ Applied: srv/mass-upload.js — templateOnly flag + filter in getDatasets()
 Source: Remove Risk Intelligence (AssetIQ) tab from Bridge Details per user request
 Applied: app/admin-bridges/fiori-service.cds — removed T6 CollectionFacet + orphaned DataPoint#AssetIQScore
 
+[2026-05-13] [Mass Upload / bridgeRef resolution] Learning: `cds.model` is NULL in the `srv/mass-upload.js` custom Express middleware context at request time — even when the CAP server is running and has loaded the model. The `cds` module's `model` property is set on the CAP service init thread but NOT visible to a separately-required `@sap/cds` instance in a middleware module. Do NOT use `cds.model?.definitions?.[entity]` for runtime introspection in custom Express routers — always use direct CDS SQL queries or hardcoded entity metadata. To resolve association-backed `bridgeRef` (entities that store `bridge: Association to Bridges` with no stored `bridgeRef` string field): always include `bridge_ID` in the SELECT columns, then do a batch `WHERE ID IN (...)` lookup on `bridge.management.Bridges` to map integer PKs to `bridgeId` strings. For entities with a stored `bridgeRef` field the SELECT returns it directly; for association-only entities it returns null — the null check is the branch condition.
+Source: Mass upload template export returning null bridgeRef for BridgeInspections, BridgeRestrictions, LoadRatingCertificates
+Applied: srv/mass-upload.js — readDatasetRows rewritten without cds.model dependency
+
+[2026-05-13] [Mass Upload / seed data] Learning: Seed CSVs for BridgeInspections, BridgeRestrictions, LoadRatingCertificates had `bridge_ID` values 1001-1005 but the Bridges table uses IDs 1-56 (seeded from mass-upload-bridges-australia.csv). This caused the bridge_ID → bridgeId lookup to return null for all rows, producing null bridgeRef in the template and 114 upload warnings. Fix: update the affected seed CSVs to reference valid bridge IDs (1-5). Always run the template round-trip test after modifying sub-domain seed CSVs.
+Source: 114 upload warnings on template round-trip test
+Applied: db/data/bridge.management-{BridgeInspections,BridgeRestrictions,LoadRatingCertificates}.csv — bridge_ID 1001-1005 → 1-5
+
+[2026-05-13] [Mass Upload / new entity CRUD] Learning: New sub-domain entities (BridgeConditionSurveys, BridgeLoadRatings, BridgePermits) support all three CRUD scenarios via mass upload: (1) initial load — leave surveyRef/ratingRef/permitRef blank, handler auto-generates CS-NNNN/LR-NNNN/PM-NNNN via batchGenerateRefs; (2) update — include the auto-ref in the CSV, upsert matches on it; (3) ongoing adds — blank ref on new rows, filled ref on existing rows, both can co-exist in the same upload file. Verified via curl: insert returns `inserted:2 updated:0`, re-upload same refs returns `inserted:0 updated:2`, all with 0 warnings.
+Source: Mass upload initial create and update verification
+Applied: srv/mass-upload.js — batchGenerateRefs, importConditionSurveyRows, importLoadRatingRows, importPermitRows
+
 ---
 
 ## Contributing to this file
