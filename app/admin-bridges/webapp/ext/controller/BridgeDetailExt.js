@@ -2,8 +2,10 @@ sap.ui.define([
   "sap/fe/core/PageController",
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
-  "BridgeManagement/adminbridges/ext/controller/CaptureCondition"
-], function (PageController, JSONModel, MessageToast, CaptureCondition) {
+  "BridgeManagement/adminbridges/ext/controller/CaptureCondition",
+  "BridgeManagement/adminbridges/ext/controller/RiskMatrixExt",
+  "BridgeManagement/adminbridges/ext/controller/BatchElementEntryExt"
+], function (PageController, JSONModel, MessageToast, CaptureCondition, RiskMatrixExt, BatchElementEntryExt) {
   "use strict";
 
   /**
@@ -270,6 +272,22 @@ sap.ui.define([
 
     onExportCard: function (oEvent) {
       return CaptureCondition.onExportCard.call(this, oEvent);
+    },
+
+    // ── RiskMatrixExt delegations ─────────────────────────────────────────────
+
+    onOpenInherentMatrix: function (oEvent) {
+      return RiskMatrixExt.onOpenInherentMatrix.call(this, oEvent);
+    },
+
+    onOpenResidualMatrix: function (oEvent) {
+      return RiskMatrixExt.onOpenResidualMatrix.call(this, oEvent);
+    },
+
+    // ── BatchElementEntry delegation ─────────────────────────────────────────
+
+    onOpenBatchElementEntry: function (oEvent) {
+      return BatchElementEntryExt.onOpenBatchElementEntry.call(this, oEvent);
     }
   });
 });

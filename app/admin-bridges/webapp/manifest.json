@@ -971,7 +971,22 @@
           "options": {
             "settings": {
               "entitySet": "BridgeInspections",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "content": {
+                "header": {
+                  "actions": {
+                    "batchElements": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeInspectionsExt.onOpenBatchElementEntry",
+                      "text": "Add Elements",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "type": "Emphasized"
+                    }
+                  }
+                }
+              },
+              "controllerName": "BridgeManagement.adminbridges.ext.controller.BridgeInspectionsExt"
             }
           }
         },
@@ -995,7 +1010,24 @@
           "options": {
             "settings": {
               "entitySet": "BridgeRiskAssessments",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "content": {
+                "header": {
+                  "actions": {
+                    "inherentMatrix": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt.onOpenInherentMatrix",
+                      "text": "Inherent Risk Matrix",
+                      "visible": true
+                    },
+                    "residualMatrix": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt.onOpenResidualMatrix",
+                      "text": "Residual Risk Matrix",
+                      "visible": true
+                    }
+                  }
+                }
+              },
+              "controllerName": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt"
             }
           }
         },

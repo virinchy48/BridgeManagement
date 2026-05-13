@@ -222,6 +222,37 @@
                           </items>
                         </List>
                       </VBox>
+                      <Panel
+                        expandable="true"
+                        expanded="true"
+                        visible="{= ${view>/rowResults}.length > 0 }"
+                        class="sapUiSmallMarginTop">
+                        <headerToolbar>
+                          <Toolbar>
+                            <Title text="Row-Level Results ({view>/rowResults/length} entries)" level="H3" />
+                            <ToolbarSpacer />
+                            <Button text="Export to CSV" icon="sap-icon://download" press=".onExportRowResults" type="Transparent" />
+                          </Toolbar>
+                        </headerToolbar>
+                        <Table items="{view>/rowResults}" growing="true" growingThreshold="20" mode="None">
+                          <columns>
+                            <Column width="4rem"><Text text="Row" /></Column>
+                            <Column width="9rem"><Text text="Dataset" /></Column>
+                            <Column width="7rem"><Text text="Status" /></Column>
+                            <Column><Text text="Message" /></Column>
+                          </columns>
+                          <items>
+                            <ColumnListItem>
+                              <cells>
+                                <Text text="{view>rowNum}" />
+                                <Text text="{view>dataset}" />
+                                <ObjectStatus text="{view>status}" state="{view>statusState}" />
+                                <Text text="{view>message}" wrapping="true" />
+                              </cells>
+                            </ColumnListItem>
+                          </items>
+                        </Table>
+                      </Panel>
                       <HBox class="sapUiSmallMarginTop" justifyContent="End">
                         <Button text="{i18n>uploadAnotherButton}" icon="sap-icon://refresh" press=".onUploadAnother" visible="{view>/hasUploadResults}" />
                       </HBox>

@@ -59,6 +59,7 @@ sap.ui.define([
         uploadSummaries: [],
         uploadWarnings: [],
         uploadWarningsTitle: "",
+        rowResults: [],
         lastMessage: "",
         skippedMessage: "",
         hasUploadResults: false,
@@ -312,6 +313,7 @@ sap.ui.define([
       model.setProperty("/uploadSummaries", []);
       model.setProperty("/uploadWarnings", []);
       model.setProperty("/uploadWarningsTitle", "");
+      model.setProperty("/rowResults", []);
       model.setProperty("/lastMessage", "");
       model.setProperty("/skippedMessage", "");
       model.setProperty("/hasUploadResults", false);
@@ -464,6 +466,7 @@ sap.ui.define([
         }
 
         model.setProperty("/hasUploadResults", !!(payload.message || (payload.summaries || []).length));
+        model.setProperty("/rowResults", this._buildRowResults(payload.summaries || [], payload.warnings || []));
         this._appendUploadHistory(payload);
         this._setSelectedFile(null);
         this.byId("fileUploader").clear();
@@ -942,6 +945,50 @@ sap.ui.define([
         return "Manage restriction direction dropdown values (e.g. BOTH, NORTHBOUND, SOUTHBOUND).";
       }
       return dataset.description;
+    },
+
+    _buildRowResults: function (summaries, warnings) {
+      const summaryRows = summaries.map(s => ({
+        rowNum: "-",
+        dataset: s.label || s.dataset || "",
+        status: s.inserted > 0 || s.updated > 0 ? "Success" : "Information",
+        statusState: s.inserted > 0 || s.updated > 0 ? "Success" : "None",
+        message: `${s.inserted || 0} inserted, ${s.updated || 0} updated, ${s.processed || 0} processed`
+      }));
+      const warningRows = warnings.map((w, i) => {
+        const m = w.match(/^(.+?) row (\d+):\s*(.+)/);
+        return {
+          rowNum: m ? parseInt(m[2]) : (i + 1),
+          dataset: m ? m[1] : "Unknown",
+          status: "Skipped",
+          statusState: "Warning",
+          message: m ? m[3] : w
+        };
+      });
+      return summaryRows.concat(warningRows);
+    },
+
+    onExportRowResults: function () {
+      const rows = this._getViewModel().getProperty("/rowResults") || [];
+      if (!rows.length) {
+        MessageToast.show("No results to export");
+        return;
+      }
+      const header = "Row,Dataset,Status,Message\n";
+      const csv = header + rows.map(r =>
+        [r.rowNum, r.dataset, r.status, r.message]
+          .map(this._escapeCsvValue)
+          .join(",")
+      ).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "upload-results.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     },
 
     onShowHelp: function () {

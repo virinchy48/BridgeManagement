@@ -1,0 +1,176 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:l="sap.ui.layout">
+
+  <Dialog
+    id="batchElementDialog"
+    title="Add Inspection Elements — {batchEntry>/inspectionRef}"
+    contentWidth="90%"
+    contentHeight="80%"
+    verticalScrolling="false"
+    resizable="true"
+    draggable="true">
+
+    <content>
+      <VBox height="100%" class="sapUiSmallMargin">
+
+        <MessageStrip
+          text="Enter element quantities for each condition state. CS1 = Good/New, CS2 = Satisfactory, CS3 = Poor, CS4 = Failed. Percentages are calculated automatically."
+          type="Information"
+          showIcon="true"
+          class="sapUiTinyMarginBottom" />
+
+        <Table
+          id="batchElementTable"
+          items="{batchEntry>/elements}"
+          mode="None"
+          growing="false"
+          fixedLayout="false"
+          width="100%"
+          alternateRowColors="true">
+
+          <columns>
+            <Column width="12rem" hAlign="Begin">
+              <Text text="Element Type *" />
+            </Column>
+            <Column width="5rem" hAlign="End">
+              <Text text="Total Qty" />
+            </Column>
+            <Column width="5rem" hAlign="End">
+              <Text text="CS1 Good" />
+            </Column>
+            <Column width="5rem" hAlign="End">
+              <Text text="CS2 Satisfactory" />
+            </Column>
+            <Column width="5rem" hAlign="End">
+              <Text text="CS3 Poor" />
+            </Column>
+            <Column width="5rem" hAlign="End">
+              <Text text="CS4 Failed" />
+            </Column>
+            <Column width="6rem" hAlign="Begin">
+              <Text text="Unit" />
+            </Column>
+            <Column width="3rem" hAlign="Center">
+              <Text text="" />
+            </Column>
+          </columns>
+
+          <items>
+            <ColumnListItem vAlign="Middle">
+              <cells>
+                <Select
+                  selectedKey="{batchEntry>elementType}"
+                  width="11rem"
+                  forceSelection="false">
+                  <items>
+                    <core:Item key="" text="— select —" />
+                    <core:Item key="Deck" text="Deck" />
+                    <core:Item key="Beam/Girder" text="Beam/Girder" />
+                    <core:Item key="Pier/Column" text="Pier/Column" />
+                    <core:Item key="Abutment" text="Abutment" />
+                    <core:Item key="Wingwall" text="Wingwall" />
+                    <core:Item key="Bearing" text="Bearing" />
+                    <core:Item key="Expansion Joint" text="Expansion Joint" />
+                    <core:Item key="Kerb/Parapet" text="Kerb/Parapet" />
+                    <core:Item key="Handrail" text="Handrail" />
+                    <core:Item key="Drainage" text="Drainage" />
+                    <core:Item key="Foundation" text="Foundation" />
+                    <core:Item key="Headstock" text="Headstock" />
+                    <core:Item key="Soffit" text="Soffit" />
+                    <core:Item key="Surfacing" text="Surfacing" />
+                    <core:Item key="Other" text="Other" />
+                  </items>
+                </Select>
+
+                <Input
+                  value="{batchEntry>totalQty}"
+                  type="Number"
+                  width="4.5rem"
+                  textAlign="End"
+                  placeholder="0" />
+
+                <Input
+                  value="{batchEntry>cs1Qty}"
+                  type="Number"
+                  width="4.5rem"
+                  textAlign="End"
+                  placeholder="0" />
+
+                <Input
+                  value="{batchEntry>cs2Qty}"
+                  type="Number"
+                  width="4.5rem"
+                  textAlign="End"
+                  placeholder="0" />
+
+                <Input
+                  value="{batchEntry>cs3Qty}"
+                  type="Number"
+                  width="4.5rem"
+                  textAlign="End"
+                  placeholder="0" />
+
+                <Input
+                  value="{batchEntry>cs4Qty}"
+                  type="Number"
+                  width="4.5rem"
+                  textAlign="End"
+                  placeholder="0" />
+
+                <Select
+                  selectedKey="{batchEntry>unit}"
+                  width="5.5rem">
+                  <items>
+                    <core:Item key="m²" text="m²" />
+                    <core:Item key="m" text="m" />
+                    <core:Item key="No." text="No." />
+                    <core:Item key="m³" text="m³" />
+                    <core:Item key="t" text="t" />
+                  </items>
+                </Select>
+
+                <Button
+                  icon="sap-icon://delete"
+                  type="Transparent"
+                  tooltip="Remove row"
+                  press="BatchElementEntryExt.onDeleteElementRow" />
+              </cells>
+            </ColumnListItem>
+          </items>
+
+        </Table>
+
+        <Toolbar class="sapUiTinyMarginTop">
+          <Button
+            id="addRowBtn"
+            icon="sap-icon://add"
+            text="Add Row"
+            press="BatchElementEntryExt.onAddElementRow" />
+          <ToolbarSpacer />
+          <Text
+            text="{= ${batchEntry>/elements}.length + ' row(s)' }"
+            class="sapUiSmallMarginEnd" />
+        </Toolbar>
+
+      </VBox>
+    </content>
+
+    <beginButton>
+      <Button
+        text="Save All"
+        type="Emphasized"
+        icon="sap-icon://save"
+        press="BatchElementEntryExt.onSaveAllElements" />
+    </beginButton>
+
+    <endButton>
+      <Button
+        text="Cancel"
+        press="BatchElementEntryExt.onCancelBatchEntry" />
+    </endButton>
+
+  </Dialog>
+
+</core:FragmentDefinition>

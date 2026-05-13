@@ -974,6 +974,10 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
           LoadRatingCertificates, NhvrRouteAssessments,
           BridgeConditionSurveys, BridgeLoadRatings, BridgePermits } = this.entities
 
+  this.on('deactivate',  BridgeInspections.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('reactivate',  BridgeInspections.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+  this.on('complete',    BridgeInspections.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
+
   this.before('NEW', BridgeInspections.drafts, async (req) => {
     if (!req.data.inspectionRef) {
       const last = await cds.run(SELECT.one.from('bridge.management.BridgeInspections').columns('inspectionRef').orderBy('inspectionRef desc').limit(1))
