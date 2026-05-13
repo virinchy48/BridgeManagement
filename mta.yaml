@@ -35,6 +35,8 @@ modules:
       - name: BridgeManagement-db
       - name: BridgeManagement-destination
       - name: BridgeManagement-logging
+      - name: BridgeManagement-autoscaler
+      - name: BridgeManagement-alert-notification
 
   - name: BridgeManagement-db-deployer
     type: hdb
@@ -302,3 +304,15 @@ resources:
     parameters:
       service: application-logs
       service-plan: lite
+
+  - name: BridgeManagement-autoscaler
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: autoscaler
+      service-plan: standard
+
+  - name: BridgeManagement-alert-notification
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: alert-notification
+      service-plan: standard

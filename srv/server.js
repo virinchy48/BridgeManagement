@@ -1,6 +1,7 @@
 const cds = require('@sap/cds')
 const express = require('express')
 const helmet = require('helmet')
+const crypto = require('crypto')
 const { recordActivity } = require('./user-activity')
 
 const {
@@ -1083,6 +1084,13 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
+  // ── Correlation ID — attach to every request ──────────────────────────────
+  app.use((req, res, next) => {
+    req.correlationId = req.headers['x-correlation-id'] || crypto.randomUUID()
+    res.setHeader('x-correlation-id', req.correlationId)
+    next()
+  })
+
   // ── FE4 draft-protocol UUID guard ─────────────────────────────────────────
   // FE4 (UI5 1.145.x) passes the parent Bridge's integer ID as the key for
   // UUID-keyed composition child entities when checking for draft/sibling entities
@@ -1120,9 +1128,28 @@ cds.on('bootstrap', (app) => {
     res.json({
       status: 'UP',
       ts: new Date().toISOString(),
-      version: process.env.npm_package_version || '1.0.0',
-      env: process.env.NODE_ENV || 'development'
+      version: process.env.npm_package_version || '1.2.0',
+      env: process.env.NODE_ENV || 'development',
+      uptime: Math.floor(process.uptime()),
+      memory: { heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), unit: 'MB' }
     })
+  })
+
+  app.get('/health/deep', async (_req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const [bridges] = await db.run('SELECT COUNT(*) as cnt FROM bridge_management_Bridges WHERE isActive=1')
+      res.json({
+        status: 'UP',
+        ts: new Date().toISOString(),
+        version: process.env.npm_package_version || '1.2.0',
+        db: { status: 'connected', activeBridges: bridges?.cnt ?? 0 },
+        uptime: Math.floor(process.uptime()),
+        memory: { heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), unit: 'MB' }
+      })
+    } catch (e) {
+      res.status(503).json({ status: 'DEGRADED', error: e.message, ts: new Date().toISOString() })
+    }
   })
 
   // ── Security middleware ────────────────────────────────────────────────────
@@ -1359,7 +1386,31 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/mass-upload/api', requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, router)
+  // ── Rate limiting ─────────────────────────────────────────────────────────
+  // Built without express-rate-limit to avoid adding a dep; uses a simple in-process
+  // token bucket. For production multi-instance deployments, replace with
+  // express-rate-limit + a Redis store.
+  const _rateLimitStore = new Map()
+  function simpleRateLimit(windowMs, maxReqs) {
+    return (req, res, next) => {
+      const key = req.ip || req.connection.remoteAddress || 'unknown'
+      const now = Date.now()
+      let bucket = _rateLimitStore.get(key)
+      if (!bucket || now - bucket.start > windowMs) {
+        bucket = { start: now, count: 0 }
+        _rateLimitStore.set(key, bucket)
+      }
+      bucket.count++
+      if (bucket.count > maxReqs) {
+        return res.status(429).json({ error: 'Too Many Requests', retryAfter: Math.ceil((bucket.start + windowMs - now) / 1000) })
+      }
+      next()
+    }
+  }
+  const apiLimiter    = simpleRateLimit(15 * 60 * 1000, 500)
+  const uploadLimiter = simpleRateLimit(60 * 1000, 10)
+
+  app.use('/mass-upload/api', uploadLimiter, requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, router)
 
   // Dashboard analytics API
   const dashboardRouter = express.Router()
@@ -1379,7 +1430,7 @@ cds.on('bootstrap', (app) => {
   dashboardRouter.get('/analytics', dashboardHandler)
   dashboardRouter.get('/overview',  dashboardHandler)
 
-  app.use('/dashboard/api', requiresAuthentication, dashboardRouter)
+  app.use('/dashboard/api', apiLimiter, requiresAuthentication, dashboardRouter)
 
   const mapRouter = express.Router()
 
@@ -1544,7 +1595,7 @@ cds.on('bootstrap', (app) => {
     }
   });
 
-  app.use('/map/api', requiresAuthentication, mapRouter)
+  app.use('/map/api', apiLimiter, requiresAuthentication, mapRouter)
 
   const massEditRouter = express.Router()
   massEditRouter.use(express.json({ limit: '5mb' }))
@@ -1604,7 +1655,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/mass-edit/api', requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, massEditRouter)
+  app.use('/mass-edit/api', apiLimiter, requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, massEditRouter)
   mountAttributesApi(app, requiresAuthentication, validateCsrfToken)
 
   // ── Audit Report API ─────────────────────────────────────────────────────
@@ -1679,7 +1730,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/audit/api', requiresAuthentication, requireScope('admin', 'manage'), auditRouter)
+  app.use('/audit/api', apiLimiter, requiresAuthentication, requireScope('admin', 'manage'), auditRouter)
 
   // ── User Access API ───────────────────────────────────────────────────────
   const accessRouter = express.Router()
@@ -1719,7 +1770,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/access/api', requiresAuthentication, accessRouter)
+  app.use('/access/api', apiLimiter, requiresAuthentication, accessRouter)
 
   // ── Data Quality API ──────────────────────────────────────────────────────
   const qualityRouter = express.Router()
@@ -2038,7 +2089,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/quality/api', requiresAuthentication, validateCsrfToken, qualityRouter)
+  app.use('/quality/api', apiLimiter, requiresAuthentication, validateCsrfToken, qualityRouter)
 
   // ── System Config API ─────────────────────────────────────────────────────
   const sysRouter = express.Router()
@@ -2086,7 +2137,7 @@ cds.on('bootstrap', (app) => {
     } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
-  app.use('/system/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, sysRouter)
+  app.use('/system/api', apiLimiter, requiresAuthentication, requireScope('admin'), validateCsrfToken, sysRouter)
 
   // ── Feature Flags API — read (all authenticated), write (config_manager|admin) ──
   const { isFeatureEnabled, DEPENDENCIES, KNOWN_FLAGS } = require('./feature-flags')
@@ -2475,7 +2526,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/admin-bridges/api', requiresAuthentication, requireScope('admin', 'manage', 'inspect'), validateCsrfToken, adminBridgeRouter)
+  app.use('/admin-bridges/api', apiLimiter, requiresAuthentication, requireScope('admin', 'manage', 'inspect'), validateCsrfToken, adminBridgeRouter)
 
   // ── BNAC Integration Config ─────────────────────────────────────────────
   const bnacRouter = express.Router()
@@ -2623,7 +2674,7 @@ cds.on('bootstrap', (app) => {
   mountReportsApi(app, requiresAuthentication)
   mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken)
 
-  app.use('/bnac/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
+  app.use('/bnac/api', apiLimiter, requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
 })
 
 cds.on('served', async () => {

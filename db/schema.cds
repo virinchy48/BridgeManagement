@@ -657,6 +657,27 @@ annotate AssetIQScores with @(cds.persistence.indexes: [
   { name: 'idx_aiq_scored', columns: ['scoredAt'] }
 ]);
 
+annotate bridge.management.Bridges with @(cds.persistence.indexes: [
+  { elements: ['state', 'isActive'] },
+  { elements: ['bridgeId'] },
+  { elements: ['conditionRating', 'isActive'] }
+]);
+
+annotate bridge.management.BridgeDefects with @(cds.persistence.indexes: [
+  { elements: ['bridge_ID', 'active'] },
+  { elements: ['severity', 'active'] }
+]);
+
+annotate bridge.management.BridgeInspections with @(cds.persistence.indexes: [
+  { elements: ['bridge_ID', 'active'] },
+  { elements: ['inspectionDate'] }
+]);
+
+annotate bridge.management.AlertsAndNotifications with @(cds.persistence.indexes: [
+  { elements: ['status', 'entityType'] },
+  { elements: ['bridge_ID', 'status'] }
+]);
+
 entity AssetIQModels : cuid, managed {
   version         : String(20) @mandatory;
   isActive        : Boolean default false;
