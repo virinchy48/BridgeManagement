@@ -716,6 +716,22 @@ Applied: db/data/bridge.management-{BridgeInspections,BridgeRestrictions,LoadRat
 Source: Mass upload initial create and update verification
 Applied: srv/mass-upload.js — batchGenerateRefs, importConditionSurveyRows, importLoadRatingRows, importPermitRows
 
+[2026-05-13] [Mass Upload / reusable component] Learning: The mass upload system is now a full reusable component with 7 user-facing datasets: Bridges (create/update/soft-delete via `isActive`), Restrictions (create/update/soft-delete via `active`), BridgeInspections (~30 fields including `active`), BridgeDefects (27 fields including SIMS codes, remediation, `active`), BridgeCapacities (28 fields including `effectiveFrom` required), BridgeScourAssessments (19 fields), and BridgeConditionSurveys/LoadRatings/Permits. Extension point: add `COLUMNS` array + importer function + DATASETS entry — never touch the core pipeline (`importCuidEntityRows`, `batchGenerateRefs`, `enrichRowsWithBridgeId`, `queueAudit`).
+Source: Mass upload reusable component sprint
+Applied: srv/mass-upload.js — DEFECT_COLUMNS, CAPACITY_COLUMNS, SCOUR_COLUMNS, importDefectRows, importCapacityRows, importScourRows, expanded INSPECTION_COLUMNS, isActive in BRIDGE_COLUMNS
+
+[2026-05-13] [Mass Upload / extraEnrich hook] Learning: `importCuidEntityRows` accepts an optional `extraEnrich(tx, rows, warnings)` async function as the last parameter. Use it for cross-entity FK resolution that is dataset-specific and must run AFTER bridgeRef → bridge_ID resolution but BEFORE upsert. Example: BridgeDefects resolves optional `inspectionRef → inspection_ID` via `extraEnrich` — looking up `BridgeInspections WHERE inspectionRef IN (...)` and setting `inspection_ID` on matching rows. Never hardcode secondary FK resolution inside `importCuidEntityRows` itself — use `extraEnrich` to keep the core pipeline entity-agnostic.
+Source: BridgeDefects importer — optional inspection link
+Applied: srv/mass-upload.js — importCuidEntityRows extraEnrich parameter, importDefectRows
+
+[2026-05-13] [Mass Upload / soft-delete via CSV] Learning: Soft-delete in mass upload uses the `active` column (or `isActive` for Bridges). Including `active=false` in a CSV row sets the record inactive on upsert — same pipeline as a normal update. No separate "deactivate" endpoint needed. The importer uses `parseBoolean()` which accepts `true/false`, `TRUE/FALSE`, `yes/no`, `1/0`. Batch operators can deactivate hundreds of records in one CSV upload. The summary counts these as `updated` (not `deactivated`) — acceptable since soft-delete is an update operation.
+Source: Mass upload soft-delete design decision
+Applied: srv/mass-upload.js — active column in BRIDGE_COLUMNS, RESTRICTION_COLUMNS, INSPECTION_COLUMNS, DEFECT_COLUMNS, CAPACITY_COLUMNS, SCOUR_COLUMNS
+
+[2026-05-13] [Mass Upload / UploadSessions] Learning: Every `/upload` call now creates a `bridge.management.UploadSessions` record (entity in `db/schema.cds`, exposed as `@readonly` projection in `srv/admin-service.cds`). Fields: `fileName`, `datasetName`, `status` (Completed/PartialSuccess/Failed), row count breakdown, `summaryJson` (serialised summaries array), `warningsJson` (first 100 warnings). Failure to persist the session never breaks the upload (wrapped in try/catch). History UI loads from `GET /mass-upload/api/history` (last 50 sessions) and allows per-session CSV report download via `GET /mass-upload/api/history/:id/report.csv`.
+Source: Upload log/report feature
+Applied: db/schema.cds (UploadSessions entity), srv/admin-service.cds (projection), srv/mass-upload.js (recordUploadSession, getUploadHistory, getUploadSessionById), srv/server.js (/history routes + recordUploadSession wired into /upload), app/mass-upload/webapp/controller/Main.controller.js (_loadHistoryFromServer, onDownloadSessionReport), app/mass-upload/webapp/view/Main.view.xml (Report column)
+
 ---
 
 ## Contributing to this file

@@ -253,6 +253,7 @@
                       <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColInserted}" /></Column>
                       <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColUpdated}" /></Column>
                       <Column width="9rem"><Text text="{i18n>historyColStatus}" /></Column>
+                      <Column width="6rem" hAlign="Center"><Text text="Report" /></Column>
                     </columns>
                     <items>
                       <ColumnListItem>
@@ -264,6 +265,9 @@
                           <ObjectStatus text="{view>inserted}" state="Success" />
                           <ObjectStatus text="{view>updated}" state="Warning" />
                           <ObjectStatus text="{view>statusLabel}" state="{view>statusState}" />
+                          <Button icon="sap-icon://download" type="Transparent" tooltip="Download CSV report"
+                                  press=".onDownloadSessionReport"
+                                  visible="{= !!${view>reportUrl} }" />
                         </cells>
                       </ColumnListItem>
                     </items>

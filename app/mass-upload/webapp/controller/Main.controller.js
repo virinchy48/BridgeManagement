@@ -122,7 +122,7 @@ sap.ui.define([
     onTabSelect: function (oEvent) {
       const key = oEvent.getParameter("key") || oEvent.getParameter("selectedKey");
       if (key === "history") {
-        this._applyHistoryFilter();
+        this._loadHistoryFromServer();
       }
     },
 
@@ -168,8 +168,7 @@ sap.ui.define([
     },
 
     onHistoryRefresh: function () {
-      this._applyHistoryFilter();
-      MessageToast.show("Upload history refreshed");
+      this._loadHistoryFromServer();
     },
 
     onRunAdminReport: function () {
@@ -187,6 +186,12 @@ sap.ui.define([
 
     onExportHistory: function () {
       this._downloadRowsAsCsv(this._getViewModel().getProperty("/historyRows") || [], "mass-upload-history.csv");
+    },
+
+    onDownloadSessionReport: function (oEvent) {
+      const ctx  = oEvent.getSource().getBindingContext("view");
+      const url  = ctx && ctx.getProperty("reportUrl");
+      if (url) { window.open(url, "_blank"); }
     },
 
     onExportAdminReport: function () {
@@ -483,6 +488,45 @@ sap.ui.define([
       model.setProperty("/allHistoryRows", rows.concat(model.getProperty("/allHistoryRows") || []));
       this._applyHistoryFilter();
       this.onRunAdminReport();
+    },
+
+    _loadHistoryFromServer: async function () {
+      const model = this._getViewModel();
+      model.setProperty("/busy", true);
+      try {
+        const response = await fetch("/mass-upload/api/history");
+        if (!response.ok) { throw new Error(`HTTP ${response.status}`); }
+        const payload = await response.json();
+        const sessions = payload.sessions || [];
+        const rows = sessions.map((s) => {
+          const uploadedAt = new Date(s.createdAt || s.modifiedAt || Date.now());
+          return {
+            id: s.ID,
+            uploadedAt: uploadedAt.toISOString(),
+            uploadedDate: this._formatDate(uploadedAt),
+            uploadedAtFmt: uploadedAt.toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
+            fileName: s.fileName || "",
+            dataset: s.datasetName || "",
+            datasetLabel: s.datasetName || "All",
+            processed: Number(s.totalRows || 0),
+            inserted: Number(s.insertedRows || 0),
+            updated: Number(s.updatedRows || 0),
+            deactivated: Number(s.deactivatedRows || 0),
+            warnings: Number(s.warningCount || 0),
+            statusLabel: s.status || "Completed",
+            statusState: s.status === "Failed" ? "Error" : s.status === "PartialSuccess" ? "Warning" : "Success",
+            reportUrl: `/mass-upload/api/history/${s.ID}/report.csv`
+          };
+        });
+        model.setProperty("/allHistoryRows", rows);
+        this._applyHistoryFilter();
+        this.onRunAdminReport();
+        MessageToast.show(`Upload history loaded (${rows.length} sessions)`);
+      } catch (e) {
+        MessageBox.error("Could not load upload history: " + e.message);
+      } finally {
+        model.setProperty("/busy", false);
+      }
     },
 
     _applyHistoryFilter: function () {

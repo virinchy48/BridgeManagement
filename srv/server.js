@@ -8,7 +8,10 @@ const {
   buildWorkbookTemplate,
   getDatasets,
   importUpload,
-  validateUpload
+  validateUpload,
+  recordUploadSession,
+  getUploadHistory,
+  getUploadSessionById
 } = require('./mass-upload')
 
 const mountAttributesApi = require('./attributes-api')
@@ -1250,6 +1253,14 @@ cds.on('bootstrap', (app) => {
         datasetName: dataset,
         uploadedBy: req.user?.id || 'system'
       })
+      const db = await cds.connect.to('db')
+      await recordUploadSession(db, {
+        fileName,
+        datasetName: dataset,
+        uploadedBy: req.user?.id || 'system',
+        summaries: result.summaries || [],
+        warnings:  result.warnings  || []
+      })
       res.json(result)
     } catch (error) {
       res.status(422).json({ error: { message: error.message || 'Upload failed' } })
@@ -1277,6 +1288,36 @@ cds.on('bootstrap', (app) => {
       res.json(result)
     } catch (error) {
       res.status(422).json({ error: { message: error.message || 'Validation failed' } })
+    }
+  })
+
+  router.get('/history', async (_req, res) => {
+    try {
+      const sessions = await getUploadHistory()
+      res.json({ sessions })
+    } catch (e) {
+      res.status(500).json({ error: { message: e.message } })
+    }
+  })
+
+  router.get('/history/:id/report.csv', async (req, res) => {
+    try {
+      const session = await getUploadSessionById(req.params.id)
+      if (!session) return res.status(404).json({ error: { message: 'Session not found' } })
+      const lines = ['Type,Dataset,Label,Inserted,Updated,Deactivated,Processed']
+      for (const s of session.summaries) {
+        lines.push(`Data,${s.dataset || ''},${(s.label || '').replace(/,/g, ';')},${s.inserted || 0},${s.updated || 0},${s.deactivated || 0},${s.processed || 0}`)
+      }
+      if (session.warnings.length) {
+        lines.push('')
+        lines.push('Warnings')
+        session.warnings.forEach(w => lines.push(String(w).replace(/,/g, ';')))
+      }
+      res.setHeader('Content-Type', 'text/csv')
+      res.setHeader('Content-Disposition', `attachment; filename="upload-report-${req.params.id.substring(0, 8)}.csv"`)
+      res.send(lines.join('\n'))
+    } catch (e) {
+      res.status(500).json({ error: { message: e.message } })
     }
   })
 

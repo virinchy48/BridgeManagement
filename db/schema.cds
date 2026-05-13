@@ -649,6 +649,21 @@ extend entity Bridges with {
   virtual ragStatus : String(10);
 }
 
+// Upload session history — one record per mass-upload execution
+entity UploadSessions : cuid, managed {
+  fileName        : String(255);
+  datasetName     : String(100) default 'All';
+  status          : String(20)  default 'Completed';   // Completed | PartialSuccess | Failed
+  totalRows       : Integer     default 0;
+  insertedRows    : Integer     default 0;
+  updatedRows     : Integer     default 0;
+  deactivatedRows : Integer     default 0;
+  warningCount    : Integer     default 0;
+  errorCount      : Integer     default 0;
+  summaryJson     : LargeString;   // JSON array of per-dataset summaries
+  warningsJson    : LargeString;   // JSON array of warning strings (capped at 100)
+}
+
 // --------------------------------------------------------------------------------
 // Temporary workaround for this situation:
 // - Fiori apps annotate Bridges with @fiori.draft.enabled.

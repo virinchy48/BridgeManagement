@@ -118,7 +118,9 @@ const BRIDGE_COLUMNS = [
   column('structuralDeficiencyCode', 'string'),
   column('deficiencyComments', 'string'),
   column('loadLimitTruck', 'decimal'),
-  column('loadLimitSemitrailer', 'decimal')
+  column('loadLimitSemitrailer', 'decimal'),
+  // ── Soft-delete ──────────────────────────────────────────────────────────
+  column('isActive', 'boolean', { description: 'Set to false to soft-deactivate this bridge (hides from operational views)' })
 ]
 
 const RESTRICTION_COLUMNS = [
@@ -171,19 +173,35 @@ const RESTRICTION_COLUMNS = [
 ]
 
 const INSPECTION_COLUMNS = [
-  column('ID',                           'string'),
-  column('bridgeRef',                    'string',  { required: true }),
-  column('inspectionDate',               'date',    { required: true }),
-  column('inspectionType',               'string',  { required: true }),
-  column('inspector',                    'string',  { required: true }),
-  column('inspectorAccreditationNumber', 'string'),
-  column('inspectorAccreditationLevel',  'string'),
-  column('inspectorCompany',             'string'),
-  column('inspectionScope',              'string'),
-  column('inspectionStandard',           'string'),
-  column('s4InspectionOrderRef',         'string'),
-  column('s4NotificationRef',            'string'),
-  column('inspectionNotes',              'string')
+  column('ID',                              'string'),
+  column('bridgeRef',                       'string',  { required: true }),
+  column('inspectionRef',                   'string',  { description: 'Auto-generated INS-NNNN if blank' }),
+  column('inspectionDate',                  'date',    { required: true }),
+  column('inspectionType',                  'string',  { required: true, description: 'Routine | Detailed | Principal | Special | Post-Event' }),
+  column('inspector',                       'string',  { required: true }),
+  column('inspectorAccreditationNumber',    'string'),
+  column('inspectorAccreditationLevel',     'string',  { description: 'Level 1 | Level 2 | Level 3 | Level 4' }),
+  column('inspectorCompany',                'string'),
+  column('qualificationExpiry',             'date'),
+  column('inspectionScope',                 'string'),
+  column('inspectionStandard',              'string',  { description: 'AS5100-7 | AGAM | TfNSW-BIM | Other' }),
+  column('inspectionMethodology',           'string',  { description: 'Visual | Under-Bridge Unit | Rope Access | Underwater | Drone' }),
+  column('weatherConditions',               'string'),
+  column('accessibilityIssues',             'string'),
+  column('overallConditionRating',          'integer', { description: '1–10 overall condition' }),
+  column('overallStructuralAdequacy',       'string',  { description: 'Adequate | Marginal | Inadequate' }),
+  column('loadCarryingCapacityConfirmed',   'boolean', { description: 'true = posted capacity still valid (AS 5100-7 §3.2)' }),
+  column('criticalFindings',                'boolean', { description: 'true = critical findings requiring immediate action' }),
+  column('followUpRequired',                'boolean', { description: 'true = follow-up inspection / action required' }),
+  column('recommendedActions',              'string'),
+  column('nextInspectionRecommended',       'date'),
+  column('reportIssueDate',                 'date'),
+  column('reportStorageRef',                'string'),
+  column('s4InspectionOrderRef',            'string'),
+  column('s4NotificationRef',               'string'),
+  column('inspectionNotes',                 'string'),
+  // ── Soft-delete ──────────────────────────────────────────────────────────
+  column('active', 'boolean', { description: 'Set to false to soft-deactivate this inspection record' })
 ]
 
 const ELEMENT_COLUMNS = [
@@ -340,6 +358,90 @@ const PERMIT_COLUMNS = [
   column('conditionsOfApproval',  'string'),
   column('remarks',               'string'),
   column('active',                'boolean'),
+]
+
+const DEFECT_COLUMNS = [
+  column('ID',                        'string'),
+  column('bridgeRef',                 'string',  { required: true,  description: 'Bridge reference e.g. BRG-NSW-001' }),
+  column('inspectionRef',             'string',  { description: 'Link to inspection (INS-NNNN) — optional' }),
+  column('defectId',                  'string',  { description: 'Auto-generated DEF-NNNN if blank' }),
+  column('defectType',                'string',  { required: true }),
+  column('defectDescription',         'string',  { required: true }),
+  column('severity',                  'integer', { required: true,  description: '1=Low 2=Medium 3=High 4=Critical' }),
+  column('urgency',                   'integer', { required: true,  description: '1=Low 2=Medium 3=Urgent 4=Emergency' }),
+  column('bridgeElement',             'string',  { description: 'Element location description' }),
+  column('defectCode',                'string',  { description: 'SIMS defect code e.g. BS01' }),
+  column('deteriorationMechanism',    'string',  { description: 'Corrosion | Fatigue | Impact | Scour | Overload | Chemical | Settlement | Aging' }),
+  column('spanNumber',                'integer'),
+  column('pierNumber',                'integer'),
+  column('face',                      'string'),
+  column('position',                  'string'),
+  column('dimensionLengthMm',         'decimal'),
+  column('dimensionWidthMm',          'decimal'),
+  column('dimensionDepthMm',          'decimal'),
+  column('remediationStatus',         'string',  { description: 'Open | In Progress | Closed | Deferred' }),
+  column('estimatedRepairCost',       'decimal', { description: 'AUD' }),
+  column('plannedRemediationDate',    'date'),
+  column('repairMethod',              'string',  { description: 'SIMS repair method code' }),
+  column('maintenancePriority',       'string',  { description: 'P1=Emergency P2=Urgent P3=Routine P4=Planned' }),
+  column('requiresLoadRestriction',   'boolean', { description: 'true triggers a capacity review alert' }),
+  column('notes',                     'string'),
+  // ── Soft-delete ──────────────────────────────────────────────────────────
+  column('active', 'boolean', { description: 'Set to false to soft-deactivate this defect record' })
+]
+
+const CAPACITY_COLUMNS = [
+  column('ID',                        'string'),
+  column('bridgeRef',                 'string',  { required: true }),
+  column('capacityType',              'string',  { required: true, description: 'e.g. AS 5100.7 | AS 1170 | Posted' }),
+  column('grossMassLimit',            'decimal', { description: 'Gross Mass Limit (t)' }),
+  column('grossCombined',             'decimal', { description: 'Gross Combined Mass (t)' }),
+  column('steerAxleLimit',            'decimal'),
+  column('singleAxleLimit',           'decimal'),
+  column('tandemGroupLimit',          'decimal'),
+  column('triAxleGroupLimit',         'decimal'),
+  column('axleSpacingMinimumM',       'decimal'),
+  column('minClearancePosted',        'decimal', { description: 'Min posted clearance (m)' }),
+  column('lane1Clearance',            'decimal'),
+  column('lane2Clearance',            'decimal'),
+  column('clearanceSurveyDate',       'date'),
+  column('clearanceSurveyMethod',     'string'),
+  column('carriagewayWidth',          'decimal'),
+  column('trafficableWidth',          'decimal'),
+  column('laneWidth',                 'decimal'),
+  column('ratingStandard',            'string',  { description: 'e.g. AS 5100.7:2017' }),
+  column('ratingFactor',              'decimal'),
+  column('ratingEngineer',            'string'),
+  column('ratingDate',                'date'),
+  column('nextReviewDue',             'date'),
+  column('reportReference',           'string'),
+  column('effectiveFrom',             'date',    { required: true }),
+  column('effectiveTo',               'date'),
+  column('engineeringNotes',          'string'),
+  // ── Soft-delete ──────────────────────────────────────────────────────────
+  column('active', 'boolean', { description: 'Set to false to soft-deactivate this capacity record' })
+]
+
+const SCOUR_COLUMNS = [
+  column('ID',                           'string'),
+  column('bridgeRef',                    'string',  { required: true }),
+  column('assessmentDate',               'date',    { required: true }),
+  column('assessmentType',               'string',  { required: true, description: 'Routine | Post-Flood | Detailed | Desktop' }),
+  column('scourRisk',                    'string',  { required: true, description: 'Low | Medium | High | Extreme' }),
+  column('measuredDepth',                'decimal', { description: 'Measured scour depth (m)' }),
+  column('criticalScourDepthM',          'decimal', { description: 'AP-G71.8 §5.1 critical scour depth (m)' }),
+  column('floodImmunityAriYears',        'integer'),
+  column('waterwayType',                 'string'),
+  column('foundationType',               'string'),
+  column('scourCountermeasureType',      'string'),
+  column('scourCountermeasureCondition', 'string'),
+  column('postFloodInspectionRequired',  'boolean'),
+  column('mitigationStatus',             'string',  { description: 'None Required | Planned | In Progress | Completed' }),
+  column('assessor',                     'string'),
+  column('inspectorAccreditationLevel',  'string'),
+  column('nextReviewDate',               'date'),
+  column('reportReference',              'string'),
+  column('remarks',                      'string')
 ]
 
 const DATASETS = Object.freeze([
@@ -638,6 +740,33 @@ const DATASETS = Object.freeze([
     columns: PERMIT_COLUMNS,
     orderBy: 'permitRef',
     importer: importPermitRows
+  },
+  {
+    name: 'BridgeDefects',
+    label: 'Bridge Defects',
+    description: 'Defect records per bridge. Leave defectId blank for new records (auto-assigned DEF-0001…); provide defectId to update. Set active=false to soft-deactivate.',
+    entity: 'bridge.management.BridgeDefects',
+    columns: DEFECT_COLUMNS,
+    orderBy: 'defectId',
+    importer: importDefectRows
+  },
+  {
+    name: 'BridgeCapacities',
+    label: 'Bridge Capacities',
+    description: 'AS 5100.7 load capacity, clearance and rating records. effectiveFrom is required. Set active=false to supersede old records.',
+    entity: 'bridge.management.BridgeCapacities',
+    columns: CAPACITY_COLUMNS,
+    orderBy: 'effectiveFrom',
+    importer: importCapacityRows
+  },
+  {
+    name: 'BridgeScourAssessments',
+    label: 'Scour Assessments',
+    description: 'AP-G71.8 scour risk assessments per bridge.',
+    entity: 'bridge.management.BridgeScourAssessments',
+    columns: SCOUR_COLUMNS,
+    orderBy: 'assessmentDate',
+    importer: importScourRows
   }
 ])
 
@@ -1614,11 +1743,12 @@ async function batchGenerateRefs(tx, entityName, refField, prefix, rows) {
   }
 }
 
-async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, { naturalKey, objectType, getName }) {
+async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, { naturalKey, objectType, getName, extraEnrich = null }) {
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
 
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  if (extraEnrich) await extraEnrich(tx, normalized, warnings)
 
   const ids = normalized.map(r => r.ID).filter(Boolean)
   const existingById = new Map()
@@ -1808,6 +1938,53 @@ async function importPermitRows(tx, dataset, rows, warnings, auditContext) {
     naturalKey: 'permitRef',
     objectType: 'BridgePermit',
     getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.permitRef}`
+  })
+}
+
+// ── BridgeDefects: auto-ref + optional inspection link resolution ────────────
+async function importDefectRows(tx, dataset, rows, warnings, auditContext) {
+  await batchGenerateRefs(tx, 'bridge.management.BridgeDefects', 'defectId', 'DEF-', rows)
+  return importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
+    naturalKey: 'defectId',
+    objectType: 'BridgeDefect',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.defectId}`,
+    extraEnrich: async (tx, normalized, warnings) => {
+      const withInspRef = normalized.filter(r => r.inspectionRef)
+      if (!withInspRef.length) return
+      const inspRefs = [...new Set(withInspRef.map(r => r.inspectionRef))]
+      const inspections = await tx.run(
+        SELECT.from('bridge.management.BridgeInspections').columns('ID', 'inspectionRef')
+          .where({ inspectionRef: { in: inspRefs } })
+      )
+      const inspMap = new Map(inspections.map(i => [i.inspectionRef, i.ID]))
+      for (const row of withInspRef) {
+        const id = inspMap.get(row.inspectionRef)
+        if (id) row.inspection_ID = id
+        else warnings.push(`Row ${row.__rowNumber}: inspectionRef "${row.inspectionRef}" not found — defect created without inspection link`)
+        delete row.inspectionRef
+      }
+      for (const row of normalized.filter(r => !r.inspectionRef && Object.prototype.hasOwnProperty.call(r, 'inspectionRef'))) {
+        delete row.inspectionRef
+      }
+    }
+  })
+}
+
+// ── BridgeCapacities ─────────────────────────────────────────────────────────
+async function importCapacityRows(tx, dataset, rows, warnings, auditContext) {
+  return importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
+    naturalKey: 'effectiveFrom',
+    objectType: 'BridgeCapacity',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.capacityType} / ${r.effectiveFrom}`
+  })
+}
+
+// ── BridgeScourAssessments ───────────────────────────────────────────────────
+async function importScourRows(tx, dataset, rows, warnings, auditContext) {
+  return importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
+    naturalKey: 'assessmentDate',
+    objectType: 'BridgeScourAssessment',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.assessmentDate}`
   })
 }
 
@@ -2200,10 +2377,65 @@ function resolveWorkbookDatasets(datasetName) {
   return [requireDataset(datasetName)]
 }
 
+// ── Upload session recording ─────────────────────────────────────────────────
+async function recordUploadSession(db, { fileName, datasetName, uploadedBy, summaries, warnings }) {
+  const totalRows       = summaries.reduce((s, x) => s + (x.processed || 0), 0)
+  const insertedRows    = summaries.reduce((s, x) => s + (x.inserted  || 0), 0)
+  const updatedRows     = summaries.reduce((s, x) => s + (x.updated   || 0), 0)
+  const deactivatedRows = summaries.reduce((s, x) => s + (x.deactivated || 0), 0)
+  const hasErrors       = warnings.some(w => /error|Error|failed|Failed/.test(w))
+  const session = {
+    ID:             cds.utils.uuid(),
+    fileName,
+    datasetName:    datasetName || 'All',
+    status:         hasErrors ? 'PartialSuccess' : 'Completed',
+    totalRows,
+    insertedRows,
+    updatedRows,
+    deactivatedRows,
+    warningCount:   warnings.length,
+    errorCount:     0,
+    summaryJson:    JSON.stringify(summaries),
+    warningsJson:   JSON.stringify(warnings.slice(0, 100))
+  }
+  try {
+    await db.run(INSERT.into('bridge.management.UploadSessions').entries([session]))
+  } catch (_) {
+    // never let session recording break an otherwise successful upload
+  }
+  return session
+}
+
+// ── Upload history queries ───────────────────────────────────────────────────
+async function getUploadHistory(limit = 50) {
+  const db = await cds.connect.to('db')
+  return db.run(
+    SELECT.from('bridge.management.UploadSessions')
+      .columns('ID', 'fileName', 'datasetName', 'status', 'totalRows', 'insertedRows', 'updatedRows',
+               'deactivatedRows', 'warningCount', 'errorCount', 'createdAt', 'createdBy')
+      .orderBy('createdAt desc')
+      .limit(limit)
+  )
+}
+
+async function getUploadSessionById(id) {
+  const db = await cds.connect.to('db')
+  const session = await db.run(SELECT.one.from('bridge.management.UploadSessions').where({ ID: id }))
+  if (!session) return null
+  return {
+    ...session,
+    summaries: JSON.parse(session.summaryJson  || '[]'),
+    warnings:  JSON.parse(session.warningsJson || '[]')
+  }
+}
+
 module.exports = {
   buildCsvTemplate,
   buildWorkbookTemplate,
   getDatasets,
   importUpload,
-  validateUpload
+  validateUpload,
+  recordUploadSession,
+  getUploadHistory,
+  getUploadSessionById
 }

@@ -182,4 +182,8 @@ service AdminService {
 
   @requires: ['admin', 'manage']
   action clearDemoData() returns { cleared: Integer; message: String };
+
+  @readonly
+  @requires: ['admin', 'manage', 'view']
+  entity UploadSessions as projection on my.UploadSessions;
 }
