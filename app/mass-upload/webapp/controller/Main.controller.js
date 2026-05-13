@@ -62,6 +62,9 @@ sap.ui.define([
         lastMessage: "",
         skippedMessage: "",
         hasUploadResults: false,
+        uploadMode: "upsert",
+        uploadModeIndex: 0,
+        uploadModeDescription: "Insert new records and update existing ones.",
         allHistoryRows: [],
         historyRows: [],
         historyFilter: "",
@@ -82,7 +85,17 @@ sap.ui.define([
             insertedRows: 0,
             updatedRows: 0
           }
-        }
+        },
+        registerDatasets: [],
+        registerDataset: "",
+        registerBridgeRef: "",
+        registerStatus: "",
+        registerActive: "",
+        registerRows: [],
+        registerTotal: 0,
+        registerShowing: 0,
+        registerBusy: false,
+        registerLastParams: null
       });
       this.getView().setModel(model, "view");
       this._invisibleMessage = InvisibleMessage.getInstance();
@@ -123,6 +136,80 @@ sap.ui.define([
       const key = oEvent.getParameter("key") || oEvent.getParameter("selectedKey");
       if (key === "history") {
         this._loadHistoryFromServer();
+      }
+    },
+
+    // ── Upload mode (Create / Update / Upsert) ──────────────────────────────
+    _MODE_KEYS: ["upsert", "create", "update"],
+    _MODE_DESCRIPTIONS: [
+      "Insert new records and update existing ones.",
+      "Only create new records. Rows whose key already exists will be rejected.",
+      "Only update existing records. Rows whose key is not found will be rejected."
+    ],
+
+    onModeChange: function (oEvent) {
+      const idx = oEvent.getParameter("selectedIndex") || 0;
+      const model = this._getViewModel();
+      model.setProperty("/uploadMode",            this._MODE_KEYS[idx]);
+      model.setProperty("/uploadModeIndex",        idx);
+      model.setProperty("/uploadModeDescription",  this._MODE_DESCRIPTIONS[idx]);
+      this._clearPreview();
+    },
+
+    // ── Register tab ─────────────────────────────────────────────────────────
+    onRegisterDatasetChange: function () {
+      this._getViewModel().setProperty("/registerRows", []);
+      this._getViewModel().setProperty("/registerTotal", 0);
+      this._getViewModel().setProperty("/registerShowing", 0);
+    },
+
+    onRegisterSearch: async function () {
+      const model = this._getViewModel();
+      const dataset   = model.getProperty("/registerDataset");
+      const bridgeRef = model.getProperty("/registerBridgeRef");
+      const status    = model.getProperty("/registerStatus");
+      const active    = model.getProperty("/registerActive");
+
+      if (!dataset) { MessageBox.warning("Select a data type first."); return; }
+
+      model.setProperty("/registerBusy", true);
+      try {
+        const params = new URLSearchParams({ dataset });
+        if (bridgeRef) params.set("bridgeRef", bridgeRef);
+        if (status)    params.set("status",    status);
+        if (active)    params.set("active",    active);
+
+        const res = await fetch(`/mass-upload/api/register?${params}`);
+        if (!res.ok) { throw new Error(`HTTP ${res.status}: ${(await res.json()).error?.message || "Failed"}`); }
+        const payload = await res.json();
+        const rows = (payload.rows || []).map(r => ({
+          ...r,
+          _key:    r.bridgeId || r.restrictionRef || r.inspectionRef || r.defectId || r.surveyRef || r.ratingRef || r.permitRef || r.ID || "",
+          _status: r.status || r.postingStatus || r.assessmentStatus || r.overallGrade || "",
+          _date:   r.inspectionDate || r.assessmentDate || r.surveyDate || r.assessmentDate || r.appliedDate || r.createdAt || ""
+        }));
+        model.setProperty("/registerRows",    rows);
+        model.setProperty("/registerTotal",   payload.total || rows.length);
+        model.setProperty("/registerShowing", rows.length);
+        model.setProperty("/registerLastParams", params.toString());
+      } catch (e) {
+        MessageBox.error("Search failed: " + e.message);
+      } finally {
+        model.setProperty("/registerBusy", false);
+      }
+    },
+
+    onRegisterExport: function () {
+      const params = this._getViewModel().getProperty("/registerLastParams");
+      if (params) window.open(`/mass-upload/api/export?${params}`, "_blank");
+    },
+
+    onRegisterDownloadForUpdate: function () {
+      const model  = this._getViewModel();
+      const params = model.getProperty("/registerLastParams");
+      if (params) {
+        window.open(`/mass-upload/api/export?${params}`, "_blank");
+        MessageToast.show("Switch to Upload mode and select 'Update Only' to re-upload the edited file.");
       }
     },
 
@@ -271,10 +358,12 @@ sap.ui.define([
 
       try {
         const contentBase64 = await this._readFileAsBase64(this._file);
+        const mode = model.getProperty("/uploadMode") || "upsert";
         const response = await this._mutate("/mass-upload/api/validate", "POST", {
           fileName: this._file.name,
           dataset,
-          contentBase64
+          contentBase64,
+          mode
         });
 
         const payload = await response.json();
@@ -334,7 +423,8 @@ sap.ui.define([
         const response = await this._mutate("/mass-upload/api/upload", "POST", {
           fileName: this._file.name,
           dataset: model.getProperty("/selectedDataset"),
-          contentBase64
+          contentBase64,
+          mode: model.getProperty("/uploadMode") || "upsert"
         });
 
         const contentType = response.headers.get("content-type") || "";
@@ -404,6 +494,12 @@ sap.ui.define([
           name: "",
           label: "All"
         }].concat(model.getProperty("/datasets")));
+
+        // Register tab: only user-facing non-lookup datasets (have a bridgeRef or key field)
+        const USER_FACING = ["Bridges", "Restrictions", "BridgeInspections", "BridgeDefects",
+          "BridgeCapacities", "BridgeScourAssessments", "BridgeConditionSurveys", "BridgeLoadRatings", "BridgePermits"];
+        model.setProperty("/registerDatasets",
+          (payload.datasets || []).filter(d => USER_FACING.includes(d.name)));
 
         if (!model.getProperty("/datasets").some((dataset) => dataset.name === model.getProperty("/selectedDataset"))) {
           const defaultDataset = model.getProperty("/datasets").find((dataset) => dataset.name === "Bridges");

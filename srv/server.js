@@ -6,6 +6,7 @@ const { recordActivity } = require('./user-activity')
 const {
   buildCsvTemplate,
   buildWorkbookTemplate,
+  exportDatasetRows,
   getDatasets,
   importUpload,
   validateUpload,
@@ -1222,7 +1223,7 @@ cds.on('bootstrap', (app) => {
 
   router.post('/upload', async (req, res) => {
     try {
-      const { fileName, contentBase64, dataset } = req.body || {}
+      const { fileName, contentBase64, dataset, mode = 'upsert' } = req.body || {}
       if (!fileName) {
         return res.status(400).json({ error: { message: 'fileName is required' } })
       }
@@ -1251,7 +1252,8 @@ cds.on('bootstrap', (app) => {
         buffer,
         fileName,
         datasetName: dataset,
-        uploadedBy: req.user?.id || 'system'
+        uploadedBy: req.user?.id || 'system',
+        mode
       })
       const db = await cds.connect.to('db')
       await recordUploadSession(db, {
@@ -1269,7 +1271,7 @@ cds.on('bootstrap', (app) => {
 
   router.post('/validate', async (req, res) => {
     try {
-      const { fileName, contentBase64, dataset } = req.body || {}
+      const { fileName, contentBase64, dataset, mode = 'upsert' } = req.body || {}
       if (!fileName) {
         return res.status(400).json({ error: { message: 'fileName is required' } })
       }
@@ -1283,11 +1285,46 @@ cds.on('bootstrap', (app) => {
       const result = await validateUpload({
         buffer,
         fileName,
-        datasetName: dataset
+        datasetName: dataset,
+        mode
       })
       res.json(result)
     } catch (error) {
       res.status(422).json({ error: { message: error.message || 'Validation failed' } })
+    }
+  })
+
+  // Export current DB records for a dataset as CSV (ready to edit and re-upload for updates)
+  router.get('/export', async (req, res) => {
+    try {
+      const { dataset, bridgeRef, active, status } = req.query
+      if (!dataset) return res.status(400).json({ error: { message: 'dataset query param required' } })
+      const csv = await exportDatasetRows(dataset, { bridgeRef, active, status })
+      const safeName = dataset.replace(/[^a-zA-Z0-9_-]/g, '_')
+      res.setHeader('Content-Type', 'text/csv')
+      res.setHeader('Content-Disposition', `attachment; filename="${safeName}-export-${new Date().toISOString().slice(0, 10)}.csv"`)
+      res.send(csv)
+    } catch (e) {
+      res.status(400).json({ error: { message: e.message } })
+    }
+  })
+
+  // Register endpoint: returns filtered rows as JSON for the Register tab table
+  router.get('/register', async (req, res) => {
+    try {
+      const { dataset, bridgeRef, active, status, limit = '200', offset = '0' } = req.query
+      if (!dataset) return res.status(400).json({ error: { message: 'dataset query param required' } })
+      const csv = await exportDatasetRows(dataset, { bridgeRef, active, status })
+      // Parse the CSV back to objects for JSON response (reuse XLSX)
+      const XLSX = require('xlsx')
+      const wb = XLSX.read(Buffer.from(csv), { type: 'buffer' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(ws, { defval: null })
+      const start = parseInt(offset, 10) || 0
+      const end = start + (parseInt(limit, 10) || 200)
+      res.json({ total: rows.length, rows: rows.slice(start, end), dataset })
+    } catch (e) {
+      res.status(400).json({ error: { message: e.message } })
     }
   })
 

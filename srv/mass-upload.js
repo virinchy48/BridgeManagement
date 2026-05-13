@@ -865,9 +865,12 @@ async function buildWorkbookTemplate() {
     }
     datasetRowsByName.set(dataset.name, rows)
     const header = buildHeaderRow(dataset)
-    const sheetRows = dataset.name === 'AllowedValues'
+    let sheetRows = dataset.name === 'AllowedValues'
       ? rows.map((row) => [row.entityName, row.code, row.label, row.description])
       : rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name || columnDef.field], columnDef.type)))
+    if (!sheetRows.length && dataset.name !== 'AllowedValues') {
+      sheetRows = getSampleRows(dataset)
+    }
     const sheet = XLSX.utils.aoa_to_sheet([header, ...sheetRows])
     sheet['!cols'] = dataset.columns.map((columnDef) => ({ wch: Math.max((columnDef.name || columnDef.header || '').length + 4, 16) }))
     XLSX.utils.book_append_sheet(workbook, sheet, dataset.name)
@@ -914,7 +917,47 @@ async function buildWorkbookTemplate() {
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
 }
 
-async function buildCsvTemplate(datasetName) {
+// ---------------------------------------------------------------------------
+// Sample rows shown in blank templates so users understand the expected format
+// ---------------------------------------------------------------------------
+const SAMPLE_ROWS = {
+  Bridges: [
+    { bridgeId: 'NSW-SAMPLE-001', bridgeName: 'Sample Creek Bridge', state: 'NSW', region: 'Hunter', lga: 'Maitland', suburb: 'Lochinvar', latitude: -32.6833, longitude: 151.5167, assetClass: 'State Road Bridge', structureType: 'Simply Supported', yearBuilt: 1985, deckWidth: 8.2, totalLength: 24.0, spanCount: 1, importanceLevel: 3, conditionRating: 7, postingStatus: 'No Posting', hmlApproved: true, bDoubleApproved: true, isActive: true }
+  ],
+  Restrictions: [
+    { restrictionRef: 'RST-SAMPLE-001', bridgeRef: 'NSW-SAMPLE-001', restrictionType: 'Mass Limit', restrictionCategory: 'Permanent', name: 'GML Restriction', grossMassLimit: 42.5, appliesToVehicleClass: 'HML', active: true }
+  ],
+  BridgeInspections: [
+    { bridgeRef: 'NSW-SAMPLE-001', inspectionDate: '2024-06-15', inspectionType: 'Routine', inspectedBy: 'J. Smith', overallConditionRating: 7, active: true }
+  ],
+  BridgeDefects: [
+    { bridgeRef: 'NSW-SAMPLE-001', inspectionRef: 'INS-0001', defectType: 'Cracking', location: 'Deck surface, west lane', severity: 2, repairMethod: 'Surface sealing', maintenancePriority: 'P3', active: true }
+  ],
+  BridgeCapacities: [
+    { bridgeRef: 'NSW-SAMPLE-001', capacityType: 'GML', grossMassLimit: 42.5, axleGroupLimit: 16.5, effectiveFrom: '2024-01-01', active: true }
+  ],
+  BridgeScourAssessments: [
+    { bridgeRef: 'NSW-SAMPLE-001', assessmentDate: '2024-03-20', scourRisk: 'Low', assessedBy: 'B. Jones', floodImmunityAri: 100, active: true }
+  ],
+  BridgeConditionSurveys: [
+    { bridgeRef: 'NSW-SAMPLE-001', surveyDate: '2024-05-10', surveyType: 'Routine', surveyedBy: 'A. Kumar', conditionRating: 7, overallGrade: 'Good', status: 'Draft', active: true }
+  ],
+  BridgeLoadRatings: [
+    { bridgeRef: 'NSW-SAMPLE-001', vehicleClass: 'T44', ratingMethod: 'AS5100', ratingFactor: 1.0, grossMassLimit: 42.5, assessedBy: 'C. Lee', assessmentDate: '2023-11-01', status: 'Active', active: true }
+  ],
+  BridgePermits: [
+    { bridgeRef: 'NSW-SAMPLE-001', permitType: 'Overmass', applicantName: 'Acme Haulage Pty Ltd', vehicleClass: 'HML', grossMass: 68.5, appliedDate: '2024-07-01', validFrom: '2024-07-15', validTo: '2025-07-14', status: 'Pending', active: true }
+  ]
+}
+
+function getSampleRows(dataset) {
+  const rows = SAMPLE_ROWS[dataset.name] || []
+  return rows.map((sampleObj) =>
+    dataset.columns.map((col) => formatCellValue(sampleObj[col.name], col.type))
+  )
+}
+
+async function buildCsvTemplate(datasetName, withSamples = false) {
   const dataset = requireDataset(datasetName)
   const db = await cds.connect.to('db')
   let dataRows
@@ -925,20 +968,63 @@ async function buildCsvTemplate(datasetName) {
     const rows = await readDatasetRows(db, dataset)
     dataRows = rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
   }
+  if (!dataRows.length && withSamples) {
+    dataRows = getSampleRows(dataset)
+  }
   const sheet = XLSX.utils.aoa_to_sheet([buildHeaderRow(dataset), ...dataRows])
   return Buffer.from(XLSX.utils.sheet_to_csv(sheet), 'utf8')
 }
 
-async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
+async function exportDatasetRows(datasetName, filters = {}) {
+  const dataset = DATASETS.find(d => d.name === datasetName && !d.templateOnly)
+  if (!dataset || !dataset.entity) throw new Error(`Dataset '${datasetName}' not found or not exportable`)
+  const db = await cds.connect.to('db')
+  const allCols = dataset.columns.map((c) => c.name || c.field).filter(Boolean)
+  const needsBridgeRef = allCols.includes('bridgeRef')
+  const readCols = needsBridgeRef ? [...allCols.filter(c => c !== 'bridge_ID'), 'bridge_ID'] : allCols
+
+  let query = SELECT.from(dataset.entity).columns(...readCols).orderBy(dataset.orderBy)
+  const where = {}
+  if (filters.bridgeRef && needsBridgeRef) {
+    const bridge = await db.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: filters.bridgeRef }))
+    if (bridge) where.bridge_ID = bridge.ID
+  }
+  if (filters.active !== undefined && filters.active !== '') where.active = filters.active === 'true' || filters.active === true
+  if (filters.status) where.status = filters.status
+  if (Object.keys(where).length) query = query.where(where)
+
+  let rows = await db.run(query)
+
+  if (needsBridgeRef) {
+    const unresolved = rows.filter(r => (r.bridgeRef == null || r.bridgeRef === '') && r.bridge_ID != null)
+    if (unresolved.length) {
+      const bridgeIds = [...new Set(unresolved.map(r => r.bridge_ID))]
+      const bridges = await db.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ ID: { in: bridgeIds } }))
+      const bridgeMap = new Map(bridges.map(b => [String(b.ID), b.bridgeId]))
+      for (const row of unresolved) row.bridgeRef = bridgeMap.get(String(row.bridge_ID)) ?? null
+    }
+    for (const row of rows) delete row.bridge_ID
+  }
+
+  const header = buildHeaderRow(dataset)
+  const dataRowArrays = rows.map(row => dataset.columns.map(col => formatCellValue(row[col.name], col.type)))
+  const sheet = XLSX.utils.aoa_to_sheet([header, ...dataRowArrays])
+  return Buffer.from(XLSX.utils.sheet_to_csv(sheet), 'utf8')
+}
+
+async function importUpload({ buffer, fileName, datasetName, uploadedBy, mode = 'upsert' }) {
   if (!buffer?.length) {
     throw new Error('Uploaded file is empty')
+  }
+  if (!['create', 'update', 'upsert'].includes(mode)) {
+    throw new Error(`Invalid mode '${mode}'. Must be create, update, or upsert.`)
   }
 
   const lowerName = (fileName || '').toLowerCase()
   const db = await cds.connect.to('db')
   const tx = db.tx()
   const batchId = cds.utils.uuid()
-  const auditContext = { db, batchId, changedBy: uploadedBy || 'system' }
+  const auditContext = { db, batchId, changedBy: uploadedBy || 'system', mode }
 
   try {
     let summaries
@@ -946,7 +1032,7 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
     let warnings = []
 
     if (lowerName.endsWith('.xlsx')) {
-      const result = await importWorkbook(tx, buffer, datasetName, auditContext)
+      const result = await importWorkbook(tx, buffer, datasetName, auditContext, mode)
       summaries = result.summaries
       skipped = result.skipped
       warnings = result.warnings
@@ -1018,7 +1104,7 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
         }
       }
     } else if (lowerName.endsWith('.csv')) {
-      const result = await importCsv(tx, buffer, datasetName, auditContext)
+      const result = await importCsv(tx, buffer, datasetName, auditContext, mode)
       summaries = [result.summary]
       warnings = result.warnings
     } else {
@@ -1035,8 +1121,10 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
     }
 
     const processed = summaries.reduce((total, summary) => total + summary.processed, 0)
+    const modeLabel = mode === 'create' ? 'Create' : mode === 'update' ? 'Update' : 'Upsert'
     return {
-      message: `Mass upload completed. ${processed} rows processed across ${summaries.length} dataset(s).`,
+      message: `Mass upload completed (${modeLabel} mode). ${processed} rows processed across ${summaries.length} dataset(s).`,
+      mode,
       summaries,
       skipped,
       warnings
@@ -1047,7 +1135,7 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
   }
 }
 
-async function validateUpload({ buffer, fileName, datasetName }) {
+async function validateUpload({ buffer, fileName, datasetName, mode = 'upsert' }) {
   if (!buffer?.length) {
     throw new Error('Uploaded file is empty')
   }
@@ -1515,6 +1603,7 @@ async function importLookupRows(tx, dataset, rows, warnings, auditContext) {
 
 async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
+  const mode = auditContext?.mode || 'upsert'
 
   if (!normalized.length) {
     return emptySummary(dataset)
@@ -1535,9 +1624,18 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
     const existing = resolveExistingBridgeRow(row, existingById, existingByBridgeId)
 
     if (existing) {
+      if (mode === 'create') {
+        warnings.push(`Bridges row ${row.__rowNumber}: skipped — bridgeId '${row.bridgeId || existing.bridgeId}' already exists. Use Update mode to modify existing records.`)
+        continue
+      }
       row.ID = existing.ID
       if (!row.bridgeId) row.bridgeId = existing.bridgeId
       updates.push(row)
+      continue
+    }
+
+    if (mode === 'update') {
+      warnings.push(`Bridges row ${row.__rowNumber}: skipped — bridgeId '${row.bridgeId || '(blank)'}' not found in the system. Use Create mode to add new bridges.`)
       continue
     }
 
@@ -1598,6 +1696,7 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
 
 async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
+  const mode = auditContext?.mode || 'upsert'
 
   if (!normalized.length) {
     return emptySummary(dataset)
@@ -1628,8 +1727,17 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
 
     const existing = resolveExistingRestrictionRow(row, existingById, existingByRef)
     if (existing) {
+      if (mode === 'create') {
+        warnings.push(`Restrictions row ${row.__rowNumber}: skipped — restrictionRef '${row.restrictionRef || existing.restrictionRef}' already exists. Use Update mode to modify existing records.`)
+        continue
+      }
       row.ID = existing.ID
       updates.push(row)
+      continue
+    }
+
+    if (mode === 'update') {
+      warnings.push(`Restrictions row ${row.__rowNumber}: skipped — restrictionRef '${row.restrictionRef || '(blank)'}' not found in the system. Use Create mode to add new restrictions.`)
       continue
     }
 
@@ -1745,6 +1853,7 @@ async function batchGenerateRefs(tx, entityName, refField, prefix, rows) {
 
 async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, { naturalKey, objectType, getName, extraEnrich = null }) {
   const normalized = normalizeRows(dataset, rows, warnings)
+  const mode = auditContext?.mode || 'upsert'
   if (!normalized.length) return emptySummary(dataset)
 
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
@@ -1770,8 +1879,16 @@ async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
   for (const row of normalized) {
     let existing = (row.ID && existingById.get(row.ID)) || (row[naturalKey] && existingByNaturalKey.get(row[naturalKey]))
     if (existing) {
+      if (mode === 'create') {
+        warnings.push(`${dataset.name} row ${row.__rowNumber}: skipped — ${naturalKey} '${row[naturalKey] || existing[naturalKey]}' already exists. Use Update mode to modify existing records.`)
+        continue
+      }
       row.ID = existing.ID
       updates.push(row)
+      continue
+    }
+    if (mode === 'update') {
+      warnings.push(`${dataset.name} row ${row.__rowNumber}: skipped — ${naturalKey} '${row[naturalKey] || '(blank)'}' not found in the system. Use Create mode to add new records.`)
       continue
     }
     if (!row.ID) row.ID = cds.utils.uuid()
@@ -2432,6 +2549,7 @@ async function getUploadSessionById(id) {
 module.exports = {
   buildCsvTemplate,
   buildWorkbookTemplate,
+  exportDatasetRows,
   getDatasets,
   importUpload,
   validateUpload,
