@@ -780,6 +780,14 @@ Applied: app/admin-bridges/webapp/ext/controller/ListReportExt.js
 Source: Legacy BIS provisions screen + expert council audit
 Applied: db/schema.cds, db/data/bridge.management-ProvisionTypes.csv, db/data/bridge.management-RepairsProposalTypes.csv, app/restrictions/fiori-service.cds
 
+[2026-05-14] [FE4 / Risk Matrix Binding Context] Learning: `_oView.getBindingContext()` returns null when opening the risk matrix dialog on a NEW draft BridgeRiskAssessment. The view reference is captured correctly via `this.getView()` in `onOpenInherentMatrix`, but `getBindingContext()` without arguments fails to resolve for FE4 OData V4 draft contexts on first open. Fix: add `_getCtx()` helper that falls back to `_oView.getElementBinding?.()?.getBoundContext?.()` — this resolves the draft binding context when `getBindingContext()` returns null. Apply to BOTH `_openMatrix()` (for pre-population of L/C values) and `_apply()` (for saving). Without this, "Apply" shows "No binding context — cannot save" on every new risk record.
+Source: UAT 2026-05-14 — risk creation flow
+Applied: app/admin-bridges/webapp/ext/controller/RiskAssessmentsExt.js — _getCtx() helper
+
+[2026-05-14] [Schema / BridgeDocuments] Learning: `BridgeDocuments` was moved from an inline entity in `db/schema.cds` to a dedicated `db/schema/documents.cds` sub-file. The entity uses an EAV-style link: `linkedEntity: String(100)` (e.g. 'BridgeInspections') + `linkedEntityId: String(36)` (UUID). Navigation properties `documents: Association to many BridgeDocuments on linkedEntityId = $self.ID and linkedEntity = 'BridgeInspections'` are added to BridgeInspections and BridgeDefects in `db/schema/defects.cds`. The custom REST API (`POST /admin-bridges/api/documents/upload`, `GET /admin-bridges/api/documents?linkedEntity=X&linkedEntityId=Y`, `DELETE /admin-bridges/api/documents/:id`) uses an `ALLOWED_LINKED_ENTITIES` whitelist to prevent arbitrary entity injection. The FE4 ObjectPage for Inspections and Defects shows the sub-table via `documents/@UI.LineItem` ReferenceFacet targets.
+Source: Document attachments sprint — 2026-05-14
+Applied: db/schema/documents.cds (new), db/schema.cds, db/schema/defects.cds, srv/admin-service.js, srv/server.js, app/admin-bridges/fiori-service.cds
+
 ---
 
 ---
