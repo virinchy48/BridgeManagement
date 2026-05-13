@@ -1153,19 +1153,46 @@ async function importCsv(tx, buffer, datasetName, auditContext) {
 
 async function readDatasetRows(dbOrTx, dataset) {
   if (!dataset.entity) return []
-  const allCols = dataset.columns.map((c) => c.name)
+  const allCols = dataset.columns.map((c) => c.name || c.field).filter(Boolean)
+  const needsBridgeRef = allCols.includes('bridgeRef')
+
+  // When bridgeRef is needed, always fetch bridge_ID alongside bridgeRef.
+  // Entities with a stored bridgeRef field return it directly; entities that
+  // use only an Association (bridge_ID FK) return null for bridgeRef but a
+  // valid integer for bridge_ID — those rows are resolved via a batch lookup.
+  // This avoids relying on cds.model (which is null in middleware context).
+  const readCols = needsBridgeRef
+    ? [...allCols.filter((c) => c !== 'bridge_ID'), 'bridge_ID']
+    : allCols
+
+  let rows
   try {
-    return await dbOrTx.run(SELECT.from(dataset.entity).columns(...allCols).orderBy(dataset.orderBy))
+    rows = await dbOrTx.run(SELECT.from(dataset.entity).columns(...readCols).orderBy(dataset.orderBy))
   } catch (_) {
-    const entityDef = cds.model?.definitions?.[dataset.entity]
-    const entityCols = entityDef ? allCols.filter((c) => entityDef.elements?.[c]) : []
-    if (!entityCols.length) return []
     try {
-      return await dbOrTx.run(SELECT.from(dataset.entity).columns(...entityCols).orderBy(dataset.orderBy))
+      rows = await dbOrTx.run(SELECT.from(dataset.entity).orderBy(dataset.orderBy))
     } catch (_2) {
       return []
     }
   }
+
+  if (needsBridgeRef) {
+    const unresolved = rows.filter((r) => (r.bridgeRef == null || r.bridgeRef === '') && r.bridge_ID != null)
+    if (unresolved.length) {
+      const bridgeIds = [...new Set(unresolved.map((r) => r.bridge_ID))]
+      const bridges = await dbOrTx.run(
+        SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ ID: { in: bridgeIds } })
+      )
+      const bridgeMap = new Map()
+      bridges.forEach((b) => bridgeMap.set(String(b.ID), b.bridgeId))
+      for (const row of unresolved) {
+        row.bridgeRef = bridgeMap.get(String(row.bridge_ID)) ?? null
+      }
+    }
+    for (const row of rows) delete row.bridge_ID
+  }
+
+  return rows
 }
 
 function queueAudit(auditContext, entry) {
