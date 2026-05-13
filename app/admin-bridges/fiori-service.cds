@@ -1702,21 +1702,26 @@ annotate AdminService.BridgeScourAssessmentDetail with @(
 ////////////////////////////////////////////////////////////////////////////
 
 annotate AdminService.BridgeDocuments with {
-  ID         @UI.Hidden;
-  bridge     @UI.Hidden;
-  content    @UI.Hidden;  // blob served via /admin-bridges/api — never via OData
-  createdAt  @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
-  title        @title: 'Title';
-  documentType @title: 'Attachment Type';
-  documentUrl  @title: 'External URL';
-  documentDate @title: 'Attachment Date';
-  fileName     @title: 'File Name';
-  mediaType    @title: 'Media Type';
-  fileSize     @title: 'File Size (bytes)';
+  ID             @UI.Hidden;
+  bridge         @UI.Hidden;
+  content        @UI.Hidden;  // blob served via /admin-bridges/api — never via OData
+  createdAt      @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
+  linkedEntityId @UI.Hidden;
+  active         @UI.Hidden;
+  title           @title: 'Title';
+  documentType    @title: 'Document Type';
+  documentUrl     @title: 'External URL';
+  documentDate    @title: 'Document Date';
+  fileName        @title: 'File Name';
+  mediaType       @title: 'Media Type';
+  fileSize        @title: 'File Size (bytes)';
+  description     @title: 'Description'   @UI.MultiLineText;
+  uploadedBy      @title: 'Uploaded By'   @Common.FieldControl: #ReadOnly;
+  linkedEntity    @title: 'Linked To';
   referenceNumber @title: 'Reference Number';
-  issuedBy     @title: 'Issued By';
-  expiryDate   @title: 'Expiry Date';
-  remarks      @title: 'Remarks'  @UI.MultiLineText;
+  issuedBy        @title: 'Issued By';
+  expiryDate      @title: 'Expiry Date';
+  remarks         @title: 'Remarks'  @UI.MultiLineText;
 };
 
 annotate AdminService.BridgeDocuments with @(
@@ -1732,31 +1737,34 @@ annotate AdminService.BridgeDocuments with @(
       Description   : { Value: fileName }
     },
     LineItem: [
-      {Value: title,           Label: 'Title'},
-      {Value: fileName,        Label: 'File Name'},
       {Value: documentType,    Label: 'Type'},
-      {Value: mediaType,       Label: 'Media Type'},
-      {Value: fileSize,        Label: 'Size'},
-      {Value: referenceNumber, Label: 'Reference'},
+      {Value: fileName,        Label: 'File Name'},
+      {Value: fileSize,        Label: 'Size (bytes)'},
+      {Value: description,     Label: 'Description'},
+      {Value: uploadedBy,      Label: 'Uploaded By'},
       {Value: documentDate,    Label: 'Date'},
       {Value: expiryDate,      Label: 'Expiry'},
+      {Value: referenceNumber, Label: 'Reference'},
     ],
     Facets: [
       {$Type: 'UI.ReferenceFacet', Label: 'Attachment Details', Target: '@UI.FieldGroup#AttachmentDetails'}
     ],
     FieldGroup#AttachmentDetails: {
       Data: [
-        {Value: documentType},
-        {Value: title},
-        {Value: fileName},
-        {Value: mediaType},
-        {Value: fileSize},
-        {Value: documentUrl},
-        {Value: referenceNumber},
-        {Value: issuedBy},
-        {Value: documentDate},
-        {Value: expiryDate},
-        {Value: remarks},
+        {Value: documentType,    Label: 'Document Type'},
+        {Value: title,           Label: 'Title'},
+        {Value: fileName,        Label: 'File Name'},
+        {Value: mediaType,       Label: 'Media Type'},
+        {Value: fileSize,        Label: 'File Size (bytes)'},
+        {Value: description,     Label: 'Description'},
+        {Value: linkedEntity,    Label: 'Linked To'},
+        {Value: uploadedBy,      Label: 'Uploaded By'},
+        {Value: documentUrl,     Label: 'External URL'},
+        {Value: referenceNumber, Label: 'Reference Number'},
+        {Value: issuedBy,        Label: 'Issued By'},
+        {Value: documentDate,    Label: 'Document Date'},
+        {Value: expiryDate,      Label: 'Expiry Date'},
+        {Value: remarks,         Label: 'Remarks'},
       ]
     },
   }
@@ -2030,6 +2038,14 @@ annotate AdminService.BridgeInspections with @(
         {$Type: 'UI.ReferenceFacet', Label: 'Element Conditions (CS1–CS4)', Target: 'inspectionElements/@UI.LineItem'},
       ]
     },
+    {
+      $Type : 'UI.CollectionFacet',
+      Label : 'Documents',
+      ID    : 'InspDocuments',
+      Facets: [
+        {$Type: 'UI.ReferenceFacet', ID: 'InspDocumentsList', Label: 'Documents', Target: 'documents/@UI.LineItem'},
+      ]
+    },
   ],
   UI.FieldGroup#InspGeneral: {
     Label: 'General',
@@ -2203,6 +2219,9 @@ annotate AdminService.BridgeDefects with @(
       {$Type: 'UI.ReferenceFacet', Label: 'Location',     Target: '@UI.FieldGroup#DefectLocation'},
       {$Type: 'UI.ReferenceFacet', Label: 'Remediation',  Target: '@UI.FieldGroup#DefectRemediation'},
       {$Type: 'UI.ReferenceFacet', Label: 'S/4HANA Integration', Target: '@UI.FieldGroup#DefectS4Integration'},
+    ]},
+    { $Type: 'UI.CollectionFacet', Label: 'Documents', ID: 'DefDocuments', Facets: [
+      {$Type: 'UI.ReferenceFacet', ID: 'DefDocumentsList', Label: 'Documents', Target: 'documents/@UI.LineItem'},
     ]},
   ],
   UI.FieldGroup#DefectGeneral: {
@@ -4177,3 +4196,4 @@ annotate AdminService.BridgeRestrictionProvisions with @(
     ]},
   }
 );
+
