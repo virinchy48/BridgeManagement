@@ -764,6 +764,22 @@ Applied: test/integration/*.test.js (10 files)
 Source: Phase 1 health endpoint extension
 Applied: srv/server.js /health/deep
 
+[2026-05-14] [FE4 / Extension Actions] Learning: FE4 `content.header.actions` `press` handlers MUST reference methods on the `controllerName` controller registered in `manifest.json`. Cross-module references (e.g. `"BridgeManagement.adminbridges.ext.controller.CaptureCondition.onCaptureConditionOpen"`) silently fail — no error, button appears but does nothing. Fix: add delegation wrapper methods in the registered BridgeDetailExt controller that call into the CaptureCondition module: `onCaptureConditionOpen: function(oEvent) { return CaptureCondition.onCaptureConditionOpen.call(this, oEvent); }`. Then reference BridgeDetailExt methods in manifest.json.
+Source: BridgeDetailExt button fix (Inspect Now, Export Card, Deactivate)
+Applied: app/admin-bridges/webapp/ext/controller/BridgeDetailExt.js + manifest.json
+
+[2026-05-14] [FE4 / Lazy Render Race] Learning: FE4 custom body section fragments (defined via `template` in manifest.json `sectionedLayout`) are lazily rendered — their binding context is NOT available when `onBeforeRendering` or `onContextChange` first fires. `resolveBridgeId()` returns null on first render because the OData binding context hasn't resolved yet. Fix: add a 500ms setTimeout retry: `if (!bridgeId) { setTimeout(() => this._loadAttachments(), 500); return; }`. This pattern is needed for any custom fragment controller that reads data from the ObjectPage binding context on init.
+Source: Attachments tab showing empty on first load
+Applied: app/admin-bridges/webapp/ext/controller/Attachments.js
+
+[2026-05-14] [FLP / Hash Navigation] Learning: FLP hash fragments must be in the format `SemanticObject-action&/InnerRoute` — not bare route names or bare semantic objects. `window.location.hash = "#NetworkReports"` causes "Illegal new hash - cannot be parsed" because FLP tries to resolve it as a semantic object intent without an action. The correct form is `window.location.hash = "Bridges-manage&/NetworkReports"` (no leading `#` when assigning to `.hash`).
+Source: NetworkReports navigation from ListReport
+Applied: app/admin-bridges/webapp/ext/controller/ListReportExt.js
+
+[2026-05-14] [Schema / Restrictions Provisions] Learning: Restriction provisions (provision codes, detour details, repairs programme) are modelled as: (1) `RestrictionProvisions` Composition of many on Restrictions — each row has a `provisionCode` FK to `ProvisionTypes` + `provisionNote` text; (2) detour fields on the parent Restrictions entity (`detourLengthKm`, `detourCapable42t`, `detourMaxAxleLoad`, `detourRouteDetails`); (3) repairs programme fields (`repairsProposal` FK to `RepairsProposalTypes`, `estimatedRepairCost`, `programmeYear`, `restrictionComments`). Provision codes: CWRS (close/restricted + signed detour), DETR (detour route), SUBB (substitution bridge), HMLL (height/mass load limit), CLTT (clearance/tolerance), RPBL (repair/bridge load), TEMP (temporary), MNTR (monitoring), SPDI (special dispensation). This matches the legacy BIS "Temporary Provision" multi-value block.
+Source: Legacy BIS provisions screen + expert council audit
+Applied: db/schema.cds, db/data/bridge.management-ProvisionTypes.csv, db/data/bridge.management-RepairsProposalTypes.csv, app/restrictions/fiori-service.cds
+
 ---
 
 ## Contributing to this file
