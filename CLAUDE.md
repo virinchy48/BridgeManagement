@@ -748,6 +748,22 @@ Applied: srv/mass-upload.js `buildHeaderRow` function
 Source: Mass upload test — Carriageways/Contacts/MEH/InspectionElements returning 422
 Applied: srv/mass-upload.js single-dataset CSV dispatch (line ~1372)
 
+[2026-05-14] [CI/CD] Learning: GitHub Actions CDS compile check must use `grep -E "^\[ERROR\]" && exit 1 || exit 0` pattern — a bare `npx cds compile db/ srv/` always exits 0 even when there are CDS errors (errors go to stderr not exit code). The `&& exit 1 || exit 0` inversion is required: if grep finds errors (exit 0) → fail the workflow; if grep finds nothing (exit 1) → pass.
+Source: GitHub Actions main.yml setup
+Applied: .github/workflows/main.yml
+
+[2026-05-14] [Rate Limiting] Learning: `express-rate-limit` is not in package.json — added a zero-dependency `simpleRateLimit()` token bucket instead. This is an in-process Map that resets per IP per window. For multi-instance BTP deployments (CF scales to multiple instances), this in-process store does NOT share state across instances — each instance has its own bucket. For true distributed rate limiting, replace with `express-rate-limit` + a Redis store (SAP Redis Hyperscaler). The current implementation is sufficient for single-instance trial/dev.
+Source: Phase 1 production hardening
+Applied: srv/server.js — simpleRateLimit() (no new dependency)
+
+[2026-05-14] [Testing / Integration Tests] Learning: BMS test suite follows the pure-unit pattern — tests extract business logic verbatim rather than spinning up a CDS server or hitting HTTP endpoints. This means 10 new integration test files (143 tests) cover all handler logic (defect auto-alert, risk score formula, permit lifecycle, access control patterns) without requiring `cds.test()` setup. Pure unit tests run in 0.9s vs 30s+ for integration tests with a live server. Follow this pattern for all new test files — only use `cds.test()` when testing OData protocol behavior (draft activation, $batch, $expand) that cannot be unit-tested.
+Source: Phase 2 test coverage sprint
+Applied: test/integration/*.test.js (10 files)
+
+[2026-05-14] [Observability] Learning: `/health/deep` endpoint queries `bridge_management_Bridges` using raw SQL (not CDS OData) because `cds.connect.to('db')` in the health endpoint runs before the bootstrap finishes model loading on first request. Use `db.run('SELECT COUNT(*) as cnt FROM bridge_management_Bridges WHERE isActive=1')` — the table name uses underscore form (namespace dots become underscores in SQLite/HANA). Always test this endpoint after any entity rename.
+Source: Phase 1 health endpoint extension
+Applied: srv/server.js /health/deep
+
 ---
 
 ## Contributing to this file
