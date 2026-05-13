@@ -531,12 +531,16 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
     await db.run(UPDATE('bridge.management.Restrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ ID }))
+    // Cascade to sub-restrictions (children) under the same legal authority
+    await db.run(UPDATE('bridge.management.Restrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ parent_ID: ID, active: true }))
     return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
   })
   this.on('reactivate', Restrictions, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
     await db.run(UPDATE('bridge.management.Restrictions').set({ active: true, restrictionStatus: 'Active' }).where({ ID }))
+    // Cascade reactivate to children that were retired together with this parent
+    await db.run(UPDATE('bridge.management.Restrictions').set({ active: true, restrictionStatus: 'Active' }).where({ parent_ID: ID, active: false }))
     return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
   })
 
