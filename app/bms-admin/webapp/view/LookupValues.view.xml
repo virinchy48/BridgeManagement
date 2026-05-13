@@ -1,0 +1,53 @@
+<mvc:View
+  controllerName="BridgeManagement.bmsadmin.controller.LookupValues"
+  xmlns:mvc="sap.ui.core.mvc"
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  displayBlock="true">
+  <Page title="{i18n>lookupValuesTitle}" showNavButton="true" navButtonPress=".onNavBack">
+    <headerContent>
+      <Button icon="sap-icon://add" text="{i18n>lookupAddValue}" press=".onAddValue" type="Emphasized"/>
+    </headerContent>
+    <subHeader>
+      <Toolbar>
+        <Label text="{i18n>lookupEntityLabel}" labelFor="entitySelect"/>
+        <Select id="entitySelect" width="18rem" change=".onEntityChange" items="{lookup>/entities}">
+          <items>
+            <core:Item key="{lookup>name}" text="{lookup>label}"/>
+          </items>
+        </Select>
+        <ToolbarSpacer/>
+        <SearchField id="searchField" width="16rem" search=".onSearch" placeholder="{i18n>lookupSearchPlaceholder}"/>
+        <CheckBox id="showInactiveChk" text="{i18n>lookupShowInactive}" selected="{lookup>/showInactive}" select=".onShowInactiveChange"/>
+      </Toolbar>
+    </subHeader>
+    <content>
+      <Table id="valuesTable" items="{lookup>/rows}" growing="true" growingThreshold="50" busyIndicatorDelay="0" busy="{lookup>/busy}" noDataText="{i18n>lookupSelectEntity}">
+        <columns>
+          <Column width="10rem"><Text text="{i18n>lookupCode}"/></Column>
+          <Column><Text text="{i18n>lookupLabel}"/></Column>
+          <Column width="16rem"><Text text="{i18n>lookupDescription}"/></Column>
+          <Column width="7rem" hAlign="Center"><Text text="{i18n>lookupActive}"/></Column>
+          <Column width="8rem" hAlign="Center"><Text text="{i18n>lookupActions}"/></Column>
+        </columns>
+        <items>
+          <ColumnListItem>
+            <cells>
+              <ObjectIdentifier title="{lookup>code}"/>
+              <Text text="{lookup>label}"/>
+              <Text text="{lookup>descr}" wrapping="false"/>
+              <ObjectStatus
+                text="{= ${lookup>active} ? 'Active' : 'Inactive'}"
+                state="{= ${lookup>active} ? 'Success' : 'Error'}"/>
+              <HBox>
+                <Button icon="sap-icon://edit" type="Transparent" tooltip="{i18n>lookupEdit}" press=".onEditValue" visible="{lookup>active}"/>
+                <Button icon="sap-icon://decline" type="Transparent" tooltip="{i18n>lookupDeactivate}" press=".onDeactivateValue" visible="{lookup>active}"/>
+                <Button icon="sap-icon://sys-enter-2" type="Transparent" tooltip="{i18n>lookupReactivate}" press=".onReactivateValue" visible="{= !${lookup>active} }"/>
+              </HBox>
+            </cells>
+          </ColumnListItem>
+        </items>
+      </Table>
+    </content>
+  </Page>
+</mvc:View>

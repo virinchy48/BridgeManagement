@@ -68,7 +68,8 @@
         { "pattern": "gis-config",        "name": "gisConfig",        "target": "gisConfig" },
 { "pattern": "api-docs",         "name": "apiDocs",         "target": "apiDocs" },
         { "pattern": "feature-flags",    "name": "featureFlags",    "target": "featureFlags" },
-        { "pattern": "demo-data",         "name": "demoData",         "target": "demoData" }
+        { "pattern": "demo-data",         "name": "demoData",         "target": "demoData" },
+        { "pattern": "lookup-values",     "name": "lookupValues",     "target": "lookupValues" }
       ],
       "targets": {
         "changeDocuments": { "viewName": "ChangeDocuments",  "viewLevel": 1 },
@@ -81,7 +82,8 @@
         "gisConfig":       { "viewName": "GisConfig",        "viewLevel": 1 },
 "apiDocs":         { "viewName": "ApiDocs",          "viewLevel": 1 },
         "featureFlags":    { "viewName": "FeatureFlags",      "viewLevel": 1 },
-        "demoData":        { "viewName": "DemoData",          "viewLevel": 1 }
+        "demoData":        { "viewName": "DemoData",          "viewLevel": 1 },
+        "lookupValues":    { "viewName": "LookupValues",      "viewLevel": 1, "title": "Lookup Values" }
       }
     },
     "contentDensities": { "compact": true, "cozy": true }

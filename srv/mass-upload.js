@@ -14,7 +14,8 @@ const ALLOWED_VALUES_COLUMNS = [
   column('entityName', 'string', { required: true }),
   column('code',       'string', { required: true }),
   column('label',      'string'),
-  column('description','string')
+  column('description','string'),
+  column('active',     'boolean')
 ]
 
 const ALLOWED_VALUES_WHITELIST = new Set([
@@ -1484,6 +1485,7 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
       await tx.run(INSERT.into(entityRef).entries(inserts.map(r => {
         const entry = { code: r.code, [labelField]: r.label || r.code }
         if (descrField) entry[descrField] = r.description || null
+        entry.active = r.active !== false
         return entry
       })))
       for (const row of inserts) {
@@ -1503,6 +1505,7 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
     for (const row of updates) {
       const setClause = { [labelField]: row.label || row.code }
       if (descrField) setClause[descrField] = row.description || null
+      if (row.active !== undefined) setClause.active = row.active !== false
       const oldRow = await fetchCurrentRecord(tx, entityRef, { code: row.code })
       await tx.run(UPDATE(entityRef).set(setClause).where({ code: row.code }))
       if (oldRow) {

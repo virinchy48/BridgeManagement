@@ -132,7 +132,7 @@ service AdminService {
   entity FoundationTypes as projection on my.FoundationTypes;
   entity WaterwayTypes as projection on my.WaterwayTypes;
   entity FatigueDetailCategories as projection on my.FatigueDetailCategories;
-  @readonly entity DefectCodes as projection on my.DefectCodes;
+  entity DefectCodes as projection on my.DefectCodes;
   entity GISConfig as projection on my.GISConfig excluding { hereApiKey };
   entity ReferenceLayerConfig as projection on my.ReferenceLayerConfig;
   @readonly entity ChangeLog as projection on my.ChangeLog;

@@ -16,7 +16,8 @@ sap.ui.define([
     attributeReport:  "attributeReport",
     apiDocs:          "apiDocs",
     featureFlags:     "featureFlags",
-    demoData:         "demoData"
+    demoData:         "demoData",
+    lookupValues:     "lookupValues"
   };
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.Shell", {

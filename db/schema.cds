@@ -265,22 +265,27 @@ entity BridgeDocuments : cuid, managed {
 
 entity AssetClasses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity States : sap.common.CodeList {
   key code : String(10);
+  active   : Boolean default true;
 }
 
 entity Regions : sap.common.CodeList {
   key code : String(80);
+  active   : Boolean default true;
 }
 
 entity StructureTypes : sap.common.CodeList {
   key code : String(60);
+  active   : Boolean default true;
 }
 
 entity DesignLoads : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity DefectCodes : managed {
@@ -292,84 +297,104 @@ entity DefectCodes : managed {
 
 entity PostingStatuses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity CapacityStatuses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity ConditionStates : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity ScourRiskLevels : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity PbsApprovalClasses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity ConditionSummaries : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity StructuralAdequacyTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity RestrictionTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity RestrictionStatuses : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity VehicleClasses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity RestrictionCategories : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity RestrictionUnits : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity RestrictionDirections : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 // ── New lookup tables — standards compliance additions ────────────────────────
 
 entity InspectionTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity ConditionTrends : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity SurfaceTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity SubstructureTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity FoundationTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity WaterwayTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity FatigueDetailCategories : sap.common.CodeList {
   key code : String(10);
+  active   : Boolean default true;
 }
 
 type Price : Decimal(9, 2);
