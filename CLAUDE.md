@@ -842,6 +842,18 @@ Applied: Documented
 Source: UAT 2026-05-14 — 400 errors discovering correct field names
 Applied: Documented
 
+[2026-05-14] [UI5 / DynamicPage Layout] Learning: `layout:HorizontalLayout` (sap.ui.layout) inside `f:DynamicPage f:content` causes panels to render with zero effective height — the screen appears blank/white even though the DOM nodes exist. Root cause: `sap.ui.layout.HorizontalLayout` does not participate in CSS flex layout used by `f:DynamicPage`'s content area. Fix: replace with `sap.m.HBox` (wrap="Wrap" alignItems="Stretch") and `sap.m.VBox` for the outer container, add `fitContent="false"` to `f:DynamicPage`. Remove the `xmlns:layout="sap.ui.layout"` namespace declaration. This applies to ALL sap.ui.layout controls inside DynamicPage — use only sap.m equivalents (HBox/VBox).
+Source: BMS Admin AttributeConfig screen blank — UAT 2026-05-14
+Applied: app/bms-admin/webapp/view/AttributeConfig.view.xml — full layout rewrite
+
+[2026-05-14] [AdminService / Draft Guard Completeness] Learning: Every draft-enabled entity in `admin-service.js` that exposes `deactivate`/`reactivate` actions MUST have BOTH: (1) the active-entity handlers `this.on('deactivate', Entity, ...)` and (2) the DRAFT guard handlers `this.on('deactivate', Entity.drafts, req => req.error(409, '...'))`. Without the `.drafts` guard, CAP throws `Service "AdminService" has no handler for "deactivate AdminService.Entity.drafts"` at runtime when FE4 calls deactivate on an unsaved draft (IsActiveEntity=false). The `.drafts` handlers must appear BEFORE the `before('NEW', Entity.drafts)` block. Check every `this.on('deactivate', SomeEntity, ...)` line and verify a matching `.drafts` guard exists immediately above it.
+Source: BridgeRiskAssessments deactivate runtime error — UAT 2026-05-14
+Applied: srv/admin-service.js — added deactivate/reactivate .drafts guards for BridgeRiskAssessments
+
+[2026-05-14] [Preview / Screenshot Viewport] Learning: The Claude preview screenshot tool renders at mobile viewport width (~273px) by default. SAP DynamicPage panels with fixed widths (e.g. width="320px") ARE in the DOM and visible (offsetHeight > 0, visibility: visible) but appear blank in the screenshot because the content overflows the narrow viewport. Use `preview_resize({ preset: 'desktop' })` before taking screenshots of SAP Fiori admin screens to get an accurate render. Always verify DOM presence and offsetHeight via `preview_eval` before concluding a view is broken.
+Source: AttributeConfig view debugging — UAT 2026-05-14
+Applied: Documented; always use desktop preset for Fiori admin screen verification
+
 ---
 
 ## Contributing to this file
