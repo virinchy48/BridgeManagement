@@ -738,9 +738,9 @@ async function buildWorkbookTemplate() {
     const header = buildHeaderRow(dataset)
     const sheetRows = dataset.name === 'AllowedValues'
       ? rows.map((row) => [row.entityName, row.code, row.label, row.description])
-      : rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
+      : rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name || columnDef.field], columnDef.type)))
     const sheet = XLSX.utils.aoa_to_sheet([header, ...sheetRows])
-    sheet['!cols'] = dataset.columns.map((columnDef) => ({ wch: Math.max(columnDef.name.length + 4, 16) }))
+    sheet['!cols'] = dataset.columns.map((columnDef) => ({ wch: Math.max((columnDef.name || columnDef.header || '').length + 4, 16) }))
     XLSX.utils.book_append_sheet(workbook, sheet, dataset.name)
   }
 
@@ -1115,7 +1115,10 @@ async function importWorkbook(tx, buffer, datasetName, auditContext) {
       continue
     }
     const rows = parseSheetRows(sheet, dataset)
-    summaries.push(await dataset.importer(tx, dataset, rows, warnings, auditContext))
+    const result = dataset.importer
+      ? await dataset.importer(tx, dataset, rows, warnings, auditContext)
+      : await dataset.importRows(rows, tx)
+    if (result) summaries.push({ dataset: dataset.name, label: dataset.label, inserted: result.inserted ?? 0, updated: result.updated ?? 0, processed: result.processed ?? rows.length })
   }
 
   if (!summaries.length) {
@@ -1150,9 +1153,19 @@ async function importCsv(tx, buffer, datasetName, auditContext) {
 
 async function readDatasetRows(dbOrTx, dataset) {
   if (!dataset.entity) return []
-  return dbOrTx.run(
-    SELECT.from(dataset.entity).columns(...dataset.columns.map((columnDef) => columnDef.name)).orderBy(dataset.orderBy)
-  )
+  const allCols = dataset.columns.map((c) => c.name)
+  try {
+    return await dbOrTx.run(SELECT.from(dataset.entity).columns(...allCols).orderBy(dataset.orderBy))
+  } catch (_) {
+    const entityDef = cds.model?.definitions?.[dataset.entity]
+    const entityCols = entityDef ? allCols.filter((c) => entityDef.elements?.[c]) : []
+    if (!entityCols.length) return []
+    try {
+      return await dbOrTx.run(SELECT.from(dataset.entity).columns(...entityCols).orderBy(dataset.orderBy))
+    } catch (_2) {
+      return []
+    }
+  }
 }
 
 function queueAudit(auditContext, entry) {
@@ -1865,16 +1878,22 @@ function parseSheetRows(sheet, dataset) {
   const normalizedHeaders = new Map(headers.map((header) => [String(header).replace(/^\uFEFF/, '').replace(/\*$/, '').trim().toLowerCase(), header]))
 
   for (const columnDef of dataset.columns) {
-    if (columnDef.required && !normalizedHeaders.has(columnDef.name.toLowerCase())) {
-      throw new Error(`Sheet "${dataset.name}" must contain a "${columnDef.name}" column.`)
+    const fieldKey = (columnDef.name || columnDef.field || '').toLowerCase()
+    const headerKey = (columnDef.header || columnDef.name || columnDef.field || '').replace(/\s*\*\s*$/, '').trim().toLowerCase()
+    const found = normalizedHeaders.has(fieldKey) || normalizedHeaders.has(headerKey)
+    if (columnDef.required && !found) {
+      throw new Error(`Sheet "${dataset.name}" must contain a "${columnDef.name || columnDef.header}" column.`)
     }
   }
 
   return rows.map((row, index) => {
     const mappedRow = { __rowNumber: index + 2 }
     for (const columnDef of dataset.columns) {
-      const originalHeader = normalizedHeaders.get(columnDef.name.toLowerCase())
-      mappedRow[columnDef.name] = originalHeader ? row[originalHeader] : null
+      const outputKey = columnDef.field || columnDef.name
+      const fieldKey = (columnDef.name || columnDef.field || '').toLowerCase()
+      const headerKey = (columnDef.header || columnDef.name || columnDef.field || '').replace(/\s*\*\s*$/, '').trim().toLowerCase()
+      const originalHeader = normalizedHeaders.get(fieldKey) || normalizedHeaders.get(headerKey)
+      mappedRow[outputKey] = originalHeader ? row[originalHeader] : null
     }
     return mappedRow
   })
@@ -2067,14 +2086,17 @@ function stripMetadata(row) {
 }
 
 function buildHeaderRow(dataset) {
-  return dataset.columns.map((columnDef) => `${columnDef.name}${columnDef.required ? '*' : ''}`)
+  return dataset.columns.map((columnDef) => {
+    const label = columnDef.name || columnDef.header || ''
+    return `${label}${columnDef.required ? '*' : ''}`
+  })
 }
 
 function buildReferenceExamplesRows(datasetRowsByName) {
   const datasetBySheetAndColumn = new Map(
     DATASETS.map((dataset) => [
       dataset.name,
-      new Map(dataset.columns.map((columnDef) => [columnDef.name, columnDef]))
+      new Map(dataset.columns.map((columnDef) => [columnDef.name || columnDef.field, columnDef]))
     ])
   )
 
