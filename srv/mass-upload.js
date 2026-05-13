@@ -986,9 +986,13 @@ async function exportDatasetRows(datasetName, filters = {}) {
 
   let query = SELECT.from(dataset.entity).columns(...readCols).orderBy(dataset.orderBy)
   const where = {}
-  if (filters.bridgeRef && needsBridgeRef) {
-    const bridge = await db.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: filters.bridgeRef }))
-    if (bridge) where.bridge_ID = bridge.ID
+  if (filters.bridgeRef) {
+    if (needsBridgeRef) {
+      const bridge = await db.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: filters.bridgeRef }))
+      if (bridge) where.bridge_ID = bridge.ID
+    } else if (allCols.includes('bridgeId')) {
+      where.bridgeId = filters.bridgeRef
+    }
   }
   if (filters.active !== undefined && filters.active !== '') where.active = filters.active === 'true' || filters.active === true
   if (filters.status) where.status = filters.status
@@ -1039,7 +1043,7 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy, mode = 
       warnings = result.warnings
 
       // Process attribute value sheets (BridgeAttributes, RestrictionAttributes)
-      const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+      const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
       const attrSheetMap = { BridgeAttributes: 'bridge', RestrictionAttributes: 'restriction' }
       for (const [sheetName, objectType] of Object.entries(attrSheetMap)) {
         const attrSheet = workbook.Sheets[sheetName]
@@ -1149,7 +1153,7 @@ async function validateUpload({ buffer, fileName, datasetName, mode = 'upsert' }
     throw new Error('Select a specific dataset for CSV uploads, or use the Excel template for All.')
   }
 
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
   const datasets = lowerName.endsWith('.xlsx') ? resolveWorkbookDatasets(datasetName) : [requireDataset(datasetName)]
   const previewRows = []
   let totalCount = 0
@@ -1320,7 +1324,7 @@ function buildValidationMessage(totalCount, validCount, warningCount, errorCount
 }
 
 async function importWorkbook(tx, buffer, datasetName, auditContext) {
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
   const summaries = []
   const skipped = []
   const warnings = []
@@ -1355,7 +1359,7 @@ async function importCsv(tx, buffer, datasetName, auditContext) {
   }
 
   const dataset = requireDataset(datasetName)
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
   const [firstSheetName] = workbook.SheetNames
   const sheet = workbook.Sheets[firstSheetName]
 
