@@ -1,5 +1,6 @@
 // Bridge Management System — DB Schema Barrel
 using { bridge.management.Bridges } from './schema/bridge-entity';
+using { bridge.management.BridgeDocuments } from './schema/documents';
 using { bridge.management.LoadRatingVehicleClass, bridge.management.LoadRatingMethod } from './schema/enum-types';
 using { bridge.management.BridgeScourAssessmentDetail } from './schema/nhvr-compliance';
 using { bridge.management.BridgeScourAssessments } from './schema/scour-assessments';
@@ -16,6 +17,7 @@ using from './schema/risk-assessments';
 using from './schema/nhvr-compliance';
 using from './schema/elements';
 using from './schema/defects';
+using from './schema/documents';
 using from './schema/alerts';
 using from './schema/maintenance';
 using from './schema/gap-entities';
@@ -278,25 +280,6 @@ entity BridgeAttributes : cuid, managed {
   source              : String(111);
   effectiveFrom       : Date;
   effectiveTo         : Date;
-  remarks             : LargeString;
-}
-
-entity BridgeDocuments : cuid, managed {
-  bridge              : Association to Bridges;
-  documentType        : String(60);
-  title               : String(111);
-  documentUrl         : String(500);
-  fileName            : String(255);
-  mediaType           : String(100);
-  fileSize            : Integer;
-  @Core.MediaType: mediaType
-  @Core.ContentDisposition.Filename: fileName
-  @Core.ContentDisposition.Type: 'attachment'
-  content             : LargeBinary;
-  referenceNumber     : String(111);
-  issuedBy            : String(111);
-  documentDate        : Date;
-  expiryDate          : Date;
   remarks             : LargeString;
 }
 

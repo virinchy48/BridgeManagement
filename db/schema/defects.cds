@@ -8,6 +8,7 @@ using { bridge.management.StructuralAdequacyVerdict }  from './enum-types';
 using { bridge.management.RepairMethod }               from './enum-types';
 using { bridge.management.MaintenancePriority }        from './enum-types';
 using { bridge.management.BridgeInspectionElements } from './gap-entities';
+using { bridge.management.BridgeDocuments } from './documents';
 
 // Inspection capture record — S/4 EAM owns scheduling; this captures the event data
 entity BridgeInspections : cuid, managed {
@@ -49,6 +50,8 @@ entity BridgeInspections : cuid, managed {
     active                       : Boolean default true;
     defects                      : Association to many BridgeDefects           on defects.inspection           = $self;
     inspectionElements           : Association to many BridgeInspectionElements on inspectionElements.inspection = $self;
+    documents                    : Association to many BridgeDocuments
+                                   on documents.linkedEntityId = $self.ID and documents.linkedEntity = 'BridgeInspections';
 }
 
 // Defect capture — inspection link is optional (standalone defects allowed)
@@ -96,6 +99,8 @@ entity BridgeDefects : cuid, managed {
     notes   : LargeString;
     active  : Boolean default true;
     alertSent : Boolean default false;
+    documents : Association to many BridgeDocuments
+                on documents.linkedEntityId = $self.ID and documents.linkedEntity = 'BridgeDefects';
 }
 
 annotate BridgeInspections with @(cds.persistence.indexes: [

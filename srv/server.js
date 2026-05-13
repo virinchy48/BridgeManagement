@@ -2554,6 +2554,90 @@ cds.on('bootstrap', (app) => {
     }
   })
 
+  // ── Document API — linked to BridgeInspections or BridgeDefects ──────────
+  const ALLOWED_LINKED_ENTITIES = new Set(['BridgeInspections', 'BridgeDefects'])
+
+  adminBridgeRouter.post('/documents/upload', async (req, res) => {
+    try {
+      const { linkedEntity, linkedEntityId, bridge_ID, documentType, fileName, mimeType, fileSizeKb, contentBase64, description } = req.body || {}
+      if (!fileName) return res.status(400).json({ error: { message: 'fileName is required' } })
+      if (!linkedEntity || !ALLOWED_LINKED_ENTITIES.has(linkedEntity)) {
+        return res.status(400).json({ error: { message: 'linkedEntity must be BridgeInspections or BridgeDefects' } })
+      }
+      if (!linkedEntityId) return res.status(400).json({ error: { message: 'linkedEntityId is required' } })
+
+      const db = await cds.connect.to('db')
+      const safeName = sanitizeAttachmentName(fileName)
+      const now = new Date()
+      const content = contentBase64 ? Buffer.from(contentBase64, 'base64') : null
+      const entry = {
+        ID: cds.utils.uuid(),
+        bridge_ID: bridge_ID || null,
+        linkedEntity,
+        linkedEntityId,
+        documentType: documentType || 'Other',
+        title: safeName,
+        fileName: safeName,
+        mediaType: mimeType || 'application/octet-stream',
+        fileSize: fileSizeKb ? Number(fileSizeKb) * 1024 : (content ? content.length : 0),
+        description: description || null,
+        uploadedBy: req.user?.id || 'anonymous',
+        content,
+        documentDate: now.toISOString().slice(0, 10),
+        active: true,
+        createdAt: now.toISOString(),
+        createdBy: req.user?.id || 'anonymous',
+        modifiedAt: now.toISOString(),
+        modifiedBy: req.user?.id || 'anonymous'
+      }
+      await db.run(INSERT.into('bridge.management.BridgeDocuments').entries(entry))
+      res.status(201).json({
+        ID: entry.ID,
+        fileName: entry.fileName,
+        documentType: entry.documentType,
+        uploadedBy: entry.uploadedBy,
+        createdAt: entry.createdAt
+      })
+    } catch (error) {
+      res.status(error.status || 422).json({ error: { message: error.message || 'Upload failed' } })
+    }
+  })
+
+  adminBridgeRouter.get('/documents', async (req, res) => {
+    try {
+      const { linkedEntity, linkedEntityId } = req.query
+      if (!linkedEntity || !ALLOWED_LINKED_ENTITIES.has(linkedEntity)) {
+        return res.status(400).json({ error: { message: 'linkedEntity must be BridgeInspections or BridgeDefects' } })
+      }
+      if (!linkedEntityId) return res.status(400).json({ error: { message: 'linkedEntityId is required' } })
+      const db = await cds.connect.to('db')
+      const rows = await db.run(
+        SELECT.from('bridge.management.BridgeDocuments')
+          .columns('ID', 'documentType', 'fileName', 'fileSize', 'description', 'uploadedBy', 'createdAt', 'active')
+          .where({ linkedEntity, linkedEntityId, active: true })
+          .orderBy('createdAt desc')
+      )
+      res.json(rows || [])
+    } catch (error) {
+      res.status(error.status || 500).json({ error: { message: error.message || 'Failed to load documents' } })
+    }
+  })
+
+  adminBridgeRouter.delete('/documents/:id', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const result = await db.run(
+        UPDATE.entity('bridge.management.BridgeDocuments')
+          .set({ active: false, modifiedAt: new Date().toISOString(), modifiedBy: req.user?.id || 'anonymous' })
+          .where({ ID: req.params.id })
+      )
+      if (!result) return res.status(404).json({ error: { message: 'Document not found' } })
+      res.status(204).end()
+    } catch (error) {
+      res.status(error.status || 500).json({ error: { message: error.message || 'Failed to delete document' } })
+    }
+  })
+
   app.use('/admin-bridges/api', apiLimiter, requiresAuthentication, requireScope('admin', 'manage', 'inspect'), validateCsrfToken, adminBridgeRouter)
 
   // QR codes + PDF inspection reports

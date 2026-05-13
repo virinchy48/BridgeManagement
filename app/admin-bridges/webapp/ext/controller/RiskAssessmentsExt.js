@@ -121,8 +121,16 @@ sap.ui.define([
     if (_oDialog) _attachCellHandlers(oModel);
   }
 
+  function _getCtx() {
+    if (!_oView) return null;
+    return _oView.getBindingContext() ||
+      (_oView.getElementBinding && _oView.getElementBinding() &&
+       _oView.getElementBinding().getBoundContext()) ||
+      null;
+  }
+
   function _openMatrix(matrixType) {
-    var oCtx  = _oView && _oView.getBindingContext();
+    var oCtx  = _getCtx();
     var lFld  = matrixType === "inherent" ? "likelihood"  : "residualLikelihood";
     var cFld  = matrixType === "inherent" ? "consequence" : "residualConsequence";
     var selL  = oCtx ? (Number(oCtx.getProperty(lFld))  || 0) : 0;
@@ -190,7 +198,7 @@ sap.ui.define([
       return;
     }
 
-    var oCtx = _oView && _oView.getBindingContext();
+    var oCtx = _getCtx();
     if (!oCtx) {
       MessageToast.show("No binding context — cannot save.");
       _oDialog.close();
