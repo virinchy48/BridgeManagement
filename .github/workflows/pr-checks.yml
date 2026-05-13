@@ -1,0 +1,20 @@
+name: BMS PR Checks
+on:
+  pull_request:
+    branches: [main, draftv8-btp-sid]
+
+jobs:
+  quick-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npx cds compile db/ srv/ --to json > /dev/null
+      - run: npm test
+      - name: Validate JSON configs
+        run: |
+          node -e "require('./app/appconfig/fioriSandboxConfig.json'); console.log('fioriSandboxConfig OK')"

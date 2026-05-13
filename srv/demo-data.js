@@ -707,18 +707,25 @@ async function activateDemoData(db) {
         inspIds.push(inspId)
         const seq = bi * 3 + ii + 1
         await db.run(INSERT.into('bridge.management.BridgeInspections').entries({
-          ID:                     inspId,
-          bridge_ID:              bID,
-          inspectionRef:          `INS-DEMO-${String(seq).padStart(4,'0')}`,
-          inspectionDate:         insp.date,
-          inspectionType:         insp.type,
-          inspector:              insp.inspector,
+          ID:                          inspId,
+          bridge_ID:                   bID,
+          inspectionRef:               `INS-DEMO-${String(seq).padStart(4,'0')}`,
+          inspectionDate:              insp.date,
+          inspectionType:              insp.type,
+          inspector:                   insp.inspector,
+          inspectorAccreditationNumber: `AUS-ACC-${String(bi * 3 + ii + 1).padStart(5,'0')}`,
           inspectorAccreditationLevel: `Level ${insp.accredLevel}`,
-          overallConditionRating: insp.rating,
-          criticalFindings:       insp.critical,
-          recommendedActions:     insp.recommendations,
-          nextInspectionRecommended: insp.nextRecommended !== 'N/A' ? insp.nextRecommended : null,
-          active:                 true
+          inspectorCompany:            insp.accredLevel >= 4 ? 'Bridge Engineering Australia Pty Ltd' : insp.accredLevel >= 3 ? 'WSP Australia Pty Ltd' : 'TfNSW Asset Management',
+          inspectionScope:             insp.type === 'Detailed' ? 'Full principal inspection covering all structural elements, substructure, superstructure, deck, bearings, joints, drainage and approaches per AS 5100-7:2017.' : insp.type === 'Routine' ? 'Routine visual inspection of accessible elements. Superstructure, deck surface, piers, abutments and drainage.' : 'Special inspection in response to reported event or preceding inspection findings.',
+          inspectionStandard:          'AS 5100-7:2017',
+          inspectionMethodology:       insp.accredLevel >= 4 ? 'Under-Bridge Unit' : 'Visual',
+          overallConditionRating:      insp.rating,
+          overallStructuralAdequacy:   insp.rating >= 7 ? 'Adequate' : insp.rating >= 5 ? 'Marginal' : 'Inadequate',
+          loadCarryingCapacityConfirmed: insp.rating >= 5,
+          criticalFindings:            insp.critical,
+          recommendedActions:          insp.recommendations,
+          nextInspectionRecommended:   insp.nextRecommended !== 'N/A' ? insp.nextRecommended : null,
+          active:                      true
         }))
         loaded++
       }
@@ -732,19 +739,32 @@ async function activateDemoData(db) {
         for (let di = 0; di < defDefs.length; di++) {
           const def = defDefs[di]
           const dseq = bi * 4 + di + 1
+          const priorityEnumMap = { P1: 'P1 Emergency', P2: 'P2 Urgent', P3: 'P3 Routine', P4: 'P4 Planned' }
+          const repairMethodMap = {
+            'Spalling': 'Patching', 'Cracking': 'Epoxy Injection', 'Vegetation': 'Surface Treatment / Coating',
+            'Corrosion': 'Surface Treatment / Coating', 'Fatigue': 'Monitoring Only', 'Efflorescence': 'Surface Treatment / Coating',
+            'Deterioration': 'Full Section Replacement', 'Section Loss': 'Full Section Replacement',
+            'Scour': 'Grouting', 'Mechanical': 'Full Section Replacement'
+          }
           await db.run(INSERT.into('bridge.management.BridgeDefects').entries({
-            ID:                 cds.utils.uuid(),
-            bridge_ID:          bID,
-            inspection_ID:      inspIds[0] || null,
-            defectId:           `DEF-DEMO-${String(dseq).padStart(4,'0')}`,
-            defectType:         def.type,
-            defectDescription:  def.desc,
-            bridgeElement:      def.element,
-            severity:           def.severity,
-            urgency:            def.urgency,
-            remediationStatus:  def.status,
-            maintenancePriority: def.priority,
-            active:             true
+            ID:                    cds.utils.uuid(),
+            bridge_ID:             bID,
+            inspection_ID:         inspIds[0] || null,
+            defectId:              `DEF-DEMO-${String(dseq).padStart(4,'0')}`,
+            defectType:            def.type,
+            defectDescription:     def.desc,
+            bridgeElement:         def.element,
+            position:              `${def.element} — ${def.severity >= 3 ? 'Critical zone, mid-span' : def.severity === 2 ? 'Approach span' : 'Minor area, parapet'}`,
+            severity:              def.severity,
+            urgency:               def.urgency,
+            dimensionLengthMm:     def.severity >= 3 ? 500 : def.severity === 2 ? 200 : 80,
+            dimensionWidthMm:      def.severity >= 3 ? 300 : def.severity === 2 ? 100 : 40,
+            remediationStatus:     def.status,
+            remediationNotes:      def.severity >= 3 ? 'Condition deteriorating — remediation required within 3 months.' : def.severity === 2 ? 'Condition stable — monitor and schedule repair.' : 'Minor condition — schedule at next routine maintenance.',
+            repairMethod:          repairMethodMap[def.type] || 'Other',
+            maintenancePriority:   priorityEnumMap[def.priority] || 'P3 Routine',
+            requiresLoadRestriction: def.severity >= 4,
+            active:                true
           }))
           loaded++
         }
@@ -778,30 +798,52 @@ async function activateDemoData(db) {
 
     // ── 6. BridgeLoadRatings ─────────────────────────────────────────────────
     const lrExisting = await db.run(
-      SELECT.one.from('bridge.management.BridgeLoadRatings').where({ bridge_ID: bID })
+      SELECT.from('bridge.management.BridgeLoadRatings').where({ bridge_ID: bID })
     )
-    if (!lrExisting) {
+    if (lrExisting.length === 0) {
       const isOld = bridgeDef.yearBuilt < 1960
       const isCritical = bridgeDef.conditionRating <= 4
       const rf = isCritical ? 0.65 : isOld ? 0.75 : 0.95
       const gml = isCritical ? 8.0 : isOld ? 15.0 : 42.5
-      await db.run(INSERT.into('bridge.management.BridgeLoadRatings').entries({
-        ID:            cds.utils.uuid(),
-        bridge_ID:     bID,
-        ratingRef:     `LR-DEMO-${String(bi + 1).padStart(4,'0')}`,
-        bridgeRef:     bridge.bridgeId,
-        vehicleClass:  bridgeDef.designLoad || 'T44',
-        ratingMethod:  'AS5100',
-        ratingFactor:  rf,
-        grossMassLimit: gml,
-        assessedBy:    INSPECTION_DATA[bi]?.[0]?.inspector || 'Demo Load Rating Engineer',
-        assessmentDate: bridgeDef.lastInspectionDate,
-        validTo:       isCritical ? '2025-12-31' : '2028-12-31',
-        governingMember: isCritical ? 'Lower chord — section loss critical' : 'Main span mid-deck',
-        status:        'Active',
-        active:        true
-      }))
-      loaded++
+      const primaryClass = bridgeDef.designLoad || 'T44'
+      const secondaryClass = primaryClass === 'HML' ? 'T44' : 'HML'
+      const lrSeq1 = (bi + 1) * 2 - 1
+      const lrSeq2 = (bi + 1) * 2
+      await db.run(INSERT.into('bridge.management.BridgeLoadRatings').entries([
+        {
+          ID:              cds.utils.uuid(),
+          bridge_ID:       bID,
+          ratingRef:       `LR-DEMO-${String(lrSeq1).padStart(4,'0')}`,
+          bridgeRef:       bridge.bridgeId,
+          vehicleClass:    primaryClass,
+          ratingMethod:    'AS 5100',
+          ratingFactor:    rf,
+          grossMassLimit:  gml,
+          assessedBy:      INSPECTION_DATA[bi]?.[0]?.inspector || 'Demo Load Rating Engineer',
+          assessmentDate:  bridgeDef.lastInspectionDate,
+          validTo:         isCritical ? '2025-12-31' : '2028-12-31',
+          governingMember: isCritical ? 'Lower chord — section loss critical' : 'Main span mid-deck',
+          status:          'Active',
+          active:          true
+        },
+        {
+          ID:              cds.utils.uuid(),
+          bridge_ID:       bID,
+          ratingRef:       `LR-DEMO-${String(lrSeq2).padStart(4,'0')}`,
+          bridgeRef:       bridge.bridgeId,
+          vehicleClass:    secondaryClass,
+          ratingMethod:    'AS 5100',
+          ratingFactor:    isCritical ? 0.55 : isOld ? 0.68 : 0.88,
+          grossMassLimit:  isCritical ? 6.0 : isOld ? 12.5 : 45.5,
+          assessedBy:      INSPECTION_DATA[bi]?.[0]?.inspector || 'Demo Load Rating Engineer',
+          assessmentDate:  bridgeDef.lastInspectionDate,
+          validTo:         isCritical ? '2025-12-31' : '2028-12-31',
+          governingMember: isCritical ? 'Lower chord — section loss critical' : 'Main span mid-deck — governing for heavy combination',
+          status:          isCritical ? 'Active' : 'Active',
+          active:          true
+        }
+      ]))
+      loaded += 2
     }
 
     // ── 7. BridgeRiskAssessments ─────────────────────────────────────────────
@@ -1117,6 +1159,92 @@ async function activateDemoData(db) {
     if (alerts.length > 0) {
       await db.run(INSERT.into('bridge.management.AlertsAndNotifications').entries(alerts))
       loaded += alerts.length
+    }
+  }
+
+  // ── 15. Ensure BridgePermits for the 3 primary demo bridges (DEMO-NSW-001/002/003) ─
+  // DEMO-NSW-001 (Lennox Bridge) has freightRoute=false so the general loop skips it.
+  // Create a heritage/special movement permit for it explicitly.
+  const lennox = demoBridges.find(b => b.bridgeId === 'DEMO-NSW-001')
+  if (lennox) {
+    const lennoxPermExisting = await db.run(
+      SELECT.one.from('bridge.management.BridgePermits').where({ bridge_ID: lennox.ID })
+    )
+    if (!lennoxPermExisting) {
+      await db.run(INSERT.into('bridge.management.BridgePermits').entries({
+        ID:            cds.utils.uuid(),
+        bridge_ID:     lennox.ID,
+        permitRef:     'PM-DEMO-0001',
+        bridgeRef:     'DEMO-NSW-001',
+        permitType:    'Mass',
+        applicantName: 'Blue Mountains Heritage Trail Authority',
+        vehicleClass:  'PBS1',
+        grossMass:     5.0,
+        height:        3.5,
+        width:         2.4,
+        length:        8.0,
+        appliedDate:   '2024-07-01',
+        validFrom:     '2024-07-15',
+        validTo:       '2025-07-15',
+        status:        'Approved',
+        decisionBy:    'TfNSW Permit Office',
+        decisionDate:  '2024-07-10',
+        conditionsOfApproval: 'Single vehicle only. Maximum 5 tonne gross mass. No concurrent vehicles on structure. Crossing permitted 0600-1800 only. Heritage site — no anchoring or drilling into masonry.',
+        active:        true
+      }))
+      loaded++
+    }
+  }
+
+  // ── 16. Ensure AlertsAndNotifications for DEMO-NSW-001, 002, and 003 ──────────
+  const primaryDemoIds = ['DEMO-NSW-001', 'DEMO-NSW-002', 'DEMO-NSW-003']
+  for (const bid of primaryDemoIds) {
+    const br = demoBridges.find(b => b.bridgeId === bid)
+    if (!br) continue
+    const alertCheckExisting = await db.run(
+      SELECT.one.from('bridge.management.AlertsAndNotifications')
+        .where({ bridge_ID: br.ID, alertType: 'Inspection Due' })
+    )
+    if (!alertCheckExisting) {
+      const alertDefs = {
+        'DEMO-NSW-001': {
+          alertTitle:       'Inspection Due: Lennox Bridge (Glenbrook) — Heritage Asset',
+          alertDescription: 'Next detailed inspection due 2026-04-10. Heritage listed sandstone arch — specialist inspector with heritage masonry experience required. Condition rating 5 (Fair).',
+          severity:         'Medium',
+          dueDate:          '2026-04-10'
+        },
+        'DEMO-NSW-002': {
+          alertTitle:       'Routine Inspection Due: Sydney Harbour Bridge',
+          alertDescription: 'Biennial routine inspection scheduled. Anti-corrosion programme review to be completed concurrently. Last inspection 2025-01-20 rated 8 (Good).',
+          severity:         'Low',
+          dueDate:          '2027-01-20'
+        },
+        'DEMO-NSW-003': {
+          alertTitle:       'Routine Inspection Due: Anzac Bridge',
+          alertDescription: 'Biennial routine inspection scheduled. Cable-stay system and vibration dampers require specialist inspection. Last inspection 2025-03-05 rated 9 (Excellent).',
+          severity:         'Low',
+          dueDate:          '2027-03-05'
+        }
+      }
+      const def = alertDefs[bid]
+      if (def) {
+        await db.run(INSERT.into('bridge.management.AlertsAndNotifications').entries({
+          ID:               cds.utils.uuid(),
+          bridge_ID:        br.ID,
+          alertType:        'Inspection Due',
+          entityType:       'Bridge',
+          entityId:         bid,
+          entityDescription: `Bridge asset — ${bid}`,
+          alertTitle:       def.alertTitle,
+          alertDescription: def.alertDescription,
+          severity:         def.severity,
+          priority:         def.severity === 'Medium' ? 2 : 3,
+          triggeredDate:    now,
+          dueDate:          def.dueDate,
+          status:           'Open'
+        }))
+        loaded++
+      }
     }
   }
 

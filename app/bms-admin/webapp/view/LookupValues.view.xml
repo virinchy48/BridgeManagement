@@ -4,6 +4,15 @@
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
   displayBlock="true">
+
+  <mvc:dependents>
+    <Dialog id="infoDialog" contentWidth="520px">
+      <content>
+        <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
+      </content>
+      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
+    </Dialog>
+  </mvc:dependents>
   <Page title="{i18n>lookupValuesTitle}" showNavButton="true" navButtonPress=".onNavBack">
     <headerContent>
       <Button icon="sap-icon://add" text="{i18n>lookupAddValue}" press=".onAddValue" type="Emphasized"/>
@@ -51,11 +60,5 @@
       </Table>
     </content>
 
-    <Dialog id="infoDialog" contentWidth="520px">
-      <content>
-        <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
-      </content>
-      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
-    </Dialog>
   </Page>
 </mvc:View>

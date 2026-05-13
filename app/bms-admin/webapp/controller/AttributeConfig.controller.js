@@ -116,14 +116,14 @@ sap.ui.define([
     },
 
     onGroupSelect: function (oEvent) {
-      var ctx = oEvent.getParameter("listItem").getBindingContext();
+      var ctx = oEvent.getParameter("listItem").getBindingContext("groups");
       this._selectedGroup = ctx.getObject();
       this.byId("defsPanel").setVisible(true);
       this._loadAttributes(this._selectedGroup.ID);
     },
 
     onAttrSelect: function (oEvent) {
-      var ctx = oEvent.getParameter("listItem").getBindingContext();
+      var ctx = oEvent.getParameter("listItem").getBindingContext("attrs");
       this._selectedAttr = ctx.getObject();
       this._loadAttrDetail(this._selectedAttr.ID);
     },

@@ -38,8 +38,13 @@ sap.ui.define([
     FoundationTypes: "Foundation Types",
     WaterwayTypes: "Waterway Types",
     FatigueDetailCategories: "Fatigue Detail Categories",
-    DefectCodes: "Defect Codes"
+    DefectCodes: "Defect Codes",
+    ProvisionTypes: "Provision Types",
+    RepairsProposalTypes: "Repairs Proposal Types"
   }
+
+  // Entities that use `description` instead of `name`/`descr` (not sap.common.CodeList standard)
+  const DESCRIPTION_FIELD_ENTITIES = new Set(["DefectCodes", "ProvisionTypes", "RepairsProposalTypes"])
 
   const BASE = "/odata/v4/admin"
 
@@ -229,14 +234,14 @@ sap.ui.define([
               try {
                 if (isNew) {
                   var body = { code: code, name: label || code, descr: descr || null, active: true }
-                  if (entity === "DefectCodes") { body.description = label || code; delete body.name; delete body.descr }
+                  if (DESCRIPTION_FIELD_ENTITIES.has(entity)) { body.description = label || code; delete body.name; delete body.descr }
                   await this._post(entity, body)
                   var allRows = this._model.getProperty("/allRows")
                   allRows.push({ code: code, label: label || code, descr: descr, active: true })
                   this._model.setProperty("/allRows", allRows)
                 } else {
                   var setBody = { name: label || row.label, descr: descr || null }
-                  if (entity === "DefectCodes") { setBody.description = label || row.label; delete setBody.name; delete setBody.descr }
+                  if (DESCRIPTION_FIELD_ENTITIES.has(entity)) { setBody.description = label || row.label; delete setBody.name; delete setBody.descr }
                   await this._patch(entity, code, setBody)
                   var allRows = this._model.getProperty("/allRows")
                   var r = allRows.find(function (x) { return x.code === code })

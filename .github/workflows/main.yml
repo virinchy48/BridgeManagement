@@ -1,47 +1,33 @@
-name: CI/CD
-
+name: BMS CI
 on:
   push:
-    branches: [ main, draftv* ]
+    branches: [main, draftv8-btp-sid]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
-  test:
-    name: Test & Build
+  build-and-test:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js 20
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
+      - run: npm ci
       - name: CDS compile check
-        run: npx cds compile db/ srv/ 2>&1 | grep -E "^\[ERROR\]" && exit 1 || exit 0
-
+        run: npx cds compile db/ srv/ --to json > /dev/null
       - name: Run tests
         run: npm test
-
       - name: CDS production build
         run: npx cds build --production
-
-      - name: Install MBT
-        run: npm install -g mbt
-
-      - name: Build MTAR
-        run: mbt build --mtar BridgeManagement_ci.mtar
-
+      - name: MBT build
+        run: |
+          npm install -g mbt
+          mbt build --mtar BridgeManagement_ci.mtar
       - name: Upload MTAR artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mtar-${{ github.sha }}
+          name: BridgeManagement-mtar
           path: mta_archives/BridgeManagement_ci.mtar
-          retention-days: 7
+          retention-days: 14

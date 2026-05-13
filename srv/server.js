@@ -2,6 +2,7 @@ const cds = require('@sap/cds')
 const express = require('express')
 const helmet = require('helmet')
 const crypto = require('crypto')
+const { v4: uuidv4 } = require('uuid')
 const { recordActivity } = require('./user-activity')
 
 const {
@@ -1086,10 +1087,35 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
-  // ── Correlation ID — attach to every request ──────────────────────────────
+  // Correlation ID middleware — must be first
   app.use((req, res, next) => {
-    req.correlationId = req.headers['x-correlation-id'] || crypto.randomUUID()
+    req.correlationId = req.headers['x-correlation-id'] || req.headers['x-request-id'] || uuidv4()
     res.setHeader('x-correlation-id', req.correlationId)
+    next()
+  })
+
+  // Structured request logger
+  app.use((req, res, next) => {
+    const start = Date.now()
+    res.on('finish', () => {
+      const ms = Date.now() - start
+      const entry = {
+        ts: new Date().toISOString(),
+        correlationId: req.correlationId,
+        method: req.method,
+        path: req.path,
+        status: res.statusCode,
+        ms,
+        userId: req.user?.id || req.authInfo?.getLogonName?.() || 'anonymous'
+      }
+      if (res.statusCode >= 400) {
+        console.error(JSON.stringify(entry))
+      } else if (ms > 2000) {
+        console.warn(JSON.stringify({ ...entry, slow: true }))
+      } else {
+        console.log(JSON.stringify(entry))
+      }
+    })
     next()
   })
 
