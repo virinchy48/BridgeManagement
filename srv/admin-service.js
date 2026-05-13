@@ -1842,8 +1842,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   this.on('deactivate', BridgeMaintenanceActions.drafts, req => req.error(409, 'Save or discard changes before deactivating.'))
   this.on('reactivate', BridgeMaintenanceActions.drafts, req => req.error(409, 'Save or discard changes before deactivating.'))
 
-  const { BridgeDocuments } = this.entities
-  this.before('CREATE', BridgeDocuments, (req) => {
+  this.before('CREATE', 'BridgeDocuments', (req) => {
     req.data.uploadedBy = req.user?.id || 'anonymous'
     req.data.active = true
   })
