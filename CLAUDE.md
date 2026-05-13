@@ -782,6 +782,44 @@ Applied: db/schema.cds, db/data/bridge.management-ProvisionTypes.csv, db/data/br
 
 ---
 
+---
+
+## Phase 3/4 deliverables (May 2026)
+
+### Work Orders (BridgeMaintenanceActions)
+- Entity in `db/schema/maintenance.cds`. Auto-ref MA-NNNN. Fields: actionType (enum), priority (P1–P4), status (Planned→Scheduled→InProgress→Completed/Deferred), estimatedCostAUD, actualCostAUD, scheduledDate, completedDate, assignedTo, organisation, linkedDefect, safetyRequirements, completionNotes.
+- `MaintenanceActionType` and `MaintenanceStatus` enum types added to `db/schema/enum-types.cds`. `MaintenancePriority` was already there.
+- Handler: `srv/handlers/maintenance.js` — auto-ref + bridge_ID resolution on both CREATE and UPDATE.
+- FLP tile: `#Maintenance-manage&/WorkOrdersList` → admin-bridges WorkOrdersList target.
+- Virtual fields on Bridges: `predictiveRiskFlag` (HIGH/MEDIUM/LOW), `daysSinceInspection`, `maintenanceActionCount` — computed in `after('READ', Bridges)` handler.
+- Predictive flag thresholds: HIGH = conditionRating≤3 AND daysSince>548 (18 months); MEDIUM = conditionRating≤5 AND daysSince>365; LOW = conditionRating≤7.
+
+### Notifications
+- `srv/notification-service.js` — wraps SAP BTP Alert Notification Service REST API. Graceful no-op when `ALERT_NOTIFICATION_URL` env var is not set. Domain helpers: `notifyInspectionOverdue`, `notifyGazetteExpiry`, `notifyDefectEscalation`, `notifyWorkOrderComplete`. To activate in BTP: set `ALERT_NOTIFICATION_URL` and `ALERT_NOTIFICATION_TOKEN` in the CF environment.
+
+### QR Code & PDF Inspection Report
+- `srv/qr-api.js` — Express router mounted at `/admin-bridges/api`.
+- `GET /admin-bridges/api/bridges/:id/qr` → PNG QR code (300px, `qrcode` npm package).
+- `GET /admin-bridges/api/inspections/:id/report` → print-ready HTML inspection report (same pattern as bridge card — browser print → PDF). Includes element condition states table.
+- `APP_BASE_URL` env var controls the URL encoded in the QR (default: `https://bms.tfnsw.gov.au`).
+- `qrcode ^1.5.3` added to `package.json` dependencies.
+
+### Restrictions Provisions
+- **Standalone Restrictions ObjectPage** now has full @UI annotations in `fiori-service.cds`: 4-tab layout — Core Details, Posted Limits & Detour, Provisions (restrProvisions/@UI.LineItem), Repairs Programme.
+- **RestrictionProvisions** (attached to standalone Restrictions): code lookup from `ProvisionTypes` (CWRS/DETR/SUBB/HMLL/CLTT/RPBL/TEMP/MNTR/SPDI), description auto-filled by value-help parameter mapping.
+- **BridgeRestrictionProvisions** (attached to BridgeRestrictions): permit provision text (LargeString), vehicle classes, time-of-day, seasonal period, legal reference. `Permit Provisions` tab added to BridgeRestrictions ObjectPage Facets.
+- ProvisionTypes and RepairsProposalTypes seed data CSVs were already in `db/data/` — no changes needed.
+
+### Help & Info Buttons
+- **Help.view.xml / Help.controller.js**: 4-tab documentation screen in bms-admin. Tabs: User Guide, Operations Manual, Troubleshooting, Deployment & Security. Content stored as HTML strings in controller `_getUserGuideHtml()` etc. methods.
+- **Shell.view.xml**: "Help & Docs" nav item added (key: `help`, icon: `sap-icon://sys-help`).
+- **Info buttons**: all BMS Admin screens now have `sap-icon://information` button in header opening an `infoDialog` (Dialog with FormattedText). The `f:DynamicPage`-based screens (AttributeReport, FeatureFlags) require the Dialog in `<mvc:dependents>` not as a sibling; `sap.m.Page`-based screens work with the dialog placed after `</Page>`.
+
+### DynamicPage Dialog placement rule (May 2026)
+- `sap.f.DynamicPage` views must place `<Dialog>` inside `<mvc:dependents>` (not as a direct child of `<mvc:View>`), otherwise `this.byId("infoDialog")` returns null at runtime. `sap.m.Page` views work with dialog after `</Page>`. Always check which base container the view uses before placing dialog elements.
+
+---
+
 ## Contributing to this file
 
 If you discover a new convention, fix a recurring mistake, or learn something about the
