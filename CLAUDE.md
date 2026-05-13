@@ -818,6 +818,30 @@ Applied: db/schema.cds, db/data/bridge.management-ProvisionTypes.csv, db/data/br
 ### DynamicPage Dialog placement rule (May 2026)
 - `sap.f.DynamicPage` views must place `<Dialog>` inside `<mvc:dependents>` (not as a direct child of `<mvc:View>`), otherwise `this.byId("infoDialog")` returns null at runtime. `sap.m.Page` views work with dialog after `</Page>`. Always check which base container the view uses before placing dialog elements.
 
+[2026-05-14] [FE4 / Extension Controller] Learning: FE4 ObjectPage `content.header.actions` press handlers require the ObjectPage routing target to have a `"controllerName"` property in `options.settings`, pointing to the extension controller module. Without it, FE4 resolves the module path but cannot create button instances in the header toolbar — the toolbar remains empty even if the module loads correctly. Fix: add `"controllerName": "Namespace.ext.controller.MyExt"` alongside `"entitySet"` in the target's `options.settings`. This is distinct from the Bridges ObjectPage pattern which also needs a `controllerName` for its extension (CaptureCondition etc.). Check: if `headerTitle.getActionsToolbar().getContent().length === 0` despite valid manifest config, the `controllerName` is missing.
+Source: UAT 2026-05-14 — Risk Matrix buttons not rendering
+Applied: app/admin-bridges/webapp/manifest.json — added controllerName to BridgeRiskAssessmentsObjectPage
+
+[2026-05-14] [Seed Data / CSV] Learning: Seed CSV files should always include auto-generated ref fields (`inspectionRef`, `defectId`, etc.) with pre-assigned values (INS-0001...INS-NNNN). The `before('NEW', Entity.drafts)` auto-gen handler only fires on NEW FE4 draft creation — it does NOT backfill records seeded via CSV. Without pre-populated refs in the CSV: (a) ObjectPage title is blank UUID; (b) filter bar search by ref returns nothing; (c) Bridge Details tabs referencing the latest inspection ref show blank. Always add the ref column with sequential values to seed CSVs immediately when the auto-gen handler is created.
+Source: UAT 2026-05-14 — 10 seed BridgeInspections with null inspectionRef
+Applied: db/data/bridge.management-BridgeInspections.csv — added inspectionRef column INS-0001...INS-0010
+
+[2026-05-14] [Mass Upload / Field Names] Learning: `LoadRatingCertificates` uses `certificateNumber` (not `certRef`), `certifyingEngineer` (not `issuedBy`), and `certificateIssueDate` + `certificateExpiryDate` (not `issueDate`/`expiryDate`). The per-class rating factors are `rfT44`, `rfSM1600`, `rfHLP400`, etc. — NOT a scalar `ratingFactor` field. Always verify exact field names via `$metadata` before writing mass-upload columns or FE4 annotations for LoadRatingCertificates.
+Source: UAT 2026-05-14 — CREATE 400 "Property certRef does not exist"
+Applied: Documented; no code change needed (worktree already had correct rfT44 in LineItem)
+
+[2026-05-14] [Schema / Draft-enabled vs Plain CRUD] Learning: `BridgeScourAssessments` and `BridgeMaintenanceActions` are plain CRUD entities (no `@odata.draft.enabled`) — POST to the OData entityset creates the record immediately. Do NOT call `draftActivate` on these entities. To check: `$metadata` EntityType without `IsActiveEntity`/`HasDraftEntity` properties = plain CRUD. For consistency with other sub-domain tiles these should eventually have draft enabled, but until then, API callers must use plain POST/PATCH/DELETE without the draft workflow.
+Source: UAT 2026-05-14 — draftActivate returns "Invalid resource path" on BridgeScourAssessments
+Applied: Documented
+
+[2026-05-14] [Draft / validTo mandatory] Learning: `BridgeLoadRatings.validTo` is `@mandatory` but is not surfaced prominently in the FE4 empty draft form — the Create button succeeds and the mandatory indicator only appears in `DraftMessages` on GET. Users who attempt draftActivate without filling `validTo` get a generic "Value is required" error with no field hint. Pattern: after CREATE, always GET the draft and check `DraftMessages` array for ASSERT_MANDATORY codes before activating. This applies to all entities with mandatory fields not obvious from the form layout.
+Source: UAT 2026-05-14 — BridgeLoadRatings draftActivate 400
+Applied: Documented
+
+[2026-05-14] [NhvrRouteAssessments / Field Names] Learning: `NhvrRouteAssessments` mandatory fields for activation are: `assessorName`, `assessorAccreditationNo`, `assessmentDate`, `validFrom`, `assessmentStatus`. The `bridge_ID` (integer FK) is required for CREATE. `assessmentId` is auto-generated as `NRA-NNNN` — do NOT pass it manually. There is no `routeName` field. Always use `assessmentStatus` (not `status`) for the current approval state — matches the `Superseded` transition on `deactivate` action.
+Source: UAT 2026-05-14 — 400 errors discovering correct field names
+Applied: Documented
+
 ---
 
 ## Contributing to this file

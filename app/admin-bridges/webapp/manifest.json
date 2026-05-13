@@ -1021,6 +1021,7 @@
             "settings": {
               "entitySet": "BridgeRiskAssessments",
               "editableHeaderContent": false,
+              "controllerName": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt",
               "content": {
                 "header": {
                   "actions": {
