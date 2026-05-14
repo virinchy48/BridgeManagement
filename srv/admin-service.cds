@@ -162,6 +162,14 @@ service AdminService {
   entity RestrictionCategories as projection on my.RestrictionCategories;
   entity RestrictionUnits as projection on my.RestrictionUnits;
   entity RestrictionDirections as projection on my.RestrictionDirections;
+  entity ProvisionTypes as projection on my.ProvisionTypes;
+  entity RepairsProposalTypes as projection on my.RepairsProposalTypes;
+  @(restrict: [
+    { grant: ['READ'],           to: ['view','inspect','operate','manage','admin','executive_view'] },
+    { grant: ['CREATE','UPDATE'],to: ['manage','admin'] },
+    { grant: ['DELETE'],         to: ['admin'] }
+  ])
+  entity RestrictionProvisions as projection on my.RestrictionProvisions;
   entity InspectionTypes as projection on my.InspectionTypes;
   entity ConditionTrends as projection on my.ConditionTrends;
   entity SurfaceTypes as projection on my.SurfaceTypes;

@@ -1,10 +1,10 @@
 code;description;active
-CWRS;CARRIAGEWAY WIDTH RESTRICTED;true
-DETR;DETOUR;true
-SUBB;SUPPORTED BY BAILEY BRIDGING;true
-HMLL;HEAVY MOTOR LOAD LIMIT;true
-CLTT;CLOSED TO TRAFFIC;true
-RPBL;ROAD PILOT / BANKSMAN / LEAD;true
-TEMP;TEMPORARY STRENGTHENING;true
-MNTR;MONITORING REQUIRED;true
-SPDI;SPEED RESTRICTION;true
+CWRS;Carriageway Width Restricted & Signed Detour;true
+DETR;Detour Route;true
+SUBB;Substitution Bridge;true
+HMLL;Height & Mass Load Limit;true
+CLTT;Clearance / Tolerance;true
+RPBL;Repair / Bridge Load Limit;true
+TEMP;Temporary Provision;true
+MNTR;Monitoring Required;true
+SPDI;Special Dispensation;true

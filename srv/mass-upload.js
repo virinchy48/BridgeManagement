@@ -252,6 +252,15 @@ const BRIDGE_RESTRICTION_COLUMNS = [
   column('direction',                 'string')
 ]
 
+const RST_PROVISION_COLUMNS = [
+  column('ID',              'string'),
+  column('restrictionRef', 'string',  { required: true }),
+  column('provisionCode',  'string',  { required: true }),
+  column('description',    'string'),
+  column('sortOrder',      'integer'),
+  column('active',         'boolean')
+]
+
 const PROVISION_COLUMNS = [
   column('ID',              'string'),
   column('restrictionRef', 'string',  { required: true }),  // natural FK — resolved to restriction_ID
@@ -539,6 +548,15 @@ const DATASETS = Object.freeze([
     columns: PROVISION_COLUMNS,
     orderBy: 'provisionNumber',
     importer: importProvisionRows
+  },
+  {
+    name: 'RestrictionProvisions',
+    label: 'Standalone Restriction Provisions',
+    description: 'Temporary provision codes attached to standalone Restrictions (CWRS, DETR, SUBB, etc.)',
+    entity: 'bridge.management.RestrictionProvisions',
+    columns: RST_PROVISION_COLUMNS,
+    orderBy: 'sortOrder',
+    importer: importRstProvisionRows
   },
   {
     name: 'BridgeInspectionElements',
@@ -2070,6 +2088,37 @@ async function importProvisionRows(tx, dataset, rows, warnings, auditContext) {
   })
 }
 
+async function importRstProvisionRows(tx, dataset, rows, warnings, auditContext) {
+  const normalized = normalizeRows(dataset, rows, warnings)
+  if (!normalized.length) return emptySummary(dataset)
+
+  // Resolve restrictionRef → restriction_ID (standalone Restrictions table)
+  const refs = [...new Set(normalized.map(r => r.restrictionRef).filter(Boolean))]
+  if (refs.length) {
+    const restrictions = await tx.run(
+      SELECT.from('bridge.management.Restrictions').columns('ID', 'restrictionRef').where({ restrictionRef: { in: refs } })
+    )
+    const map = new Map(restrictions.map(r => [r.restrictionRef, r.ID]))
+    for (const row of normalized) {
+      if (!row.restrictionRef) continue
+      const id = map.get(row.restrictionRef)
+      if (!id) { warnings.push(`Row ${row.__rowNumber}: unknown restrictionRef "${row.restrictionRef}" — skipped`); continue }
+      row.restriction_ID = id
+    }
+  }
+
+  for (const row of normalized) {
+    if (row.active === null || row.active === undefined) row.active = true
+    if (!row.sortOrder) row.sortOrder = 1
+  }
+
+  return importCuidEntityRows(tx, dataset, normalized.map(r => ({ ...r, __alreadyNormalized: true })), warnings, auditContext, {
+    naturalKey: 'provisionCode',
+    objectType: 'RestrictionProvision',
+    getName: r => `${r.restrictionRef} / ${r.provisionCode}`
+  })
+}
+
 async function importConditionSurveyRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
@@ -2398,6 +2447,7 @@ function getDedupeKey(dataset, row) {
   if (dataset.name === 'BridgeRestrictions') return row.ID ?? `${row.bridgeRef}|${row.restrictionRef}`
   if (dataset.name === 'LoadRatingCertificates') return row.ID ?? `${row.bridgeRef}|${row.certificateNumber}`
   if (dataset.name === 'BridgeRestrictionProvisions') return row.ID ?? `${row.restrictionRef}|${row.provisionNumber}`
+  if (dataset.name === 'RestrictionProvisions') return row.ID ?? `${row.restrictionRef}|${row.provisionCode}`
   if (dataset.name === 'BridgeConditionSurveys') return row.ID ?? (row.surveyRef ? `surveyRef:${row.surveyRef}` : `${row.bridgeRef}|${row.surveyDate}|${row.surveyType}`)
   if (dataset.name === 'BridgeLoadRatings') return row.ID ?? (row.ratingRef ? `ratingRef:${row.ratingRef}` : `${row.bridgeRef}|${row.vehicleClass}|${row.assessmentDate}`)
   if (dataset.name === 'BridgePermits') return row.ID ?? (row.permitRef ? `permitRef:${row.permitRef}` : `${row.bridgeRef}|${row.permitType}|${row.applicantName}|${row.appliedDate}`)
