@@ -411,10 +411,14 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (!bridgeId) return
     const today = new Date().toISOString().slice(0, 10)
     const active = await SELECT.from('bridge.management.Restrictions')
-      .columns('ID', 'closureType', 'active')
+      .columns('ID', 'closureType', 'closureStartDate', 'closureEndDate', 'active')
       .where({ bridge_ID: bridgeId, active: true })
-    const current = active.filter(r => true) // all active — postingStatus = 'Posted' if any restriction
-    const closures = active.filter(r => r.closureType)
+    // Only count closures that are current (start <= today AND (no end OR end >= today))
+    const closures = active.filter(r =>
+      r.closureType &&
+      (!r.closureStartDate || r.closureStartDate <= today) &&
+      (!r.closureEndDate   || r.closureEndDate   >= today)
+    )
     let newStatus
     if (closures.length > 0)   newStatus = 'Closed'
     else if (active.length > 0) newStatus = 'Posted'
