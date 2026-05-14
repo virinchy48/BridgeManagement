@@ -14,7 +14,8 @@ const ALLOWED_VALUES_COLUMNS = [
   column('entityName', 'string', { required: true }),
   column('code',       'string', { required: true }),
   column('label',      'string'),
-  column('description','string')
+  column('description','string'),
+  column('active',     'boolean')
 ]
 
 const ALLOWED_VALUES_WHITELIST = new Set([
@@ -118,7 +119,9 @@ const BRIDGE_COLUMNS = [
   column('structuralDeficiencyCode', 'string'),
   column('deficiencyComments', 'string'),
   column('loadLimitTruck', 'decimal'),
-  column('loadLimitSemitrailer', 'decimal')
+  column('loadLimitSemitrailer', 'decimal'),
+  // ── Soft-delete ──────────────────────────────────────────────────────────
+  column('isActive', 'boolean', { description: 'Set to false to soft-deactivate this bridge (hides from operational views)' })
 ]
 
 const RESTRICTION_COLUMNS = [
@@ -171,19 +174,35 @@ const RESTRICTION_COLUMNS = [
 ]
 
 const INSPECTION_COLUMNS = [
-  column('ID',                           'string'),
-  column('bridgeRef',                    'string',  { required: true }),
-  column('inspectionDate',               'date',    { required: true }),
-  column('inspectionType',               'string',  { required: true }),
-  column('inspector',                    'string',  { required: true }),
-  column('inspectorAccreditationNumber', 'string'),
-  column('inspectorAccreditationLevel',  'string'),
-  column('inspectorCompany',             'string'),
-  column('inspectionScope',              'string'),
-  column('inspectionStandard',           'string'),
-  column('s4InspectionOrderRef',         'string'),
-  column('s4NotificationRef',            'string'),
-  column('inspectionNotes',              'string')
+  column('ID',                              'string'),
+  column('bridgeRef',                       'string',  { required: true }),
+  column('inspectionRef',                   'string',  { description: 'Auto-generated INS-NNNN if blank' }),
+  column('inspectionDate',                  'date',    { required: true }),
+  column('inspectionType',                  'string',  { required: true, description: 'Routine | Detailed | Principal | Special | Post-Event' }),
+  column('inspector',                       'string',  { required: true }),
+  column('inspectorAccreditationNumber',    'string'),
+  column('inspectorAccreditationLevel',     'string',  { description: 'Level 1 | Level 2 | Level 3 | Level 4' }),
+  column('inspectorCompany',                'string'),
+  column('qualificationExpiry',             'date'),
+  column('inspectionScope',                 'string'),
+  column('inspectionStandard',              'string',  { description: 'AS5100-7 | AGAM | TfNSW-BIM | Other' }),
+  column('inspectionMethodology',           'string',  { description: 'Visual | Under-Bridge Unit | Rope Access | Underwater | Drone' }),
+  column('weatherConditions',               'string'),
+  column('accessibilityIssues',             'string'),
+  column('overallConditionRating',          'integer', { description: '1–10 overall condition' }),
+  column('overallStructuralAdequacy',       'string',  { description: 'Adequate | Marginal | Inadequate' }),
+  column('loadCarryingCapacityConfirmed',   'boolean', { description: 'true = posted capacity still valid (AS 5100-7 §3.2)' }),
+  column('criticalFindings',                'boolean', { description: 'true = critical findings requiring immediate action' }),
+  column('followUpRequired',                'boolean', { description: 'true = follow-up inspection / action required' }),
+  column('recommendedActions',              'string'),
+  column('nextInspectionRecommended',       'date'),
+  column('reportIssueDate',                 'date'),
+  column('reportStorageRef',                'string'),
+  column('s4InspectionOrderRef',            'string'),
+  column('s4NotificationRef',               'string'),
+  column('inspectionNotes',                 'string'),
+  // ── Soft-delete ──────────────────────────────────────────────────────────
+  column('active', 'boolean', { description: 'Set to false to soft-deactivate this inspection record' })
 ]
 
 const ELEMENT_COLUMNS = [
@@ -274,50 +293,156 @@ const LRC_COLUMNS = [
 ]
 
 const CONDITION_SURVEY_COLUMNS = [
-  column('bridgeRef',        'string',  { required: true }),
-  column('surveyRef',        'string',  { required: true }),
-  column('surveyDate',       'date',    { required: true }),
-  column('surveyType',       'string',  { required: true }),
-  column('surveyedBy',       'string',  { required: true }),
-  column('conditionRating',  'integer', { required: true }),
-  column('structuralRating', 'integer'),
-  column('overallGrade',     'string'),
-  column('status',           'string'),
-  column('notes',            'string'),
-  column('active',           'boolean'),
+  column('bridgeRef',                  'string',  { required: true }),
+  column('surveyRef',                  'string'),
+  column('surveyDate',                 'date',    { required: true }),
+  column('surveyType',                 'string',  { required: true }),
+  column('surveyedBy',                 'string',  { required: true }),
+  column('conditionRating',            'integer', { required: true }),
+  column('structuralRating',           'integer'),
+  column('overallGrade',               'string'),
+  column('inspectorAccreditationLevel','string'),
+  column('accessMethod',               'string'),
+  column('nextSurveyRecommended',      'date'),
+  column('estimatedRehabCost',         'decimal'),
+  column('actionPlan',                 'string'),
+  column('linkedInspectionRef',        'string'),
+  column('programmeYear',              'integer'),
+  column('status',                     'string'),
+  column('notes',                      'string'),
+  column('remarks',                    'string'),
+  column('active',                     'boolean'),
 ]
 
 const LOAD_RATING_COLUMNS = [
-  column('bridgeRef',       'string',  { required: true }),
-  column('ratingRef',       'string',  { required: true }),
-  column('vehicleClass',    'string',  { required: true }),
-  column('ratingMethod',    'string',  { required: true }),
-  column('ratingFactor',    'decimal'),
-  column('grossMassLimit',  'decimal'),
-  column('assessedBy',      'string',  { required: true }),
-  column('assessmentDate',  'date',    { required: true }),
-  column('validTo',         'date'),
-  column('status',          'string'),
-  column('ratingBasis',     'string'),
-  column('active',          'boolean'),
+  column('bridgeRef',              'string',  { required: true }),
+  column('ratingRef',              'string'),
+  column('vehicleClass',           'string',  { required: true }),
+  column('ratingMethod',           'string',  { required: true }),
+  column('ratingFactor',           'decimal'),
+  column('grossMassLimit',         'decimal'),
+  column('assessedBy',             'string',  { required: true }),
+  column('assessmentDate',         'date',    { required: true }),
+  column('validTo',                'date',    { required: true }),
+  column('ratingEngineerNer',      'string'),
+  column('governingMember',        'string'),
+  column('governingFailureMode',   'string'),
+  column('dynamicLoadAllowance',   'decimal'),
+  column('reportRef',              'string'),
+  column('status',                 'string'),
+  column('remarks',                'string'),
+  column('active',                 'boolean'),
 ]
 
 const PERMIT_COLUMNS = [
-  column('bridgeRef',            'string',  { required: true }),
-  column('permitRef',            'string',  { required: true }),
-  column('permitType',           'string',  { required: true }),
-  column('applicantName',        'string',  { required: true }),
-  column('vehicleClass',         'string'),
-  column('grossMass',            'decimal'),
-  column('height',               'decimal'),
-  column('width',                'decimal'),
-  column('length',               'decimal'),
-  column('appliedDate',          'date'),
-  column('validFrom',            'date'),
-  column('validTo',              'date'),
-  column('status',               'string'),
-  column('conditionsOfApproval', 'string'),
-  column('active',               'boolean'),
+  column('bridgeRef',             'string',  { required: true }),
+  column('permitRef',             'string'),
+  column('permitType',            'string',  { required: true }),
+  column('applicantName',         'string',  { required: true }),
+  column('nhvrPermitNumber',      'string'),
+  column('nhvrApplicationNumber', 'string'),
+  column('vehicleClass',          'string'),
+  column('grossMass',             'decimal'),
+  column('height',                'decimal'),
+  column('width',                 'decimal'),
+  column('length',                'decimal'),
+  column('tripCount',             'integer'),
+  column('axleConfiguration',     'string'),
+  column('escortRequired',        'boolean'),
+  column('pilotVehicleCount',     'integer'),
+  column('appliedDate',           'date'),
+  column('validFrom',             'date'),
+  column('validTo',               'date'),
+  column('status',                'string'),
+  column('decisionBy',            'string'),
+  column('decisionDate',          'date'),
+  column('conditionsOfApproval',  'string'),
+  column('remarks',               'string'),
+  column('active',                'boolean'),
+]
+
+const DEFECT_COLUMNS = [
+  column('ID',                        'string'),
+  column('bridgeRef',                 'string',  { required: true,  description: 'Bridge reference e.g. BRG-NSW-001' }),
+  column('inspectionRef',             'string',  { description: 'Link to inspection (INS-NNNN) — optional' }),
+  column('defectId',                  'string',  { description: 'Auto-generated DEF-NNNN if blank' }),
+  column('defectType',                'string',  { required: true }),
+  column('defectDescription',         'string',  { required: true }),
+  column('severity',                  'integer', { required: true,  description: '1=Low 2=Medium 3=High 4=Critical' }),
+  column('urgency',                   'integer', { required: true,  description: '1=Low 2=Medium 3=Urgent 4=Emergency' }),
+  column('bridgeElement',             'string',  { description: 'Element location description' }),
+  column('defectCode',                'string',  { description: 'SIMS defect code e.g. BS01' }),
+  column('deteriorationMechanism',    'string',  { description: 'Corrosion | Fatigue | Impact | Scour | Overload | Chemical | Settlement | Aging' }),
+  column('spanNumber',                'integer'),
+  column('pierNumber',                'integer'),
+  column('face',                      'string'),
+  column('position',                  'string'),
+  column('dimensionLengthMm',         'decimal'),
+  column('dimensionWidthMm',          'decimal'),
+  column('dimensionDepthMm',          'decimal'),
+  column('remediationStatus',         'string',  { description: 'Open | In Progress | Closed | Deferred' }),
+  column('estimatedRepairCost',       'decimal', { description: 'AUD' }),
+  column('plannedRemediationDate',    'date'),
+  column('repairMethod',              'string',  { description: 'SIMS repair method code' }),
+  column('maintenancePriority',       'string',  { description: 'P1=Emergency P2=Urgent P3=Routine P4=Planned' }),
+  column('requiresLoadRestriction',   'boolean', { description: 'true triggers a capacity review alert' }),
+  column('notes',                     'string'),
+  // ── Soft-delete ──────────────────────────────────────────────────────────
+  column('active', 'boolean', { description: 'Set to false to soft-deactivate this defect record' })
+]
+
+const CAPACITY_COLUMNS = [
+  column('ID',                        'string'),
+  column('bridgeRef',                 'string',  { required: true }),
+  column('capacityType',              'string',  { required: true, description: 'e.g. AS 5100.7 | AS 1170 | Posted' }),
+  column('grossMassLimit',            'decimal', { description: 'Gross Mass Limit (t)' }),
+  column('grossCombined',             'decimal', { description: 'Gross Combined Mass (t)' }),
+  column('steerAxleLimit',            'decimal'),
+  column('singleAxleLimit',           'decimal'),
+  column('tandemGroupLimit',          'decimal'),
+  column('triAxleGroupLimit',         'decimal'),
+  column('axleSpacingMinimumM',       'decimal'),
+  column('minClearancePosted',        'decimal', { description: 'Min posted clearance (m)' }),
+  column('lane1Clearance',            'decimal'),
+  column('lane2Clearance',            'decimal'),
+  column('clearanceSurveyDate',       'date'),
+  column('clearanceSurveyMethod',     'string'),
+  column('carriagewayWidth',          'decimal'),
+  column('trafficableWidth',          'decimal'),
+  column('laneWidth',                 'decimal'),
+  column('ratingStandard',            'string',  { description: 'e.g. AS 5100.7:2017' }),
+  column('ratingFactor',              'decimal'),
+  column('ratingEngineer',            'string'),
+  column('ratingDate',                'date'),
+  column('nextReviewDue',             'date'),
+  column('reportReference',           'string'),
+  column('effectiveFrom',             'date',    { required: true }),
+  column('effectiveTo',               'date'),
+  column('engineeringNotes',          'string'),
+  // ── Soft-delete ──────────────────────────────────────────────────────────
+  column('active', 'boolean', { description: 'Set to false to soft-deactivate this capacity record' })
+]
+
+const SCOUR_COLUMNS = [
+  column('ID',                           'string'),
+  column('bridgeRef',                    'string',  { required: true }),
+  column('assessmentDate',               'date',    { required: true }),
+  column('assessmentType',               'string',  { required: true, description: 'Routine | Post-Flood | Detailed | Desktop' }),
+  column('scourRisk',                    'string',  { required: true, description: 'Low | Medium | High | Extreme' }),
+  column('measuredDepth',                'decimal', { description: 'Measured scour depth (m)' }),
+  column('criticalScourDepthM',          'decimal', { description: 'AP-G71.8 §5.1 critical scour depth (m)' }),
+  column('floodImmunityAriYears',        'integer'),
+  column('waterwayType',                 'string'),
+  column('foundationType',               'string'),
+  column('scourCountermeasureType',      'string'),
+  column('scourCountermeasureCondition', 'string'),
+  column('postFloodInspectionRequired',  'boolean'),
+  column('mitigationStatus',             'string',  { description: 'None Required | Planned | In Progress | Completed' }),
+  column('assessor',                     'string'),
+  column('inspectorAccreditationLevel',  'string'),
+  column('nextReviewDate',               'date'),
+  column('reportReference',              'string'),
+  column('remarks',                      'string')
 ]
 
 const DATASETS = Object.freeze([
@@ -593,7 +718,7 @@ const DATASETS = Object.freeze([
   {
     name: 'BridgeConditionSurveys',
     label: 'Condition Surveys',
-    description: 'Bulk upload condition survey records linked to bridges',
+    description: 'Condition survey records. Leave surveyRef blank for new records (auto-assigned CS-0001…); provide surveyRef to update existing records.',
     entity: 'bridge.management.BridgeConditionSurveys',
     columns: CONDITION_SURVEY_COLUMNS,
     orderBy: 'surveyRef',
@@ -602,7 +727,7 @@ const DATASETS = Object.freeze([
   {
     name: 'BridgeLoadRatings',
     label: 'Load Ratings',
-    description: 'Bulk upload per-vehicle-class load rating assessments',
+    description: 'Per-vehicle-class load rating assessments. Leave ratingRef blank for new records (auto-assigned LR-0001…); provide ratingRef to update existing records.',
     entity: 'bridge.management.BridgeLoadRatings',
     columns: LOAD_RATING_COLUMNS,
     orderBy: 'ratingRef',
@@ -611,11 +736,38 @@ const DATASETS = Object.freeze([
   {
     name: 'BridgePermits',
     label: 'Permits',
-    description: 'Bulk upload permit applications and approvals',
+    description: 'Permit applications and approvals. Leave permitRef blank for new records (auto-assigned PM-0001…); provide permitRef to update existing records.',
     entity: 'bridge.management.BridgePermits',
     columns: PERMIT_COLUMNS,
     orderBy: 'permitRef',
     importer: importPermitRows
+  },
+  {
+    name: 'BridgeDefects',
+    label: 'Bridge Defects',
+    description: 'Defect records per bridge. Leave defectId blank for new records (auto-assigned DEF-0001…); provide defectId to update. Set active=false to soft-deactivate.',
+    entity: 'bridge.management.BridgeDefects',
+    columns: DEFECT_COLUMNS,
+    orderBy: 'defectId',
+    importer: importDefectRows
+  },
+  {
+    name: 'BridgeCapacities',
+    label: 'Bridge Capacities',
+    description: 'AS 5100.7 load capacity, clearance and rating records. effectiveFrom is required. Set active=false to supersede old records.',
+    entity: 'bridge.management.BridgeCapacities',
+    columns: CAPACITY_COLUMNS,
+    orderBy: 'effectiveFrom',
+    importer: importCapacityRows
+  },
+  {
+    name: 'BridgeScourAssessments',
+    label: 'Scour Assessments',
+    description: 'AP-G71.8 scour risk assessments per bridge.',
+    entity: 'bridge.management.BridgeScourAssessments',
+    columns: SCOUR_COLUMNS,
+    orderBy: 'assessmentDate',
+    importer: importScourRows
   }
 ])
 
@@ -714,11 +866,14 @@ async function buildWorkbookTemplate() {
     }
     datasetRowsByName.set(dataset.name, rows)
     const header = buildHeaderRow(dataset)
-    const sheetRows = dataset.name === 'AllowedValues'
+    let sheetRows = dataset.name === 'AllowedValues'
       ? rows.map((row) => [row.entityName, row.code, row.label, row.description])
-      : rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
+      : rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name || columnDef.field], columnDef.type)))
+    if (!sheetRows.length && dataset.name !== 'AllowedValues') {
+      sheetRows = getSampleRows(dataset)
+    }
     const sheet = XLSX.utils.aoa_to_sheet([header, ...sheetRows])
-    sheet['!cols'] = dataset.columns.map((columnDef) => ({ wch: Math.max(columnDef.name.length + 4, 16) }))
+    sheet['!cols'] = dataset.columns.map((columnDef) => ({ wch: Math.max((columnDef.name || columnDef.header || '').length + 4, 16) }))
     XLSX.utils.book_append_sheet(workbook, sheet, dataset.name)
   }
 
@@ -763,7 +918,47 @@ async function buildWorkbookTemplate() {
   return XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' })
 }
 
-async function buildCsvTemplate(datasetName) {
+// ---------------------------------------------------------------------------
+// Sample rows shown in blank templates so users understand the expected format
+// ---------------------------------------------------------------------------
+const SAMPLE_ROWS = {
+  Bridges: [
+    { bridgeId: 'NSW-SAMPLE-001', bridgeName: 'Sample Creek Bridge', state: 'NSW', region: 'Hunter', lga: 'Maitland', suburb: 'Lochinvar', latitude: -32.6833, longitude: 151.5167, assetClass: 'State Road Bridge', structureType: 'Simply Supported', yearBuilt: 1985, deckWidth: 8.2, totalLength: 24.0, spanCount: 1, importanceLevel: 3, conditionRating: 7, postingStatus: 'No Posting', hmlApproved: true, bDoubleApproved: true, isActive: true }
+  ],
+  Restrictions: [
+    { restrictionRef: 'RST-SAMPLE-001', bridgeRef: 'NSW-SAMPLE-001', restrictionType: 'Mass Limit', restrictionCategory: 'Permanent', name: 'GML Restriction', grossMassLimit: 42.5, appliesToVehicleClass: 'HML', active: true }
+  ],
+  BridgeInspections: [
+    { bridgeRef: 'NSW-SAMPLE-001', inspectionDate: '2024-06-15', inspectionType: 'Routine', inspectedBy: 'J. Smith', overallConditionRating: 7, active: true }
+  ],
+  BridgeDefects: [
+    { bridgeRef: 'NSW-SAMPLE-001', inspectionRef: 'INS-0001', defectType: 'Cracking', location: 'Deck surface, west lane', severity: 2, repairMethod: 'Surface sealing', maintenancePriority: 'P3', active: true }
+  ],
+  BridgeCapacities: [
+    { bridgeRef: 'NSW-SAMPLE-001', capacityType: 'GML', grossMassLimit: 42.5, axleGroupLimit: 16.5, effectiveFrom: '2024-01-01', active: true }
+  ],
+  BridgeScourAssessments: [
+    { bridgeRef: 'NSW-SAMPLE-001', assessmentDate: '2024-03-20', scourRisk: 'Low', assessedBy: 'B. Jones', floodImmunityAri: 100, active: true }
+  ],
+  BridgeConditionSurveys: [
+    { bridgeRef: 'NSW-SAMPLE-001', surveyDate: '2024-05-10', surveyType: 'Routine', surveyedBy: 'A. Kumar', conditionRating: 7, overallGrade: 'Good', status: 'Draft', active: true }
+  ],
+  BridgeLoadRatings: [
+    { bridgeRef: 'NSW-SAMPLE-001', vehicleClass: 'T44', ratingMethod: 'AS5100', ratingFactor: 1.0, grossMassLimit: 42.5, assessedBy: 'C. Lee', assessmentDate: '2023-11-01', status: 'Active', active: true }
+  ],
+  BridgePermits: [
+    { bridgeRef: 'NSW-SAMPLE-001', permitType: 'Overmass', applicantName: 'Acme Haulage Pty Ltd', vehicleClass: 'HML', grossMass: 68.5, appliedDate: '2024-07-01', validFrom: '2024-07-15', validTo: '2025-07-14', status: 'Pending', active: true }
+  ]
+}
+
+function getSampleRows(dataset) {
+  const rows = SAMPLE_ROWS[dataset.name] || []
+  return rows.map((sampleObj) =>
+    dataset.columns.map((col) => formatCellValue(sampleObj[col.name], col.type))
+  )
+}
+
+async function buildCsvTemplate(datasetName, withSamples = false) {
   const dataset = requireDataset(datasetName)
   const db = await cds.connect.to('db')
   let dataRows
@@ -774,34 +969,83 @@ async function buildCsvTemplate(datasetName) {
     const rows = await readDatasetRows(db, dataset)
     dataRows = rows.map((row) => dataset.columns.map((columnDef) => formatCellValue(row[columnDef.name], columnDef.type)))
   }
+  if (!dataRows.length && withSamples) {
+    dataRows = getSampleRows(dataset)
+  }
   const sheet = XLSX.utils.aoa_to_sheet([buildHeaderRow(dataset), ...dataRows])
   return Buffer.from(XLSX.utils.sheet_to_csv(sheet), 'utf8')
 }
 
-async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
+async function exportDatasetRows(datasetName, filters = {}) {
+  const dataset = DATASETS.find(d => d.name === datasetName && !d.templateOnly)
+  if (!dataset || !dataset.entity) throw new Error(`Dataset '${datasetName}' not found or not exportable`)
+  const db = await cds.connect.to('db')
+  const allCols = dataset.columns.map((c) => c.name || c.field).filter(Boolean)
+  const needsBridgeRef = allCols.includes('bridgeRef')
+  const readCols = needsBridgeRef ? [...allCols.filter(c => c !== 'bridge_ID'), 'bridge_ID'] : allCols
+
+  let query = SELECT.from(dataset.entity).columns(...readCols).orderBy(dataset.orderBy)
+  const where = {}
+  if (filters.bridgeRef) {
+    if (needsBridgeRef) {
+      const bridge = await db.run(SELECT.one.from('bridge.management.Bridges').columns('ID').where({ bridgeId: filters.bridgeRef }))
+      if (bridge) where.bridge_ID = bridge.ID
+    } else if (allCols.includes('bridgeId')) {
+      where.bridgeId = filters.bridgeRef
+    }
+  }
+  if (filters.active !== undefined && filters.active !== '') where.active = filters.active === 'true' || filters.active === true
+  if (filters.status) where.status = filters.status
+  if (Object.keys(where).length) query = query.where(where)
+
+  let rows = await db.run(query)
+
+  if (needsBridgeRef) {
+    const unresolved = rows.filter(r => (r.bridgeRef == null || r.bridgeRef === '') && r.bridge_ID != null)
+    if (unresolved.length) {
+      const bridgeIds = [...new Set(unresolved.map(r => r.bridge_ID))]
+      const bridges = await db.run(SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ ID: { in: bridgeIds } }))
+      const bridgeMap = new Map(bridges.map(b => [String(b.ID), b.bridgeId]))
+      for (const row of unresolved) row.bridgeRef = bridgeMap.get(String(row.bridge_ID)) ?? null
+    }
+    for (const row of rows) delete row.bridge_ID
+  }
+
+  const header = buildHeaderRow(dataset)
+  const dataRowArrays = rows.map(row => dataset.columns.map(col => formatCellValue(row[col.name], col.type)))
+  const sheet = XLSX.utils.aoa_to_sheet([header, ...dataRowArrays])
+  return Buffer.from(XLSX.utils.sheet_to_csv(sheet), 'utf8')
+}
+
+async function importUpload({ buffer, fileName, datasetName, uploadedBy, mode = 'upsert' }) {
   if (!buffer?.length) {
     throw new Error('Uploaded file is empty')
+  }
+  if (!['create', 'update', 'upsert'].includes(mode)) {
+    throw new Error(`Invalid mode '${mode}'. Must be create, update, or upsert.`)
   }
 
   const lowerName = (fileName || '').toLowerCase()
   const db = await cds.connect.to('db')
   const tx = db.tx()
   const batchId = cds.utils.uuid()
-  const auditContext = { db, batchId, changedBy: uploadedBy || 'system' }
+  const auditContext = { db, batchId, changedBy: uploadedBy || 'system', mode }
 
   try {
     let summaries
     let skipped = []
     let warnings = []
+    let allRowResults = []
 
     if (lowerName.endsWith('.xlsx')) {
-      const result = await importWorkbook(tx, buffer, datasetName, auditContext)
+      const result = await importWorkbook(tx, buffer, datasetName, auditContext, mode)
       summaries = result.summaries
       skipped = result.skipped
       warnings = result.warnings
+      allRowResults = result.rowResults || []
 
       // Process attribute value sheets (BridgeAttributes, RestrictionAttributes)
-      const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+      const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
       const attrSheetMap = { BridgeAttributes: 'bridge', RestrictionAttributes: 'restriction' }
       for (const [sheetName, objectType] of Object.entries(attrSheetMap)) {
         const attrSheet = workbook.Sheets[sheetName]
@@ -867,9 +1111,10 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
         }
       }
     } else if (lowerName.endsWith('.csv')) {
-      const result = await importCsv(tx, buffer, datasetName, auditContext)
+      const result = await importCsv(tx, buffer, datasetName, auditContext, mode)
       summaries = [result.summary]
       warnings = result.warnings
+      allRowResults = result.rowResults || []
     } else {
       throw new Error('Unsupported file type. Upload an .xlsx or .csv file.')
     }
@@ -884,11 +1129,14 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
     }
 
     const processed = summaries.reduce((total, summary) => total + summary.processed, 0)
+    const modeLabel = mode === 'create' ? 'Create' : mode === 'update' ? 'Update' : 'Upsert'
     return {
-      message: `Mass upload completed. ${processed} rows processed across ${summaries.length} dataset(s).`,
+      message: `Mass upload completed (${modeLabel} mode). ${processed} rows processed across ${summaries.length} dataset(s).`,
+      mode,
       summaries,
       skipped,
-      warnings
+      warnings,
+      rowResults: allRowResults
     }
   } catch (error) {
     await tx.rollback()
@@ -896,7 +1144,7 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy }) {
   }
 }
 
-async function validateUpload({ buffer, fileName, datasetName }) {
+async function validateUpload({ buffer, fileName, datasetName, mode = 'upsert' }) {
   if (!buffer?.length) {
     throw new Error('Uploaded file is empty')
   }
@@ -909,7 +1157,7 @@ async function validateUpload({ buffer, fileName, datasetName }) {
     throw new Error('Select a specific dataset for CSV uploads, or use the Excel template for All.')
   }
 
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
   const datasets = lowerName.endsWith('.xlsx') ? resolveWorkbookDatasets(datasetName) : [requireDataset(datasetName)]
   const previewRows = []
   let totalCount = 0
@@ -1080,10 +1328,11 @@ function buildValidationMessage(totalCount, validCount, warningCount, errorCount
 }
 
 async function importWorkbook(tx, buffer, datasetName, auditContext) {
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
   const summaries = []
   const skipped = []
   const warnings = []
+  const allRowResults = []
   const datasets = resolveWorkbookDatasets(datasetName)
 
   for (const dataset of datasets) {
@@ -1093,7 +1342,15 @@ async function importWorkbook(tx, buffer, datasetName, auditContext) {
       continue
     }
     const rows = parseSheetRows(sheet, dataset)
-    summaries.push(await dataset.importer(tx, dataset, rows, warnings, auditContext))
+    const result = dataset.importer
+      ? await dataset.importer(tx, dataset, rows, warnings, auditContext)
+      : await dataset.importRows(rows, tx)
+    if (result) {
+      summaries.push({ dataset: dataset.name, label: dataset.label, inserted: result.inserted ?? 0, updated: result.updated ?? 0, processed: result.processed ?? rows.length, deleted: result.deleted ?? 0, errors: result.errors ?? 0 })
+      if (result.rowResults) {
+        allRowResults.push(...result.rowResults.map(r => ({ ...r, datasetLabel: result.label || result.dataset })))
+      }
+    }
   }
 
   if (!summaries.length) {
@@ -1103,7 +1360,7 @@ async function importWorkbook(tx, buffer, datasetName, auditContext) {
     throw new Error('No supported upload sheets were found in the workbook.')
   }
 
-  return { summaries, skipped, warnings }
+  return { summaries, skipped, warnings, rowResults: allRowResults }
 }
 
 async function importCsv(tx, buffer, datasetName, auditContext) {
@@ -1112,7 +1369,7 @@ async function importCsv(tx, buffer, datasetName, auditContext) {
   }
 
   const dataset = requireDataset(datasetName)
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true })
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
   const [firstSheetName] = workbook.SheetNames
   const sheet = workbook.Sheets[firstSheetName]
 
@@ -1122,15 +1379,55 @@ async function importCsv(tx, buffer, datasetName, auditContext) {
 
   const warnings = []
   const rows = parseSheetRows(sheet, dataset)
-  const summary = await dataset.importer(tx, dataset, rows, warnings, auditContext)
-  return { summary, warnings }
+  const result = await (dataset.importer
+    ? dataset.importer(tx, dataset, rows, warnings, auditContext)
+    : dataset.importRows(rows, tx))
+  const rowResults = (result?.rowResults || []).map(r => ({ ...r, datasetLabel: result.label || result.dataset }))
+  return { summary: result, warnings, rowResults }
 }
 
 async function readDatasetRows(dbOrTx, dataset) {
   if (!dataset.entity) return []
-  return dbOrTx.run(
-    SELECT.from(dataset.entity).columns(...dataset.columns.map((columnDef) => columnDef.name)).orderBy(dataset.orderBy)
-  )
+  const allCols = dataset.columns.map((c) => c.name || c.field).filter(Boolean)
+  const needsBridgeRef = allCols.includes('bridgeRef')
+
+  // When bridgeRef is needed, always fetch bridge_ID alongside bridgeRef.
+  // Entities with a stored bridgeRef field return it directly; entities that
+  // use only an Association (bridge_ID FK) return null for bridgeRef but a
+  // valid integer for bridge_ID — those rows are resolved via a batch lookup.
+  // This avoids relying on cds.model (which is null in middleware context).
+  const readCols = needsBridgeRef
+    ? [...allCols.filter((c) => c !== 'bridge_ID'), 'bridge_ID']
+    : allCols
+
+  let rows
+  try {
+    rows = await dbOrTx.run(SELECT.from(dataset.entity).columns(...readCols).orderBy(dataset.orderBy))
+  } catch (_) {
+    try {
+      rows = await dbOrTx.run(SELECT.from(dataset.entity).orderBy(dataset.orderBy))
+    } catch (_2) {
+      return []
+    }
+  }
+
+  if (needsBridgeRef) {
+    const unresolved = rows.filter((r) => (r.bridgeRef == null || r.bridgeRef === '') && r.bridge_ID != null)
+    if (unresolved.length) {
+      const bridgeIds = [...new Set(unresolved.map((r) => r.bridge_ID))]
+      const bridges = await dbOrTx.run(
+        SELECT.from('bridge.management.Bridges').columns('ID', 'bridgeId').where({ ID: { in: bridgeIds } })
+      )
+      const bridgeMap = new Map()
+      bridges.forEach((b) => bridgeMap.set(String(b.ID), b.bridgeId))
+      for (const row of unresolved) {
+        row.bridgeRef = bridgeMap.get(String(row.bridge_ID)) ?? null
+      }
+    }
+    for (const row of rows) delete row.bridge_ID
+  }
+
+  return rows
 }
 
 function queueAudit(auditContext, entry) {
@@ -1205,6 +1502,7 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
       await tx.run(INSERT.into(entityRef).entries(inserts.map(r => {
         const entry = { code: r.code, [labelField]: r.label || r.code }
         if (descrField) entry[descrField] = r.description || null
+        entry.active = r.active !== false
         return entry
       })))
       for (const row of inserts) {
@@ -1224,6 +1522,7 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
     for (const row of updates) {
       const setClause = { [labelField]: row.label || row.code }
       if (descrField) setClause[descrField] = row.description || null
+      if (row.active !== undefined) setClause.active = row.active !== false
       const oldRow = await fetchCurrentRecord(tx, entityRef, { code: row.code })
       await tx.run(UPDATE(entityRef).set(setClause).where({ code: row.code }))
       if (oldRow) {
@@ -1324,6 +1623,7 @@ async function importLookupRows(tx, dataset, rows, warnings, auditContext) {
 
 async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
+  const mode = auditContext?.mode || 'upsert'
 
   if (!normalized.length) {
     return emptySummary(dataset)
@@ -1339,14 +1639,29 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
 
   const inserts = []
   const updates = []
+  const rowResults = []
 
   for (const row of normalized) {
     const existing = resolveExistingBridgeRow(row, existingById, existingByBridgeId)
 
     if (existing) {
+      if (mode === 'create') {
+        const msg = `Bridges row ${row.__rowNumber}: skipped — bridgeId '${row.bridgeId || existing.bridgeId}' already exists. Use Update mode to modify existing records.`
+        warnings.push(msg)
+        rowResults.push({ rowNum: row.__rowNumber, key: row.bridgeId || existing.bridgeId || '(blank)', status: 'Skipped', action: 'skip', message: msg })
+        continue
+      }
       row.ID = existing.ID
       if (!row.bridgeId) row.bridgeId = existing.bridgeId
       updates.push(row)
+      rowResults.push({ rowNum: row.__rowNumber, key: row.bridgeId || String(row.ID), status: 'Updated', action: 'update', message: 'Record updated successfully' })
+      continue
+    }
+
+    if (mode === 'update') {
+      const msg = `Bridges row ${row.__rowNumber}: skipped — bridgeId '${row.bridgeId || '(blank)'}' not found in the system. Use Create mode to add new bridges.`
+      warnings.push(msg)
+      rowResults.push({ rowNum: row.__rowNumber, key: row.bridgeId || '(blank)', status: 'Skipped', action: 'skip', message: msg })
       continue
     }
 
@@ -1356,6 +1671,7 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
     inserts.push(row)
     existingById.set(row.ID, row)
     if (row.bridgeId) existingByBridgeId.set(row.bridgeId, row)
+    rowResults.push({ rowNum: row.__rowNumber, key: row.bridgeId || String(row.ID), status: 'Created', action: 'create', message: 'Record created successfully' })
   }
 
   if (inserts.length) {
@@ -1402,11 +1718,12 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
     }
   }
 
-  return buildSummary(dataset, normalized.length, inserts.length, updates.length)
+  return buildSummary(dataset, normalized.length, inserts.length, updates.length, 0, 0, rowResults)
 }
 
 async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
+  const mode = auditContext?.mode || 'upsert'
 
   if (!normalized.length) {
     return emptySummary(dataset)
@@ -1423,6 +1740,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
 
   const inserts = []
   const updates = []
+  const rowResults = []
 
   for (const row of normalized) {
     if (!row.name) {
@@ -1437,8 +1755,22 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
 
     const existing = resolveExistingRestrictionRow(row, existingById, existingByRef)
     if (existing) {
+      if (mode === 'create') {
+        const msg = `Restrictions row ${row.__rowNumber}: skipped — restrictionRef '${row.restrictionRef || existing.restrictionRef}' already exists. Use Update mode to modify existing records.`
+        warnings.push(msg)
+        rowResults.push({ rowNum: row.__rowNumber, key: row.restrictionRef || existing.restrictionRef || '(blank)', status: 'Skipped', action: 'skip', message: msg })
+        continue
+      }
       row.ID = existing.ID
       updates.push(row)
+      rowResults.push({ rowNum: row.__rowNumber, key: row.restrictionRef || row.ID, status: 'Updated', action: 'update', message: 'Record updated successfully' })
+      continue
+    }
+
+    if (mode === 'update') {
+      const msg = `Restrictions row ${row.__rowNumber}: skipped — restrictionRef '${row.restrictionRef || '(blank)'}' not found in the system. Use Create mode to add new restrictions.`
+      warnings.push(msg)
+      rowResults.push({ rowNum: row.__rowNumber, key: row.restrictionRef || '(blank)', status: 'Skipped', action: 'skip', message: msg })
       continue
     }
 
@@ -1448,6 +1780,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
     inserts.push(row)
     existingById.set(row.ID, row)
     existingByRef.set(row.restrictionRef, row)
+    rowResults.push({ rowNum: row.__rowNumber, key: row.restrictionRef || row.ID, status: 'Created', action: 'create', message: 'Record created successfully' })
   }
 
   if (inserts.length) {
@@ -1494,7 +1827,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
     }
   }
 
-  return buildSummary(dataset, normalized.length, inserts.length, updates.length)
+  return buildSummary(dataset, normalized.length, inserts.length, updates.length, 0, 0, rowResults)
 }
 
 async function enrichRestrictionsWithBridgeKeys(tx, rows) {
@@ -1531,11 +1864,34 @@ async function enrichRowsWithBridgeId(tx, rows, datasetName) {
   }
 }
 
-async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, { naturalKey, objectType, getName }) {
+async function batchGenerateRefs(tx, entityName, refField, prefix, rows) {
+  const blanks = rows.filter(r => !r[refField])
+  if (!blanks.length) return
+  const existing = await tx.run(SELECT.from(entityName).columns(refField))
+  const pattern = new RegExp(`^${prefix}(\\d+)$`)
+  let maxSeq = 0
+  for (const rec of existing) {
+    const m = rec[refField]?.match(pattern)
+    if (m) maxSeq = Math.max(maxSeq, parseInt(m[1], 10))
+  }
+  for (const row of rows.filter(r => r[refField])) {
+    const m = row[refField]?.match(pattern)
+    if (m) maxSeq = Math.max(maxSeq, parseInt(m[1], 10))
+  }
+  let seq = maxSeq + 1
+  for (const row of blanks) {
+    row[refField] = `${prefix}${String(seq).padStart(4, '0')}`
+    seq++
+  }
+}
+
+async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, { naturalKey, objectType, getName, extraEnrich = null }) {
   const normalized = normalizeRows(dataset, rows, warnings)
+  const mode = auditContext?.mode || 'upsert'
   if (!normalized.length) return emptySummary(dataset)
 
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  if (extraEnrich) await extraEnrich(tx, normalized, warnings)
 
   const ids = normalized.map(r => r.ID).filter(Boolean)
   const existingById = new Map()
@@ -1553,18 +1909,33 @@ async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
 
   const inserts = []
   const updates = []
+  const rowResults = []
 
   for (const row of normalized) {
     let existing = (row.ID && existingById.get(row.ID)) || (row[naturalKey] && existingByNaturalKey.get(row[naturalKey]))
     if (existing) {
+      if (mode === 'create') {
+        const msg = `${dataset.name} row ${row.__rowNumber}: skipped — ${naturalKey} '${row[naturalKey] || existing[naturalKey]}' already exists. Use Update mode to modify existing records.`
+        warnings.push(msg)
+        rowResults.push({ rowNum: row.__rowNumber, key: row[naturalKey] || existing[naturalKey] || '(blank)', status: 'Skipped', action: 'skip', message: msg })
+        continue
+      }
       row.ID = existing.ID
       updates.push(row)
+      rowResults.push({ rowNum: row.__rowNumber, key: row[naturalKey] || row.ID, status: 'Updated', action: 'update', message: 'Record updated successfully' })
+      continue
+    }
+    if (mode === 'update') {
+      const msg = `${dataset.name} row ${row.__rowNumber}: skipped — ${naturalKey} '${row[naturalKey] || '(blank)'}' not found in the system. Use Create mode to add new records.`
+      warnings.push(msg)
+      rowResults.push({ rowNum: row.__rowNumber, key: row[naturalKey] || '(blank)', status: 'Skipped', action: 'skip', message: msg })
       continue
     }
     if (!row.ID) row.ID = cds.utils.uuid()
     inserts.push(row)
     existingById.set(row.ID, row)
     if (row[naturalKey]) existingByNaturalKey.set(row[naturalKey], row)
+    rowResults.push({ rowNum: row.__rowNumber, key: row[naturalKey] || '(new)', status: 'Created', action: 'create', message: 'Record created successfully' })
   }
 
   if (inserts.length) {
@@ -1596,7 +1967,7 @@ async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
     }
   }
 
-  return buildSummary(dataset, normalized.length, inserts.length, updates.length)
+  return buildSummary(dataset, normalized.length, inserts.length, updates.length, 0, 0, rowResults)
 }
 
 async function importInspectionRows(tx, dataset, rows, warnings, auditContext) {
@@ -1684,6 +2055,7 @@ async function importConditionSurveyRows(tx, dataset, rows, warnings, auditConte
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  await batchGenerateRefs(tx, 'bridge.management.BridgeConditionSurveys', 'surveyRef', 'CS-', normalized)
   for (const row of normalized) {
     if (!row.status) row.status = 'Draft'
     if (row.active === null || row.active === undefined) row.active = true
@@ -1699,6 +2071,7 @@ async function importLoadRatingRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  await batchGenerateRefs(tx, 'bridge.management.BridgeLoadRatings', 'ratingRef', 'LR-', normalized)
   for (const row of normalized) {
     if (!row.status) row.status = 'Active'
     if (row.active === null || row.active === undefined) row.active = true
@@ -1714,6 +2087,7 @@ async function importPermitRows(tx, dataset, rows, warnings, auditContext) {
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
   await enrichRowsWithBridgeId(tx, normalized, dataset.name)
+  await batchGenerateRefs(tx, 'bridge.management.BridgePermits', 'permitRef', 'PM-', normalized)
   for (const row of normalized) {
     if (!row.status) row.status = 'Pending'
     if (row.active === null || row.active === undefined) row.active = true
@@ -1722,6 +2096,53 @@ async function importPermitRows(tx, dataset, rows, warnings, auditContext) {
     naturalKey: 'permitRef',
     objectType: 'BridgePermit',
     getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.permitRef}`
+  })
+}
+
+// ── BridgeDefects: auto-ref + optional inspection link resolution ────────────
+async function importDefectRows(tx, dataset, rows, warnings, auditContext) {
+  await batchGenerateRefs(tx, 'bridge.management.BridgeDefects', 'defectId', 'DEF-', rows)
+  return importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
+    naturalKey: 'defectId',
+    objectType: 'BridgeDefect',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.defectId}`,
+    extraEnrich: async (tx, normalized, warnings) => {
+      const withInspRef = normalized.filter(r => r.inspectionRef)
+      if (!withInspRef.length) return
+      const inspRefs = [...new Set(withInspRef.map(r => r.inspectionRef))]
+      const inspections = await tx.run(
+        SELECT.from('bridge.management.BridgeInspections').columns('ID', 'inspectionRef')
+          .where({ inspectionRef: { in: inspRefs } })
+      )
+      const inspMap = new Map(inspections.map(i => [i.inspectionRef, i.ID]))
+      for (const row of withInspRef) {
+        const id = inspMap.get(row.inspectionRef)
+        if (id) row.inspection_ID = id
+        else warnings.push(`Row ${row.__rowNumber}: inspectionRef "${row.inspectionRef}" not found — defect created without inspection link`)
+        delete row.inspectionRef
+      }
+      for (const row of normalized.filter(r => !r.inspectionRef && Object.prototype.hasOwnProperty.call(r, 'inspectionRef'))) {
+        delete row.inspectionRef
+      }
+    }
+  })
+}
+
+// ── BridgeCapacities ─────────────────────────────────────────────────────────
+async function importCapacityRows(tx, dataset, rows, warnings, auditContext) {
+  return importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
+    naturalKey: 'effectiveFrom',
+    objectType: 'BridgeCapacity',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.capacityType} / ${r.effectiveFrom}`
+  })
+}
+
+// ── BridgeScourAssessments ───────────────────────────────────────────────────
+async function importScourRows(tx, dataset, rows, warnings, auditContext) {
+  return importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
+    naturalKey: 'assessmentDate',
+    objectType: 'BridgeScourAssessment',
+    getName: r => `${r.bridgeRef || r.bridge_ID} / ${r.assessmentDate}`
   })
 }
 
@@ -1819,16 +2240,22 @@ function parseSheetRows(sheet, dataset) {
   const normalizedHeaders = new Map(headers.map((header) => [String(header).replace(/^\uFEFF/, '').replace(/\*$/, '').trim().toLowerCase(), header]))
 
   for (const columnDef of dataset.columns) {
-    if (columnDef.required && !normalizedHeaders.has(columnDef.name.toLowerCase())) {
-      throw new Error(`Sheet "${dataset.name}" must contain a "${columnDef.name}" column.`)
+    const fieldKey = (columnDef.name || columnDef.field || '').toLowerCase()
+    const headerKey = (columnDef.header || columnDef.name || columnDef.field || '').replace(/\s*\*\s*$/, '').trim().toLowerCase()
+    const found = normalizedHeaders.has(fieldKey) || normalizedHeaders.has(headerKey)
+    if (columnDef.required && !found) {
+      throw new Error(`Sheet "${dataset.name}" must contain a "${columnDef.name || columnDef.header}" column.`)
     }
   }
 
   return rows.map((row, index) => {
     const mappedRow = { __rowNumber: index + 2 }
     for (const columnDef of dataset.columns) {
-      const originalHeader = normalizedHeaders.get(columnDef.name.toLowerCase())
-      mappedRow[columnDef.name] = originalHeader ? row[originalHeader] : null
+      const outputKey = columnDef.field || columnDef.name
+      const fieldKey = (columnDef.name || columnDef.field || '').toLowerCase()
+      const headerKey = (columnDef.header || columnDef.name || columnDef.field || '').replace(/\s*\*\s*$/, '').trim().toLowerCase()
+      const originalHeader = normalizedHeaders.get(fieldKey) || normalizedHeaders.get(headerKey)
+      mappedRow[outputKey] = originalHeader ? row[originalHeader] : null
     }
     return mappedRow
   })
@@ -1952,6 +2379,9 @@ function getDedupeKey(dataset, row) {
   if (dataset.name === 'BridgeRestrictions') return row.ID ?? `${row.bridgeRef}|${row.restrictionRef}`
   if (dataset.name === 'LoadRatingCertificates') return row.ID ?? `${row.bridgeRef}|${row.certificateNumber}`
   if (dataset.name === 'BridgeRestrictionProvisions') return row.ID ?? `${row.restrictionRef}|${row.provisionNumber}`
+  if (dataset.name === 'BridgeConditionSurveys') return row.ID ?? (row.surveyRef ? `surveyRef:${row.surveyRef}` : `${row.bridgeRef}|${row.surveyDate}|${row.surveyType}`)
+  if (dataset.name === 'BridgeLoadRatings') return row.ID ?? (row.ratingRef ? `ratingRef:${row.ratingRef}` : `${row.bridgeRef}|${row.vehicleClass}|${row.assessmentDate}`)
+  if (dataset.name === 'BridgePermits') return row.ID ?? (row.permitRef ? `permitRef:${row.permitRef}` : `${row.bridgeRef}|${row.permitType}|${row.applicantName}|${row.appliedDate}`)
   return JSON.stringify(row)
 }
 
@@ -2018,14 +2448,18 @@ function stripMetadata(row) {
 }
 
 function buildHeaderRow(dataset) {
-  return dataset.columns.map((columnDef) => `${columnDef.name}${columnDef.required ? '*' : ''}`)
+  return dataset.columns.map((columnDef) => {
+    const label = columnDef.name || columnDef.header || ''
+    if (columnDef.required && !label.endsWith('*')) return `${label}*`
+    return label
+  })
 }
 
 function buildReferenceExamplesRows(datasetRowsByName) {
   const datasetBySheetAndColumn = new Map(
     DATASETS.map((dataset) => [
       dataset.name,
-      new Map(dataset.columns.map((columnDef) => [columnDef.name, columnDef]))
+      new Map(dataset.columns.map((columnDef) => [columnDef.name || columnDef.field, columnDef]))
     ])
   )
 
@@ -2077,13 +2511,16 @@ function emptySummary(dataset) {
   return buildSummary(dataset, 0, 0, 0)
 }
 
-function buildSummary(dataset, processed, inserted, updated) {
+function buildSummary(dataset, processed, inserted, updated, deleted = 0, errors = 0, rowResults = []) {
   return {
     dataset: dataset.name,
     label: dataset.label,
     inserted,
     updated,
-    processed
+    processed,
+    deleted,
+    errors,
+    rowResults
   }
 }
 
@@ -2102,10 +2539,67 @@ function resolveWorkbookDatasets(datasetName) {
   return [requireDataset(datasetName)]
 }
 
+// ── Upload session recording ─────────────────────────────────────────────────
+async function recordUploadSession(db, { fileName, datasetName, uploadedBy, mode, summaries, warnings }) {
+  const totalRows       = summaries.reduce((s, x) => s + (x.processed || 0), 0)
+  const insertedRows    = summaries.reduce((s, x) => s + (x.inserted  || 0), 0)
+  const updatedRows     = summaries.reduce((s, x) => s + (x.updated   || 0), 0)
+  const deactivatedRows = summaries.reduce((s, x) => s + (x.deactivated || 0), 0)
+  const hasErrors       = warnings.some(w => /error|Error|failed|Failed/.test(w))
+  const session = {
+    ID:             cds.utils.uuid(),
+    fileName,
+    datasetName:    datasetName || 'All',
+    mode:           mode || 'upsert',
+    status:         hasErrors ? 'PartialSuccess' : 'Completed',
+    totalRows,
+    insertedRows,
+    updatedRows,
+    deactivatedRows,
+    warningCount:   warnings.length,
+    errorCount:     0,
+    summaryJson:    JSON.stringify(summaries),
+    warningsJson:   JSON.stringify(warnings.slice(0, 100))
+  }
+  try {
+    await db.run(INSERT.into('bridge.management.UploadSessions').entries([session]))
+  } catch (_) {
+    // never let session recording break an otherwise successful upload
+  }
+  return session
+}
+
+// ── Upload history queries ───────────────────────────────────────────────────
+async function getUploadHistory(limit = 50) {
+  const db = await cds.connect.to('db')
+  return db.run(
+    SELECT.from('bridge.management.UploadSessions')
+      .columns('ID', 'fileName', 'datasetName', 'mode', 'status', 'totalRows', 'insertedRows', 'updatedRows',
+               'deactivatedRows', 'warningCount', 'errorCount', 'summaryJson', 'createdAt', 'createdBy')
+      .orderBy('createdAt desc')
+      .limit(limit)
+  )
+}
+
+async function getUploadSessionById(id) {
+  const db = await cds.connect.to('db')
+  const session = await db.run(SELECT.one.from('bridge.management.UploadSessions').where({ ID: id }))
+  if (!session) return null
+  return {
+    ...session,
+    summaries: JSON.parse(session.summaryJson  || '[]'),
+    warnings:  JSON.parse(session.warningsJson || '[]')
+  }
+}
+
 module.exports = {
   buildCsvTemplate,
   buildWorkbookTemplate,
+  exportDatasetRows,
   getDatasets,
   importUpload,
-  validateUpload
+  validateUpload,
+  recordUploadSession,
+  getUploadHistory,
+  getUploadSessionById
 }

@@ -174,7 +174,7 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Closure',              Target: '@UI.FieldGroup#Closure'},
         ]
       },
-      // ── T7: External System References ───────────────────────────────────
+      // ── T6: External System References ───────────────────────────────────
       {
         $Type : 'UI.CollectionFacet',
         Label : 'External Systems',
@@ -182,15 +182,6 @@ annotate AdminService.Bridges with @(
         Facets: [
           {$Type: 'UI.ReferenceFacet', Label: 'NHVR Portal',       Target: '@UI.FieldGroup#ExtNHVR'},
           {$Type: 'UI.ReferenceFacet', Label: 'BNAC Integration',  Target: '@UI.FieldGroup#ExtBNAC'},
-        ]
-      },
-      // ── T7: Custom Attributes ─────────────────────────────────────────────
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Custom Attributes',
-        ID    : 'CustomAttributes',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Attributes', Target: 'attributes/@UI.LineItem'},
         ]
       },
       // ── T7: Administration ────────────────────────────────────────────────
@@ -705,8 +696,242 @@ annotate AdminService.Bridges with {
 
 // Hide the ID on the Restrictions VH so it doesn't appear as a column
 annotate AdminService.Restrictions with {
-  ID @UI.Hidden;
+  ID                    @UI.Hidden;
+  bridge                @UI.Hidden;
+  parent                @UI.Hidden;
+  children              @UI.Hidden;
+  createdAt @UI.Hidden; createdBy @UI.Hidden; modifiedAt @UI.Hidden; modifiedBy @UI.Hidden;
+  // Auto-generated ref — read-only
+  restrictionRef        @Core.Computed @Common.FieldControl: #ReadOnly @title: 'Restriction Ref';
+  bridgeRef             @title: 'Bridge ID'
+    @Common.Text: bridge.bridgeName
+    @Common.TextArrangement: #TextSeparate
+    @Common.ValueList: {
+      CollectionPath: 'Bridges',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterInOut', LocalDataProperty: bridgeRef,         ValueListProperty: 'bridgeId' },
+        { $Type: 'Common.ValueListParameterOut',   LocalDataProperty: bridge_ID,         ValueListProperty: 'ID' },
+        { $Type: 'Common.ValueListParameterOut',   LocalDataProperty: bridge.bridgeName, ValueListProperty: 'bridgeName' },
+      ]
+    };
+  restrictionCategory @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { CollectionPath: 'RestrictionCategories', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: restrictionCategory, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Category';
+  restrictionType @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { CollectionPath: 'RestrictionTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: restrictionType, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Restriction Type';
+  restrictionValue      @Common.FieldControl: #Mandatory @title: 'Value';
+  restrictionUnit @(
+    Common.FieldControl: #Mandatory,
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { CollectionPath: 'RestrictionUnits', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: restrictionUnit, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Unit';
+  restrictionStatus @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { CollectionPath: 'RestrictionStatuses', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: restrictionStatus, ValueListProperty: 'code' },
+    ]}
+  ) @title: 'Status';
+  active                @Common.FieldControl: #ReadOnly @title: 'Active';
+  temporary             @UI.Hidden;
+  appliesToVehicleClass @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { CollectionPath: 'VehicleClasses', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: appliesToVehicleClass, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
+    ]}
+  ) @title: 'Applies to Vehicle Class';
+  direction @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { CollectionPath: 'RestrictionDirections', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: direction, ValueListProperty: 'code' },
+    ]}
+  ) @title: 'Direction';
+  effectiveFrom         @Common.FieldControl: #Mandatory @title: 'Effective From';
+  effectiveTo           @title: 'Effective To';
+  grossMassLimit        @title: 'Gross Mass Limit (t)';
+  axleMassLimit         @title: 'Axle Mass Limit (t)';
+  heightLimit           @title: 'Height Limit (m)';
+  widthLimit            @title: 'Width Limit (m)';
+  lengthLimit           @title: 'Length Limit (m)';
+  speedLimit            @title: 'Speed Limit (km/h)';
+  permitRequired        @title: 'Permit Required';
+  escortRequired        @title: 'Escort Required';
+  approvedBy            @title: 'Approved By';
+  approvalReference     @title: 'Approval Reference';
+  legalReference        @title: 'Gazette / Legal Reference';
+  legalEffectiveDate    @title: 'Legal Effective Date';
+  issuingAuthority      @title: 'Issuing Authority';
+  enforcementAuthority  @title: 'Enforcement Authority';
+  reviewDueDate         @title: 'Review Due Date';
+  temporaryFrom         @title: 'Temporary From';
+  temporaryTo           @title: 'Temporary To';
+  temporaryReason       @title: 'Temporary Reason' @UI.MultiLineText;
+  remarks               @title: 'Remarks' @UI.MultiLineText;
+  postingSignId         @title: 'Posting Sign ID'       @Common.QuickInfo: 'AS 1742.10 sign reference number';
+  signRequirements      @title: 'Sign Requirements';
+  gazetteNumber         @title: 'Gazette Number'        @Common.QuickInfo: 'NSW Gazette order number (Roads Act 1993 §122)';
+  gazettePublicationDate @title: 'Gazette Published';
+  gazetteExpiryDate     @title: 'Gazette Expiry'        @Common.QuickInfo: 'Alert generated 90/60/30 days before expiry';
+  loadLimitOrderRef     @title: 'Load Limit Order Ref'  @Common.QuickInfo: 'Roads Act 1993 LLO reference';
+  loadLimitOrderDate    @title: 'LLO Issued Date';
+  loadLimitOrderExpiry  @title: 'LLO Expiry Date';
+  pilotVehicleCount     @title: 'Pilot Vehicle Count';
+  dateCorrected         @title: 'Date Corrected';
+  // ── Posted Limits & Detour ───────────────────────────────────────────────
+  postedLoadLimitRigid  @title: 'Posted Load Limit — Rigid (t)'  @Common.QuickInfo: 'Max load for rigid trucks (NHVR HVNL)';
+  postedLoadLimitSemi   @title: 'Posted Load Limit — Semi (t)'   @Common.QuickInfo: 'Max load for semitrailers (NHVR HVNL)';
+  detourLengthKm        @title: 'Detour Length (km)';
+  detourCapable42t      @title: 'Detour Capable >42.5t';
+  detourMaxAxleLoad     @title: 'Detour Max Axle Load (t)';
+  detourRouteDetails    @title: 'Detour Route Details' @UI.MultiLineText;
+  // ── Repairs Programme ────────────────────────────────────────────────────
+  repairsProposal @(
+    Common.ValueListWithFixedValues,
+    Common.ValueList: { CollectionPath: 'RepairsProposalTypes', Parameters: [
+      { $Type: 'Common.ValueListParameterOut', LocalDataProperty: repairsProposal, ValueListProperty: 'code' },
+      { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'description' }
+    ]}
+  ) @title: 'Repairs Proposal';
+  estimatedRepairCost   @title: 'Estimated Repair Cost (AUD)';
+  programmeYear         @title: 'Programme Year';
+  restrictionComments   @title: 'Comments' @UI.MultiLineText;
+  reviewCriticality     @UI.Hidden;
+  name                  @UI.Hidden;
+  descr                 @UI.Hidden;
 };
+
+annotate AdminService.Restrictions with @(
+  Common.Label: 'Restrictions',
+  Capabilities.InsertRestrictions.Insertable  : true,
+  Capabilities.UpdateRestrictions.Updatable   : true,
+  Capabilities.DeleteRestrictions.Deletable   : false,
+  UI: {
+    HeaderInfo: {
+      TypeName      : 'Restriction',
+      TypeNamePlural: 'Restrictions',
+      Title         : { Value: restrictionRef },
+      Description   : { Value: restrictionType }
+    },
+    SelectionFields: [ bridgeRef, restrictionCategory, restrictionType, restrictionStatus, appliesToVehicleClass, effectiveFrom ],
+    LineItem: [
+      { Value: bridgeRef,             Label: 'Bridge ID' },
+      { Value: bridge.bridgeName,     Label: 'Bridge' },
+      { Value: restrictionRef,        Label: 'Ref' },
+      { Value: restrictionCategory,   Label: 'Category' },
+      { Value: restrictionType,       Label: 'Type' },
+      { Value: restrictionValue,      Label: 'Value' },
+      { Value: restrictionUnit,       Label: 'Unit' },
+      { Value: restrictionStatus,     Label: 'Status' },
+      { Value: appliesToVehicleClass, Label: 'Vehicle Class' },
+      { Value: effectiveFrom,         Label: 'From' },
+      { Value: effectiveTo,           Label: 'To' },
+      { Value: gazetteExpiryDate,     Label: 'Gazette Expiry',
+        Criticality: { $edmJson: { $If: [
+          { $Le: [{ $Path: 'reviewCriticality' }, 2] }, 2, 3
+        ]}} },
+    ],
+    Facets: [
+      { $Type: 'UI.CollectionFacet', Label: 'Restriction Details', ID: 'RestrDetails', Facets: [
+        { $Type: 'UI.ReferenceFacet', Label: 'Core Details',       Target: '@UI.FieldGroup#RestrCore' },
+        { $Type: 'UI.ReferenceFacet', Label: 'Limits & Vehicle',   Target: '@UI.FieldGroup#RestrLimits' },
+        { $Type: 'UI.ReferenceFacet', Label: 'Authority & Gazette', Target: '@UI.FieldGroup#RestrAuthority' },
+      ]},
+      { $Type: 'UI.CollectionFacet', Label: 'Posted Limits & Detour', ID: 'DetourDetails', Facets: [
+        { $Type: 'UI.ReferenceFacet', Label: 'Posted Limits',      Target: '@UI.FieldGroup#RestrPosted' },
+        { $Type: 'UI.ReferenceFacet', Label: 'Detour Route',       Target: '@UI.FieldGroup#RestrDetour' },
+      ]},
+      { $Type: 'UI.ReferenceFacet',   Label: 'Provisions',         Target: 'restrProvisions/@UI.LineItem', ID: 'ProvisionsTab' },
+      { $Type: 'UI.CollectionFacet', Label: 'Repairs Programme',   ID: 'RepairsProg', Facets: [
+        { $Type: 'UI.ReferenceFacet', Label: 'Repairs & Programme', Target: '@UI.FieldGroup#RestrRepairs' },
+      ]},
+    ],
+    FieldGroup#RestrCore: { Data: [
+      { Value: restrictionRef },
+      { Value: bridgeRef },
+      { Value: restrictionCategory },
+      { Value: restrictionType },
+      { Value: restrictionValue },
+      { Value: restrictionUnit },
+      { Value: restrictionStatus },
+      { Value: active },
+      { Value: effectiveFrom },
+      { Value: effectiveTo },
+      { Value: direction },
+      { Value: temporaryFrom },
+      { Value: temporaryTo },
+      { Value: temporaryReason },
+      { Value: reviewDueDate },
+    ]},
+    FieldGroup#RestrLimits: { Data: [
+      { Value: appliesToVehicleClass },
+      { Value: grossMassLimit },
+      { Value: axleMassLimit },
+      { Value: heightLimit },
+      { Value: widthLimit },
+      { Value: lengthLimit },
+      { Value: speedLimit },
+      { Value: permitRequired },
+      { Value: escortRequired },
+      { Value: pilotVehicleCount },
+    ]},
+    FieldGroup#RestrAuthority: { Data: [
+      { Value: approvedBy },
+      { Value: approvalReference },
+      { Value: issuingAuthority },
+      { Value: enforcementAuthority },
+      { Value: legalReference },
+      { Value: legalEffectiveDate },
+      { Value: gazetteNumber },
+      { Value: gazettePublicationDate },
+      { Value: gazetteExpiryDate },
+      { Value: loadLimitOrderRef },
+      { Value: loadLimitOrderDate },
+      { Value: loadLimitOrderExpiry },
+      { Value: postingSignId },
+      { Value: signRequirements },
+      { Value: remarks },
+    ]},
+    FieldGroup#RestrPosted: { Data: [
+      { Value: postedLoadLimitRigid },
+      { Value: postedLoadLimitSemi },
+      { Value: dateCorrected },
+    ]},
+    FieldGroup#RestrDetour: { Data: [
+      { Value: detourLengthKm },
+      { Value: detourCapable42t },
+      { Value: detourMaxAxleLoad },
+      { Value: detourRouteDetails },
+    ]},
+    FieldGroup#RestrRepairs: { Data: [
+      { Value: repairsProposal },
+      { Value: estimatedRepairCost },
+      { Value: programmeYear },
+      { Value: restrictionComments },
+    ]},
+    Identification: [
+      { $Type: 'UI.DataFieldForAction', Action: 'AdminService.Restrictions/AdminService.deactivate',
+        Label: 'Retire (Soft-Delete)', Criticality: #Negative,
+        ![@UI.Hidden]: { $edmJson: { $Eq: [{ $Path: 'active' }, false] } } },
+      { $Type: 'UI.DataFieldForAction', Action: 'AdminService.Restrictions/AdminService.reactivate',
+        Label: 'Reactivate', Criticality: #Positive,
+        ![@UI.Hidden]: { $edmJson: { $Ne: [{ $Path: 'active' }, false] } } },
+    ],
+  }
+);
 
 ////////////////////////////////////////////////////////////////////////////
 //  BridgeRestrictions — sub-entity on Bridge ObjectPage
@@ -922,6 +1147,7 @@ annotate AdminService.BridgeRestrictions with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Enforcement',         Target: '@UI.FieldGroup#BREnforcement'},
         ]
       },
+      { $Type: 'UI.ReferenceFacet', Label: 'Permit Provisions', Target: 'provisions/@UI.LineItem' },
     ],
     FieldGroup#BRDetails: {
       Data: [
@@ -1467,21 +1693,26 @@ annotate AdminService.BridgeScourAssessmentDetail with @(
 ////////////////////////////////////////////////////////////////////////////
 
 annotate AdminService.BridgeDocuments with {
-  ID         @UI.Hidden;
-  bridge     @UI.Hidden;
-  content    @UI.Hidden;  // blob served via /admin-bridges/api — never via OData
-  createdAt  @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
-  title        @title: 'Title';
-  documentType @title: 'Attachment Type';
-  documentUrl  @title: 'External URL';
-  documentDate @title: 'Attachment Date';
-  fileName     @title: 'File Name';
-  mediaType    @title: 'Media Type';
-  fileSize     @title: 'File Size (bytes)';
+  ID             @UI.Hidden;
+  bridge         @UI.Hidden;
+  content        @UI.Hidden;  // blob served via /admin-bridges/api — never via OData
+  createdAt      @UI.Hidden;  createdBy @UI.Hidden;  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
+  linkedEntityId @UI.Hidden;
+  active         @UI.Hidden;
+  title           @title: 'Title';
+  documentType    @title: 'Document Type';
+  documentUrl     @title: 'External URL';
+  documentDate    @title: 'Document Date';
+  fileName        @title: 'File Name';
+  mediaType       @title: 'Media Type';
+  fileSize        @title: 'File Size (bytes)';
+  description     @title: 'Description'   @UI.MultiLineText;
+  uploadedBy      @title: 'Uploaded By'   @Common.FieldControl: #ReadOnly;
+  linkedEntity    @title: 'Linked To';
   referenceNumber @title: 'Reference Number';
-  issuedBy     @title: 'Issued By';
-  expiryDate   @title: 'Expiry Date';
-  remarks      @title: 'Remarks'  @UI.MultiLineText;
+  issuedBy        @title: 'Issued By';
+  expiryDate      @title: 'Expiry Date';
+  remarks         @title: 'Remarks'  @UI.MultiLineText;
 };
 
 annotate AdminService.BridgeDocuments with @(
@@ -1497,31 +1728,34 @@ annotate AdminService.BridgeDocuments with @(
       Description   : { Value: fileName }
     },
     LineItem: [
-      {Value: title,           Label: 'Title'},
-      {Value: fileName,        Label: 'File Name'},
       {Value: documentType,    Label: 'Type'},
-      {Value: mediaType,       Label: 'Media Type'},
-      {Value: fileSize,        Label: 'Size'},
-      {Value: referenceNumber, Label: 'Reference'},
+      {Value: fileName,        Label: 'File Name'},
+      {Value: fileSize,        Label: 'Size (bytes)'},
+      {Value: description,     Label: 'Description'},
+      {Value: uploadedBy,      Label: 'Uploaded By'},
       {Value: documentDate,    Label: 'Date'},
       {Value: expiryDate,      Label: 'Expiry'},
+      {Value: referenceNumber, Label: 'Reference'},
     ],
     Facets: [
       {$Type: 'UI.ReferenceFacet', Label: 'Attachment Details', Target: '@UI.FieldGroup#AttachmentDetails'}
     ],
     FieldGroup#AttachmentDetails: {
       Data: [
-        {Value: documentType},
-        {Value: title},
-        {Value: fileName},
-        {Value: mediaType},
-        {Value: fileSize},
-        {Value: documentUrl},
-        {Value: referenceNumber},
-        {Value: issuedBy},
-        {Value: documentDate},
-        {Value: expiryDate},
-        {Value: remarks},
+        {Value: documentType,    Label: 'Document Type'},
+        {Value: title,           Label: 'Title'},
+        {Value: fileName,        Label: 'File Name'},
+        {Value: mediaType,       Label: 'Media Type'},
+        {Value: fileSize,        Label: 'File Size (bytes)'},
+        {Value: description,     Label: 'Description'},
+        {Value: linkedEntity,    Label: 'Linked To'},
+        {Value: uploadedBy,      Label: 'Uploaded By'},
+        {Value: documentUrl,     Label: 'External URL'},
+        {Value: referenceNumber, Label: 'Reference Number'},
+        {Value: issuedBy,        Label: 'Issued By'},
+        {Value: documentDate,    Label: 'Document Date'},
+        {Value: expiryDate,      Label: 'Expiry Date'},
+        {Value: remarks,         Label: 'Remarks'},
       ]
     },
   }
@@ -1795,6 +2029,14 @@ annotate AdminService.BridgeInspections with @(
         {$Type: 'UI.ReferenceFacet', Label: 'Element Conditions (CS1–CS4)', Target: 'inspectionElements/@UI.LineItem'},
       ]
     },
+    {
+      $Type : 'UI.CollectionFacet',
+      Label : 'Documents',
+      ID    : 'InspDocuments',
+      Facets: [
+        {$Type: 'UI.ReferenceFacet', ID: 'InspDocumentsList', Label: 'Documents', Target: 'documents/@UI.LineItem'},
+      ]
+    },
   ],
   UI.FieldGroup#InspGeneral: {
     Label: 'General',
@@ -1968,6 +2210,9 @@ annotate AdminService.BridgeDefects with @(
       {$Type: 'UI.ReferenceFacet', Label: 'Location',     Target: '@UI.FieldGroup#DefectLocation'},
       {$Type: 'UI.ReferenceFacet', Label: 'Remediation',  Target: '@UI.FieldGroup#DefectRemediation'},
       {$Type: 'UI.ReferenceFacet', Label: 'S/4HANA Integration', Target: '@UI.FieldGroup#DefectS4Integration'},
+    ]},
+    { $Type: 'UI.CollectionFacet', Label: 'Documents', ID: 'DefDocuments', Facets: [
+      {$Type: 'UI.ReferenceFacet', ID: 'DefDocumentsList', Label: 'Documents', Target: 'documents/@UI.LineItem'},
     ]},
   ],
   UI.FieldGroup#DefectGeneral: {
@@ -3739,3 +3984,207 @@ annotate AdminService.AssetIQScores with {
   overrideReason @title: 'Override Reason'  @Common.FieldControl: #ReadOnly  @UI.MultiLineText;
   overrideAt     @title: 'Override At'      @Common.FieldControl: #ReadOnly;
 };
+
+////////////////////////////////////////////////////////////////////////////
+//  BridgeMaintenanceActions — Work Orders
+////////////////////////////////////////////////////////////////////////////
+annotate AdminService.BridgeMaintenanceActions with {
+  ID              @UI.Hidden;
+  bridge          @UI.Hidden;
+  bridge_ID       @UI.Hidden;
+  createdAt       @UI.Hidden; createdBy @UI.Hidden; modifiedAt @UI.Hidden; modifiedBy @UI.Hidden;
+  actionRef       @Core.Computed @Common.FieldControl: #ReadOnly @title: 'Work Order Ref';
+  bridgeRef       @title: 'Bridge ID'
+    @Common.Text: bridge.bridgeName
+    @Common.TextArrangement: #TextSeparate
+    @Common.ValueList: {
+      CollectionPath: 'Bridges',
+      Parameters: [
+        {$Type: 'Common.ValueListParameterInOut',  LocalDataProperty: bridgeRef,    ValueListProperty: 'bridgeId'},
+        {$Type: 'Common.ValueListParameterOut',    LocalDataProperty: bridge_ID,    ValueListProperty: 'ID'},
+        {$Type: 'Common.ValueListParameterOut',    LocalDataProperty: bridge.bridgeName, ValueListProperty: 'bridgeName'},
+      ]
+    };
+  actionTitle     @title: 'Title' @mandatory;
+  actionType      @title: 'Action Type';
+  priority        @title: 'Priority';
+  status          @title: 'Status';
+  assignedTo      @title: 'Assigned To';
+  organisation    @title: 'Organisation';
+  scheduledDate   @title: 'Scheduled Date';
+  completedDate   @title: 'Completed Date';
+  estimatedCostAUD @title: 'Est. Cost (AUD)';
+  actualCostAUD   @title: 'Actual Cost (AUD)';
+  contractReference @title: 'Contract Ref';
+  standardsReference @title: 'Standards Ref';
+  workDescription @title: 'Work Description' @UI.MultiLineText;
+  safetyRequirements @title: 'Safety Requirements' @UI.MultiLineText;
+  completionNotes @title: 'Completion Notes' @UI.MultiLineText;
+  reviewDueDate   @title: 'Review Due';
+  linkedDefect    @title: 'Linked Defect'
+    @Common.Text: linkedDefect.defectId
+    @Common.ValueList: {
+      CollectionPath: 'BridgeDefects',
+      Parameters: [
+        {$Type: 'Common.ValueListParameterOut', LocalDataProperty: linkedDefect_ID, ValueListProperty: 'ID'},
+        {$Type: 'Common.ValueListParameterOut', LocalDataProperty: linkedDefect.defectId, ValueListProperty: 'defectId'},
+      ]
+    };
+  active          @UI.Hidden;
+};
+
+annotate AdminService.BridgeMaintenanceActions with @(
+  Common.Label: 'Work Orders',
+  Capabilities.InsertRestrictions.Insertable: true,
+  Capabilities.UpdateRestrictions.Updatable : true,
+  Capabilities.DeleteRestrictions.Deletable : false,
+  UI: {
+    HeaderInfo: {
+      TypeName      : 'Work Order',
+      TypeNamePlural: 'Work Orders',
+      Title         : { Value: actionRef },
+      Description   : { Value: actionTitle }
+    },
+    SelectionFields: [bridgeRef, status, priority, actionType, scheduledDate],
+    LineItem: [
+      { Value: actionRef,    Label: 'Ref' },
+      { Value: bridgeRef,    Label: 'Bridge ID' },
+      { Value: bridge.bridgeName, Label: 'Bridge' },
+      { Value: actionTitle,  Label: 'Title' },
+      { Value: actionType,   Label: 'Type' },
+      { Value: priority,     Label: 'Priority' },
+      { Value: status,       Label: 'Status' },
+      { Value: assignedTo,   Label: 'Assigned To' },
+      { Value: scheduledDate, Label: 'Scheduled' },
+      { Value: estimatedCostAUD, Label: 'Est. Cost (AUD)' },
+    ],
+    Facets: [
+      { $Type: 'UI.CollectionFacet', Label: 'Work Order Details', ID: 'MaintenanceDetails', Facets: [
+        { $Type: 'UI.ReferenceFacet', Label: 'Identity',          Target: '@UI.FieldGroup#WoIdentity' },
+        { $Type: 'UI.ReferenceFacet', Label: 'Assignment & Cost', Target: '@UI.FieldGroup#WoAssignment' },
+        { $Type: 'UI.ReferenceFacet', Label: 'Work Description',  Target: '@UI.FieldGroup#WoDescription' },
+      ]},
+    ],
+    FieldGroup#WoIdentity: { Data: [
+      { Value: actionRef },
+      { Value: bridgeRef },
+      { Value: linkedDefect.defectId },
+      { Value: actionType },
+      { Value: priority },
+      { Value: status },
+      { Value: scheduledDate },
+      { Value: completedDate },
+      { Value: reviewDueDate },
+    ]},
+    FieldGroup#WoAssignment: { Data: [
+      { Value: assignedTo },
+      { Value: organisation },
+      { Value: estimatedCostAUD },
+      { Value: actualCostAUD },
+      { Value: contractReference },
+      { Value: standardsReference },
+    ]},
+    FieldGroup#WoDescription: { Data: [
+      { Value: actionTitle },
+      { Value: workDescription },
+      { Value: safetyRequirements },
+      { Value: completionNotes },
+    ]},
+  }
+);
+
+////////////////////////////////////////////////////////////////////////////
+//  RestrictionProvisions — standalone provision codes on Restrictions
+////////////////////////////////////////////////////////////////////////////
+annotate AdminService.RestrictionProvisions with {
+  ID             @UI.Hidden;
+  restriction    @UI.Hidden;
+  createdAt      @UI.Hidden; createdBy @UI.Hidden; modifiedAt @UI.Hidden; modifiedBy @UI.Hidden;
+  provisionCode  @title: 'Code'
+    @Common.Text: provisionCode
+    @Common.ValueList: {
+      CollectionPath: 'ProvisionTypes',
+      Parameters: [
+        { $Type: 'Common.ValueListParameterInOut', LocalDataProperty: provisionCode, ValueListProperty: 'code' },
+        { $Type: 'Common.ValueListParameterOut',   LocalDataProperty: description,   ValueListProperty: 'description' },
+      ]
+    };
+  description    @title: 'Provision Description';
+  sortOrder      @title: 'Sort Order';
+  active         @UI.Hidden;
+};
+
+annotate AdminService.RestrictionProvisions with @(
+  Capabilities.InsertRestrictions.Insertable: true,
+  Capabilities.UpdateRestrictions.Updatable : true,
+  Capabilities.DeleteRestrictions.Deletable : true,
+  UI: {
+    HeaderInfo: { TypeName: 'Provision', TypeNamePlural: 'Provisions', Title: { Value: provisionCode } },
+    LineItem: [
+      { Value: sortOrder,     Label: '#' },
+      { Value: provisionCode, Label: 'Code' },
+      { Value: description,   Label: 'Description' },
+    ],
+    Facets: [
+      { $Type: 'UI.ReferenceFacet', Label: 'Provision', Target: '@UI.FieldGroup#ProvDetails' }
+    ],
+    FieldGroup#ProvDetails: { Data: [
+      { Value: sortOrder },
+      { Value: provisionCode },
+      { Value: description },
+    ]},
+  }
+);
+
+////////////////////////////////////////////////////////////////////////////
+//  BridgeRestrictionProvisions — permit provisions on bridge restriction postings
+////////////////////////////////////////////////////////////////////////////
+annotate AdminService.BridgeRestrictionProvisions with {
+  ID              @UI.Hidden;
+  restriction     @UI.Hidden;
+  createdAt       @UI.Hidden; createdBy @UI.Hidden; modifiedAt @UI.Hidden; modifiedBy @UI.Hidden;
+  provisionNumber @title: 'No.';
+  provisionType   @title: 'Type';
+  provisionText   @title: 'Provision Text' @mandatory @UI.MultiLineText;
+  vehicleClasses  @title: 'Vehicle Classes';
+  timeOfDay       @title: 'Time of Day';
+  seasonalPeriod  @title: 'Seasonal Period';
+  effectiveFrom   @title: 'Effective From';
+  effectiveTo     @title: 'Effective To';
+  approvedBy      @title: 'Approved By';
+  legalReference  @title: 'Legal Reference';
+};
+
+annotate AdminService.BridgeRestrictionProvisions with @(
+  Capabilities.InsertRestrictions.Insertable: true,
+  Capabilities.UpdateRestrictions.Updatable : true,
+  Capabilities.DeleteRestrictions.Deletable : true,
+  UI: {
+    HeaderInfo: { TypeName: 'Provision', TypeNamePlural: 'Provisions',
+                  Title: { Value: provisionNumber }, Description: { Value: provisionType } },
+    LineItem: [
+      { Value: provisionNumber, Label: 'No.' },
+      { Value: provisionType,   Label: 'Type' },
+      { Value: provisionText,   Label: 'Provision Text' },
+      { Value: vehicleClasses,  Label: 'Vehicle Classes' },
+      { Value: effectiveFrom,   Label: 'From' },
+      { Value: effectiveTo,     Label: 'To' },
+    ],
+    Facets: [
+      { $Type: 'UI.ReferenceFacet', Label: 'Provision Details', Target: '@UI.FieldGroup#BrProvDetails' }
+    ],
+    FieldGroup#BrProvDetails: { Data: [
+      { Value: provisionNumber },
+      { Value: provisionType },
+      { Value: provisionText },
+      { Value: vehicleClasses },
+      { Value: timeOfDay },
+      { Value: seasonalPeriod },
+      { Value: effectiveFrom },
+      { Value: effectiveTo },
+      { Value: approvedBy },
+      { Value: legalReference },
+    ]},
+  }
+);
+

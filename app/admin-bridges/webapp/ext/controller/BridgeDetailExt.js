@@ -247,6 +247,15 @@ sap.ui.define([
         var isExecutive = this._scopes.includes("executive_view");
         this._hideSections(this._scopes, isExecutive);
       }
+      // Boot the custom attributes module — core:require timing is unreliable in FE4 fragments
+      sap.ui.require(
+        ["BridgeManagement/adminbridges/ext/controller/CustomAttributesInit"],
+        function (CAInit) {
+          if (CAInit && typeof CAInit.onContextChange === "function") {
+            CAInit.onContextChange();
+          }
+        }
+      );
     }
   });
 });

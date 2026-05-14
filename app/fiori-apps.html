@@ -26,7 +26,8 @@
         }
       },
       bootstrapConfig: {
-        "mergeApplications": false
+        "mergeApplications": false,
+        "mergeCatalogs": false
       },
       services: {
         LaunchPage: {
@@ -58,7 +59,8 @@
                     { id: "RiskAssessments",     tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Risk Assessments",        subtitle: "Risk Register & Treatment",    icon: "sap-icon://business-objects-experience", targetURL: "#Bridges-manage&/BridgeRiskAssessments" } },
                     { id: "NhvrRouteAssessments",tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "NHVR Route Assessments",  subtitle: "Heavy Vehicle Route Approvals", icon: "sap-icon://map",                 targetURL: "#Bridges-manage&/NhvrRouteAssessments" } },
                     { id: "LoadRatingCerts",     tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Load Rating Certificates", subtitle: "Issued Certificates",         icon: "sap-icon://document-text",        targetURL: "#Bridges-manage&/LoadRatingCertificates" } },
-                    { id: "Permits",             tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Permits",                subtitle: "Permit Applications",          icon: "sap-icon://to-be-reviewed",       targetURL: "#Bridges-manage&/BridgePermits" } }
+                    { id: "Permits",             tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Permits",                subtitle: "Permit Applications",          icon: "sap-icon://to-be-reviewed",       targetURL: "#Bridges-manage&/BridgePermits" } },
+                    { id: "WorkOrdersTile",      tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Work Orders",             subtitle: "Maintenance Action Register",  icon: "sap-icon://tools-opportunity",    targetURL: "#Maintenance-manage" } }
                   ]
                 },
                 {
@@ -103,7 +105,8 @@
                 "NhvrRouteAssessments-manage":{ semanticObject: "NhvrRouteAssessments",action: "manage", title: "NHVR Route Assessments",  signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "NhvrRouteAssessments" } },
                 "LoadRatingCerts-manage":     { semanticObject: "LoadRatingCerts",     action: "manage", title: "Load Rating Certificates", signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "LoadRatingCertificates" } },
                 "Permits-manage":             { semanticObject: "Permits",             action: "manage", title: "Permits",                signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgePermits" } },
-                "AssetIQ-display":            { semanticObject: "AssetIQ",             action: "display", title: "AssetIQ Risk Intelligence", signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "AssetIQScores" } }
+                "AssetIQ-display":            { semanticObject: "AssetIQ",             action: "display", title: "AssetIQ Risk Intelligence", signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "AssetIQScores" } },
+                "Maintenance-manage":         { semanticObject: "Maintenance",         action: "manage",  title: "Work Orders",               signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "&/WorkOrdersList" } }
               }
             }
           }
@@ -115,10 +118,25 @@
   <script>
     (function() {
       var cfg = window['sap-ushell-config'];
-      var myGroups = cfg.services.LaunchPage.adapter.config.groups;
-      Object.defineProperty(cfg.services.LaunchPage.adapter.config, 'groups', {
+      var launchCfg = cfg.services.LaunchPage.adapter.config;
+
+      var myGroups = launchCfg.groups;
+      Object.defineProperty(launchCfg, 'groups', {
         get: function() { return myGroups; },
-        set: function() { /* ignore sandbox.js overwrite attempts */ },
+        set: function() {},
+        configurable: false
+      });
+
+      var myCatalogs = [];
+      Object.defineProperty(launchCfg, 'catalogs', {
+        get: function() { return myCatalogs; },
+        set: function() {},
+        configurable: false
+      });
+
+      Object.defineProperty(cfg, 'catalogueEntries', {
+        get: function() { return []; },
+        set: function() {},
         configurable: false
       });
     })();

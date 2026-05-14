@@ -43,6 +43,20 @@
                         showIcon="true"
                         enableFormattedText="false"
                         class="sapUiSmallMarginTop" />
+                      <VBox class="sapUiSmallMarginTop">
+                        <Label text="{i18n>uploadModeLabel}" class="sapUiTinyMarginBottom" />
+                        <RadioButtonGroup id="uploadModeGroup" columns="3" select=".onModeChange" selectedIndex="{view>/uploadModeIndex}">
+                          <RadioButton id="modeUpsert"  text="{i18n>uploadModeUpsert}"  tooltip="{i18n>uploadModeUpsertDesc}" />
+                          <RadioButton id="modeCreate"  text="{i18n>uploadModeCreate}"  tooltip="{i18n>uploadModeCreateDesc}" />
+                          <RadioButton id="modeUpdate"  text="{i18n>uploadModeUpdate}"  tooltip="{i18n>uploadModeUpdateDesc}" />
+                        </RadioButtonGroup>
+                        <MessageStrip
+                          text="{view>/uploadModeDescription}"
+                          type="Information"
+                          showIcon="true"
+                          visible="{= !!${view>/uploadModeDescription} }"
+                          class="sapUiTinyMarginTop" />
+                      </VBox>
                       <Panel
                         headerText="{i18n>templateRulesTitle}"
                         expandable="true"
@@ -171,6 +185,17 @@
                         showIcon="true"
                         enableFormattedText="false"
                         class="sapUiSmallMarginBottom" />
+                      <HBox
+                        visible="{view>/hasUploadResults}"
+                        wrap="Wrap"
+                        class="sapUiSmallMarginBottom sapUiSmallMarginTop">
+                        <ObjectStatus title="Processed" text="{view>/uploadKpis/processed}" state="None" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Created" text="{view>/uploadKpis/created}" state="Success" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Updated" text="{view>/uploadKpis/updated}" state="Warning" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Deleted" text="{view>/uploadKpis/deleted}" state="Information" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Errors" text="{view>/uploadKpis/errors}" state="{= ${view>/uploadKpis/errors} > 0 ? 'Error' : 'None'}" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Warnings" text="{view>/uploadKpis/warnings}" state="{= ${view>/uploadKpis/warnings} > 0 ? 'Warning' : 'None'}" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                      </HBox>
                       <Table
                         id="summaryTable"
                         items="{view>/uploadSummaries}"
@@ -188,6 +213,7 @@
                           <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColProcessed}" /></Column>
                           <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColInserted}" /></Column>
                           <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColUpdated}" /></Column>
+                          <Column hAlign="End" width="6rem"><Text text="Errors" /></Column>
                         </columns>
                         <items>
                           <ColumnListItem>
@@ -196,6 +222,7 @@
                               <Text text="{view>processed}" />
                               <ObjectStatus text="{view>inserted}" state="Success" />
                               <ObjectStatus text="{view>updated}" state="Warning" />
+                              <ObjectStatus text="{view>errors}" state="{= ${view>errors} > 0 ? 'Error' : 'None'}" />
                             </cells>
                           </ColumnListItem>
                         </items>
@@ -208,6 +235,41 @@
                           </items>
                         </List>
                       </VBox>
+                      <Panel
+                        expandable="true"
+                        expanded="true"
+                        visible="{view>/hasRowResults}"
+                        class="sapUiSmallMarginTop">
+                        <headerToolbar>
+                          <Toolbar>
+                            <Title text="Row-Level Results" level="H3" />
+                            <ToolbarSpacer />
+                            <Button text="Export Row Results to CSV" icon="sap-icon://download" press=".onExportRowResults" type="Transparent" />
+                          </Toolbar>
+                        </headerToolbar>
+                        <Table items="{view>/rowResults}" growing="true" growingThreshold="20" mode="None">
+                          <columns>
+                            <Column width="4rem"><Text text="Row" /></Column>
+                            <Column width="9rem"><Text text="Dataset" /></Column>
+                            <Column width="7rem"><Text text="Status" /></Column>
+                            <Column width="7rem"><Text text="Action" /></Column>
+                            <Column width="10rem"><Text text="Record Key" /></Column>
+                            <Column><Text text="Message" /></Column>
+                          </columns>
+                          <items>
+                            <ColumnListItem>
+                              <cells>
+                                <Text text="{view>rowNum}" />
+                                <Text text="{view>datasetLabel}" />
+                                <ObjectStatus text="{view>status}" state="{view>statusState}" />
+                                <Text text="{view>action}" />
+                                <Text text="{view>key}" wrapping="false" />
+                                <Text text="{view>message}" wrapping="true" />
+                              </cells>
+                            </ColumnListItem>
+                          </items>
+                        </Table>
+                      </Panel>
                       <HBox class="sapUiSmallMarginTop" justifyContent="End">
                         <Button text="{i18n>uploadAnotherButton}" icon="sap-icon://refresh" press=".onUploadAnother" visible="{view>/hasUploadResults}" />
                       </HBox>
@@ -253,6 +315,7 @@
                       <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColInserted}" /></Column>
                       <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColUpdated}" /></Column>
                       <Column width="9rem"><Text text="{i18n>historyColStatus}" /></Column>
+                      <Column width="6rem" hAlign="Center"><Text text="Report" /></Column>
                     </columns>
                     <items>
                       <ColumnListItem>
@@ -264,6 +327,9 @@
                           <ObjectStatus text="{view>inserted}" state="Success" />
                           <ObjectStatus text="{view>updated}" state="Warning" />
                           <ObjectStatus text="{view>statusLabel}" state="{view>statusState}" />
+                          <Button icon="sap-icon://download" type="Transparent" tooltip="Download CSV report"
+                                  press=".onDownloadSessionReport"
+                                  visible="{= !!${view>reportUrl} }" />
                         </cells>
                       </ColumnListItem>
                     </items>
@@ -325,6 +391,92 @@
                           <ObjectStatus text="{view>inserted}" state="Success" />
                           <ObjectStatus text="{view>updated}" state="Warning" />
                           <ObjectStatus text="{view>statusLabel}" state="{view>statusState}" />
+                        </cells>
+                      </ColumnListItem>
+                    </items>
+                  </Table>
+                </VBox>
+              </IconTabFilter>
+
+              <IconTabFilter id="tabRegister" key="register" text="{i18n>tabRegister}" icon="sap-icon://database">
+                <VBox class="sapUiSmallMargin">
+                  <MessageStrip
+                    text="Search existing records, slice and dice the data, then export as CSV for direct update upload."
+                    type="Information" showIcon="true" class="sapUiSmallMarginBottom" />
+                  <HBox alignItems="End" wrap="Wrap" class="sapUiSmallMarginBottom">
+                    <VBox class="sapUiSmallMarginEnd">
+                      <Label text="{i18n>registerDatasetLabel}" class="sapUiTinyMarginBottom" />
+                      <Select id="registerDatasetSelect" width="16rem" selectedKey="{view>/registerDataset}"
+                              change=".onRegisterDatasetChange"
+                              items="{view>/registerDatasets}">
+                        <core:Item key="{view>name}" text="{view>label}" />
+                      </Select>
+                    </VBox>
+                    <VBox class="sapUiSmallMarginEnd">
+                      <Label text="{i18n>registerBridgeRefLabel}" class="sapUiTinyMarginBottom" />
+                      <Input id="registerBridgeFilter" value="{view>/registerBridgeRef}"
+                             placeholder="e.g. NSW-001" width="12rem"
+                             submit=".onRegisterSearch" />
+                    </VBox>
+                    <VBox class="sapUiSmallMarginEnd">
+                      <Label text="{i18n>registerStatusLabel}" class="sapUiTinyMarginBottom" />
+                      <Input id="registerStatusFilter" value="{view>/registerStatus}"
+                             placeholder="e.g. Active, Draft" width="12rem"
+                             submit=".onRegisterSearch" />
+                    </VBox>
+                    <VBox class="sapUiSmallMarginEnd">
+                      <Label text="{i18n>registerActiveLabel}" class="sapUiTinyMarginBottom" />
+                      <Select id="registerActiveFilter" width="10rem" selectedKey="{view>/registerActive}">
+                        <core:Item key="" text="{i18n>registerActiveAll}" />
+                        <core:Item key="true" text="{i18n>registerActiveOnly}" />
+                        <core:Item key="false" text="{i18n>registerInactiveOnly}" />
+                      </Select>
+                    </VBox>
+                    <Button text="{i18n>registerSearch}" icon="sap-icon://search"
+                            type="Emphasized" press=".onRegisterSearch"
+                            class="sapUiSmallMarginEnd sapUiSmallMarginBottom" />
+                  </HBox>
+                  <HBox class="sapUiSmallMarginBottom" alignItems="Center">
+                    <ObjectStatus
+                      title="{i18n>registerColTotal}" text="{view>/registerTotal}"
+                      state="None" class="sapUiSmallMarginEnd" />
+                    <ObjectStatus
+                      title="{i18n>registerColShowing}" text="{view>/registerShowing}"
+                      state="None" class="sapUiSmallMarginEnd" />
+                    <ToolbarSpacer />
+                    <Button text="{i18n>registerExportCsv}" icon="sap-icon://download"
+                            press=".onRegisterExport" type="Transparent"
+                            enabled="{= ${view>/registerTotal} > 0 }"
+                            class="sapUiSmallMarginEnd" />
+                    <Button text="{i18n>registerDownloadUpdateTemplate}" icon="sap-icon://edit"
+                            press=".onRegisterDownloadForUpdate" type="Transparent"
+                            tooltip="Download these records as a CSV pre-filled for Update mode upload"
+                            enabled="{= ${view>/registerTotal} > 0 }" />
+                  </HBox>
+                  <Table id="registerTable" items="{view>/registerRows}" growing="true"
+                         growingThreshold="50" mode="None"
+                         noDataText="{i18n>registerNoData}" busy="{view>/registerBusy}">
+                    <headerToolbar>
+                      <OverflowToolbar>
+                        <Title text="{i18n>registerTableTitle}" level="H2" />
+                      </OverflowToolbar>
+                    </headerToolbar>
+                    <columns>
+                      <Column><Text text="Key" /></Column>
+                      <Column><Text text="Bridge" /></Column>
+                      <Column><Text text="Status / State" /></Column>
+                      <Column><Text text="Date" /></Column>
+                      <Column><Text text="Active" /></Column>
+                    </columns>
+                    <items>
+                      <ColumnListItem>
+                        <cells>
+                          <Text text="{view>_key}" />
+                          <Text text="{view>bridgeRef}" />
+                          <Text text="{view>_status}" />
+                          <Text text="{view>_date}" />
+                          <ObjectStatus text="{= ${view>active} === false || ${view>isActive} === false ? 'Inactive' : 'Active' }"
+                                        state="{= ${view>active} === false || ${view>isActive} === false ? 'Error' : 'Success' }" />
                         </cells>
                       </ColumnListItem>
                     </items>

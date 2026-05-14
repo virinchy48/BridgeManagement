@@ -259,6 +259,16 @@
           "pattern": "BridgeDefects({key}):?query:",
           "name": "BridgeDefectsObjectPage",
           "target": "BridgeDefectsObjectPage"
+        },
+        {
+          "pattern": "WorkOrdersList",
+          "name": "WorkOrdersList",
+          "target": "WorkOrdersList"
+        },
+        {
+          "pattern": "WorkOrdersList/{key}:?query:",
+          "name": "WorkOrdersObjectPage",
+          "target": "WorkOrdersObjectPage"
         }
       ],
       "targets": {
@@ -517,7 +527,7 @@
                 "header": {
                   "actions": {
                     "captureConditionAction": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.CaptureCondition.onCaptureConditionOpen",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onCaptureConditionOpen",
                       "text": "Inspect Now",
                       "enabled": true,
                       "requiresSelection": false,
@@ -539,13 +549,21 @@
                     },
                     "exportCardAction": {
                       "text": "Export Card",
-                      "press": "BridgeManagement.adminbridges.ext.controller.CaptureCondition.onExportCard",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onExportCard",
                       "enabled": true
                     }
                   }
                 },
                 "body": {
                   "sections": {
+                    "customAttributesSection": {
+                      "template": "BridgeManagement.adminbridges.ext.fragment.CustomAttributes",
+                      "title": "Custom Attributes",
+                      "position": {
+                        "placement": "Before",
+                        "anchor": "Administration"
+                      }
+                    },
                     "attachmentsSection": {
                       "template": "BridgeManagement.adminbridges.ext.fragment.Attachments",
                       "title": "Documents & Attachments",
@@ -971,7 +989,22 @@
           "options": {
             "settings": {
               "entitySet": "BridgeInspections",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "content": {
+                "header": {
+                  "actions": {
+                    "batchElements": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeInspectionsExt.onOpenBatchElementEntry",
+                      "text": "Add Elements",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "type": "Emphasized"
+                    }
+                  }
+                }
+              },
+              "controllerName": "BridgeManagement.adminbridges.ext.controller.BridgeInspectionsExt"
             }
           }
         },
@@ -1089,6 +1122,30 @@
             "settings": {
               "entitySet": "BridgeDefects",
               "editableHeaderContent": false
+            }
+          }
+        },
+        "WorkOrdersList": {
+          "type": "Component",
+          "id": "WorkOrdersList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeMaintenanceActions",
+              "variantManagement": "Page",
+              "initialLoad": true,
+              "title": "Work Orders"
+            }
+          }
+        },
+        "WorkOrdersObjectPage": {
+          "type": "Component",
+          "id": "WorkOrdersObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "entitySet": "BridgeMaintenanceActions",
+              "title": "Work Order"
             }
           }
         }
