@@ -24,10 +24,36 @@ assets, restrictions, inspections, and NHVR heavy-vehicle approvals across Austr
 
 ## Git workflow
 
-- **Working branch: `draftv5`** — all development goes here, never directly to `main`
-- Always `git pull --rebase origin draftv5` before starting work
-- Never commit to `main` or any other branch without explicit instruction
+- **Working branch: `main`** — all development goes here; consolidated from draftv8-btp-sid
+- Always `git pull --rebase origin main` before starting work
 - Never mix changes from other projects into commits here
+
+### End-of-session cleanup (mandatory)
+
+After every Claude Code session, run these commands before closing the terminal:
+
+```bash
+cd "/Users/siddharthaampolu/39 18042026"
+
+# 1. Push all commits to remote
+git push origin main
+
+# 2. Remove any Claude worktrees created during the session
+git worktree list   # identify any .claude/worktrees/* entries
+# For each one:
+git worktree remove --force ".claude/worktrees/<name>"
+
+# 3. Delete the corresponding local branches
+git branch | grep "claude/"   # list them
+git branch -D claude/<name>   # delete each one
+
+# 4. Confirm clean state
+git worktree list   # only main repo should remain
+git branch          # only * main should remain
+git status          # should be clean
+```
+
+**Why:** Claude automatically creates isolated worktrees for each session. If not removed, they accumulate as stale copies that diverge from `main`, cause confusion about which files are current, and leave orphaned branches. The work is always merged to `main` before the session ends — the worktree branches are safe to delete.
 - Push with `git push origin draftv5`
 
 ---
