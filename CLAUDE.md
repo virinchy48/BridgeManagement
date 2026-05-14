@@ -951,6 +951,16 @@ Applied: CaptureCondition.js getView() function + BridgeDetailExt.js _viewFromRe
 
 ---
 
+[2026-05-14] [Schema / Closure Architecture] Learning: Bridge closures are mastered by the standalone `bridge.management.Restrictions` entity — NOT directly on `bridge.management.Bridges`. Pattern (Option C): Restrictions has `closureStartDate/closureEndDate/closureType` fields and a `ClosureTypes` lookup. Bridge has `virtual activeClosureCount : Integer default 0` computed in `after('READ', Bridges)` via a batch GROUP BY on Restrictions. Bridge `postingStatus` auto-syncs to 'Closed'/'Posted'/'Unrestricted' via `syncBridgeClosureStatus(bridgeId)` — a helper called from `after(['CREATE','UPDATE'], Restrictions)` AND from `on('deactivate')` / `on('reactivate')` Restrictions handlers. The Bridge entity must NOT store closure dates — use the Restrictions register as the single source of truth. Reports query Restrictions directly with `closureType IS NOT NULL` filter.
+Source: UAT 2026-05-14 — closure architecture design decision
+Applied: db/schema.cds (closureStartDate/closureEndDate/closureType on Restrictions + ClosureTypes entity), db/schema/bridge-entity.cds (removed closureDate/closureReason, added virtual activeClosureCount), srv/admin-service.js (syncBridgeClosureStatus + after hooks), app/admin-bridges/fiori-service.cds (FieldGroup#Closure shows postingStatus/activeClosureCount), app/restrictions/fiori-service.cds (FieldGroup#RstClosure), srv/reports-api.js (/bridge-closures endpoint), NetworkReports.controller.js + .view.xml (Bridge Closures tab)
+
+[2026-05-14] [FE4 / Custom Actions] Learning: To REMOVE a custom action button from Bridge Details ObjectPage header, delete its entry from `content.header.actions` array in the BridgesDetails routing target in `app/admin-bridges/webapp/manifest.json`. The corresponding method in `BridgeDetailExt.js` can remain (dead code is harmless) — only the manifest entry controls whether the button appears. Remove BOTH the manifest entry AND the method if the feature is permanently removed.
+Source: Remove "Create Work Order" and "Export Card" buttons per user request
+Applied: manifest.json — removed createWorkOrderAction and exportCardAction
+
+---
+
 ## Contributing to this file
 
 If you discover a new convention, fix a recurring mistake, or learn something about the
