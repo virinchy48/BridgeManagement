@@ -15,7 +15,7 @@ sap.ui.define(["sap/m/MessageToast"], function (MessageToast) {
       if (router) {
         router.navTo("NetworkReports");
       } else {
-        window.location.hash = "Bridges-manage&/NetworkReports";
+        window.location.hash = "#NetworkReports";
       }
     },
 
