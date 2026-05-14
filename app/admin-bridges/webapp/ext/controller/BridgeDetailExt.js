@@ -1,10 +1,10 @@
 sap.ui.define([
   "sap/ui/model/json/JSONModel",
   "sap/m/MessageToast",
+  "sap/m/MessageBox",
   "BridgeManagement/adminbridges/ext/controller/CaptureCondition",
-  "BridgeManagement/adminbridges/ext/controller/RiskAssessmentsExt",
-  "BridgeManagement/adminbridges/ext/controller/BridgeInspectionsExt"
-], function (JSONModel, MessageToast, CaptureCondition, RiskAssessmentsExt, BridgeInspectionsExt) {
+  "BridgeManagement/adminbridges/ext/controller/RiskAssessmentsExt"
+], function (JSONModel, MessageToast, MessageBox, CaptureCondition, RiskAssessmentsExt) {
   "use strict";
 
   var XSAPPNAME = "bridge-management";
@@ -237,6 +237,76 @@ sap.ui.define([
       }).catch(function () {
         MessageToast.show("Could not start new inspection");
       });
+    },
+
+    onUploadDocument: function (oEvent) {
+      var oView = _getView(oEvent);
+      var oCtx = oView && oView.getBindingContext();
+      if (!oCtx) {
+        // fallback: walk component registry for ObjectPage context
+        var comps = sap.ui.core.Component.registry.all();
+        var keys = Object.keys(comps);
+        for (var i = 0; i < keys.length; i++) {
+          var c = comps[keys[i]];
+          if (c.getMetadata && c.getMetadata().getName() === "sap.fe.templates.ObjectPage.Component") {
+            var root = c.getRootControl && c.getRootControl();
+            if (root) { oCtx = root.getBindingContext && root.getBindingContext(); }
+            if (oCtx) break;
+          }
+        }
+      }
+      if (!oCtx) { MessageToast.show("No record loaded — save the record before uploading documents."); return; }
+
+      var entityId  = oCtx.getProperty("ID");
+      var bridge_ID = oCtx.getProperty("bridge_ID") || null;
+      var path = oCtx.getPath ? oCtx.getPath() : "";
+      var linkedEntity = path.indexOf("BridgeDefects") !== -1 ? "BridgeDefects" : "BridgeInspections";
+
+      if (!entityId) { MessageToast.show("Record ID not available — activate the draft first."); return; }
+
+      var input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip";
+      input.style.display = "none";
+      document.body.appendChild(input);
+
+      var self = this;
+      input.addEventListener("change", function () {
+        var file = input.files && input.files[0];
+        document.body.removeChild(input);
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function (e) {
+          var b64 = e.target.result.split(",")[1];
+          fetch("/admin-bridges/api/documents", {
+            method: "HEAD", credentials: "include",
+            headers: { "X-CSRF-Token": "Fetch" }
+          }).then(function (r) {
+            return r.headers.get("x-csrf-token") || "bms-csrf-v1";
+          }).then(function (token) {
+            return fetch("/admin-bridges/api/documents", {
+              method: "POST", credentials: "include",
+              headers: { "Content-Type": "application/json", "X-CSRF-Token": token },
+              body: JSON.stringify({
+                linkedEntity: linkedEntity, linkedEntityId: entityId,
+                bridge_ID: bridge_ID,
+                title: file.name, fileName: file.name,
+                mediaType: file.type || "application/octet-stream",
+                documentType: "Other", contentBase64: b64
+              })
+            });
+          }).then(function (r) { return r.json(); }).then(function (result) {
+            if (result.error) { MessageBox.error("Upload failed: " + result.error); return; }
+            MessageToast.show("Document uploaded: " + file.name);
+            var model = oView && oView.getModel();
+            if (model && model.refresh) model.refresh();
+          }).catch(function (err) {
+            MessageBox.error("Upload error: " + (err.message || "Unknown error"));
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+      input.click();
     },
 
     onOpenBatchElementEntry: function () {

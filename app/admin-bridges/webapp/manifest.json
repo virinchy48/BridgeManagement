@@ -986,6 +986,13 @@
               "content": {
                 "header": {
                   "actions": {
+                    "uploadDocument": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onUploadDocument",
+                      "text": "Upload Document",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false
+                    },
                     "batchElements": {
                       "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onOpenBatchElementEntry",
                       "text": "Add Elements",
@@ -1112,7 +1119,20 @@
           "options": {
             "settings": {
               "entitySet": "BridgeDefects",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "content": {
+                "header": {
+                  "actions": {
+                    "uploadDocument": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onUploadDocument",
+                      "text": "Upload Document",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false
+                    }
+                  }
+                }
+              }
             }
           }
         },

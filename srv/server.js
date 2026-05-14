@@ -2397,6 +2397,99 @@ cds.on('bootstrap', (app) => {
     }
   })
 
+  // ── Per-entity document upload (Inspections, Defects) ────────────────────
+  const ALLOWED_LINKED_ENTITIES = new Set(['BridgeInspections', 'BridgeDefects', 'Bridges'])
+
+  adminBridgeRouter.head('/documents', (req, res) => {
+    res.setHeader('x-csrf-token', 'bms-csrf-v1')
+    res.status(204).end()
+  })
+
+  adminBridgeRouter.get('/documents', async (req, res) => {
+    try {
+      const { linkedEntity, linkedEntityId } = req.query
+      if (!linkedEntity || !linkedEntityId) {
+        return res.status(400).json({ error: 'linkedEntity and linkedEntityId are required' })
+      }
+      if (!ALLOWED_LINKED_ENTITIES.has(linkedEntity)) {
+        return res.status(400).json({ error: 'Invalid linkedEntity' })
+      }
+      const db = await cds.connect.to('db')
+      const rows = await db.run(
+        SELECT.from('bridge.management.BridgeDocuments')
+          .columns('ID', 'title', 'fileName', 'mediaType', 'fileSize', 'documentType', 'linkedEntity', 'linkedEntityId', 'createdAt', 'createdBy')
+          .where({ linkedEntity, linkedEntityId, active: true })
+          .orderBy('createdAt desc')
+      )
+      res.json({ documents: rows || [] })
+    } catch (err) {
+      res.status(500).json({ error: err.message || 'Failed to load documents' })
+    }
+  })
+
+  adminBridgeRouter.post('/documents', async (req, res) => {
+    try {
+      const { linkedEntity, linkedEntityId, bridge_ID, title, fileName, mediaType, documentType, contentBase64 } = req.body || {}
+      if (!linkedEntity || !linkedEntityId || !contentBase64) {
+        return res.status(400).json({ error: 'linkedEntity, linkedEntityId and contentBase64 are required' })
+      }
+      if (!ALLOWED_LINKED_ENTITIES.has(linkedEntity)) {
+        return res.status(400).json({ error: 'Invalid linkedEntity' })
+      }
+      const content = Buffer.from(contentBase64, 'base64')
+      const db = await cds.connect.to('db')
+      const entry = {
+        ID: cds.utils.uuid(),
+        linkedEntity,
+        linkedEntityId,
+        bridge_ID: bridge_ID || null,
+        title: title || fileName || 'Document',
+        fileName: fileName || 'document',
+        mediaType: mediaType || 'application/octet-stream',
+        fileSize: content.length,
+        documentType: documentType || 'Other',
+        content,
+        active: true
+      }
+      await db.run(INSERT.into('bridge.management.BridgeDocuments').entries(entry))
+      res.status(201).json({ ID: entry.ID, title: entry.title, fileName: entry.fileName })
+    } catch (err) {
+      res.status(500).json({ error: err.message || 'Upload failed' })
+    }
+  })
+
+  adminBridgeRouter.get('/documents/:docId/content', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      const row = await db.run(
+        SELECT.one.from('bridge.management.BridgeDocuments')
+          .columns('content', 'fileName', 'mediaType')
+          .where({ ID: req.params.docId, active: true })
+      )
+      if (!row) return res.status(404).json({ error: 'Document not found' })
+      const buf = Buffer.isBuffer(row.content) ? row.content : Buffer.from(row.content)
+      res.setHeader('Content-Type', row.mediaType || 'application/octet-stream')
+      res.setHeader('Content-Disposition', `attachment; filename="${row.fileName || 'document'}"`)
+      res.send(buf)
+    } catch (err) {
+      res.status(500).json({ error: err.message || 'Download failed' })
+    }
+  })
+
+  adminBridgeRouter.delete('/documents/:docId', async (req, res) => {
+    try {
+      const db = await cds.connect.to('db')
+      await db.run(
+        UPDATE('bridge.management.BridgeDocuments')
+          .set({ active: false })
+          .where({ ID: req.params.docId })
+      )
+      res.status(204).end()
+    } catch (err) {
+      res.status(500).json({ error: err.message || 'Delete failed' })
+    }
+  })
+
   app.use('/admin-bridges/api', requiresAuthentication, requireScope('admin', 'manage', 'inspect'), validateCsrfToken, adminBridgeRouter)
 
   // ── BNAC Integration Config ─────────────────────────────────────────────

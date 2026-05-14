@@ -1736,6 +1736,10 @@ annotate AdminService.BridgeDocuments with @(
       {Value: documentDate,    Label: 'Date'},
       {Value: expiryDate,      Label: 'Expiry'},
       {Value: referenceNumber, Label: 'Reference'},
+      {$Type: 'UI.DataFieldWithUrl',
+       Label: 'Download',
+       Value: fileName,
+       Url: { $edmJson: { $Apply: ['/admin-bridges/api/documents/', { $Path: 'ID' }, '/content'], $Function: 'odata.concat' } }},
     ],
     Facets: [
       {$Type: 'UI.ReferenceFacet', Label: 'Attachment Details', Target: '@UI.FieldGroup#AttachmentDetails'}
