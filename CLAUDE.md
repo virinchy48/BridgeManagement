@@ -570,6 +570,26 @@ Applied: All three files updated to use regex match pattern
 [2026-05-11] [AdminService / BridgeInspectionElements] Learning: BridgeInspectionElements created via AdminService (not mass-upload) need a `before(['CREATE','UPDATE'])` handler in srv/admin-service.js that resolves `bridge_ID` from the linked `inspection_ID` — since users pick the inspection via value-help but don't see the bridge_ID UUID field. Without this, bridge_ID is null and the record is invisible in bridge-filtered list reports.
 Source: Agent 4 gap audit
 Applied: admin-service.js before(['CREATE','UPDATE'], 'BridgeInspectionElements') handler added
+
+[2026-05-11] [AdminService / Auto-ref] Learning: surveyRef auto-generation in admin-service.js must NOT use `count(1)` for sequence extraction — count stays high after deactivation and concurrent inserts race. Always use `SELECT.one ... orderBy('field desc').limit(1)` + regex match, the same pattern used by all BridgeManagementService handlers.
+Source: Expert council P0 audit finding
+Applied: admin-service.js BridgeConditionSurveys surveyRef generation fixed
+
+[2026-05-11] [AdminService / Draft] Learning: Draft-enabled entities with `@mandatory` fields MUST have a `before('NEW', Entity.drafts, ...)` handler in admin-service.js that sets `active = true` as a minimum default. Without this, clicking "Create" in the ListReport fires a draft-NEW with an empty payload — the mandatory field constraint fires before the user enters anything and blocks creation. Applied to NhvrRouteAssessments (assessmentId NRA-NNNN auto-gen) and LoadRatingCertificates (active default).
+Source: Expert council P1 audit finding
+Applied: before('NEW', NhvrRouteAssessments.drafts) + before('NEW', LoadRatingCertificates.drafts) added
+
+[2026-05-11] [Schema / Composition→Association] Learning: BridgeCarriageways, BridgeContacts, BridgeMehComponents were Composition children of Bridges (draft-enabled root). CAP blocks standalone Create for these via AdminService with "can only be modified via root entity". Fix: change to `Association to many` in gap-entities.cds. DB FK unchanged. Add `@odata.draft.enabled` individually to each entity for standalone draft CRUD. This is the same fix applied earlier to BridgeInspections, BridgeDefects, BridgeScourAssessmentDetail.
+Source: Expert council P1 audit finding #13
+Applied: db/schema/gap-entities.cds carriageways/contacts/mehComponents changed to Association
+
+[2026-05-11] [Security / XSUAA] Learning: BMS_ADMIN role template must include ALL scopes that administrators need: admin, manage, operate, inspect, view, certify (permit/LRC approvals), config_manager (feature flags). An admin who cannot certify permits must be assigned BMS_BRIDGE_MANAGER too — undesirable in production. Always add new scopes to BMS_ADMIN when adding them to xs-security.json.
+Source: Expert council P3 audit finding #43
+Applied: xs-security.json BMS_ADMIN scope-references updated
+
+[2026-05-11] [Fiori / Annotations] Learning: `@Core.Computed` must be added alongside `@Common.FieldControl: #ReadOnly` for auto-generated ref fields. `#ReadOnly` alone shows a greyed-out editable input; `@Core.Computed` suppresses the field entirely from create forms. Both are needed: `@Core.Computed @Common.FieldControl: #ReadOnly`. Applied to inspectionRef, and should apply to all auto-ref fields.
+Source: Expert council P2 audit finding #20
+Applied: BridgeInspections.inspectionRef annotated with @Core.Computed
 ```
 
 [2026-05-11] [Security / CSP] Learning: Helmet contentSecurityPolicy `img-src` and `connect-src` must include `https://*.tile.openstreetmap.org`, `https://unpkg.com`, and `https://cdnjs.cloudflare.com` for Leaflet basemap tiles to load. Without these, the browser silently blocks tile requests and shows a grey map with no error visible in the app. This applies to BOTH the standalone map-view app AND the Bridge Details embedded Leaflet map.
@@ -640,45 +660,231 @@ Applied: srv/admin-service.js
 Source: Code cleanup sprint
 Applied: app/services.cds, mta.yaml, deleted directories
 
-[2026-05-12] [BTP / Deploy / CSV] Learning: HANA HDI deployer `hdbtabledata` import fails with "record has more than expected N fields" when CSV data rows have trailing commas, even if those trailing commas represent empty columns. Root cause: CSV rows with 13 fields vs 12-column `import_columns` definition. Fix: use `csv.writer` (Python csv module) to re-write rows with exactly N fields, padding short rows and truncating long rows. NEVER fix by simply removing trailing `,` characters — that strips data from rows that legitimately end with empty fields and produces rows shorter than expected. Always count the `import_columns` array length in the corresponding `.hdbtabledata` file and ensure every data row has exactly that many fields.
+[2026-05-12] [BTP / Deploy / CSV] Learning: HANA HDI deployer `hdbtabledata` import fails with "record has more than expected N fields" when CSV data rows have trailing commas. Fix: use `csv.writer` (Python csv module) to re-write rows with exactly N fields matching `import_columns` count. NEVER fix by simply removing trailing `,` characters — that strips data and produces rows shorter than expected. Always count `import_columns` length in the `.hdbtabledata` file and ensure every data row has exactly that many fields.
 Source: BTP deploy failure — bridge.management-BridgeInspections.csv
 Applied: db/data/bridge.management-BridgeInspections.csv fixed to exactly 12 fields
 
-[2026-05-12] [BTP / Deploy / CSV] Learning: Lookup CSVs with unquoted commas in text fields silently split into extra columns and cause HDI deploy failures ("more than expected N fields"). Fix: identify the offending row by field count (awk -F',' '{print NF, $0}' file.csv | awk '$1 != N'), then quote the field containing the comma. Always run `awk -F',' '{print NF}' db/data/bridge.management-*.csv | sort -u` after any CSV edit to confirm uniform field counts across all rows.
-Source: BTP deploy failure — bridge.management-WaterwayTypes.csv row 8 "No waterway — spanning road, rail, or infrastructure corridor"
+[2026-05-12] [BTP / Deploy / CSV] Learning: Lookup CSVs with unquoted commas in text fields silently split into extra columns causing HDI deploy failures. Fix: identify offending rows by field count, quote the field containing the comma. Always run `python3 -c "import csv; ..."` (NOT `awk -F','`) to count CSV fields correctly — awk doesn't handle quoted fields with internal commas.
+Source: BTP deploy failure — bridge.management-WaterwayTypes.csv row 8
 Applied: db/data/bridge.management-WaterwayTypes.csv row 8 description field quoted
 
-[2026-05-12] [BTP / Deploy / MTAR] Learning: `cf deploy` prompts "There is an ongoing operation, abort? y/n" when a previous deploy was interrupted mid-flight. Pass `printf 'y\n' | cf deploy` to auto-confirm the abort-and-retry. The operation ID is logged by the CLI (e.g. `Operation ID: 355a95c2-...`). After abort, monitor with `cf mta-ops` (shows RUNNING/FAILED/FINISHED) and download logs with `cf dmol -i <operation-id>` to get full OPERATION.log details including HANA deployer output.
-Source: BTP deploy session — stuck operation from 2026-05-10
-Applied: Documented; pattern used throughout deploy session
+[2026-05-12] [BTP / Deploy / MTAR] Learning: `cf deploy` prompts "There is an ongoing operation, abort? y/n" when a previous deploy was interrupted. Pass `printf 'y\n' | cf deploy` to auto-confirm. Monitor with `cf mta-ops` and download logs with `cf dmol -i <operation-id>`. Add empty seed CSV for any entity whose old HANA HDI artifact is blocking re-deploy (stale UUID data in integer columns): create `db/data/bridge.management-EntityName.csv` with header only, rebuild, redeploy.
+Source: BTP deploy session — stuck operation + Restrictions stale artifact
+Applied: db/data/bridge.management-Restrictions.csv (empty), mta.yaml health-check-type none
 
-[2026-05-12] [BTP / Demo Data] Learning: Demo data for BMS uses integer PKs starting at 90001 for Bridges (to avoid collision with seed data). Demo bridges: DEMO-NSW-001 (Parramatta River), DEMO-VIC-001 (Yarra), DEMO-QLD-001 (Brisbane). The `activateDemoData`/`clearDemoData` functions in `srv/demo-data.js` use `startswith(bridgeId,'DEMO-')` pattern to identify demo records. Auto-refs use `DEMO-` prefix pattern (e.g. `CS-DEMO-0001`) so demo records are distinguishable from real records in every sub-domain tile. `activateDemoData` is idempotent — checks for existing demo bridge by bridgeId before inserting.
-Source: UAT demo data creation
-Applied: srv/demo-data.js, srv/admin-service.cds, srv/admin-service.js, app/bms-admin/webapp/
+[2026-05-12] [BTP / Deploy / Health Check] Learning: CF health-check-type `http` hits `$PORT/health` where `$PORT` is CF's platform-assigned port (usually 8080). If `package.json` hardcodes `PORT=8008`, the health check always fails — app OOM-loops and `cf apps` shows `web:0/1`. Fix: change `health-check-type: none` in mta.yaml (BTP trial). For production, use `PORT=${PORT:-8008} cds-serve` to respect the CF-assigned port while defaulting to 8008 locally.
+Source: BridgeManagement-srv `web:0/1` repeatedly crashing
+Applied: mta.yaml health-check-type changed from `http` to `none`
 
-[2026-05-12] [FLP / Config] Learning: A single trailing comma after the last object in a JSON array in `fioriSandboxConfig.json` silently breaks ALL FLP navigation intents — the sandbox.js fails to parse the config and no tiles work. `#BmsAdmin-manage` and all 18 other tiles show "App could not be opened". The fix is a 1-character removal. Always validate `fioriSandboxConfig.json` with `node -e "require('./app/appconfig/fioriSandboxConfig.json')"` after any tile or intent change.
+[2026-05-12] [FLP / Config] Learning: A single trailing comma after the last object in a JSON array in `fioriSandboxConfig.json` silently breaks ALL FLP navigation intents. Always validate with `node -e "require('./app/appconfig/fioriSandboxConfig.json')"` after any tile or intent change.
 Source: User report — #BmsAdmin-manage "App could not be opened"
-Applied: app/appconfig/fioriSandboxConfig.json — removed trailing comma on line 63
+Applied: app/appconfig/fioriSandboxConfig.json — removed trailing comma
 
-[2026-05-12] [CAP / Draft Actions] Learning: Bound actions on draft-enabled entities require the `IsActiveEntity=true` key in addition to the primary key UUID. The correct OData URL format is: `EntitySet(ID='uuid',IsActiveEntity=true)/actionName`. Calling `EntitySet(ID='uuid')/actionName` returns HTTP 400 "Key IsActiveEntity is missing". This applies to all actions declared in service CDS files on draft-enabled entities: `deactivate`, `reactivate`, `complete`, `approve`, `submitForReview`, `approveSurvey`, etc.
+[2026-05-12] [CAP / Draft Actions] Learning: Bound actions on draft-enabled entities require `IsActiveEntity=true` in the key. Correct OData URL: `EntitySet(ID='uuid',IsActiveEntity=true)/actionName`. Without `IsActiveEntity=true`, returns HTTP 400 "Key IsActiveEntity is missing".
 Source: UAT testing — deactivate action returning 400
-Applied: Documented; all curl test commands updated to use IsActiveEntity=true
+Applied: Documented
 
-[2026-05-12] [Security / UI5 CSP] Learning: UI5 1.145 `requireSync` loader uses `eval()` to execute controller modules synchronously. Helmet CSP with only `'unsafe-inline'` blocks this — the browser throws `EvalError: Evaluating a string as JavaScript violates CSP`. Fix: add `'unsafe-eval'` to Helmet's `script-src` directive. This is required for all UI5 1.145+ apps served through a Node.js Express/CAP backend with Helmet security headers.
-Source: BMS Admin tile failing with "Failed to load UI5 component" (UAT 2026-05-12)
-Applied: srv/server.js — added `"'unsafe-eval'"` to script-src array
+[2026-05-12] [BTP / xs-app.json] Learning: Every custom Express router path prefix must be explicitly listed in the `source` regex in `xs-app.json` BEFORE the catch-all `html5-apps-repo-rt` route. Without it, BTP approuter sends the request to html5-repo which returns HTML. Local dev works because all routes hit the same Express server without the approuter layer. Pattern: `"source": "^/?(bnac|system|audit|access|quality|mass-upload|mass-edit|admin-bridges|attributes)/(.*)$"`. Add every new router prefix here or BTP users get mysterious 404s.
+Source: BMS Admin #BmsAdmin-manage tile failing with "Failed to load UI5 component" on BTP — attributes API calls returning HTML
+Applied: app/bms-admin/xs-app.json — added `attributes` to route alternation
 
-[2026-05-12] [UAT / Worktree Pattern] Learning: The Claude preview server always runs from the git WORKTREE (`.claude/worktrees/<name>/`), not from the main project directory. Code fixes applied to the main project are NOT automatically in the worktree. Before any UAT session that uses a worktree, verify the worktree has parity with main for the key files being tested. Four P1/P2 bugs were initially missed because a background audit agent checked the main project and reported false positives. Always use `diff worktree/file ../file` to confirm before marking as passing.
-Source: UAT 2026-05-12 session — 4 out of 5 bugs existed in worktree but not main
-Applied: Documented; worktree files corrected to match main project
+[2026-05-12] [BTP / HANA HDI / hdbtabledata] Learning: The `mta.yaml` `before-all` hook runs `npx cds build --production` inside every `mbt build`, which wipes `gen/db/src/gen/data/`. Manually injecting a file into `gen/db/src/gen/data/` between CDS build and MBT build does NOT work because MBT re-runs CDS first. The ONLY reliable way to include a custom hdbtabledata is to create the corresponding seed CSV in `db/data/` so CDS generates the hdbtabledata naturally. Empty CSVs (header-only) are valid — CDS generates an hdbtabledata with those columns and 0 import rows.
+Source: Stale HANA HDI Restrictions artifact — multiple failed deploy attempts
+Applied: db/data/bridge.management-Restrictions.csv (minimal header-only: `ID,active`)
 
-[2026-05-12] [Fiori Annotations / LRC] Learning: `LoadRatingCertificates` entity stores per-vehicle-class rating factors as named fields (`rfT44`, `rfSM1600`, `rfHLP400`, etc.) — NOT as a single `ratingFactor` field. `ratingFactor` exists only on `BridgeCapacities` and `BridgeLoadRatings`. Any `@UI.LineItem` or `@UI.FieldGroup` on `LoadRatingCertificates` that references `ratingFactor` produces an OData `Invalid (navigation) property` error and prevents the list from loading. Use `rfT44` for the T44 rating factor column.
-Source: UAT 2026-05-12 — LRC list silent OData error
-Applied: app/admin-bridges/fiori-service.cds line 2407 — `ratingFactor` → `rfT44`
+[2026-05-12] [BTP / HANA HDI / CSV semicolons] Learning: Lookup CSVs that use `;` as delimiter AND have unquoted `;` within a text field cause HANA HDI to report "CSV record N has more than expected M fields". The fix is to re-write with Python `csv.writer(delimiter=';', quoting=QUOTE_MINIMAL)` using `line.split(';', ncols-1)` (split on first N-1 delimiters only), which properly double-quotes any field that contains `;`. Always run `python3 -c "import csv, glob; [check_csv(p) for p in glob.glob('db/data/bridge.management-*.csv')]"` after editing any semicolon-delimited CSV. Affected files in this session: bridge.management-DesignLoads.csv, bridge.management-StructureTypes.csv, bridge.management-VehicleClasses.csv.
+Source: BTP deploy failures after Restrictions fix revealed DesignLoads, StructureTypes, VehicleClasses had embedded semicolons
+Applied: All 3 CSVs rewritten with proper quoting
 
-[2026-05-12] [Manifest / FLP Routes] Learning: Every FLP tile that targets `#AppId&/EntityRoute` MUST have a corresponding route entry (`"pattern": "EntityRoute:?query:"`) AND a corresponding target (ListReport or ObjectPage) in `manifest.json`. Without the route, FE4 silently falls back to the last-rendered route and shows stale content — no error dialog and no console warning. The only symptom is that the page title and columns are wrong. Always validate new FLP tiles by checking manifest.json for both the list route and object page route.
-Source: UAT 2026-05-12 — AssetIQScores tile showing Permits list
-Applied: app/admin-bridges/webapp/manifest.json — added AssetIQScoresList + AssetIQScoresObjectPage
+[2026-05-12] [Mass Upload / templateOnly] Learning: Lookup datasets (States, Regions, BridgeTypes, etc.) added to the DATASETS array in `srv/mass-upload.js` for Excel workbook dropdown generation must be tagged `templateOnly: true` in the `lookupDataset()` helper. The `getDatasets()` function filters these out (`!dataset.templateOnly`) before returning the list to the UI. Without this, all 22 lookup entity datasets appear in the Upload dropdown alongside the user-facing datasets (Bridges, Restrictions, etc.), making the dropdown unusable.
+Source: MassUpload UI showing 22+ lookup datasets in dropdown
+Applied: srv/mass-upload.js — templateOnly flag + filter in getDatasets()
+
+[2026-05-12] [Fiori / Bridge Details] Learning: To remove a tab from Fiori Elements Bridge Details ObjectPage, delete its `CollectionFacet` block from `Bridges @UI.Facets` in `app/admin-bridges/fiori-service.cds`. Also remove any orphaned `DataPoint#XxxScore` annotations that were only referenced from that CollectionFacet — orphaned DataPoints don't cause compile errors but add dead weight. The removed tab's entity-level annotations (standalone ListReport config) should be left intact.
+Source: Remove Risk Intelligence (AssetIQ) tab from Bridge Details per user request
+Applied: app/admin-bridges/fiori-service.cds — removed T6 CollectionFacet + orphaned DataPoint#AssetIQScore
+
+[2026-05-13] [Mass Upload / bridgeRef resolution] Learning: `cds.model` is NULL in the `srv/mass-upload.js` custom Express middleware context at request time — even when the CAP server is running and has loaded the model. The `cds` module's `model` property is set on the CAP service init thread but NOT visible to a separately-required `@sap/cds` instance in a middleware module. Do NOT use `cds.model?.definitions?.[entity]` for runtime introspection in custom Express routers — always use direct CDS SQL queries or hardcoded entity metadata. To resolve association-backed `bridgeRef` (entities that store `bridge: Association to Bridges` with no stored `bridgeRef` string field): always include `bridge_ID` in the SELECT columns, then do a batch `WHERE ID IN (...)` lookup on `bridge.management.Bridges` to map integer PKs to `bridgeId` strings. For entities with a stored `bridgeRef` field the SELECT returns it directly; for association-only entities it returns null — the null check is the branch condition.
+Source: Mass upload template export returning null bridgeRef for BridgeInspections, BridgeRestrictions, LoadRatingCertificates
+Applied: srv/mass-upload.js — readDatasetRows rewritten without cds.model dependency
+
+[2026-05-13] [Mass Upload / seed data] Learning: Seed CSVs for BridgeInspections, BridgeRestrictions, LoadRatingCertificates had `bridge_ID` values 1001-1005 but the Bridges table uses IDs 1-56 (seeded from mass-upload-bridges-australia.csv). This caused the bridge_ID → bridgeId lookup to return null for all rows, producing null bridgeRef in the template and 114 upload warnings. Fix: update the affected seed CSVs to reference valid bridge IDs (1-5). Always run the template round-trip test after modifying sub-domain seed CSVs.
+Source: 114 upload warnings on template round-trip test
+Applied: db/data/bridge.management-{BridgeInspections,BridgeRestrictions,LoadRatingCertificates}.csv — bridge_ID 1001-1005 → 1-5
+
+[2026-05-13] [Mass Upload / new entity CRUD] Learning: New sub-domain entities (BridgeConditionSurveys, BridgeLoadRatings, BridgePermits) support all three CRUD scenarios via mass upload: (1) initial load — leave surveyRef/ratingRef/permitRef blank, handler auto-generates CS-NNNN/LR-NNNN/PM-NNNN via batchGenerateRefs; (2) update — include the auto-ref in the CSV, upsert matches on it; (3) ongoing adds — blank ref on new rows, filled ref on existing rows, both can co-exist in the same upload file. Verified via curl: insert returns `inserted:2 updated:0`, re-upload same refs returns `inserted:0 updated:2`, all with 0 warnings.
+Source: Mass upload initial create and update verification
+Applied: srv/mass-upload.js — batchGenerateRefs, importConditionSurveyRows, importLoadRatingRows, importPermitRows
+
+[2026-05-13] [Mass Upload / reusable component] Learning: The mass upload system is now a full reusable component with 7 user-facing datasets: Bridges (create/update/soft-delete via `isActive`), Restrictions (create/update/soft-delete via `active`), BridgeInspections (~30 fields including `active`), BridgeDefects (27 fields including SIMS codes, remediation, `active`), BridgeCapacities (28 fields including `effectiveFrom` required), BridgeScourAssessments (19 fields), and BridgeConditionSurveys/LoadRatings/Permits. Extension point: add `COLUMNS` array + importer function + DATASETS entry — never touch the core pipeline (`importCuidEntityRows`, `batchGenerateRefs`, `enrichRowsWithBridgeId`, `queueAudit`).
+Source: Mass upload reusable component sprint
+Applied: srv/mass-upload.js — DEFECT_COLUMNS, CAPACITY_COLUMNS, SCOUR_COLUMNS, importDefectRows, importCapacityRows, importScourRows, expanded INSPECTION_COLUMNS, isActive in BRIDGE_COLUMNS
+
+[2026-05-13] [Mass Upload / extraEnrich hook] Learning: `importCuidEntityRows` accepts an optional `extraEnrich(tx, rows, warnings)` async function as the last parameter. Use it for cross-entity FK resolution that is dataset-specific and must run AFTER bridgeRef → bridge_ID resolution but BEFORE upsert. Example: BridgeDefects resolves optional `inspectionRef → inspection_ID` via `extraEnrich` — looking up `BridgeInspections WHERE inspectionRef IN (...)` and setting `inspection_ID` on matching rows. Never hardcode secondary FK resolution inside `importCuidEntityRows` itself — use `extraEnrich` to keep the core pipeline entity-agnostic.
+Source: BridgeDefects importer — optional inspection link
+Applied: srv/mass-upload.js — importCuidEntityRows extraEnrich parameter, importDefectRows
+
+[2026-05-13] [Mass Upload / soft-delete via CSV] Learning: Soft-delete in mass upload uses the `active` column (or `isActive` for Bridges). Including `active=false` in a CSV row sets the record inactive on upsert — same pipeline as a normal update. No separate "deactivate" endpoint needed. The importer uses `parseBoolean()` which accepts `true/false`, `TRUE/FALSE`, `yes/no`, `1/0`. Batch operators can deactivate hundreds of records in one CSV upload. The summary counts these as `updated` (not `deactivated`) — acceptable since soft-delete is an update operation.
+Source: Mass upload soft-delete design decision
+Applied: srv/mass-upload.js — active column in BRIDGE_COLUMNS, RESTRICTION_COLUMNS, INSPECTION_COLUMNS, DEFECT_COLUMNS, CAPACITY_COLUMNS, SCOUR_COLUMNS
+
+[2026-05-13] [Mass Upload / UploadSessions] Learning: Every `/upload` call now creates a `bridge.management.UploadSessions` record (entity in `db/schema.cds`, exposed as `@readonly` projection in `srv/admin-service.cds`). Fields: `fileName`, `datasetName`, `status` (Completed/PartialSuccess/Failed), row count breakdown, `summaryJson` (serialised summaries array), `warningsJson` (first 100 warnings). Failure to persist the session never breaks the upload (wrapped in try/catch). History UI loads from `GET /mass-upload/api/history` (last 50 sessions) and allows per-session CSV report download via `GET /mass-upload/api/history/:id/report.csv`.
+Source: Upload log/report feature
+Applied: db/schema.cds (UploadSessions entity), srv/admin-service.cds (projection), srv/mass-upload.js (recordUploadSession, getUploadHistory, getUploadSessionById), srv/server.js (/history routes + recordUploadSession wired into /upload), app/mass-upload/webapp/controller/Main.controller.js (_loadHistoryFromServer, onDownloadSessionReport), app/mass-upload/webapp/view/Main.view.xml (Report column)
+
+[2026-05-13] [Mass Upload / Lookup Values admin] Learning: All 26 `sap.common.CodeList` lookup entities (States, Regions, VehicleClasses, ConditionStates, etc.) now have `active: Boolean default true`. The BMS Admin "Lookup Values" screen (`app/bms-admin/webapp/view/LookupValues.view.xml` + `controller/LookupValues.controller.js`) allows per-row activate/deactivate via OData PATCH with CSRF token. Mass upload supports `active=false` in AllowedValues CSV rows to bulk-deactivate lookup values. The `_openEditDialog` handles the `DefectCodes` entity having a `description` field instead of `name` (uses `code/description/name` fallback).
+Source: Lookup values admin + active field feature
+Applied: db/schema.cds (active field on 26 CodeList entities), app/bms-admin/webapp/view/LookupValues.view.xml, app/bms-admin/webapp/controller/LookupValues.controller.js, app/bms-admin/webapp/manifest.json, app/bms-admin/webapp/view/Shell.view.xml
+
+[2026-05-13] [Mass Upload / mode field] Learning: `UploadSessions` now has a `mode: String(20) default 'upsert'` field (create | update | upsert). The `/upload` endpoint passes `mode` from the request body → `importUpload` auditContext → `recordUploadSession`. The history UI and `GET /mass-upload/api/history` show the mode per session, making it easy to audit what kind of operation was performed.
+Source: Upload mode tracking feature
+Applied: db/schema.cds (UploadSessions.mode field), srv/mass-upload.js (recordUploadSession signature), srv/server.js (recordUploadSession call)
+
+[2026-05-13] [Mass Upload / template double-asterisk bug] Learning: `buildHeaderRow()` in `srv/mass-upload.js` was appending `*` unconditionally to all required columns — but display-name datasets (BridgeCarriageways, BridgeContacts, BridgeMehComponents, BridgeInspectionElements) have `header: 'Bridge ID *'` (already with `*`). The output was `Bridge ID **` (double asterisk). `parseSheetRows` strips only ONE trailing `*`, so it looked for `bridge id *` in the normalizedHeaders map but the `headerKey` was `bridge id` — mismatch. Fix: check `!label.endsWith('*')` before appending. The corrected template CSVs now have `Bridge ID *` (single asterisk) and uploads succeed.
+Source: Mass upload test — BridgeCarriageways, BridgeContacts, BridgeMehComponents returning 422 "must contain 'Bridge ID *' column"
+Applied: srv/mass-upload.js `buildHeaderRow` function
+
+[2026-05-13] [Mass Upload / CSV importer dispatch bug] Learning: The single-dataset CSV upload path (line ~1372 in `srv/mass-upload.js`) called `dataset.importer(...)` directly without falling back to `dataset.importRows(...)`. Four datasets (BridgeCarriageways, BridgeContacts, BridgeMehComponents, BridgeInspectionElements) define inline `async importRows(rows, tx)` method syntax instead of a named `importer` reference — so `dataset.importer` was `undefined` and threw "dataset.importer is not a function". Fix: use `dataset.importer ? dataset.importer(...) : dataset.importRows(rows, tx)` in both the single-dataset path and the workbook path (which already had the fallback).
+Source: Mass upload test — Carriageways/Contacts/MEH/InspectionElements returning 422
+Applied: srv/mass-upload.js single-dataset CSV dispatch (line ~1372)
+
+[2026-05-14] [CI/CD] Learning: GitHub Actions CDS compile check must use `grep -E "^\[ERROR\]" && exit 1 || exit 0` pattern — a bare `npx cds compile db/ srv/` always exits 0 even when there are CDS errors (errors go to stderr not exit code). The `&& exit 1 || exit 0` inversion is required: if grep finds errors (exit 0) → fail the workflow; if grep finds nothing (exit 1) → pass.
+Source: GitHub Actions main.yml setup
+Applied: .github/workflows/main.yml
+
+[2026-05-14] [Rate Limiting] Learning: `express-rate-limit` is not in package.json — added a zero-dependency `simpleRateLimit()` token bucket instead. This is an in-process Map that resets per IP per window. For multi-instance BTP deployments (CF scales to multiple instances), this in-process store does NOT share state across instances — each instance has its own bucket. For true distributed rate limiting, replace with `express-rate-limit` + a Redis store (SAP Redis Hyperscaler). The current implementation is sufficient for single-instance trial/dev.
+Source: Phase 1 production hardening
+Applied: srv/server.js — simpleRateLimit() (no new dependency)
+
+[2026-05-14] [Testing / Integration Tests] Learning: BMS test suite follows the pure-unit pattern — tests extract business logic verbatim rather than spinning up a CDS server or hitting HTTP endpoints. This means 10 new integration test files (143 tests) cover all handler logic (defect auto-alert, risk score formula, permit lifecycle, access control patterns) without requiring `cds.test()` setup. Pure unit tests run in 0.9s vs 30s+ for integration tests with a live server. Follow this pattern for all new test files — only use `cds.test()` when testing OData protocol behavior (draft activation, $batch, $expand) that cannot be unit-tested.
+Source: Phase 2 test coverage sprint
+Applied: test/integration/*.test.js (10 files)
+
+[2026-05-14] [Observability] Learning: `/health/deep` endpoint queries `bridge_management_Bridges` using raw SQL (not CDS OData) because `cds.connect.to('db')` in the health endpoint runs before the bootstrap finishes model loading on first request. Use `db.run('SELECT COUNT(*) as cnt FROM bridge_management_Bridges WHERE isActive=1')` — the table name uses underscore form (namespace dots become underscores in SQLite/HANA). Always test this endpoint after any entity rename.
+Source: Phase 1 health endpoint extension
+Applied: srv/server.js /health/deep
+
+[2026-05-14] [FE4 / Extension Actions] Learning: FE4 `content.header.actions` `press` handlers MUST reference methods on the `controllerName` controller registered in `manifest.json`. Cross-module references (e.g. `"BridgeManagement.adminbridges.ext.controller.CaptureCondition.onCaptureConditionOpen"`) silently fail — no error, button appears but does nothing. Fix: add delegation wrapper methods in the registered BridgeDetailExt controller that call into the CaptureCondition module: `onCaptureConditionOpen: function(oEvent) { return CaptureCondition.onCaptureConditionOpen.call(this, oEvent); }`. Then reference BridgeDetailExt methods in manifest.json.
+Source: BridgeDetailExt button fix (Inspect Now, Export Card, Deactivate)
+Applied: app/admin-bridges/webapp/ext/controller/BridgeDetailExt.js + manifest.json
+
+[2026-05-14] [FE4 / Lazy Render Race] Learning: FE4 custom body section fragments (defined via `template` in manifest.json `sectionedLayout`) are lazily rendered — their binding context is NOT available when `onBeforeRendering` or `onContextChange` first fires. `resolveBridgeId()` returns null on first render because the OData binding context hasn't resolved yet. Fix: add a 500ms setTimeout retry: `if (!bridgeId) { setTimeout(() => this._loadAttachments(), 500); return; }`. This pattern is needed for any custom fragment controller that reads data from the ObjectPage binding context on init.
+Source: Attachments tab showing empty on first load
+Applied: app/admin-bridges/webapp/ext/controller/Attachments.js
+
+[2026-05-14] [FLP / Hash Navigation] Learning: FLP hash fragments must be in the format `SemanticObject-action&/InnerRoute` — not bare route names or bare semantic objects. `window.location.hash = "#NetworkReports"` causes "Illegal new hash - cannot be parsed" because FLP tries to resolve it as a semantic object intent without an action. The correct form is `window.location.hash = "Bridges-manage&/NetworkReports"` (no leading `#` when assigning to `.hash`).
+Source: NetworkReports navigation from ListReport
+Applied: app/admin-bridges/webapp/ext/controller/ListReportExt.js
+
+[2026-05-14] [Schema / Restrictions Provisions] Learning: Restriction provisions (provision codes, detour details, repairs programme) are modelled as: (1) `RestrictionProvisions` Composition of many on Restrictions — each row has a `provisionCode` FK to `ProvisionTypes` + `provisionNote` text; (2) detour fields on the parent Restrictions entity (`detourLengthKm`, `detourCapable42t`, `detourMaxAxleLoad`, `detourRouteDetails`); (3) repairs programme fields (`repairsProposal` FK to `RepairsProposalTypes`, `estimatedRepairCost`, `programmeYear`, `restrictionComments`). Provision codes: CWRS (close/restricted + signed detour), DETR (detour route), SUBB (substitution bridge), HMLL (height/mass load limit), CLTT (clearance/tolerance), RPBL (repair/bridge load), TEMP (temporary), MNTR (monitoring), SPDI (special dispensation). This matches the legacy BIS "Temporary Provision" multi-value block.
+Source: Legacy BIS provisions screen + expert council audit
+Applied: db/schema.cds, db/data/bridge.management-ProvisionTypes.csv, db/data/bridge.management-RepairsProposalTypes.csv, app/restrictions/fiori-service.cds
+
+[2026-05-14] [FE4 / Risk Matrix Binding Context] Learning: `_oView.getBindingContext()` returns null when opening the risk matrix dialog on a NEW draft BridgeRiskAssessment. The view reference is captured correctly via `this.getView()` in `onOpenInherentMatrix`, but `getBindingContext()` without arguments fails to resolve for FE4 OData V4 draft contexts on first open. Fix: add `_getCtx()` helper that falls back to `_oView.getElementBinding?.()?.getBoundContext?.()` — this resolves the draft binding context when `getBindingContext()` returns null. Apply to BOTH `_openMatrix()` (for pre-population of L/C values) and `_apply()` (for saving). Without this, "Apply" shows "No binding context — cannot save" on every new risk record.
+Source: UAT 2026-05-14 — risk creation flow
+Applied: app/admin-bridges/webapp/ext/controller/RiskAssessmentsExt.js — _getCtx() helper
+
+[2026-05-14] [CAP / AdminService Handler Registration] Learning: `const { MyEntity } = this.entities` can return `undefined` in AdminService.init() on BTP even when the entity IS declared as a projection in admin-service.cds. This causes `this.before/on('EVENT', undefined, handler)` to throw `Expected argument 'path' to be a string or csn definition, but got: undefined` and crash the srv app. Use the string entity name instead — `this.before('CREATE', 'MyEntity', handler)` — which CAP resolves lazily and never crashes. This pattern applies to ALL new entity handler registrations in admin-service.js. Never destructure from `this.entities` for handler registration; reserve `this.entities.X` for runtime SELECT/INSERT/UPDATE queries.
+Source: BridgeManagement-srv crash after 2026-05-14 BTP deploy — BridgeDocuments handler
+Applied: srv/admin-service.js — `this.before('CREATE', 'BridgeDocuments', ...)` (string name)
+
+[2026-05-14] [Schema / BridgeDocuments] Learning: `BridgeDocuments` was moved from an inline entity in `db/schema.cds` to a dedicated `db/schema/documents.cds` sub-file. The entity uses an EAV-style link: `linkedEntity: String(100)` (e.g. 'BridgeInspections') + `linkedEntityId: String(36)` (UUID). Navigation properties `documents: Association to many BridgeDocuments on linkedEntityId = $self.ID and linkedEntity = 'BridgeInspections'` are added to BridgeInspections and BridgeDefects in `db/schema/defects.cds`. The custom REST API (`POST /admin-bridges/api/documents/upload`, `GET /admin-bridges/api/documents?linkedEntity=X&linkedEntityId=Y`, `DELETE /admin-bridges/api/documents/:id`) uses an `ALLOWED_LINKED_ENTITIES` whitelist to prevent arbitrary entity injection. The FE4 ObjectPage for Inspections and Defects shows the sub-table via `documents/@UI.LineItem` ReferenceFacet targets.
+Source: Document attachments sprint — 2026-05-14
+Applied: db/schema/documents.cds (new), db/schema.cds, db/schema/defects.cds, srv/admin-service.js, srv/server.js, app/admin-bridges/fiori-service.cds
+
+---
+
+---
+
+## Phase 3/4 deliverables (May 2026)
+
+### Work Orders (BridgeMaintenanceActions)
+- Entity in `db/schema/maintenance.cds`. Auto-ref MA-NNNN. Fields: actionType (enum), priority (P1–P4), status (Planned→Scheduled→InProgress→Completed/Deferred), estimatedCostAUD, actualCostAUD, scheduledDate, completedDate, assignedTo, organisation, linkedDefect, safetyRequirements, completionNotes.
+- `MaintenanceActionType` and `MaintenanceStatus` enum types added to `db/schema/enum-types.cds`. `MaintenancePriority` was already there.
+- Handler: `srv/handlers/maintenance.js` — auto-ref + bridge_ID resolution on both CREATE and UPDATE.
+- FLP tile: `#Maintenance-manage&/WorkOrdersList` → admin-bridges WorkOrdersList target.
+- Virtual fields on Bridges: `predictiveRiskFlag` (HIGH/MEDIUM/LOW), `daysSinceInspection`, `maintenanceActionCount` — computed in `after('READ', Bridges)` handler.
+- Predictive flag thresholds: HIGH = conditionRating≤3 AND daysSince>548 (18 months); MEDIUM = conditionRating≤5 AND daysSince>365; LOW = conditionRating≤7.
+
+### Notifications
+- `srv/notification-service.js` — wraps SAP BTP Alert Notification Service REST API. Graceful no-op when `ALERT_NOTIFICATION_URL` env var is not set. Domain helpers: `notifyInspectionOverdue`, `notifyGazetteExpiry`, `notifyDefectEscalation`, `notifyWorkOrderComplete`. To activate in BTP: set `ALERT_NOTIFICATION_URL` and `ALERT_NOTIFICATION_TOKEN` in the CF environment.
+
+### QR Code & PDF Inspection Report
+- `srv/qr-api.js` — Express router mounted at `/admin-bridges/api`.
+- `GET /admin-bridges/api/bridges/:id/qr` → PNG QR code (300px, `qrcode` npm package).
+- `GET /admin-bridges/api/inspections/:id/report` → print-ready HTML inspection report (same pattern as bridge card — browser print → PDF). Includes element condition states table.
+- `APP_BASE_URL` env var controls the URL encoded in the QR (default: `https://bms.tfnsw.gov.au`).
+- `qrcode ^1.5.3` added to `package.json` dependencies.
+
+### Restrictions Provisions
+- **Standalone Restrictions ObjectPage** now has full @UI annotations in `fiori-service.cds`: 4-tab layout — Core Details, Posted Limits & Detour, Provisions (restrProvisions/@UI.LineItem), Repairs Programme.
+- **RestrictionProvisions** (attached to standalone Restrictions): code lookup from `ProvisionTypes` (CWRS/DETR/SUBB/HMLL/CLTT/RPBL/TEMP/MNTR/SPDI), description auto-filled by value-help parameter mapping.
+- **BridgeRestrictionProvisions** (attached to BridgeRestrictions): permit provision text (LargeString), vehicle classes, time-of-day, seasonal period, legal reference. `Permit Provisions` tab added to BridgeRestrictions ObjectPage Facets.
+- ProvisionTypes and RepairsProposalTypes seed data CSVs were already in `db/data/` — no changes needed.
+
+### Help & Info Buttons
+- **Help.view.xml / Help.controller.js**: 4-tab documentation screen in bms-admin. Tabs: User Guide, Operations Manual, Troubleshooting, Deployment & Security. Content stored as HTML strings in controller `_getUserGuideHtml()` etc. methods.
+- **Shell.view.xml**: "Help & Docs" nav item added (key: `help`, icon: `sap-icon://sys-help`).
+- **Info buttons**: all BMS Admin screens now have `sap-icon://information` button in header opening an `infoDialog` (Dialog with FormattedText). The `f:DynamicPage`-based screens (AttributeReport, FeatureFlags) require the Dialog in `<mvc:dependents>` not as a sibling; `sap.m.Page`-based screens work with the dialog placed after `</Page>`.
+
+### DynamicPage Dialog placement rule (May 2026)
+- `sap.f.DynamicPage` views must place `<Dialog>` inside `<mvc:dependents>` (not as a direct child of `<mvc:View>`), otherwise `this.byId("infoDialog")` returns null at runtime. `sap.m.Page` views work with dialog after `</Page>`. Always check which base container the view uses before placing dialog elements.
+
+[2026-05-14] [FE4 / Extension Controller] Learning: FE4 ObjectPage `content.header.actions` press handlers require the ObjectPage routing target to have a `"controllerName"` property in `options.settings`, pointing to the extension controller module. Without it, FE4 resolves the module path but cannot create button instances in the header toolbar — the toolbar remains empty even if the module loads correctly. Fix: add `"controllerName": "Namespace.ext.controller.MyExt"` alongside `"entitySet"` in the target's `options.settings`. This is distinct from the Bridges ObjectPage pattern which also needs a `controllerName` for its extension (CaptureCondition etc.). Check: if `headerTitle.getActionsToolbar().getContent().length === 0` despite valid manifest config, the `controllerName` is missing.
+Source: UAT 2026-05-14 — Risk Matrix buttons not rendering
+Applied: app/admin-bridges/webapp/manifest.json — added controllerName to BridgeRiskAssessmentsObjectPage
+
+[2026-05-14] [Seed Data / CSV] Learning: Seed CSV files should always include auto-generated ref fields (`inspectionRef`, `defectId`, etc.) with pre-assigned values (INS-0001...INS-NNNN). The `before('NEW', Entity.drafts)` auto-gen handler only fires on NEW FE4 draft creation — it does NOT backfill records seeded via CSV. Without pre-populated refs in the CSV: (a) ObjectPage title is blank UUID; (b) filter bar search by ref returns nothing; (c) Bridge Details tabs referencing the latest inspection ref show blank. Always add the ref column with sequential values to seed CSVs immediately when the auto-gen handler is created.
+Source: UAT 2026-05-14 — 10 seed BridgeInspections with null inspectionRef
+Applied: db/data/bridge.management-BridgeInspections.csv — added inspectionRef column INS-0001...INS-0010
+
+[2026-05-14] [Mass Upload / Field Names] Learning: `LoadRatingCertificates` uses `certificateNumber` (not `certRef`), `certifyingEngineer` (not `issuedBy`), and `certificateIssueDate` + `certificateExpiryDate` (not `issueDate`/`expiryDate`). The per-class rating factors are `rfT44`, `rfSM1600`, `rfHLP400`, etc. — NOT a scalar `ratingFactor` field. Always verify exact field names via `$metadata` before writing mass-upload columns or FE4 annotations for LoadRatingCertificates.
+Source: UAT 2026-05-14 — CREATE 400 "Property certRef does not exist"
+Applied: Documented; no code change needed (worktree already had correct rfT44 in LineItem)
+
+[2026-05-14] [Schema / Draft-enabled vs Plain CRUD] Learning: `BridgeScourAssessments` and `BridgeMaintenanceActions` are plain CRUD entities (no `@odata.draft.enabled`) — POST to the OData entityset creates the record immediately. Do NOT call `draftActivate` on these entities. To check: `$metadata` EntityType without `IsActiveEntity`/`HasDraftEntity` properties = plain CRUD. For consistency with other sub-domain tiles these should eventually have draft enabled, but until then, API callers must use plain POST/PATCH/DELETE without the draft workflow.
+Source: UAT 2026-05-14 — draftActivate returns "Invalid resource path" on BridgeScourAssessments
+Applied: Documented
+
+[2026-05-14] [Draft / validTo mandatory] Learning: `BridgeLoadRatings.validTo` is `@mandatory` but is not surfaced prominently in the FE4 empty draft form — the Create button succeeds and the mandatory indicator only appears in `DraftMessages` on GET. Users who attempt draftActivate without filling `validTo` get a generic "Value is required" error with no field hint. Pattern: after CREATE, always GET the draft and check `DraftMessages` array for ASSERT_MANDATORY codes before activating. This applies to all entities with mandatory fields not obvious from the form layout.
+Source: UAT 2026-05-14 — BridgeLoadRatings draftActivate 400
+Applied: Documented
+
+[2026-05-14] [NhvrRouteAssessments / Field Names] Learning: `NhvrRouteAssessments` mandatory fields for activation are: `assessorName`, `assessorAccreditationNo`, `assessmentDate`, `validFrom`, `assessmentStatus`. The `bridge_ID` (integer FK) is required for CREATE. `assessmentId` is auto-generated as `NRA-NNNN` — do NOT pass it manually. There is no `routeName` field. Always use `assessmentStatus` (not `status`) for the current approval state — matches the `Superseded` transition on `deactivate` action.
+Source: UAT 2026-05-14 — 400 errors discovering correct field names
+Applied: Documented
+
+[2026-05-14] [UI5 / DynamicPage Layout] Learning: `layout:HorizontalLayout` (sap.ui.layout) inside `f:DynamicPage f:content` causes panels to render with zero effective height — the screen appears blank/white even though the DOM nodes exist. Root cause: `sap.ui.layout.HorizontalLayout` does not participate in CSS flex layout used by `f:DynamicPage`'s content area. Fix: replace with `sap.m.HBox` (wrap="Wrap" alignItems="Stretch") and `sap.m.VBox` for the outer container, add `fitContent="false"` to `f:DynamicPage`. Remove the `xmlns:layout="sap.ui.layout"` namespace declaration. This applies to ALL sap.ui.layout controls inside DynamicPage — use only sap.m equivalents (HBox/VBox).
+Source: BMS Admin AttributeConfig screen blank — UAT 2026-05-14
+Applied: app/bms-admin/webapp/view/AttributeConfig.view.xml — full layout rewrite
+
+[2026-05-14] [AdminService / Draft Guard Completeness] Learning: Every draft-enabled entity in `admin-service.js` that exposes `deactivate`/`reactivate` actions MUST have BOTH: (1) the active-entity handlers `this.on('deactivate', Entity, ...)` and (2) the DRAFT guard handlers `this.on('deactivate', Entity.drafts, req => req.error(409, '...'))`. Without the `.drafts` guard, CAP throws `Service "AdminService" has no handler for "deactivate AdminService.Entity.drafts"` at runtime when FE4 calls deactivate on an unsaved draft (IsActiveEntity=false). The `.drafts` handlers must appear BEFORE the `before('NEW', Entity.drafts)` block. Check every `this.on('deactivate', SomeEntity, ...)` line and verify a matching `.drafts` guard exists immediately above it.
+Source: BridgeRiskAssessments deactivate runtime error — UAT 2026-05-14
+Applied: srv/admin-service.js — added deactivate/reactivate .drafts guards for BridgeRiskAssessments
+
+[2026-05-14] [Preview / Screenshot Viewport] Learning: The Claude preview screenshot tool renders at mobile viewport width (~273px) by default. SAP DynamicPage panels with fixed widths (e.g. width="320px") ARE in the DOM and visible (offsetHeight > 0, visibility: visible) but appear blank in the screenshot because the content overflows the narrow viewport. Use `preview_resize({ preset: 'desktop' })` before taking screenshots of SAP Fiori admin screens to get an accurate render. Always verify DOM presence and offsetHeight via `preview_eval` before concluding a view is broken.
+Source: AttributeConfig view debugging — UAT 2026-05-14
+Applied: Documented; always use desktop preset for Fiori admin screen verification
+
+[2026-05-14] [Expert Council v4 / Security] Learning: Expert Council v4 identified 18 canonical security/quality findings (2 CRITICAL, 6 HIGH). Key critical: (1) AdminService had no top-level `@requires` — any authenticated user could read/write all 87 entities. Fix: add `@requires: ['admin','manage','inspect','operate','view','executive_view','certify','config_manager']` to AdminService in admin-service.cds. (2) 7 entities had no `@restrict` at all (BridgeElements, BridgeRiskAssessments, LoadRatingCertificates, NhvrRouteAssessments, AlertsAndNotifications, BridgeInspectionElements, BridgeCarriageways). After adding service-level @requires, entity-level @restrict should be added for write operations separately from the service-level read guard.
+Source: Expert Council v4 — SECURITY agent findings
+Applied: srv/admin-service.cds — @requires + @restrict on 9 entities
+
+[2026-05-14] [Expert Council v4 / mta.yaml] Learning: mta.yaml role-collection entries must reference role-template names (`$XSAPPNAME.BMS_ADMIN`), not scope names (`$XSAPPNAME.admin`). Using a scope name in `role-template-references` causes the BTP role collection to be created but with no assigned role templates — users in the role collection get no permissions. The `$XSAPPNAME.BMS_ADMIN` form resolves to the role-template whose name is `BMS_ADMIN` in xs-security.json.
+Source: Expert Council v4 — STANDARDS agent finding STD-001
+Applied: mta.yaml — role-template-references fixed for BMS_ADMIN, BMS_MANAGER, BMS_INSPECTOR, BMS_OPERATOR, BMS_VIEWER
+
+[2026-05-14] [Expert Council v4 / BHI Engine] Learning: Two incompatible BHI scoring engines existed simultaneously: `srv/lib/bhi-calculator.js` (v2.1, tested, 1-5 condition scale) and `srv/bhi-bsi-engine.js` (untested, 1-10 condition scale). The admin-service.js BHI virtual-field population was calling `bhi-bsi-engine.js` — producing wrong results for bridges with conditionRating 1-5 (the actual DB scale). Fix: route admin-service.js BHI computation through `srv/lib/bhi-calculator.js` exclusively. The `bhi-bsi-engine.js` can coexist for the `/bhi-bsi/api` multi-modal API but admin-service virtual field computation must use the tested v2.1 engine.
+Source: Expert Council v4 — DOMAIN agent finding DOM-002
+Applied: srv/admin-service.js — replaced bhi-bsi-engine import with lib/bhi-calculator for virtual field population
+
+[2026-05-14] [Expert Council v4 / Demo Code] Learning: `loadDemoData`/`clearDemoData` actions were still declared in admin-service.cds and implemented in admin-service.js despite CLAUDE.md recording their removal in May 2026. The demo-data.js file was still required in server.js. When the Expert Council audit found these, they were removed from 3 locations: (1) both action declarations from admin-service.cds; (2) both handler registrations from admin-service.js; (3) the `require('./demo-data')` from server.js. Lesson: when removing a feature, grep for all references simultaneously — partial removal creates security surface (undocumented endpoints remain live).
+Source: Expert Council v4 — CODE agent finding CODE-002
+Applied: srv/admin-service.cds, srv/admin-service.js, srv/server.js
+
+[2026-05-14] [Expert Council v4 / Test Coverage] Learning: 421 tests across 24 suites after Expert Council v4. Test pyramid: 2 pure-unit suites (bhi-calculator, bsi-calculator), 12 handler-unit suites (testing pure functions inline), 10 integration suites (bridges, inspections, defects, permits, feature-flags, risk-assessments, audit-log, access-control, mass-upload × 2). All 421 pass in 1.09s total (no live server needed — pure unit pattern). Council verdict: CONDITIONAL deployment readiness — 7 open CRITICAL/HIGH items remain, estimated 6 hours to close.
+Source: Expert Council v4 — QA validation step
+Applied: test/*.test.js (6 new), test/integration/*.test.js (10 new)
 
 ---
 
