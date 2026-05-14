@@ -13,7 +13,8 @@ module.exports = function registerInspectionHandlers (srv, { logAudit }) {
                 SELECT.from('bridge.management.BridgeInspections')
                     .columns('inspectionRef').orderBy('inspectionRef desc').limit(1)
             )
-            const seq = last?.inspectionRef ? parseInt(last.inspectionRef.replace('INS-', ''), 10) + 1 : 1
+            const m = last?.inspectionRef?.match(/^INS-(\d+)$/)
+            const seq = m ? parseInt(m[1], 10) + 1 : 1
             req.data.inspectionRef = `INS-${String(seq).padStart(4, '0')}`
         }
 

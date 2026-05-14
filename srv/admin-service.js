@@ -1,8 +1,7 @@
 const cds = require('@sap/cds')
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
-const { computeBhiBsi } = require('./bhi-bsi-engine')
+const { calculateBHI } = require('./lib/bhi-calculator')
 const { isFeatureEnabled } = require('./feature-flags')
-const { activateDemoData, clearDemoData } = require('./demo-data')
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
 
@@ -452,21 +451,22 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (bhiEnabled) {
       for (const b of list) {
         if (b.conditionRating != null) {
-          const elementRatings = [
-            { element: 'Deck',           rating: b.conditionRating, weight: 25 },
-            { element: 'Substructure',   rating: b.conditionRating, weight: 30 },
-            { element: 'Superstructure', rating: b.conditionRating, weight: 30 },
-            { element: 'Approach',       rating: b.conditionRating, weight: 15 },
-          ]
-          const result = computeBhiBsi({
-            structureMode: 'Road',
-            elementRatings,
-            importanceClass: b.importanceLevel || 2,
-            envPenalty: 0,
-            yearBuilt: b.yearBuilt
-          })
-          b.bhi = result.bhi
-          b.nbi = result.nbi
+          // Convert 1-10 conditionRating to 1-5 AS 5100.7 scale for calculateBHI
+          const rating15 = Math.max(1, Math.min(5, Math.ceil(b.conditionRating / 2)))
+          try {
+            const result = calculateBHI({
+              superstructure: rating15,
+              substructure:   rating15,
+              deck:           rating15,
+              bearing:        rating15,
+              joint:          rating15
+            })
+            b.bhi = result.score
+            b.nbi = result.score
+          } catch (_) {
+            b.bhi = null
+            b.nbi = null
+          }
         }
       }
     }
@@ -1845,18 +1845,6 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   this.before('CREATE', 'BridgeDocuments', (req) => {
     req.data.uploadedBy = req.user?.id || 'anonymous'
     req.data.active = true
-  })
-
-  this.on('loadDemoData', async req => {
-    const db = await cds.connect.to('db')
-    const loaded = await activateDemoData(db)
-    return { loaded, message: `Demo data activated — ${loaded} record(s) inserted across all tiles.` }
-  })
-
-  this.on('clearDemoData', async req => {
-    const db = await cds.connect.to('db')
-    const cleared = await clearDemoData(db)
-    return { cleared, message: `Demo data cleared — ${cleared} record(s) removed.` }
   })
 
   return super.init()

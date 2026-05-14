@@ -81,7 +81,7 @@ entity BridgeDefects : cuid, managed {
     photoReferences   : LargeString;
 
     remediationStatus      : String(20) default 'Open';
-    estimatedRepairCost    : Decimal(12,2);
+    estimatedRepairCost    : Decimal(12,2) @Measures.ISOCurrency: 'AUD';
     plannedRemediationDate : Date;
     actualRemediationDate  : Date;
     remediationNotes       : String(500);

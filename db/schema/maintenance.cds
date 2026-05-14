@@ -21,8 +21,8 @@ entity BridgeMaintenanceActions : cuid, managed {
   organisation        : String(255);
   scheduledDate       : Date;
   completedDate       : Date;
-  estimatedCostAUD    : Decimal(15,2);
-  actualCostAUD       : Decimal(15,2);
+  estimatedCostAUD    : Decimal(15,2) @Measures.ISOCurrency: 'AUD';
+  actualCostAUD       : Decimal(15,2) @Measures.ISOCurrency: 'AUD';
   contractReference   : String(80);
   standardsReference  : String(80);
   safetyRequirements  : LargeString;

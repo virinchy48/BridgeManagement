@@ -34,8 +34,8 @@ extend entity Bridges with {
     lifecycleStage       : String(30) default 'Operation';
 
     // ── Financial (whole-of-life; read from EAM when connected) ──────────
-    replacementCostEstimate       : Decimal(14,2);
-    annualMaintenanceCostEstimate : Decimal(12,2);
+    replacementCostEstimate       : Decimal(14,2) @Measures.ISOCurrency: 'AUD';
+    annualMaintenanceCostEstimate : Decimal(12,2) @Measures.ISOCurrency: 'AUD';
     maintenancePriority           : String(20);
 
     // ── EAM References (SAP S/4HANA — nullable; standalone mode ignores) ─

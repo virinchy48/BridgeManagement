@@ -259,7 +259,7 @@ resources:
           - name: "BMS Admin (${org}-${space})"
             description: "Full BMS administration"
             role-template-references:
-              - "$XSAPPNAME.admin"
+              - "$XSAPPNAME.BMS_ADMIN"
           - name: "BMS Bridge Manager (${org}-${space})"
             description: "Bridge register management"
             role-template-references:

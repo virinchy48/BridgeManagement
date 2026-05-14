@@ -107,7 +107,7 @@ entity Restrictions : cuid, managed {
   detourMaxAxleLoad      : Decimal(9,2);          // Max axle load on detour for vehicles >42.5t
   detourRouteDetails     : LargeString;           // Details of route for vehicles >42.5t
   repairsProposal        : String(10);            // Repairs proposal code (e.g. REPR)
-  estimatedRepairCost    : Decimal(15,2);         // Estimated repair cost (AUD)
+  estimatedRepairCost    : Decimal(15,2) @Measures.ISOCurrency: 'AUD';
   programmeYear          : String(10);            // Programme Year e.g. "2026/27"
   restrictionComments    : LargeString;           // Comments / additional notes
   restrProvisions : Composition of many RestrictionProvisions on restrProvisions.restriction = $self;

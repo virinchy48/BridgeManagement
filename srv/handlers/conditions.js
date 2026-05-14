@@ -4,38 +4,39 @@ const cds = require('@sap/cds')
 module.exports = function registerConditionHandlers (srv, { logAudit }) {
 
     srv.before(['CREATE', 'UPDATE'], 'BridgeConditionSurveys', async req => {
-        const db = await cds.connect.to('db')
+        try {
+            const db = await cds.connect.to('db')
 
-        if (req.event === 'CREATE') {
-            // Auto-generate surveyRef (CS-NNNN) once at creation
-            const [last] = await db.run(
-                SELECT.from('bridge.management.BridgeConditionSurveys')
-                    .columns('surveyRef').orderBy('surveyRef desc').limit(1)
-            )
-            const m = last?.surveyRef?.match(/^CS-(\d+)$/)
-            const seq = m ? parseInt(m[1], 10) + 1 : 1
-            req.data.surveyRef = `CS-${String(seq).padStart(4, '0')}`
-            if (!req.data.status) req.data.status = 'Draft'
-            if (req.data.active === undefined) req.data.active = true
-        }
+            if (req.event === 'CREATE') {
+                const [last] = await db.run(
+                    SELECT.from('bridge.management.BridgeConditionSurveys')
+                        .columns('surveyRef').orderBy('surveyRef desc').limit(1)
+                )
+                const m = last?.surveyRef?.match(/^CS-(\d+)$/)
+                const seq = m ? parseInt(m[1], 10) + 1 : 1
+                req.data.surveyRef = `CS-${String(seq).padStart(4, '0')}`
+                if (!req.data.status) req.data.status = 'Draft'
+                if (req.data.active === undefined) req.data.active = true
+            }
 
-        // Resolve bridge_ID from bridgeRef on CREATE and UPDATE so that
-        // FE4 draft edits (PATCH after initial create) carry bridge_ID correctly
-        if (req.data.bridgeRef) {
-            const bridge = await db.run(
-                SELECT.one.from('bridge.management.Bridges')
-                    .columns('ID').where({ bridgeId: req.data.bridgeRef })
-            )
-            if (bridge) req.data.bridge_ID = bridge.ID
-            else return req.error(400, `Bridge '${req.data.bridgeRef}' not found`)
-        }
+            if (req.data.bridgeRef) {
+                const bridge = await db.run(
+                    SELECT.one.from('bridge.management.Bridges')
+                        .columns('ID').where({ bridgeId: req.data.bridgeRef })
+                )
+                if (bridge) req.data.bridge_ID = bridge.ID
+                else return req.error(400, `Bridge '${req.data.bridgeRef}' not found`)
+            }
+        } catch (e) { req.error(500, e.message) }
     })
 
     srv.after(['CREATE', 'UPDATE'], 'BridgeConditionSurveys', async (data, req) => {
-        if (!data?.ID) return
-        const db = await cds.connect.to('db')
-        await logAudit(db, req, req.event, 'BridgeConditionSurvey',
-            data.ID, data.surveyRef, data, `Condition survey ${req.event.toLowerCase()}d`)
+        try {
+            if (!data?.ID) return
+            const db = await cds.connect.to('db')
+            await logAudit(db, req, req.event, 'BridgeConditionSurvey',
+                data.ID, data.surveyRef, data, `Condition survey ${req.event.toLowerCase()}d`)
+        } catch (_) { /* non-fatal: audit log failure should not block response */ }
     })
 
     srv.on('deactivate', 'BridgeConditionSurveys', async req => {

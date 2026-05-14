@@ -5,8 +5,8 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
     srv.on('getNetworkKPIs', async req => {
         const db = await cds.connect.to('db')
         const [bridges, restrictions] = await Promise.all([
-            db.run(SELECT.from('nhvr.Bridge').where({ isDeleted: false })),
-            db.run(SELECT.from('nhvr.Restriction').where({ status: 'ACTIVE', isActive: true }))
+            db.run(SELECT.from('bridge.management.Bridges').columns('ID','isActive','postingStatus','condition','highPriorityAsset','overdueFlag').where({ isActive: true })),
+            db.run(SELECT.from('bridge.management.Restrictions').columns('ID','status').where({ status: 'Active' }))
         ])
         return {
             totalBridges:       bridges.length,
@@ -23,10 +23,10 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
     srv.on('getConditionDistribution', async req => {
         const { state, region } = req.data
         const db = await cds.connect.to('db')
-        const where = { isDeleted: false }
+        const where = { isActive: true }
         if (state)  where.state  = state
         if (region) where.region = region
-        const bridges = await db.run(SELECT.from('nhvr.Bridge').where(where))
+        const bridges = await db.run(SELECT.from('bridge.management.Bridges').columns('condition').where(where))
         const dist = {}
         bridges.forEach(b => { dist[b.condition] = (dist[b.condition] || 0) + 1 })
         return Object.entries(dist).map(([condition, count]) => ({ condition, count }))
@@ -35,15 +35,14 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
     srv.on('getRestrictionSummary', async req => {
         const { state, region } = req.data
         const db = await cds.connect.to('db')
-        // FIX: apply state/region filter via bridge join
         let restrictions = await db.run(
-            SELECT.from('nhvr.Restriction').where({ status: 'ACTIVE', isActive: true })
+            SELECT.from('bridge.management.Restrictions').columns('ID','restrictionType','bridge_ID').where({ status: 'Active' })
         )
         if (state || region) {
-            const bridgeWhere = { isDeleted: false }
+            const bridgeWhere = { isActive: true }
             if (state)  bridgeWhere.state  = state
             if (region) bridgeWhere.region = region
-            const bridges = await db.run(SELECT.from('nhvr.Bridge').where(bridgeWhere))
+            const bridges = await db.run(SELECT.from('bridge.management.Bridges').columns('ID').where(bridgeWhere))
             const bridgeIds = new Set(bridges.map(b => b.ID))
             restrictions = restrictions.filter(r => bridgeIds.has(r.bridge_ID))
         }
@@ -81,9 +80,9 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
         const cutoff = new Date()
         cutoff.setDate(cutoff.getDate() + daysAhead)
         const cutoffStr = cutoff.toISOString().split('T')[0]
-        const where = { isDeleted: false }
+        const where = { isActive: true }
         if (state) where.state = state
-        const bridges = await db.run(SELECT.from('nhvr.Bridge').where(where))
+        const bridges = await db.run(SELECT.from('bridge.management.Bridges').columns('bridgeId','bridgeName','gazetteExpiryDate','postingStatus').where(where))
         return bridges
             .filter(b => b.gazetteExpiryDate && b.gazetteExpiryDate >= today && b.gazetteExpiryDate <= cutoffStr)
             .map(b => {
@@ -92,7 +91,7 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
                 const daysUntilExpiry = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24))
                 return {
                     bridgeId: b.bridgeId,
-                    bridgeName: b.name,
+                    bridgeName: b.bridgeName,
                     gazetteExpiryDate: b.gazetteExpiryDate,
                     daysUntilExpiry,
                     postingStatus: b.postingStatus
@@ -105,9 +104,9 @@ module.exports = function registerDashboardHandlers (srv, { logAudit }) {
         const { snapshotType = 'Daily' } = req.data
         const db = await cds.connect.to('db')
         const today = new Date().toISOString().split('T')[0]
-        const bridges = await db.run(SELECT.from('nhvr.Bridge').where({ isDeleted: false }))
+        const bridges = await db.run(SELECT.from('bridge.management.Bridges').columns('ID','state','isActive','condition','conditionRating','highPriorityAsset','overdueFlag').where({ isActive: true }))
         const restrictions = await db.run(
-            SELECT.from('nhvr.Restriction').where({ status: 'ACTIVE', isActive: true })
+            SELECT.from('bridge.management.Restrictions').columns('ID','bridge_ID','status').where({ status: 'Active' })
         )
         const states = [...new Set(bridges.map(b => b.state).filter(Boolean)), 'ALL']
         let recorded = 0

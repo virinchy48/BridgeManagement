@@ -33,7 +33,7 @@ entity BridgeElements : cuid, managed {
 
     maintenanceRequired    : Boolean default false;
     urgencyLevel           : String(20);
-    estimatedRepairCost    : Decimal(12,2);
+    estimatedRepairCost    : Decimal(12,2) @Measures.ISOCurrency: 'AUD';
 
     s4EquipmentNumber      : String(18);
     notes                  : LargeString;

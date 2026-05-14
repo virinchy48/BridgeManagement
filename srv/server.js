@@ -2788,7 +2788,7 @@ cds.on('bootstrap', (app) => {
 
   mountReportsApi(app, requiresAuthentication)
   mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken)
-  mountExternalApi(app, apiLimiter)
+  mountExternalApi(app, apiLimiter, requiresAuthentication)
 
   app.use('/bnac/api', apiLimiter, requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
 })

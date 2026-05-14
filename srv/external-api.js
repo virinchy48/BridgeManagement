@@ -296,7 +296,7 @@ function authMiddleware(db) {
   }
 }
 
-module.exports = function mountExternalApi(app, apiLimiter) {
+module.exports = function mountExternalApi(app, apiLimiter, requiresAuthentication) {
   const router = express.Router()
   const db = cds.db || cds.connect.to('db')
 
@@ -465,5 +465,6 @@ module.exports = function mountExternalApi(app, apiLimiter) {
     })
   }))
 
-  app.use('/api/v1', apiLimiter, router)
+  const authMiddleware = requiresAuthentication || ((req, res, next) => next())
+  app.use('/api/v1', apiLimiter, authMiddleware, router)
 }
