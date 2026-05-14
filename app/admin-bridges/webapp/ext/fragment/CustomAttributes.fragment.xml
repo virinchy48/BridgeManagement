@@ -2,5 +2,11 @@
   xmlns="sap.m"
   xmlns:core="sap.ui.core"
   core:require="{CAInit: 'BridgeManagement/adminbridges/ext/controller/CustomAttributesInit'}">
-  <core:HTML id="customAttrsHost" content="&lt;div id='ca-bridge-root' style='font-family:72,Arial,sans-serif;margin:0.5rem'&gt;&lt;/div&gt;"/>
+  <VBox
+    id="customAttrsHost"
+    modelContextChange="CAInit.onContextChange">
+    <core:HTML
+      id="customAttrsHtml"
+      content="&lt;div id='ca-bridge-root' style='font-family:72,Arial,sans-serif;margin:0.5rem'&gt;&lt;/div&gt;"/>
+  </VBox>
 </core:FragmentDefinition>

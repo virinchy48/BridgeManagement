@@ -368,5 +368,17 @@ sap.ui.define([], function () {
   }(0));
 
   }());
-  return {};
+  return {
+    onContextChange: function () {
+      var id = getBridgeId();
+      var root = document.getElementById('ca-bridge-root');
+      if (!id || !root) return;
+      if (id !== _s.loadedForId) { load(id); }
+    },
+    onAfterRendering: function () {
+      var id = getBridgeId();
+      var root = document.getElementById('ca-bridge-root');
+      if (id && root && !root._caPopulated) { load(id); }
+    }
+  };
 });

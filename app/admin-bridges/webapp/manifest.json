@@ -556,6 +556,14 @@
                 },
                 "body": {
                   "sections": {
+                    "customAttributesSection": {
+                      "template": "BridgeManagement.adminbridges.ext.fragment.CustomAttributes",
+                      "title": "Custom Attributes",
+                      "position": {
+                        "placement": "Before",
+                        "anchor": "Administration"
+                      }
+                    },
                     "attachmentsSection": {
                       "template": "BridgeManagement.adminbridges.ext.fragment.Attachments",
                       "title": "Documents & Attachments",

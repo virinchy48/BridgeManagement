@@ -184,15 +184,6 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'BNAC Integration',  Target: '@UI.FieldGroup#ExtBNAC'},
         ]
       },
-      // ── T7: Custom Attributes ─────────────────────────────────────────────
-      {
-        $Type : 'UI.CollectionFacet',
-        Label : 'Custom Attributes',
-        ID    : 'CustomAttributes',
-        Facets: [
-          {$Type: 'UI.ReferenceFacet', Label: 'Attributes', Target: 'attributes/@UI.LineItem'},
-        ]
-      },
       // ── T7: Administration ────────────────────────────────────────────────
       // Bridge Geometry (GeoJSON) removed — raw coordinate fields are in Location & Ownership;
       // the Map section provides the visual; geoJson blob is import-only, not user-editable.
