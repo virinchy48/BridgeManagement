@@ -157,6 +157,7 @@ service AdminService {
   entity StructuralAdequacyTypes as projection on my.StructuralAdequacyTypes;
   entity RestrictionTypes as projection on my.RestrictionTypes;
   entity RestrictionStatuses as projection on my.RestrictionStatuses;
+  entity ClosureTypes as projection on my.ClosureTypes;
   entity VehicleClasses as projection on my.VehicleClasses;
   entity RestrictionCategories as projection on my.RestrictionCategories;
   entity RestrictionUnits as projection on my.RestrictionUnits;

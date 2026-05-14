@@ -96,7 +96,8 @@ sap.ui.define([
         regulatory:   "/reports/api/regulatory-compliance",
         risk:         "/reports/api/risk-register",
         restrictions: "/reports/api/bridges-restrictions",
-        quality:      "/reports/api/data-quality"
+        quality:      "/reports/api/data-quality",
+        closures:     "/reports/api/bridge-closures"
       };
 
       const url = endpoints[key];
@@ -122,7 +123,8 @@ sap.ui.define([
         regulatory:   () => this._renderRegulatory(data),
         risk:         () => this._renderRisk(data),
         restrictions: () => this._renderRestrictions(data),
-        quality:      () => this._renderQuality(data)
+        quality:      () => this._renderQuality(data),
+        closures:     () => this._renderClosures(data)
       };
       if (render[key]) render[key]();
       // Apply drill-down filter from Dashboard deep-link (once, then clear)
@@ -487,6 +489,51 @@ sap.ui.define([
     fmtImportance: function (level) {
       const map = { 1: "Critical", 2: "Essential", 3: "Important", 4: "Ordinary" };
       return map[level] || "";
+    },
+
+    _renderClosures: function (d) {
+      const closures = d.closures || [];
+      const current = d.currentCount || 0;
+      const total   = d.totalCount  || 0;
+
+      const kpiHtml = `<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
+        ${this._kpiStrip([
+          { label: "Currently Closed", value: current, cls: current > 0 ? "rptKpiError" : "rptKpiGood", scroll: "closuresTable" },
+          { label: "All Closure Records", value: total, cls: "rptKpiNeutral", scroll: "closuresTable" }
+        ], true)}
+      </div>`;
+
+      const rowsHtml = closures.map(c => {
+        const statusCls = c.isCurrent ? "rptStatusError" : (c.active ? "rptStatusWarn" : "rptStatusNeutral");
+        const statusLabel = c.isCurrent ? "Current" : (c.active ? "Active" : "Retired");
+        return `<tr>
+          <td style="padding:6px 8px">${c.bridgeName || ""}</td>
+          <td style="padding:6px 8px">${c.bridgeId || ""}</td>
+          <td style="padding:6px 8px">${c.state || ""}</td>
+          <td style="padding:6px 8px">${c.closureType || ""}</td>
+          <td style="padding:6px 8px">${c.closureStartDate || ""}</td>
+          <td style="padding:6px 8px">${c.closureEndDate || "—"}</td>
+          <td style="padding:6px 8px"><span class="${statusCls}">${statusLabel}</span></td>
+          <td style="padding:6px 8px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${c.restrictionReason || ""}">${c.restrictionReason || ""}</td>
+        </tr>`;
+      }).join("");
+
+      const tableHtml = `<table id="closuresTable" style="width:100%;border-collapse:collapse;font-size:0.85rem">
+        <thead><tr style="background:#f5f5f5;text-align:left">
+          <th style="padding:6px 8px">Bridge</th>
+          <th style="padding:6px 8px">Bridge ID</th>
+          <th style="padding:6px 8px">State</th>
+          <th style="padding:6px 8px">Closure Type</th>
+          <th style="padding:6px 8px">Start Date</th>
+          <th style="padding:6px 8px">End Date</th>
+          <th style="padding:6px 8px">Status</th>
+          <th style="padding:6px 8px">Reason</th>
+        </tr></thead>
+        <tbody>${rowsHtml || "<tr><td colspan='8' style='padding:12px;text-align:center;color:#666'>No closure records found</td></tr>"}</tbody>
+      </table>`;
+
+      const container = this.byId("closuresContent");
+      if (container) container.setContent(kpiHtml + tableHtml);
     },
 
     fmtBool: function (v) { return v ? "Yes" : "No"; },

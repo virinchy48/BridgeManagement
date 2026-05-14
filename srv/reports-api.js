@@ -499,6 +499,71 @@ function mountReportsApi(app, requiresAuthentication, requireViewScope) {
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 
+  // ── Bridge Closures report — all closure-type Restrictions with start/end dates ──
+  router.get('/bridge-closures', async (req, res) => {
+    try {
+      const { state, status } = req.query
+      const db = await cds.connect.to('db')
+
+      let query = SELECT.from('bridge.management.Restrictions')
+        .columns(
+          'ID', 'restrictionRef', 'closureType', 'closureStartDate', 'closureEndDate',
+          'active', 'restrictionStatus', 'remarks', 'bridge_ID',
+          'approvedBy'
+        )
+        .where(`closureType IS NOT NULL`)
+
+      const rows = await db.run(query)
+      if (!rows.length) return res.json({ totalCount: 0, closures: [] })
+
+      // Enrich with bridge details
+      const bridgeIds = [...new Set(rows.map(r => r.bridge_ID).filter(Boolean))]
+      let bridgeMap = {}
+      if (bridgeIds.length) {
+        const bridges = await db.run(
+          SELECT.from('bridge.management.Bridges')
+            .columns('ID', 'bridgeId', 'bridgeName', 'state', 'region', 'route')
+            .where({ ID: { in: bridgeIds } })
+        )
+        bridgeMap = Object.fromEntries(bridges.map(b => [b.ID, b]))
+      }
+
+      const today = new Date().toISOString().slice(0, 10)
+
+      let closures = rows.map(r => {
+        const bridge = bridgeMap[r.bridge_ID] || {}
+        const isCurrent = r.active &&
+          (!r.closureStartDate || r.closureStartDate <= today) &&
+          (!r.closureEndDate || r.closureEndDate >= today)
+        return {
+          id:                r.ID,
+          restrictionRef:    r.restrictionRef,
+          closureType:       r.closureType,
+          closureStartDate:  r.closureStartDate,
+          closureEndDate:    r.closureEndDate,
+          status:            r.restrictionStatus || (r.active ? 'Active' : 'Retired'),
+          active:            r.active,
+          isCurrent,
+          restrictionReason: r.remarks,
+          approvedBy:        r.approvedBy,
+          bridgeId:          bridge.bridgeId,
+          bridgeName:        bridge.bridgeName,
+          state:             bridge.state,
+          region:            bridge.region,
+          route:             bridge.route,
+        }
+      })
+
+      if (state)  closures = closures.filter(c => c.state === state)
+      if (status === 'current') closures = closures.filter(c => c.isCurrent)
+      else if (status === 'active') closures = closures.filter(c => c.active)
+
+      closures.sort((a, b) => (b.closureStartDate || '').localeCompare(a.closureStartDate || ''))
+
+      res.json({ totalCount: closures.length, currentCount: closures.filter(c => c.isCurrent).length, closures })
+    } catch (err) { res.status(500).json({ error: { message: err.message } }) }
+  })
+
   app.use('/reports/api', requiresAuthentication, requireViewScope, router)
 }
 

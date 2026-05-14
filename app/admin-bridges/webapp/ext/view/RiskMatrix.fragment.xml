@@ -6,7 +6,7 @@
   <Dialog
     id="riskMatrixDialog"
     title="{matrix>/title}"
-    contentWidth="520px"
+    contentWidth="580px"
     resizable="true"
     draggable="true">
 
@@ -37,51 +37,63 @@
           </items>
         </IconTabBar>
 
-        <HBox class="sapUiTinyMarginTop" alignItems="Center">
+        <!-- Selection summary -->
+        <HBox class="sapUiTinyMarginTop" alignItems="Center" justifyContent="SpaceBetween">
           <items>
-            <Text text="Selected: " class="sapUiTinyMarginEnd" />
-            <ObjectStatus
-              text="{matrix>/selectedLabel}"
-              state="{matrix>/selectedState}"
-              inverted="true" />
+            <HBox alignItems="Center">
+              <items>
+                <Label text="Selected: " class="sapUiTinyMarginEnd" design="Bold"/>
+                <ObjectStatus
+                  text="{matrix>/selectedLabel}"
+                  state="{matrix>/selectedState}"
+                  inverted="true" />
+              </items>
+            </HBox>
+            <!-- Live score preview -->
+            <HBox alignItems="Center" class="sapUiSmallMarginBegin"
+                  visible="{= !!${matrix>/previewScore} }">
+              <items>
+                <Label text="→ Score: " class="sapUiTinyMarginEnd" design="Bold"/>
+                <core:HTML content="{= '&lt;span style=&quot;font-size:15px;font-weight:700;color:' + ${matrix>/previewColor} + ';&quot;&gt;' + ${matrix>/previewScore} + ' (' + ${matrix>/previewLevel} + ')&lt;/span&gt;' }" />
+              </items>
+            </HBox>
           </items>
         </HBox>
 
         <Text
-          text="Click a cell to select likelihood (row) and consequence (column)."
+          text="Click a cell to select Likelihood (row) × Consequence (column). Press Apply to write values to the form."
           class="sapUiTinyMarginTop"
           wrapping="true" />
 
-        <l:HorizontalLayout class="sapUiSmallMarginTop">
-          <HBox wrap="Wrap" alignItems="Center">
-            <items>
-              <HBox class="sapUiTinyMarginEnd" alignItems="Center">
-                <items>
-                  <core:HTML content="&lt;span style='display:inline-block;width:14px;height:14px;background:#4CAF50;border-radius:2px;margin-right:4px;'&gt;&lt;/span&gt;" />
-                  <Text text="Low (≤4)" />
-                </items>
-              </HBox>
-              <HBox class="sapUiTinyMarginEnd sapUiSmallMarginBegin" alignItems="Center">
-                <items>
-                  <core:HTML content="&lt;span style='display:inline-block;width:14px;height:14px;background:#FF9800;border-radius:2px;margin-right:4px;'&gt;&lt;/span&gt;" />
-                  <Text text="Medium (5–9)" />
-                </items>
-              </HBox>
-              <HBox class="sapUiTinyMarginEnd sapUiSmallMarginBegin" alignItems="Center">
-                <items>
-                  <core:HTML content="&lt;span style='display:inline-block;width:14px;height:14px;background:#FF5722;border-radius:2px;margin-right:4px;'&gt;&lt;/span&gt;" />
-                  <Text text="High (10–14)" />
-                </items>
-              </HBox>
-              <HBox class="sapUiSmallMarginBegin" alignItems="Center">
-                <items>
-                  <core:HTML content="&lt;span style='display:inline-block;width:14px;height:14px;background:#F44336;border-radius:2px;margin-right:4px;'&gt;&lt;/span&gt;" />
-                  <Text text="Extreme (≥15)" />
-                </items>
-              </HBox>
-            </items>
-          </HBox>
-        </l:HorizontalLayout>
+        <!-- Legend -->
+        <HBox wrap="Wrap" alignItems="Center" class="sapUiSmallMarginTop">
+          <items>
+            <HBox class="sapUiTinyMarginEnd" alignItems="Center">
+              <items>
+                <core:HTML content="&lt;span style='display:inline-block;width:14px;height:14px;background:#4CAF50;border-radius:3px;margin-right:4px;'&gt;&lt;/span&gt;" />
+                <Text text="Low (≤4)" />
+              </items>
+            </HBox>
+            <HBox class="sapUiTinyMarginEnd sapUiSmallMarginBegin" alignItems="Center">
+              <items>
+                <core:HTML content="&lt;span style='display:inline-block;width:14px;height:14px;background:#FF9800;border-radius:3px;margin-right:4px;'&gt;&lt;/span&gt;" />
+                <Text text="Medium (5–9)" />
+              </items>
+            </HBox>
+            <HBox class="sapUiTinyMarginEnd sapUiSmallMarginBegin" alignItems="Center">
+              <items>
+                <core:HTML content="&lt;span style='display:inline-block;width:14px;height:14px;background:#FF5722;border-radius:3px;margin-right:4px;'&gt;&lt;/span&gt;" />
+                <Text text="High (10–14)" />
+              </items>
+            </HBox>
+            <HBox class="sapUiSmallMarginBegin" alignItems="Center">
+              <items>
+                <core:HTML content="&lt;span style='display:inline-block;width:14px;height:14px;background:#F44336;border-radius:3px;margin-right:4px;'&gt;&lt;/span&gt;" />
+                <Text text="Extreme (≥15)" />
+              </items>
+            </HBox>
+          </items>
+        </HBox>
 
       </VBox>
     </content>

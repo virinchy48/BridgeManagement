@@ -36,6 +36,15 @@
     }
   },
   "sap.ui5": {
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ObjectPage.ObjectPageController": {
+            "controllerName": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt"
+          }
+        }
+      }
+    },
     "dependencies": {
       "minUI5Version": "1.136.0",
       "libs": {
@@ -439,10 +448,7 @@
                 },
                 "inspections/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
-                    "enablePaste": false,
-                    "creationMode": {
-                      "name": "NewPage"
-                    }
+                    "enablePaste": false
                   }
                 },
                 "elements/@com.sap.vocabularies.UI.v1.LineItem": {
@@ -527,18 +533,11 @@
                 "header": {
                   "actions": {
                     "captureConditionAction": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onCaptureConditionOpen",
-                      "text": "Inspect Now",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onNewInspection",
+                      "text": "New Inspection",
                       "enabled": true,
                       "requiresSelection": false,
                       "type": "Emphasized"
-                    },
-                    "createWorkOrderAction": {
-                      "text": "Create Work Order",
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onCreateWorkOrder",
-                      "enabled": true,
-                      "requiresSelection": false,
-                      "type": "Default"
                     },
                     "viewInS4Action": {
                       "text": "View in S/4HANA \u2197",
@@ -546,11 +545,6 @@
                       "enabled": true,
                       "requiresSelection": false,
                       "type": "Default"
-                    },
-                    "exportCardAction": {
-                      "text": "Export Card",
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onExportCard",
-                      "enabled": true
                     }
                   }
                 },
@@ -582,8 +576,7 @@
                     }
                   }
                 }
-              },
-              "controllerName": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt"
+              }
             }
           }
         },
@@ -994,7 +987,7 @@
                 "header": {
                   "actions": {
                     "batchElements": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeInspectionsExt.onOpenBatchElementEntry",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onOpenBatchElementEntry",
                       "text": "Add Elements",
                       "visible": true,
                       "enabled": true,
@@ -1003,8 +996,7 @@
                     }
                   }
                 }
-              },
-              "controllerName": "BridgeManagement.adminbridges.ext.controller.BridgeInspectionsExt"
+              }
             }
           }
         },
@@ -1029,19 +1021,18 @@
             "settings": {
               "entitySet": "BridgeRiskAssessments",
               "editableHeaderContent": false,
-              "controllerName": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt",
               "content": {
                 "header": {
                   "actions": {
                     "inherentMatrix": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt.onOpenInherentMatrix",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onOpenInherentMatrix",
                       "text": "Inherent Risk Matrix",
                       "enabled": true,
                       "requiresSelection": false,
                       "visible": true
                     },
                     "residualMatrix": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt.onOpenResidualMatrix",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onOpenResidualMatrix",
                       "text": "Residual Risk Matrix",
                       "enabled": true,
                       "requiresSelection": false,

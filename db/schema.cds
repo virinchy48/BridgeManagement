@@ -1,5 +1,6 @@
 // Bridge Management System — DB Schema Barrel
 using { bridge.management.Bridges } from './schema/bridge-entity';
+using { bridge.management.BridgeDocuments } from './schema/documents';
 using { bridge.management.LoadRatingVehicleClass, bridge.management.LoadRatingMethod } from './schema/enum-types';
 using { bridge.management.BridgeScourAssessmentDetail } from './schema/nhvr-compliance';
 using { bridge.management.BridgeScourAssessments } from './schema/scour-assessments';
@@ -16,9 +17,10 @@ using from './schema/risk-assessments';
 using from './schema/nhvr-compliance';
 using from './schema/elements';
 using from './schema/defects';
+using from './schema/documents';
 using from './schema/alerts';
-using from './schema/gap-entities';
 using from './schema/maintenance';
+using from './schema/gap-entities';
 using {
   Currency,
   cuid,
@@ -96,9 +98,49 @@ entity Restrictions : cuid, managed {
   legalEffectiveDate   : Date;               // Date restriction has legal force (gazette effective date)
   signRequirements     : String(255);        // AS 1742.10 sign type and placement notes
   virtual reviewCriticality : Integer;       // 1=Overdue, 2=Due within 30d, 3=OK — computed in after READ
+  // ── Provisions & Detour (legacy BIS Temporary Provision fields) ──────────
+  dateCorrected          : Date;                  // Date Deficiency Corrected
+  postedLoadLimitRigid   : Decimal(9,2);          // Posted Load Limit — Rigid Trucks (t)
+  postedLoadLimitSemi    : Decimal(9,2);          // Posted Load Limit — Semitrailers (t)
+  detourLengthKm         : Decimal(9,2);          // Detour Length (km)
+  detourCapable42t       : Boolean default false; // Detour capable of carrying >42.5t gross
+  detourMaxAxleLoad      : Decimal(9,2);          // Max axle load on detour for vehicles >42.5t
+  detourRouteDetails     : LargeString;           // Details of route for vehicles >42.5t
+  repairsProposal        : String(10);            // Repairs proposal code (e.g. REPR)
+  estimatedRepairCost    : Decimal(15,2) @Measures.ISOCurrency: 'AUD';
+  programmeYear          : String(10);            // Programme Year e.g. "2026/27"
+  restrictionComments    : LargeString;           // Comments / additional notes
+  // ── Closure Period (Full closure restrictions — for reporting) ───────────
+  closureStartDate    : Date;                 // Date bridge fully closed to traffic
+  closureEndDate      : Date;                 // Date bridge reopened (null = still closed)
+  closureType         : String(40);           // Full Closure / Partial Closure / Lane Closure / Emergency
+  restrProvisions : Composition of many RestrictionProvisions on restrProvisions.restriction = $self;
   parent   : Association to Restrictions;
   children : Composition of many Restrictions
                on children.parent = $self;
+}
+
+// Temporary Provisions attached to a standalone Restriction (legacy BIS "Temporary Provision" block)
+entity RestrictionProvisions : cuid, managed {
+  restriction    : Association to Restrictions;
+  provisionCode  : String(10);  // e.g. CWRS, DETR, SUBB, CLTT, HMLL, RPBL
+  description    : String(255); // Auto-resolved from ProvisionTypes lookup
+  sortOrder      : Integer default 1;
+  active         : Boolean default true;
+}
+
+// Lookup: Temporary Provision Types (CWRS, DETR, SUBB, etc.)
+entity ProvisionTypes : sap.common.CodeList {
+  key code        : String(10);
+  description     : String(255);
+  active          : Boolean default true;
+}
+
+// Lookup: Repairs Proposal Types (REPR, REPL, PATC, MNTN, etc.)
+entity RepairsProposalTypes : sap.common.CodeList {
+  key code        : String(10);
+  description     : String(255);
+  active          : Boolean default true;
 }
 
 entity BridgeRestrictions : cuid, managed {
@@ -245,43 +287,29 @@ entity BridgeAttributes : cuid, managed {
   remarks             : LargeString;
 }
 
-entity BridgeDocuments : cuid, managed {
-  bridge              : Association to Bridges;
-  documentType        : String(60);
-  title               : String(111);
-  documentUrl         : String(500);
-  fileName            : String(255);
-  mediaType           : String(100);
-  fileSize            : Integer;
-  @Core.MediaType: mediaType
-  @Core.ContentDisposition.Filename: fileName
-  @Core.ContentDisposition.Type: 'attachment'
-  content             : LargeBinary;
-  referenceNumber     : String(111);
-  issuedBy            : String(111);
-  documentDate        : Date;
-  expiryDate          : Date;
-  remarks             : LargeString;
-}
-
 entity AssetClasses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity States : sap.common.CodeList {
   key code : String(10);
+  active   : Boolean default true;
 }
 
 entity Regions : sap.common.CodeList {
   key code : String(80);
+  active   : Boolean default true;
 }
 
 entity StructureTypes : sap.common.CodeList {
   key code : String(60);
+  active   : Boolean default true;
 }
 
 entity DesignLoads : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity DefectCodes : managed {
@@ -293,84 +321,109 @@ entity DefectCodes : managed {
 
 entity PostingStatuses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity CapacityStatuses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity ConditionStates : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity ScourRiskLevels : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity PbsApprovalClasses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity ConditionSummaries : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity StructuralAdequacyTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity RestrictionTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
+}
+
+entity ClosureTypes : sap.common.CodeList {
+  key code : String(40);
+  active   : Boolean default true;
 }
 
 entity RestrictionStatuses : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity VehicleClasses : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity RestrictionCategories : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity RestrictionUnits : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity RestrictionDirections : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 // ── New lookup tables — standards compliance additions ────────────────────────
 
 entity InspectionTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity ConditionTrends : sap.common.CodeList {
   key code : String(20);
+  active   : Boolean default true;
 }
 
 entity SurfaceTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity SubstructureTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity FoundationTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity WaterwayTypes : sap.common.CodeList {
   key code : String(40);
+  active   : Boolean default true;
 }
 
 entity FatigueDetailCategories : sap.common.CodeList {
   key code : String(10);
+  active   : Boolean default true;
 }
 
 type Price : Decimal(9, 2);
@@ -633,6 +686,27 @@ annotate AssetIQScores with @(cds.persistence.indexes: [
   { name: 'idx_aiq_scored', columns: ['scoredAt'] }
 ]);
 
+annotate bridge.management.Bridges with @(cds.persistence.indexes: [
+  { elements: ['state', 'isActive'] },
+  { elements: ['bridgeId'] },
+  { elements: ['conditionRating', 'isActive'] }
+]);
+
+annotate bridge.management.BridgeDefects with @(cds.persistence.indexes: [
+  { elements: ['bridge_ID', 'active'] },
+  { elements: ['severity', 'active'] }
+]);
+
+annotate bridge.management.BridgeInspections with @(cds.persistence.indexes: [
+  { elements: ['bridge_ID', 'active'] },
+  { elements: ['inspectionDate'] }
+]);
+
+annotate bridge.management.AlertsAndNotifications with @(cds.persistence.indexes: [
+  { elements: ['status', 'entityType'] },
+  { elements: ['bridge_ID', 'status'] }
+]);
+
 entity AssetIQModels : cuid, managed {
   version         : String(20) @mandatory;
   isActive        : Boolean default false;
@@ -650,23 +724,24 @@ extend entity Bridges with {
   virtual ragStatus : String(10);
 }
 
-// --------------------------------------------------------------------------------
-// Temporary workaround for this situation:
-// - Fiori apps annotate Bridges with @fiori.draft.enabled.
-// - Because of that .csv data has to eagerly fill in ID_texts column.
-annotate Bridges with @fiori.draft.enabled;
-
+// Upload session history — one record per mass-upload execution
 entity UploadSessions : cuid, managed {
   fileName        : String(255);
   datasetName     : String(100) default 'All';
-  mode            : String(20)  default 'upsert';
-  status          : String(20)  default 'Completed';
+  mode            : String(20)  default 'upsert';      // create | update | upsert
+  status          : String(20)  default 'Completed';   // Completed | PartialSuccess | Failed
   totalRows       : Integer     default 0;
   insertedRows    : Integer     default 0;
   updatedRows     : Integer     default 0;
   deactivatedRows : Integer     default 0;
   warningCount    : Integer     default 0;
   errorCount      : Integer     default 0;
-  summaryJson     : LargeString;
-  warningsJson    : LargeString;
+  summaryJson     : LargeString;   // JSON array of per-dataset summaries
+  warningsJson    : LargeString;   // JSON array of warning strings (capped at 100)
 }
+
+// --------------------------------------------------------------------------------
+// Temporary workaround for this situation:
+// - Fiori apps annotate Bridges with @fiori.draft.enabled.
+// - Because of that .csv data has to eagerly fill in ID_texts column.
+annotate Bridges with @fiori.draft.enabled;

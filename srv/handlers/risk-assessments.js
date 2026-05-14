@@ -21,6 +21,9 @@ module.exports = function registerRiskAssessmentHandlers (srv, { logAudit }) {
 
         const likelihood = d.likelihood ?? null
         const consequence = d.consequence ?? null
+        const residualL = d.residualLikelihood ?? null
+        const residualC = d.residualConsequence ?? null
+
         if (likelihood !== null && consequence !== null) {
             d.inherentRiskScore = likelihood * consequence
             d.inherentRiskLevel = scoreToLevel(d.inherentRiskScore)
@@ -34,6 +37,22 @@ module.exports = function registerRiskAssessmentHandlers (srv, { logAudit }) {
             if (l && c) {
                 d.inherentRiskScore = l * c
                 d.inherentRiskLevel = scoreToLevel(d.inherentRiskScore)
+            }
+        }
+
+        if (residualL !== null && residualC !== null) {
+            d.residualRiskScore = residualL * residualC
+            d.residualRiskLevel = scoreToLevel(d.residualRiskScore)
+        } else if (req.event === 'UPDATE' && (residualL !== null || residualC !== null)) {
+            const existing = await db.run(
+                SELECT.one.from('bridge.management.BridgeRiskAssessments')
+                    .columns('residualLikelihood', 'residualConsequence').where({ ID: d.ID })
+            )
+            const rl = residualL ?? existing?.residualLikelihood
+            const rc = residualC ?? existing?.residualConsequence
+            if (rl && rc) {
+                d.residualRiskScore = rl * rc
+                d.residualRiskLevel = scoreToLevel(d.residualRiskScore)
             }
         }
     })

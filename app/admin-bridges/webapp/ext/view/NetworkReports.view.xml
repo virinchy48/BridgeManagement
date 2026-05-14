@@ -323,6 +323,14 @@
             </content>
           </IconTabFilter>
 
+          <IconTabFilter key="closures" icon="sap-icon://warning2" text="Bridge Closures" id="tabClosures">
+            <content>
+              <VBox class="sapUiSmallMargin">
+                <core:HTML id="closuresContent" content="&lt;div class='rptEmptyState'&gt;Loading...&lt;/div&gt;"/>
+              </VBox>
+            </content>
+          </IconTabFilter>
+
         </items>
       </IconTabBar>
     </content>

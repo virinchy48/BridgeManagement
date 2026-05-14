@@ -81,9 +81,6 @@ entity Bridges : managed {
       gazetteEffectiveDate    : Date;
       gazetteExpiryDate       : Date;
       postingStatusReason     : String(200);
-      closureDate             : Date;
-      closureEndDate          : Date;
-      closureReason           : String(500);
       isActive                : Boolean default true;
       isDeleted               : Boolean default false;
       // ── WA/Interstate dataset fields (gaps identified May 2026) ──────────────
@@ -99,6 +96,7 @@ entity Bridges : managed {
       // Virtual fields populated server-side for UI KPI chips — never persisted
       virtual postingStatusCriticality : Integer;
       virtual activeRestrictionCount   : Integer default 0;
+      virtual activeClosureCount       : Integer default 0;
       virtual bsiScore                 : Decimal(5,2);
       virtual bsiWidthRating           : Integer;
       virtual bsiBarrierRating         : Integer;

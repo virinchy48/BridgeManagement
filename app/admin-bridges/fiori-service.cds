@@ -147,9 +147,10 @@ annotate AdminService.Bridges with @(
         ]
       },
       // ── T4: Inspection Status ─────────────────────────────────────────────
-      // "Current Condition" = read-only snapshot set by Inspect Now workflow
+      // "Current Condition" = read-only snapshot updated by New Inspection workflow
       // "Inspection Schedule" = editable bridge-level manager config
       // "Environmental & Risk Flags" = editable bridge-level attributes only
+      // "Inspection History" = live sub-table of BridgeInspections for this bridge
       // Scour risk/depth live exclusively in the BridgeScourAssessments tile
       {
         $Type : 'UI.CollectionFacet',
@@ -159,6 +160,7 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Current Condition',          Target: '@UI.FieldGroup#LastInspectionResults'},
           {$Type: 'UI.ReferenceFacet', Label: 'Environmental & Risk Flags', Target: '@UI.FieldGroup#EnvRisk'},
           {$Type: 'UI.ReferenceFacet', Label: 'Inspection Schedule',        Target: '@UI.FieldGroup#InspectionConfig'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Inspection History',         Target: 'inspections/@UI.LineItem'},
         ]
       },
       // ── T5: Traffic & NHVR ───────────────────────────────────────────────
@@ -371,13 +373,13 @@ annotate AdminService.Bridges with @(
         {Value: gazetteExpiryDate,    Label: 'Gazette Expiry Date'},
       ]
     },
-    // Operational closure events (separate from standing gazette/posting)
+    // Closure status — derived from active closure-type Restrictions (read-only snapshot)
     FieldGroup#Closure: {
-      Label: 'Closure',
+      Label: 'Closure Status',
       Data: [
-        {Value: closureDate,    Label: 'Closure From'},
-        {Value: closureEndDate, Label: 'Closure To'},
-        {Value: closureReason,  Label: 'Closure Reason'},
+        {Value: postingStatus,       Label: 'Posting Status'},
+        {Value: activeClosureCount,  Label: 'Active Closure Restrictions'},
+        {Value: postingStatusReason, Label: 'Status Reason'},
       ]
     },
 
@@ -672,9 +674,7 @@ annotate AdminService.Bridges with {
   gazetteEffectiveDate  @title: 'Gazette Effective Date'  @Common.QuickInfo: 'Date gazette order came into effect — Roads Act 1993 §122';
   gazetteExpiryDate     @title: 'Gazette Expiry Date'     @Common.QuickInfo: 'Drives renewal alerts 90/60/30 days before expiry';
   postingStatusReason   @title: 'Posting Status Reason';
-  closureDate           @title: 'Closure Date';
-  closureEndDate        @title: 'Expected Reopening Date';
-  closureReason         @title: 'Closure Reason'  @UI.MultiLineText;
+  activeClosureCount    @title: 'Active Closure Restrictions'  @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Count of current active closure-type Restrictions for this bridge — auto-computed';
   maintenanceClass      @title: 'Maintenance Class';
   lifecycleStage        @title: 'Lifecycle Stage';
 };

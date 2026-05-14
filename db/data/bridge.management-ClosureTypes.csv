@@ -1,0 +1,6 @@
+code;name;descr;active
+Full Closure;Full Closure;Bridge fully closed to all traffic;true
+Partial Closure;Partial Closure;One or more lanes closed — through traffic restricted;true
+Lane Closure;Lane Closure;Single lane closure — traffic controlled by signals or flagging;true
+Footpath Closure;Footpath Closure;Pedestrian/cyclist access closed — vehicles unaffected;true
+Emergency;Emergency Closure;Unplanned closure due to incident, flood, structural damage or inspectors order;true
