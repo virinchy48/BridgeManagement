@@ -403,7 +403,24 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   // ── Virtual fields for ObjectPage header KPI chips ───────────────────────
   // postingStatusCriticality: Integer (1=Error/red, 2=Warning/amber, 3=Success/green)
   // activeRestrictionCount: count of active BridgeRestrictions (detail page only)
-  const POSTING_CRITICALITY = { 'Unrestricted': 3, 'Under Review': 2, 'Restricted': 2, 'Closed': 1 }
+  // activeClosureCount: count of current active closure-type Restrictions
+  const POSTING_CRITICALITY = { 'Unrestricted': 3, 'Under Review': 2, 'Restricted': 2, 'Posted': 2, 'Closed': 1 }
+
+  // Syncs bridge postingStatus based on active closure/restriction Restrictions records
+  const syncBridgeClosureStatus = async (bridgeId) => {
+    if (!bridgeId) return
+    const today = new Date().toISOString().slice(0, 10)
+    const active = await SELECT.from('bridge.management.Restrictions')
+      .columns('ID', 'closureType', 'active')
+      .where({ bridge_ID: bridgeId, active: true })
+    const current = active.filter(r => true) // all active — postingStatus = 'Posted' if any restriction
+    const closures = active.filter(r => r.closureType)
+    let newStatus
+    if (closures.length > 0)   newStatus = 'Closed'
+    else if (active.length > 0) newStatus = 'Posted'
+    else                        newStatus = 'Unrestricted'
+    await UPDATE('bridge.management.Bridges').set({ postingStatus: newStatus }).where({ ID: bridgeId })
+  }
 
   this.after('READ', Bridges, async (results, req) => {
     const list = Array.isArray(results) ? results : (results ? [results] : [])
@@ -411,12 +428,12 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       if (!b) continue
       b.postingStatusCriticality = POSTING_CRITICALITY[b.postingStatus] ?? 2
       b.activeRestrictionCount   = 0
+      b.activeClosureCount       = 0
     }
+    const ids = list.map(b => b.ID).filter(Boolean)
+    const isSingleRecord = list.length === 1 && req.params?.[0]
     // Batch COUNT active restrictions for all records in one query
     const wantCount = !req.query?.$select || req.query.$select.split(',').map(f => f.trim()).includes('activeRestrictionCount')
-    const ids = list.map(b => b.ID).filter(Boolean)
-    // Skip expensive COUNT on single-record ObjectPage navigations (count loads from Restrictions tab directly)
-    const isSingleRecord = list.length === 1 && req.params?.[0]
     if (wantCount && ids.length > 0 && !isSingleRecord) {
       const counts = await SELECT.from('bridge.management.BridgeRestrictions')
         .columns('bridge_ID', 'count(1) as cnt')
@@ -424,6 +441,17 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
         .groupBy('bridge_ID')
       const countMap = Object.fromEntries(counts.map(r => [r.bridge_ID, Number(r.cnt)]))
       for (const b of list) b.activeRestrictionCount = countMap[b.ID] ?? 0
+    }
+    // Batch COUNT active closure-type Restrictions
+    if (ids.length > 0) {
+      const today = new Date().toISOString().slice(0, 10)
+      const closureCounts = await SELECT.from('bridge.management.Restrictions')
+        .columns('bridge_ID', 'count(1) as cnt')
+        .where({ bridge_ID: { in: ids }, active: true })
+        .where(`closureType IS NOT NULL AND (closureStartDate IS NULL OR closureStartDate <= '${today}') AND (closureEndDate IS NULL OR closureEndDate >= '${today}')`)
+        .groupBy('bridge_ID')
+      const closureMap = Object.fromEntries(closureCounts.map(r => [r.bridge_ID, Number(r.cnt)]))
+      for (const b of list) b.activeClosureCount = closureMap[b.ID] ?? 0
     }
     // BSI composite score (simplified)
     for (const b of list) {
@@ -448,7 +476,8 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       const aiqMap = Object.fromEntries((aiqScores || []).map(r => [r.bridge_ID, r.ragStatus]))
       for (const b of list) b.ragStatus = aiqMap[b.ID] ?? null
     }
-    // BHI/NBI — only computed when feature flag is enabled
+    // BHI/NBI — always initialise to null so FE4 $select drill-down never fails
+    for (const b of list) { b.bhi = null; b.nbi = null }
     const bhiEnabled = await isFeatureEnabled('bhiBsiAssessment')
     if (bhiEnabled) {
       for (const b of list) {
@@ -531,13 +560,17 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
   this.on('deactivate', Restrictions, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
+    const r = await db.run(SELECT.one.from('bridge.management.Restrictions').columns('bridge_ID').where({ ID }))
     await db.run(UPDATE('bridge.management.Restrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ ID }))
+    if (r?.bridge_ID) await syncBridgeClosureStatus(r.bridge_ID)
     return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
   })
   this.on('reactivate', Restrictions, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
+    const r = await db.run(SELECT.one.from('bridge.management.Restrictions').columns('bridge_ID').where({ ID }))
     await db.run(UPDATE('bridge.management.Restrictions').set({ active: true, restrictionStatus: 'Active' }).where({ ID }))
+    if (r?.bridge_ID) await syncBridgeClosureStatus(r.bridge_ID)
     return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
   })
 
@@ -628,6 +661,12 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (!req.data.name) {
       req.data.name = req.data.restrictionRef || req.data.restrictionType || 'Restriction'
     }
+  })
+
+  // Sync bridge posting status when a Restriction is created/updated
+  this.after(['CREATE', 'UPDATE'], Restrictions, async (result) => {
+    const bridgeId = result?.bridge_ID
+    if (bridgeId) await syncBridgeClosureStatus(bridgeId)
   })
 
   // ── Audit: Bridges (draft activation = UPDATE on active entity) ──────────
@@ -1110,6 +1149,22 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       d.inherentRiskScore = likelihood * consequence
       const score = d.inherentRiskScore
       d.inherentRiskLevel = score >= 15 ? 'Extreme' : score >= 10 ? 'High' : score >= 5 ? 'Medium' : 'Low'
+    }
+
+    let residualL = d.residualLikelihood ?? null
+    let residualC = d.residualConsequence ?? null
+    if ((residualL === null || residualC === null) && d.ID) {
+      const draft = await db.run(
+        SELECT.one.from('bridge.management.BridgeRiskAssessments.drafts')
+          .columns('residualLikelihood', 'residualConsequence').where({ ID: d.ID })
+      ).catch(() => null)
+      residualL = residualL ?? draft?.residualLikelihood ?? null
+      residualC = residualC ?? draft?.residualConsequence ?? null
+    }
+    if (residualL !== null && residualC !== null) {
+      d.residualRiskScore = residualL * residualC
+      const rs = d.residualRiskScore
+      d.residualRiskLevel = rs >= 15 ? 'Extreme' : rs >= 10 ? 'High' : rs >= 5 ? 'Medium' : 'Low'
     }
   }
 
