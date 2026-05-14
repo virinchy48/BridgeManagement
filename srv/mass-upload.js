@@ -1466,6 +1466,7 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
   const normalized = normalizeRows(dataset, rows, warnings)
   if (!normalized.length) return emptySummary(dataset)
 
+  const mode = auditContext?.mode || 'upsert'
   const grouped = new Map()
   for (const row of normalized) {
     if (!ALLOWED_VALUES_WHITELIST.has(row.entityName)) {
@@ -1479,6 +1480,7 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
   let totalInserted = 0
   let totalUpdated = 0
   let totalProcessed = 0
+  const rowResults = []
   const entityFieldMap = {
     DefectCodes: { labelField: 'description', descrField: null }
   }
@@ -1498,7 +1500,7 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
       else inserts.push(row)
     }
 
-    if (inserts.length) {
+    if (mode !== 'update' && inserts.length) {
       await tx.run(INSERT.into(entityRef).entries(inserts.map(r => {
         const entry = { code: r.code, [labelField]: r.label || r.code }
         if (descrField) entry[descrField] = r.description || null
@@ -1516,36 +1518,52 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
           changes:    [{ fieldName: 'code', oldValue: '', newValue: row.code },
                        { fieldName: labelField, oldValue: '', newValue: row.label || '' }]
         })
+        rowResults.push({ rowNum: row.__rowNumber, key: `${entityName}:${row.code}`, status: 'Created', action: 'insert', message: '' })
+      }
+      totalInserted += inserts.length
+    } else if (mode === 'update') {
+      for (const row of inserts) {
+        const msg = `AllowedValues: skipped — ${entityName}:${row.code} not found. Use Upsert mode to create new codes.`
+        warnings.push(msg)
+        rowResults.push({ rowNum: row.__rowNumber, key: `${entityName}:${row.code}`, status: 'Skipped', action: 'skip', message: msg })
       }
     }
 
-    for (const row of updates) {
-      const setClause = { [labelField]: row.label || row.code }
-      if (descrField) setClause[descrField] = row.description || null
-      if (row.active !== undefined) setClause.active = row.active !== false
-      const oldRow = await fetchCurrentRecord(tx, entityRef, { code: row.code })
-      await tx.run(UPDATE(entityRef).set(setClause).where({ code: row.code }))
-      if (oldRow) {
-        const changes = diffRecords(
-          Object.fromEntries(Object.keys(setClause).map(k => [k, oldRow[k]])),
-          setClause
-        )
-        if (changes.length) {
-          queueAudit(auditContext, {
-            objectType: 'Lookup',
-            objectId:   `${entityName}:${row.code}`,
-            objectName: `${entityName} / ${row.code}`,
-            source:     'MassUpload',
-            batchId:    auditContext?.batchId,
-            changedBy:  auditContext?.changedBy || 'system',
-            changes
-          })
+    if (mode !== 'create') {
+      for (const row of updates) {
+        const setClause = { [labelField]: row.label || row.code }
+        if (descrField) setClause[descrField] = row.description || null
+        if (row.active !== undefined) setClause.active = row.active !== false
+        const oldRow = await fetchCurrentRecord(tx, entityRef, { code: row.code })
+        await tx.run(UPDATE(entityRef).set(setClause).where({ code: row.code }))
+        if (oldRow) {
+          const changes = diffRecords(
+            Object.fromEntries(Object.keys(setClause).map(k => [k, oldRow[k]])),
+            setClause
+          )
+          if (changes.length) {
+            queueAudit(auditContext, {
+              objectType: 'Lookup',
+              objectId:   `${entityName}:${row.code}`,
+              objectName: `${entityName} / ${row.code}`,
+              source:     'MassUpload',
+              batchId:    auditContext?.batchId,
+              changedBy:  auditContext?.changedBy || 'system',
+              changes
+            })
+          }
         }
+        rowResults.push({ rowNum: row.__rowNumber, key: `${entityName}:${row.code}`, status: 'Updated', action: 'update', message: '' })
+      }
+      totalUpdated += updates.length
+    } else {
+      for (const row of updates) {
+        const msg = `AllowedValues: skipped — ${entityName}:${row.code} already exists. Use Upsert mode to update existing codes.`
+        warnings.push(msg)
+        rowResults.push({ rowNum: row.__rowNumber, key: `${entityName}:${row.code}`, status: 'Skipped', action: 'skip', message: msg })
       }
     }
 
-    totalInserted += inserts.length
-    totalUpdated += updates.length
     totalProcessed += entityRows.length
   }
 
@@ -1554,7 +1572,8 @@ async function importAllowedValueRows(tx, dataset, rows, warnings, auditContext)
     label: dataset.label,
     inserted: totalInserted,
     updated: totalUpdated,
-    processed: totalProcessed
+    processed: totalProcessed,
+    rowResults
   }
 }
 
