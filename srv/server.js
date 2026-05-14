@@ -8,7 +8,9 @@ const {
   buildWorkbookTemplate,
   getDatasets,
   importUpload,
-  validateUpload
+  validateUpload,
+  getUploadHistory,
+  getUploadSessionById
 } = require('./mass-upload')
 
 const mountAttributesApi = require('./attributes-api')
@@ -1277,6 +1279,30 @@ cds.on('bootstrap', (app) => {
       res.json(result)
     } catch (error) {
       res.status(422).json({ error: { message: error.message || 'Validation failed' } })
+    }
+  })
+
+  // Upload history routes (GET — no CSRF needed)
+  router.get('/history', async (req, res) => {
+    try {
+      const sessions = await getUploadHistory(50)
+      res.json({ sessions })
+    } catch (err) {
+      res.status(500).json({ error: { message: err.message } })
+    }
+  })
+
+  router.get('/history/:id/report.csv', async (req, res) => {
+    try {
+      const session = await getUploadSessionById(req.params.id)
+      if (!session) return res.status(404).json({ error: { message: 'Session not found' } })
+      const rows = JSON.parse(session.warningsJson || '[]')
+      const lines = ['Row,Dataset,Status,Message', ...rows.map((w, i) => `${i + 1},${session.datasetName},Warning,${String(w).replace(/,/g, ';')}`)]
+      res.setHeader('Content-Type', 'text/csv')
+      res.setHeader('Content-Disposition', `attachment; filename="upload-report-${req.params.id}.csv"`)
+      res.send(lines.join('\n'))
+    } catch (err) {
+      res.status(500).json({ error: { message: err.message } })
     }
   })
 
