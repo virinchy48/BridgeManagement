@@ -15,10 +15,10 @@ function gazetteUrgency(expiryDate, today) {
 function conditionKey(c) {
   const n = Number(c)
   if (!isNaN(n) && n > 0) {
-    // TfNSW 1–5 scale: 5=Critical, 4=Poor, 3=Fair, 2=Satisfactory, 1=Good
-    if (n >= 5) return 'critical'
-    if (n >= 4) return 'poor'
-    if (n >= 3) return 'fair'
+    // conditionRating is 1-10 (TfNSW/AS 5100-7); 10=new, 1=critical failure
+    if (n <= 2) return 'critical'
+    if (n <= 4) return 'poor'
+    if (n <= 6) return 'fair'
     return 'good'
   }
   const s = (c || '').toLowerCase()
@@ -28,9 +28,11 @@ function conditionKey(c) {
   return 'good'
 }
 
-function mountReportsApi(app, requiresAuthentication) {
+function mountReportsApi(app, requiresAuthentication, requireViewScope) {
   const router = express.Router()
   router.use(express.json())
+  router.use(requiresAuthentication)
+  router.use(requireViewScope)
 
   router.get('/network-health', async (req, res) => {
     try {
@@ -454,7 +456,7 @@ function mountReportsApi(app, requiresAuthentication) {
 
   const ALLOWED_GROUP_BY = ['state', 'region', 'condition', 'postingStatus', 'structureType', 'material', 'scourRisk']
 
-  app.get('/reports/api/custom', requiresAuthentication, async (req, res) => {
+  app.get('/reports/api/custom', requiresAuthentication, requireViewScope, async (req, res) => {
     try {
       const { groupBy, filterField, filterValue, state } = req.query
 
@@ -497,7 +499,7 @@ function mountReportsApi(app, requiresAuthentication) {
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 
-  app.use('/reports/api', requiresAuthentication, router)
+  app.use('/reports/api', requiresAuthentication, requireViewScope, router)
 }
 
 module.exports = mountReportsApi

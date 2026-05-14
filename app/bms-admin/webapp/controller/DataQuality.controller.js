@@ -87,8 +87,8 @@ sap.ui.define([
     _getCsrfToken: function () {
       if (this._csrfToken) return Promise.resolve(this._csrfToken);
       return fetch("/quality/api/rules", { method: "HEAD", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
-        .then(r => { this._csrfToken = r.headers.get("X-CSRF-Token") || "unsafe"; return this._csrfToken; })
-        .catch(() => { this._csrfToken = "unsafe"; return this._csrfToken; });
+        .then(r => { this._csrfToken = r.headers.get("X-CSRF-Token"); return this._csrfToken; })
+        .catch(() => { throw new Error("CSRF token fetch failed — reload the page"); });
     },
 
     _mutate: function (url, method, body) {

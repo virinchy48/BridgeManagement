@@ -1160,7 +1160,7 @@ cds.on('bootstrap', (app) => {
   const validateCsrfToken = (req, res, next) => {
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
       const csrfToken = req.headers['x-csrf-token']
-      if (!csrfToken || csrfToken.length < 4 || csrfToken.toLowerCase() === 'fetch') {
+      if (!csrfToken || csrfToken.length < 4 || csrfToken.toLowerCase() === 'fetch' || csrfToken.toLowerCase() === 'unsafe') {
         return res.status(403).json({ error: 'CSRF token required', code: 'CSRF_MISSING' })
       }
     }
@@ -1459,6 +1459,7 @@ cds.on('bootstrap', (app) => {
       } else {
         cfg.customWmsLayers = [];
       }
+      delete cfg.hereApiKey  // never expose API key in map config endpoint
       res.json(cfg);
     } catch (err) {
       res.status(500).json({ error: { message: err.message || 'Failed to load GIS config' } });
@@ -1526,7 +1527,7 @@ cds.on('bootstrap', (app) => {
   })
 
   app.use('/mass-edit/api', requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, massEditRouter)
-  mountAttributesApi(app, requiresAuthentication, validateCsrfToken)
+  mountAttributesApi(app, requiresAuthentication, requireScope('manage', 'admin'))
 
   // ── Audit Report API ─────────────────────────────────────────────────────
   const auditRouter = express.Router()
@@ -2541,8 +2542,8 @@ cds.on('bootstrap', (app) => {
     } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
-  mountReportsApi(app, requiresAuthentication)
-  mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken)
+  mountReportsApi(app, requiresAuthentication, requireScope('view', 'inspect', 'manage', 'admin'))
+  mountBhiBsiApi(app, requiresAuthentication, requireScope)
 
   app.use('/bnac/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
 })

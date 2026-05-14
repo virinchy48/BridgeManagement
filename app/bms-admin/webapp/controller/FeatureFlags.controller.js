@@ -72,7 +72,7 @@ sap.ui.define([
         credentials: "include",
         headers: { "X-CSRF-Token": "Fetch" }
       }).then(function (res) {
-        return res.headers.get("X-CSRF-Token") || "unsafe";
+        return res.headers.get("X-CSRF-Token");
       });
     },
 

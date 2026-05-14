@@ -126,9 +126,14 @@ sap.ui.define([
   var _csrfToken = null;
   function getCsrfToken() {
     if (_csrfToken) return Promise.resolve(_csrfToken);
-    return fetch("/admin-bridges/api/bridges", { method: "HEAD", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
-      .then(function (r) { _csrfToken = r.headers.get("X-CSRF-Token") || "unsafe"; return _csrfToken; })
-      .catch(function () { _csrfToken = "unsafe"; return _csrfToken; });
+    return fetch("/odata/v4/admin/Bridges?$top=0", { method: "GET", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
+      .then(function (r) {
+        var token = r.headers.get("X-CSRF-Token");
+        if (!token || token.toLowerCase() === "fetch") throw new Error("No CSRF token returned");
+        _csrfToken = token;
+        return _csrfToken;
+      })
+      .catch(function (e) { return Promise.reject(new Error("CSRF token fetch failed: " + e.message)); });
   }
 
   function mutate(url, method, body) {

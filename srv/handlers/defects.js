@@ -61,7 +61,7 @@ module.exports = function registerDefectHandlers (srv, { logAudit }) {
         if (defect.requiresLoadRestriction && defect.bridge_ID) {
             const existingRestriction = await db.run(
                 SELECT.one.from('bridge.management.Restrictions')
-                    .where({ bridge_ID: defect.bridge_ID, restrictionType: 'Weight', restrictionStatus: 'Draft', active: true })
+                    .where({ bridge_ID: defect.bridge_ID, restrictionType: 'Weight', restrictionStatus: 'Draft' })
                     .columns('ID')
             )
             if (!existingRestriction) {
@@ -73,7 +73,12 @@ module.exports = function registerDefectHandlers (srv, { logAudit }) {
                     restrictionType: 'Weight',
                     restrictionStatus: 'Draft',
                     restrictionCategory: 'Temporary',
-                    active: true,
+                    bridgeRef: defect.bridge?.bridgeId || defect.bridge_ID?.toString() || '',
+                    restrictionValue: 'TBD',
+                    restrictionUnit: 'T',
+                    restrictionRef: 'AUTO-' + (defect.defectId || defect.ID?.substring(0, 8) || 'PENDING'),
+                    notes: `Auto-suggested from defect ${defect.defectId || defect.ID}: requires engineering review before posting`,
+                    active: false,
                     effectiveFrom: new Date().toISOString().split('T')[0]
                 }))
             }

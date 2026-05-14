@@ -12,8 +12,8 @@ entity Bridges : managed {
       region       : String(80);
       lga          : String(111);
       routeNumber  : String(40);
-      latitude     : Decimal(15,6) @mandatory @assert.range: [-90, 90];
-      longitude    : Decimal(15,6) @mandatory @assert.range: [-180, 180];
+      latitude     : Decimal(9,6)  @mandatory @assert.range: [-44, -10];   // GDA2020 — Australia bounding box
+      longitude    : Decimal(10,6) @mandatory @assert.range: [112, 154];   // GDA2020 — Australia bounding box
       location     : String(255);
       assetOwner   : String(111) @mandatory;
       managingAuthority : String(111);

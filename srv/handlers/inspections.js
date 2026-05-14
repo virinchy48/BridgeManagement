@@ -13,7 +13,8 @@ module.exports = function registerInspectionHandlers (srv, { logAudit }) {
                 SELECT.from('bridge.management.BridgeInspections')
                     .columns('inspectionRef').orderBy('inspectionRef desc').limit(1)
             )
-            const seq = last?.inspectionRef ? parseInt(last.inspectionRef.replace('INS-', ''), 10) + 1 : 1
+            const m = last?.inspectionRef?.match(/^INS-(\d+)$/)
+            const seq = m ? parseInt(m[1], 10) + 1 : 1
             req.data.inspectionRef = `INS-${String(seq).padStart(4, '0')}`
         }
 
@@ -21,8 +22,8 @@ module.exports = function registerInspectionHandlers (srv, { logAudit }) {
         if (restrictedTypes.includes(req.data.inspectionType)) {
             const level = req.data.inspectorAccreditationLevel
             const allowed = ['Level 3', 'Level 4']
-            if (level && !allowed.includes(level)) {
-                return req.error(422, `${req.data.inspectionType} inspections require Level 3 or Level 4 accreditation (current: ${level})`)
+            if (!level || !allowed.includes(level)) {
+                return req.error(422, `${req.data.inspectionType} inspections require Level 3 or Level 4 accreditation. Please provide inspectorAccreditationLevel.`)
             }
         }
     })
@@ -35,9 +36,9 @@ module.exports = function registerInspectionHandlers (srv, { logAudit }) {
         const cs4 = d.conditionState4Qty ?? 0
         const total = cs1 + cs2 + cs3 + cs4
         if (total > 0) {
-            d.elementHealthRating = Math.round(
-                ((cs1 * 1 + cs2 * 2 + cs3 * 3 + cs4 * 4) / total) * 100
-            ) / 100
+            const weighted = (cs1 * 1 + cs2 * 2 + cs3 * 3 + cs4 * 4) / total
+            // SIMS CS1-CS4 scale inverted to 0-100 health (100=new/CS1, 0=failed/CS4)
+            d.elementHealthRating = Math.round((1 - (weighted - 1) / 3) * 100 * 100) / 100
         }
     })
 

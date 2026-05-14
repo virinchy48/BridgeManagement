@@ -25,7 +25,7 @@ function deriveElementRatings(conditionRating) {
   ]
 }
 
-function mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken) {
+function mountBhiBsiApi(app, requiresAuthentication, requireScope) {
   const router = express.Router()
   router.use(express.json())
 
@@ -33,7 +33,7 @@ function mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken) {
     res.json({ modeParams: MODE_PARAMS })
   })
 
-  router.post('/assess', requiresAuthentication, validateCsrfToken, async (req, res) => {
+  router.post('/assess', requiresAuthentication, requireScope('manage', 'admin'), async (req, res) => {
     try {
       if (!await checkFeatureFlag(res)) return
 
@@ -91,7 +91,7 @@ function mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken) {
     } catch (err) { res.status(500).json({ error: { message: err.message } }) }
   })
 
-  router.get('/network-summary', requiresAuthentication, async (req, res) => {
+  router.get('/network-summary', requiresAuthentication, requireScope('manage', 'admin'), async (req, res) => {
     try {
       if (!await checkFeatureFlag(res)) return
 

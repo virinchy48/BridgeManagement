@@ -48,8 +48,19 @@ service AdminService {
     action reactivate() returns BridgeDefects;
   };
   // Structural elements: Manager+Admin write; all read
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
   entity BridgeElements        as projection on my.BridgeElements;
   // Risk + compliance: Manager+Admin write; all read
+  @restrict: [
+    { grant: ['READ'],                            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'],                 to: ['manage','admin'] },
+    { grant: ['deactivate','reactivate'],         to: ['manage','admin'] },
+    { grant: ['DELETE'],                          to: [] }
+  ]
   entity BridgeRiskAssessments as projection on my.BridgeRiskAssessments actions {
     action deactivate() returns BridgeRiskAssessments;
     action reactivate() returns BridgeRiskAssessments;
@@ -64,10 +75,35 @@ service AdminService {
   };
   entity NhvrApprovedVehicleClasses as projection on my.NhvrApprovedVehicleClasses;
   // Alerts: Manager+Admin write; all read
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
   entity AlertsAndNotifications as projection on my.AlertsAndNotifications;
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
   entity BridgeInspectionElements as projection on my.BridgeInspectionElements;
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
   entity BridgeCarriageways        as projection on my.BridgeCarriageways;
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
   entity BridgeContacts            as projection on my.BridgeContacts;
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
   entity BridgeMehComponents       as projection on my.BridgeMehComponents;
 
   // ── Hub tiles — Phase A new entities ─────────────────────────────────────
