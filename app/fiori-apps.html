@@ -26,7 +26,8 @@
         }
       },
       bootstrapConfig: {
-        "mergeApplications": false
+        "mergeApplications": false,
+        "mergeCatalogs": false
       },
       services: {
         LaunchPage: {
@@ -117,10 +118,25 @@
   <script>
     (function() {
       var cfg = window['sap-ushell-config'];
-      var myGroups = cfg.services.LaunchPage.adapter.config.groups;
-      Object.defineProperty(cfg.services.LaunchPage.adapter.config, 'groups', {
+      var launchCfg = cfg.services.LaunchPage.adapter.config;
+
+      var myGroups = launchCfg.groups;
+      Object.defineProperty(launchCfg, 'groups', {
         get: function() { return myGroups; },
-        set: function() { /* ignore sandbox.js overwrite attempts */ },
+        set: function() {},
+        configurable: false
+      });
+
+      var myCatalogs = [];
+      Object.defineProperty(launchCfg, 'catalogs', {
+        get: function() { return myCatalogs; },
+        set: function() {},
+        configurable: false
+      });
+
+      Object.defineProperty(cfg, 'catalogueEntries', {
+        get: function() { return []; },
+        set: function() {},
         configurable: false
       });
     })();
