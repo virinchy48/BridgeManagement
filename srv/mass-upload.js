@@ -1035,12 +1035,14 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy, mode = 
     let summaries
     let skipped = []
     let warnings = []
+    let allRowResults = []
 
     if (lowerName.endsWith('.xlsx')) {
       const result = await importWorkbook(tx, buffer, datasetName, auditContext, mode)
       summaries = result.summaries
       skipped = result.skipped
       warnings = result.warnings
+      allRowResults = result.rowResults || []
 
       // Process attribute value sheets (BridgeAttributes, RestrictionAttributes)
       const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, codepage: 65001 })
@@ -1112,6 +1114,7 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy, mode = 
       const result = await importCsv(tx, buffer, datasetName, auditContext, mode)
       summaries = [result.summary]
       warnings = result.warnings
+      allRowResults = result.rowResults || []
     } else {
       throw new Error('Unsupported file type. Upload an .xlsx or .csv file.')
     }
@@ -1132,7 +1135,8 @@ async function importUpload({ buffer, fileName, datasetName, uploadedBy, mode = 
       mode,
       summaries,
       skipped,
-      warnings
+      warnings,
+      rowResults: allRowResults
     }
   } catch (error) {
     await tx.rollback()
@@ -1328,6 +1332,7 @@ async function importWorkbook(tx, buffer, datasetName, auditContext) {
   const summaries = []
   const skipped = []
   const warnings = []
+  const allRowResults = []
   const datasets = resolveWorkbookDatasets(datasetName)
 
   for (const dataset of datasets) {
@@ -1340,7 +1345,12 @@ async function importWorkbook(tx, buffer, datasetName, auditContext) {
     const result = dataset.importer
       ? await dataset.importer(tx, dataset, rows, warnings, auditContext)
       : await dataset.importRows(rows, tx)
-    if (result) summaries.push({ dataset: dataset.name, label: dataset.label, inserted: result.inserted ?? 0, updated: result.updated ?? 0, processed: result.processed ?? rows.length })
+    if (result) {
+      summaries.push({ dataset: dataset.name, label: dataset.label, inserted: result.inserted ?? 0, updated: result.updated ?? 0, processed: result.processed ?? rows.length, deleted: result.deleted ?? 0, errors: result.errors ?? 0 })
+      if (result.rowResults) {
+        allRowResults.push(...result.rowResults.map(r => ({ ...r, datasetLabel: result.label || result.dataset })))
+      }
+    }
   }
 
   if (!summaries.length) {
@@ -1350,7 +1360,7 @@ async function importWorkbook(tx, buffer, datasetName, auditContext) {
     throw new Error('No supported upload sheets were found in the workbook.')
   }
 
-  return { summaries, skipped, warnings }
+  return { summaries, skipped, warnings, rowResults: allRowResults }
 }
 
 async function importCsv(tx, buffer, datasetName, auditContext) {
@@ -1369,10 +1379,11 @@ async function importCsv(tx, buffer, datasetName, auditContext) {
 
   const warnings = []
   const rows = parseSheetRows(sheet, dataset)
-  const summary = await (dataset.importer
+  const result = await (dataset.importer
     ? dataset.importer(tx, dataset, rows, warnings, auditContext)
     : dataset.importRows(rows, tx))
-  return { summary, warnings }
+  const rowResults = (result?.rowResults || []).map(r => ({ ...r, datasetLabel: result.label || result.dataset }))
+  return { summary: result, warnings, rowResults }
 }
 
 async function readDatasetRows(dbOrTx, dataset) {
@@ -1628,23 +1639,29 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
 
   const inserts = []
   const updates = []
+  const rowResults = []
 
   for (const row of normalized) {
     const existing = resolveExistingBridgeRow(row, existingById, existingByBridgeId)
 
     if (existing) {
       if (mode === 'create') {
-        warnings.push(`Bridges row ${row.__rowNumber}: skipped — bridgeId '${row.bridgeId || existing.bridgeId}' already exists. Use Update mode to modify existing records.`)
+        const msg = `Bridges row ${row.__rowNumber}: skipped — bridgeId '${row.bridgeId || existing.bridgeId}' already exists. Use Update mode to modify existing records.`
+        warnings.push(msg)
+        rowResults.push({ rowNum: row.__rowNumber, key: row.bridgeId || existing.bridgeId || '(blank)', status: 'Skipped', action: 'skip', message: msg })
         continue
       }
       row.ID = existing.ID
       if (!row.bridgeId) row.bridgeId = existing.bridgeId
       updates.push(row)
+      rowResults.push({ rowNum: row.__rowNumber, key: row.bridgeId || String(row.ID), status: 'Updated', action: 'update', message: 'Record updated successfully' })
       continue
     }
 
     if (mode === 'update') {
-      warnings.push(`Bridges row ${row.__rowNumber}: skipped — bridgeId '${row.bridgeId || '(blank)'}' not found in the system. Use Create mode to add new bridges.`)
+      const msg = `Bridges row ${row.__rowNumber}: skipped — bridgeId '${row.bridgeId || '(blank)'}' not found in the system. Use Create mode to add new bridges.`
+      warnings.push(msg)
+      rowResults.push({ rowNum: row.__rowNumber, key: row.bridgeId || '(blank)', status: 'Skipped', action: 'skip', message: msg })
       continue
     }
 
@@ -1654,6 +1671,7 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
     inserts.push(row)
     existingById.set(row.ID, row)
     if (row.bridgeId) existingByBridgeId.set(row.bridgeId, row)
+    rowResults.push({ rowNum: row.__rowNumber, key: row.bridgeId || String(row.ID), status: 'Created', action: 'create', message: 'Record created successfully' })
   }
 
   if (inserts.length) {
@@ -1700,7 +1718,7 @@ async function importBridgeRows(tx, dataset, rows, warnings, auditContext) {
     }
   }
 
-  return buildSummary(dataset, normalized.length, inserts.length, updates.length)
+  return buildSummary(dataset, normalized.length, inserts.length, updates.length, 0, 0, rowResults)
 }
 
 async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) {
@@ -1722,6 +1740,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
 
   const inserts = []
   const updates = []
+  const rowResults = []
 
   for (const row of normalized) {
     if (!row.name) {
@@ -1737,16 +1756,21 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
     const existing = resolveExistingRestrictionRow(row, existingById, existingByRef)
     if (existing) {
       if (mode === 'create') {
-        warnings.push(`Restrictions row ${row.__rowNumber}: skipped — restrictionRef '${row.restrictionRef || existing.restrictionRef}' already exists. Use Update mode to modify existing records.`)
+        const msg = `Restrictions row ${row.__rowNumber}: skipped — restrictionRef '${row.restrictionRef || existing.restrictionRef}' already exists. Use Update mode to modify existing records.`
+        warnings.push(msg)
+        rowResults.push({ rowNum: row.__rowNumber, key: row.restrictionRef || existing.restrictionRef || '(blank)', status: 'Skipped', action: 'skip', message: msg })
         continue
       }
       row.ID = existing.ID
       updates.push(row)
+      rowResults.push({ rowNum: row.__rowNumber, key: row.restrictionRef || row.ID, status: 'Updated', action: 'update', message: 'Record updated successfully' })
       continue
     }
 
     if (mode === 'update') {
-      warnings.push(`Restrictions row ${row.__rowNumber}: skipped — restrictionRef '${row.restrictionRef || '(blank)'}' not found in the system. Use Create mode to add new restrictions.`)
+      const msg = `Restrictions row ${row.__rowNumber}: skipped — restrictionRef '${row.restrictionRef || '(blank)'}' not found in the system. Use Create mode to add new restrictions.`
+      warnings.push(msg)
+      rowResults.push({ rowNum: row.__rowNumber, key: row.restrictionRef || '(blank)', status: 'Skipped', action: 'skip', message: msg })
       continue
     }
 
@@ -1756,6 +1780,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
     inserts.push(row)
     existingById.set(row.ID, row)
     existingByRef.set(row.restrictionRef, row)
+    rowResults.push({ rowNum: row.__rowNumber, key: row.restrictionRef || row.ID, status: 'Created', action: 'create', message: 'Record created successfully' })
   }
 
   if (inserts.length) {
@@ -1802,7 +1827,7 @@ async function importRestrictionRows(tx, dataset, rows, warnings, auditContext) 
     }
   }
 
-  return buildSummary(dataset, normalized.length, inserts.length, updates.length)
+  return buildSummary(dataset, normalized.length, inserts.length, updates.length, 0, 0, rowResults)
 }
 
 async function enrichRestrictionsWithBridgeKeys(tx, rows) {
@@ -1884,26 +1909,33 @@ async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
 
   const inserts = []
   const updates = []
+  const rowResults = []
 
   for (const row of normalized) {
     let existing = (row.ID && existingById.get(row.ID)) || (row[naturalKey] && existingByNaturalKey.get(row[naturalKey]))
     if (existing) {
       if (mode === 'create') {
-        warnings.push(`${dataset.name} row ${row.__rowNumber}: skipped — ${naturalKey} '${row[naturalKey] || existing[naturalKey]}' already exists. Use Update mode to modify existing records.`)
+        const msg = `${dataset.name} row ${row.__rowNumber}: skipped — ${naturalKey} '${row[naturalKey] || existing[naturalKey]}' already exists. Use Update mode to modify existing records.`
+        warnings.push(msg)
+        rowResults.push({ rowNum: row.__rowNumber, key: row[naturalKey] || existing[naturalKey] || '(blank)', status: 'Skipped', action: 'skip', message: msg })
         continue
       }
       row.ID = existing.ID
       updates.push(row)
+      rowResults.push({ rowNum: row.__rowNumber, key: row[naturalKey] || row.ID, status: 'Updated', action: 'update', message: 'Record updated successfully' })
       continue
     }
     if (mode === 'update') {
-      warnings.push(`${dataset.name} row ${row.__rowNumber}: skipped — ${naturalKey} '${row[naturalKey] || '(blank)'}' not found in the system. Use Create mode to add new records.`)
+      const msg = `${dataset.name} row ${row.__rowNumber}: skipped — ${naturalKey} '${row[naturalKey] || '(blank)'}' not found in the system. Use Create mode to add new records.`
+      warnings.push(msg)
+      rowResults.push({ rowNum: row.__rowNumber, key: row[naturalKey] || '(blank)', status: 'Skipped', action: 'skip', message: msg })
       continue
     }
     if (!row.ID) row.ID = cds.utils.uuid()
     inserts.push(row)
     existingById.set(row.ID, row)
     if (row[naturalKey]) existingByNaturalKey.set(row[naturalKey], row)
+    rowResults.push({ rowNum: row.__rowNumber, key: row[naturalKey] || '(new)', status: 'Created', action: 'create', message: 'Record created successfully' })
   }
 
   if (inserts.length) {
@@ -1935,7 +1967,7 @@ async function importCuidEntityRows(tx, dataset, rows, warnings, auditContext, {
     }
   }
 
-  return buildSummary(dataset, normalized.length, inserts.length, updates.length)
+  return buildSummary(dataset, normalized.length, inserts.length, updates.length, 0, 0, rowResults)
 }
 
 async function importInspectionRows(tx, dataset, rows, warnings, auditContext) {
@@ -2479,13 +2511,16 @@ function emptySummary(dataset) {
   return buildSummary(dataset, 0, 0, 0)
 }
 
-function buildSummary(dataset, processed, inserted, updated) {
+function buildSummary(dataset, processed, inserted, updated, deleted = 0, errors = 0, rowResults = []) {
   return {
     dataset: dataset.name,
     label: dataset.label,
     inserted,
     updated,
-    processed
+    processed,
+    deleted,
+    errors,
+    rowResults
   }
 }
 

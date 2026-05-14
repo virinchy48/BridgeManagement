@@ -62,6 +62,9 @@ sap.ui.define([
         lastMessage: "",
         skippedMessage: "",
         hasUploadResults: false,
+        rowResults: [],
+        uploadKpis: { processed: 0, created: 0, updated: 0, deleted: 0, errors: 0, warnings: 0 },
+        hasRowResults: false,
         allHistoryRows: [],
         historyRows: [],
         historyFilter: "",
@@ -223,6 +226,9 @@ sap.ui.define([
       model.setProperty("/lastMessage", "");
       model.setProperty("/skippedMessage", "");
       model.setProperty("/hasUploadResults", false);
+      model.setProperty("/rowResults", []);
+      model.setProperty("/hasRowResults", false);
+      model.setProperty("/uploadKpis", { processed: 0, created: 0, updated: 0, deleted: 0, errors: 0, warnings: 0 });
       const wizard = this.byId("uploadWizard");
       if (wizard) {
         wizard.discardProgress(this.byId("stepEntity"));
@@ -367,6 +373,24 @@ sap.ui.define([
           model.setProperty("/uploadWarnings", []);
           model.setProperty("/uploadWarningsTitle", "");
         }
+
+        const rowResults = (payload.rowResults || []).map(r => ({
+          ...r,
+          statusState: r.status === "Created" ? "Success" : r.status === "Updated" ? "Warning" : r.status === "Skipped" ? "Information" : r.status === "Error" ? "Error" : "None"
+        }));
+        model.setProperty("/rowResults", rowResults);
+        model.setProperty("/hasRowResults", rowResults.length > 0);
+
+        const allSummaries = payload.summaries || [];
+        const kpis = allSummaries.reduce((acc, s) => {
+          acc.processed += s.processed || 0;
+          acc.created += s.inserted || 0;
+          acc.updated += s.updated || 0;
+          acc.deleted += s.deleted || 0;
+          acc.errors += s.errors || 0;
+          return acc;
+        }, { processed: 0, created: 0, updated: 0, deleted: 0, errors: 0, warnings: (payload.warnings || []).length });
+        model.setProperty("/uploadKpis", kpis);
 
         model.setProperty("/hasUploadResults", !!(payload.message || (payload.summaries || []).length));
         this._appendUploadHistory(payload);
@@ -802,6 +826,26 @@ sap.ui.define([
         return "Manage restriction direction dropdown values (e.g. BOTH, NORTHBOUND, SOUTHBOUND).";
       }
       return dataset.description;
+    },
+
+    onExportRowResults: function () {
+      const model = this._getViewModel();
+      const rows = model.getProperty("/rowResults") || [];
+      if (!rows.length) {
+        return;
+      }
+      const header = ["Row", "Dataset", "Status", "Action", "Key", "Message"];
+      const csvRows = rows.map(r => [r.rowNum, r.datasetLabel || r.dataset, r.status, r.action, r.key, r.message].map(v => `"${String(v || "").replace(/"/g, '""')}"`).join(","));
+      const csv = [header.join(","), ...csvRows].join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "upload-results.csv";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
     },
 
     onShowHelp: function () {

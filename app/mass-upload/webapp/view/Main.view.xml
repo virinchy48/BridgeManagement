@@ -185,6 +185,17 @@
                         showIcon="true"
                         enableFormattedText="false"
                         class="sapUiSmallMarginBottom" />
+                      <HBox
+                        visible="{view>/hasUploadResults}"
+                        wrap="Wrap"
+                        class="sapUiSmallMarginBottom sapUiSmallMarginTop">
+                        <ObjectStatus title="Processed" text="{view>/uploadKpis/processed}" state="None" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Created" text="{view>/uploadKpis/created}" state="Success" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Updated" text="{view>/uploadKpis/updated}" state="Warning" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Deleted" text="{view>/uploadKpis/deleted}" state="Information" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Errors" text="{view>/uploadKpis/errors}" state="{= ${view>/uploadKpis/errors} > 0 ? 'Error' : 'None'}" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                        <ObjectStatus title="Warnings" text="{view>/uploadKpis/warnings}" state="{= ${view>/uploadKpis/warnings} > 0 ? 'Warning' : 'None'}" class="sapUiSmallMarginEnd sapUiMediumMarginBottom" />
+                      </HBox>
                       <Table
                         id="summaryTable"
                         items="{view>/uploadSummaries}"
@@ -202,6 +213,7 @@
                           <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColProcessed}" /></Column>
                           <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColInserted}" /></Column>
                           <Column hAlign="End" width="8rem"><Text text="{i18n>summaryColUpdated}" /></Column>
+                          <Column hAlign="End" width="6rem"><Text text="Errors" /></Column>
                         </columns>
                         <items>
                           <ColumnListItem>
@@ -210,6 +222,7 @@
                               <Text text="{view>processed}" />
                               <ObjectStatus text="{view>inserted}" state="Success" />
                               <ObjectStatus text="{view>updated}" state="Warning" />
+                              <ObjectStatus text="{view>errors}" state="{= ${view>errors} > 0 ? 'Error' : 'None'}" />
                             </cells>
                           </ColumnListItem>
                         </items>
@@ -225,13 +238,13 @@
                       <Panel
                         expandable="true"
                         expanded="true"
-                        visible="{= ${view>/rowResults}.length > 0 }"
+                        visible="{view>/hasRowResults}"
                         class="sapUiSmallMarginTop">
                         <headerToolbar>
                           <Toolbar>
-                            <Title text="Row-Level Results ({view>/rowResults/length} entries)" level="H3" />
+                            <Title text="Row-Level Results" level="H3" />
                             <ToolbarSpacer />
-                            <Button text="Export to CSV" icon="sap-icon://download" press=".onExportRowResults" type="Transparent" />
+                            <Button text="Export Row Results to CSV" icon="sap-icon://download" press=".onExportRowResults" type="Transparent" />
                           </Toolbar>
                         </headerToolbar>
                         <Table items="{view>/rowResults}" growing="true" growingThreshold="20" mode="None">
@@ -239,14 +252,18 @@
                             <Column width="4rem"><Text text="Row" /></Column>
                             <Column width="9rem"><Text text="Dataset" /></Column>
                             <Column width="7rem"><Text text="Status" /></Column>
+                            <Column width="7rem"><Text text="Action" /></Column>
+                            <Column width="10rem"><Text text="Record Key" /></Column>
                             <Column><Text text="Message" /></Column>
                           </columns>
                           <items>
                             <ColumnListItem>
                               <cells>
                                 <Text text="{view>rowNum}" />
-                                <Text text="{view>dataset}" />
+                                <Text text="{view>datasetLabel}" />
                                 <ObjectStatus text="{view>status}" state="{view>statusState}" />
+                                <Text text="{view>action}" />
+                                <Text text="{view>key}" wrapping="false" />
                                 <Text text="{view>message}" wrapping="true" />
                               </cells>
                             </ColumnListItem>
