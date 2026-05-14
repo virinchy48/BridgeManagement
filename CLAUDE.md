@@ -968,6 +968,14 @@ Applied: srv/reports-api.js — removed restrictionReason/approvalDate from SELE
 [2026-05-14] [syncBridgeClosureStatus / Date Mismatch] Learning: `syncBridgeClosureStatus()` in admin-service.js sets `postingStatus='Closed'` if ANY active Restriction with a non-null `closureType` exists, WITHOUT checking `closureStartDate <= today`. The `activeClosureCount` in `after('READ', Bridges)` DOES apply a date-range filter. This means a future-dated closure restriction sets `postingStatus='Closed'` while `activeClosureCount=0` — the two fields are inconsistent. Fix: add the same date-range guard to `syncBridgeClosureStatus`: `closureStartDate IS NULL OR closureStartDate <= today`. Not yet applied — noted for next sprint.
 Source: UAT 2026-05-14 — code review of syncBridgeClosureStatus vs activeClosureCount computation
 
+[2026-05-14] [FE4 / BridgeDetailExt single-file architecture] Learning: FE4 1.145 `sap.ui.controllerExtensions` requires a **plain object** — not a PageController class. Attempting to point `controllerExtensions` at a PageController.extend(...) class produces `[FUTURE FATAL] Controller extension should be a plain object` + `Method 'getMetadata' is flagged final and cannot be overridden`. The solution is a single `BridgeDetailExt.js` file that returns a plain object containing BOTH lifecycle methods (`onInit`, `onAfterRendering`, `_resolveScopes`, etc.) AND all press handlers (`onNewInspection`, `onCaptureConditionOpen`, etc.). FE4 calls lifecycle methods with `this` = the ObjectPage controller (so `this.getView()` works). Press handlers are AMD-required directly by FE4 and called with `this` = the plain object (so press handlers must use `_viewFromRegistry()` fallback). `BridgeDetailExt.controller.js` must be left as an empty stub (`sap.ui.define([], function(){return{};})`) to prevent any stale module registry conflict.
+Source: New Inspection button fix — button click not firing handler
+Applied: app/admin-bridges/webapp/ext/controller/BridgeDetailExt.js (merged), BridgeDetailExt.controller.js (neutralised to empty stub)
+
+[2026-05-14] [FE4 / btn.click() vs firePress()] Learning: Calling `domButton.click()` on an SAP UI5 Button's DOM element does NOT trigger the button's `press` event. UI5 wires its press handler to the native `click` event, but only on the innermost focusable element, and FE4 custom action buttons may have additional wrapper divs that intercept the click. To programmatically trigger a UI5 button's press handler: `sap.ui.getCore().byId(buttonId).firePress()`. In automated tests or preview_eval scripts, always use `firePress()` not `.click()`. The button ID for a FE4 `content.header.actions` entry named `myAction` is: `{appNamespace}::BridgesDetailsList--fe::CustomAction::myAction`.
+Source: New Inspection end-to-end test — DOM btn.click() did not navigate
+Applied: Documented
+
 ---
 
 ## Contributing to this file
