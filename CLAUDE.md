@@ -907,6 +907,14 @@ Applied: srv/handlers/inspections.js
 Source: BridgeManagement-srv crash on BTP deploy v1.8.0 — `srv/attributes-api.js` `manageScopeMiddleware` used at line 421, declared at line 851
 Applied: srv/attributes-api.js — moved manageScopeMiddleware declaration above first route; deployed as v1.8.1
 
+[2026-05-14] [UI5 / FE4 Fragment Module Loading] Learning: `core:require="{Alias: 'Module/path'}"` in a fragment XML is NOT guaranteed to load the module before the fragment's event handlers fire — particularly in FE4 custom body sections rendered lazily after ObjectPage data binding. The module may stay in state 0 (not loaded) even when `ca-bridge-root` is in the DOM. Reliable fix: in the always-loaded extension controller (`BridgeDetailExt.js`), add a `sap.ui.require([modulePath], function(mod) { mod.onContextChange(); })` call inside `onAfterRendering`. This fires after every FE4 render cycle and guarantees the module is loaded and initialized. The `sap.ui.require` call is idempotent — UI5 only downloads the module once; subsequent calls invoke the callback immediately with the cached export.
+Source: Custom attributes panel not rendering — `core:require` in CustomAttributes.fragment.xml not triggering module load
+Applied: app/admin-bridges/webapp/ext/controller/BridgeDetailExt.js — sap.ui.require call in onAfterRendering
+
+[2026-05-14] [Fiori / Custom Attributes Section] Learning: To replace a static CDS-annotation-backed CollectionFacet with a dynamic custom fragment in Bridge Details ObjectPage: (1) remove the CollectionFacet from `Bridges @UI.Facets` in `fiori-service.cds`; (2) add a `body.sections` entry in `manifest.json` with `"template": "Namespace.ext.fragment.MyFragment"` and position `Before/After` a known anchor section ID; (3) the fragment VBox must have `modelContextChange="CAInit.onContextChange"` to receive the OData binding context when FE4 sets it; (4) add a `sap.ui.require` fallback in `BridgeDetailExt.onAfterRendering` to boot the module regardless of `core:require` timing. Without step 4, the panel renders the container div but leaves it empty on first load.
+Source: Custom Attributes tab fix — Bridge Details showing static BridgeAttributes form instead of dynamic EAV panel
+Applied: fiori-service.cds, manifest.json, CustomAttributes.fragment.xml, CustomAttributesInit.js, BridgeDetailExt.js
+
 ---
 
 ## Contributing to this file
