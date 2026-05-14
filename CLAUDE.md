@@ -830,9 +830,9 @@ Applied: db/schema/documents.cds (new), db/schema.cds, db/schema/defects.cds, sr
 ### DynamicPage Dialog placement rule (May 2026)
 - `sap.f.DynamicPage` views must place `<Dialog>` inside `<mvc:dependents>` (not as a direct child of `<mvc:View>`), otherwise `this.byId("infoDialog")` returns null at runtime. `sap.m.Page` views work with dialog after `</Page>`. Always check which base container the view uses before placing dialog elements.
 
-[2026-05-14] [FE4 / Extension Controller] Learning: FE4 ObjectPage `content.header.actions` press handlers require the ObjectPage routing target to have a `"controllerName"` property in `options.settings`, pointing to the extension controller module. Without it, FE4 resolves the module path but cannot create button instances in the header toolbar — the toolbar remains empty even if the module loads correctly. Fix: add `"controllerName": "Namespace.ext.controller.MyExt"` alongside `"entitySet"` in the target's `options.settings`. This is distinct from the Bridges ObjectPage pattern which also needs a `controllerName` for its extension (CaptureCondition etc.). Check: if `headerTitle.getActionsToolbar().getContent().length === 0` despite valid manifest config, the `controllerName` is missing.
-Source: UAT 2026-05-14 — Risk Matrix buttons not rendering
-Applied: app/admin-bridges/webapp/manifest.json — added controllerName to BridgeRiskAssessmentsObjectPage
+[2026-05-14] [FE4 / Extension Controller — CORRECTED] Learning: `"controllerName"` is NOT a valid property in ObjectPage target `options.settings` — adding it causes `ManagedObject.apply: encountered unknown setting 'controllerName'`. The correct mechanism for lifecycle extension is the global `sap.ui5.extends.extensions.sap.ui.controllerExtensions` map (pointing to `BridgeDetailExt.controller.js`). For `content.header.actions` press string resolution, FE4 AMD-requires `BridgeDetailExt.js` (no `.controller` suffix) separately. Do NOT add `controllerName` to any ObjectPage routing target options.
+Source: Fix session 2026-05-14 — correcting wrong earlier entry
+Applied: manifest.json — removed controllerName from BridgesDetails target options
 
 [2026-05-14] [Seed Data / CSV] Learning: Seed CSV files should always include auto-generated ref fields (`inspectionRef`, `defectId`, etc.) with pre-assigned values (INS-0001...INS-NNNN). The `before('NEW', Entity.drafts)` auto-gen handler only fires on NEW FE4 draft creation — it does NOT backfill records seeded via CSV. Without pre-populated refs in the CSV: (a) ObjectPage title is blank UUID; (b) filter bar search by ref returns nothing; (c) Bridge Details tabs referencing the latest inspection ref show blank. Always add the ref column with sequential values to seed CSVs immediately when the auto-gen handler is created.
 Source: UAT 2026-05-14 — 10 seed BridgeInspections with null inspectionRef
@@ -926,6 +926,28 @@ Applied: app/admin-bridges/webapp/ext/controller/RiskAssessmentsExt.js — PageC
 [2026-05-14] [FLP / Sample Apps Catalog] Learning: The SAP FLP sandbox bootstrap (`sandbox.js`) merges BOTH `groups` AND `catalogs` from `FioriSandboxDefaultConfig.json` into the launchpad, injecting sample app tiles. To suppress ALL of them: (1) add `bootstrapConfig: { mergeApplications: false, mergeCatalogs: false }` to `sap-ushell-config` in `fiori-apps.html`; (2) add an `Object.defineProperty` getter/setter trap BEFORE `sandbox.js` loads that freezes BOTH `groups`, `catalogs`, AND `catalogueEntries` arrays — the no-op setter discards all sandbox merges; (3) add `"catalogs": []` to the LaunchPage adapter config in `fioriSandboxConfig.json`. All three layers are needed — missing any one leaves either groups or catalog tiles visible.
 Source: User report — SAP sample apps (AppPersSample3, AppContextSample, PersSrvTest, AppStateSample, WDA Navigation) appearing in FLP home
 Applied: app/fiori-apps.html, app/appconfig/fioriSandboxConfig.json
+
+[2026-05-14] [FE4 / Two-file Extension Architecture] Learning: Bridge Details ObjectPage requires TWO separate controller files: (1) `BridgeDetailExt.controller.js` — a `PageController.extend(...)` class registered via `sap.ui5.extends.extensions.sap.ui.controllerExtensions` in manifest.json; handles `onInit` (scope resolution, persona/section visibility), `onAfterRendering`, and lifecycle delegation. (2) `BridgeDetailExt.js` — a **plain object** (no class, just `return { ... }`) registered via the `press` string in `content.header.actions`; FE4 AMD-requires this file (without `.controller` suffix) and calls methods directly on the export. If `BridgeDetailExt.js` exports a class instead of a plain object, `export.methodName` resolves to `undefined` (methods are on prototype) and press handlers silently do nothing. The `.controller.js` file must NOT be referenced in press strings — only in `sap.ui.controllerExtensions`.
+Source: Inspect Now button fix session
+Applied: app/admin-bridges/webapp/ext/controller/BridgeDetailExt.js (plain object) + BridgeDetailExt.controller.js (PageController class)
+
+[2026-05-14] [FE4 / Custom Action oEvent.getSource() is null] Learning: When FE4 fires a `content.header.actions` custom action press handler, `oEvent.getSource()` returns **null** — not the button control. Any code traversing `oEvent.getSource().getParent()` to find the view will fail silently (null reference). Fix: always add a component registry fallback in press handlers:
+```javascript
+function _viewFromRegistry() {
+  var comps = sap.ui.core.Component.registry.all();
+  var keys = Object.keys(comps);
+  for (var i = 0; i < keys.length; i++) {
+    var c = comps[keys[i]];
+    if (c.getMetadata && c.getMetadata().getName() === "sap.fe.templates.ObjectPage.Component") {
+      return c.getRootControl && c.getRootControl();
+    }
+  }
+  return null;
+}
+```
+Apply this fallback in BOTH `BridgeDetailExt.js` AND in any module it delegates to (e.g. `CaptureCondition.js`), since `call(this, oEvent)` passes the null source through.
+Source: Inspect Now button fix — oEvent.getSource() null trace
+Applied: CaptureCondition.js getView() function + BridgeDetailExt.js _viewFromRegistry()
 
 ---
 

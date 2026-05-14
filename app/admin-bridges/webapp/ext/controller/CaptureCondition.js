@@ -22,15 +22,25 @@ sap.ui.define([
   }
 
   function getView(oEvent) {
-    // FE4 press handlers: `this` is the FE controller — try that first.
-    // Fallback: traverse up from the event source.
+    // Try the controller's getView() first (works when called from a PageController instance).
     if (typeof this !== "undefined" && this && typeof this.getView === "function") {
       return this.getView();
     }
+    // Traverse up from the event source.
     var parent = oEvent && oEvent.getSource && oEvent.getSource();
     while (parent) {
       if (parent.isA && parent.isA("sap.ui.core.mvc.View")) return parent;
       parent = parent.getParent ? parent.getParent() : null;
+    }
+    // FE4 custom-action press: getSource() is null — find the ObjectPage view via component registry.
+    var comps = sap.ui.core.Component.registry.all();
+    var compKeys = Object.keys(comps);
+    for (var i = 0; i < compKeys.length; i++) {
+      var c = comps[compKeys[i]];
+      if (c.getMetadata && c.getMetadata().getName() === "sap.fe.templates.ObjectPage.Component") {
+        var root = c.getRootControl && c.getRootControl();
+        if (root) return root;
+      }
     }
     return _oView;
   }

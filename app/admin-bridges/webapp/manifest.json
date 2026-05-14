@@ -36,6 +36,15 @@
     }
   },
   "sap.ui5": {
+    "extends": {
+      "extensions": {
+        "sap.ui.controllerExtensions": {
+          "sap.fe.templates.ObjectPage.ObjectPageController": {
+            "controllerName": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt"
+          }
+        }
+      }
+    },
     "dependencies": {
       "minUI5Version": "1.136.0",
       "libs": {
@@ -582,8 +591,7 @@
                     }
                   }
                 }
-              },
-              "controllerName": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt"
+              }
             }
           }
         },
@@ -994,7 +1002,7 @@
                 "header": {
                   "actions": {
                     "batchElements": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeInspectionsExt.onOpenBatchElementEntry",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onOpenBatchElementEntry",
                       "text": "Add Elements",
                       "visible": true,
                       "enabled": true,
@@ -1003,8 +1011,7 @@
                     }
                   }
                 }
-              },
-              "controllerName": "BridgeManagement.adminbridges.ext.controller.BridgeInspectionsExt"
+              }
             }
           }
         },
@@ -1029,19 +1036,18 @@
             "settings": {
               "entitySet": "BridgeRiskAssessments",
               "editableHeaderContent": false,
-              "controllerName": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt",
               "content": {
                 "header": {
                   "actions": {
                     "inherentMatrix": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt.onOpenInherentMatrix",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onOpenInherentMatrix",
                       "text": "Inherent Risk Matrix",
                       "enabled": true,
                       "requiresSelection": false,
                       "visible": true
                     },
                     "residualMatrix": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt.onOpenResidualMatrix",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onOpenResidualMatrix",
                       "text": "Residual Risk Matrix",
                       "enabled": true,
                       "requiresSelection": false,
