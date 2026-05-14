@@ -542,24 +542,12 @@
                       "requiresSelection": false,
                       "type": "Emphasized"
                     },
-                    "createWorkOrderAction": {
-                      "text": "Create Work Order",
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onCreateWorkOrder",
-                      "enabled": true,
-                      "requiresSelection": false,
-                      "type": "Default"
-                    },
                     "viewInS4Action": {
                       "text": "View in S/4HANA \u2197",
                       "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onViewInS4Hana",
                       "enabled": true,
                       "requiresSelection": false,
                       "type": "Default"
-                    },
-                    "exportCardAction": {
-                      "text": "Export Card",
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onExportCard",
-                      "enabled": true
                     }
                   }
                 },
