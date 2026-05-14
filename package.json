@@ -1,6 +1,6 @@
 {
   "name": "BridgeManagement",
-  "version": "1.9.3",
+  "version": "1.9.4",
   "engines": {
     "node": ">=20.0.0"
   },
