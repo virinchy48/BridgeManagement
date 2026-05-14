@@ -397,6 +397,12 @@ sap.ui.define([
         this._setSelectedFile(null);
         this.byId("fileUploader").clear();
         MessageToast.show("Mass upload completed");
+
+        const wizard = this.byId("uploadWizard");
+        if (wizard) {
+          this.byId("stepResult")?.setValidated(true);
+          wizard.nextStep();
+        }
       } catch (error) {
         MessageBox.error(error.message || "Upload failed");
       } finally {
