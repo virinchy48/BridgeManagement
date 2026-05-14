@@ -508,8 +508,8 @@ function mountReportsApi(app, requiresAuthentication, requireViewScope) {
       let query = SELECT.from('bridge.management.Restrictions')
         .columns(
           'ID', 'restrictionRef', 'closureType', 'closureStartDate', 'closureEndDate',
-          'active', 'restrictionStatus', 'restrictionReason', 'bridge_ID',
-          'approvedBy', 'approvalDate'
+          'active', 'restrictionStatus', 'remarks', 'bridge_ID',
+          'approvedBy'
         )
         .where(`closureType IS NOT NULL`)
 
@@ -544,9 +544,8 @@ function mountReportsApi(app, requiresAuthentication, requireViewScope) {
           status:            r.restrictionStatus || (r.active ? 'Active' : 'Retired'),
           active:            r.active,
           isCurrent,
-          restrictionReason: r.restrictionReason,
+          restrictionReason: r.remarks,
           approvedBy:        r.approvedBy,
-          approvalDate:      r.approvalDate,
           bridgeId:          bridge.bridgeId,
           bridgeName:        bridge.bridgeName,
           state:             bridge.state,

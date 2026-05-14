@@ -959,6 +959,15 @@ Applied: db/schema.cds (closureStartDate/closureEndDate/closureType on Restricti
 Source: Remove "Create Work Order" and "Export Card" buttons per user request
 Applied: manifest.json — removed createWorkOrderAction and exportCardAction
 
+[2026-05-14] [Schema / Deploy] Learning: Adding a new CodeList entity (e.g. `ClosureTypes`) and new columns (`closureStartDate`, `closureEndDate`, `closureType`) to existing entities in `db/schema.cds` requires a full `cds deploy --to sqlite:db.sqlite` before the server will serve them. The server started before deploy will serve the old DB and return "no such table: AdminService_ClosureTypes" for any OData read on the new entity. Always kill all server processes, delete db.sqlite stale files, redeploy, then restart. If the new server fails to start due to EADDRINUSE, the old process is still alive — use `lsof -ti:8008 | xargs kill -9`.
+
+[2026-05-14] [Reports API / Field Names] Learning: `srv/reports-api.js` bridge-closures endpoint referenced two non-existent fields: `restrictionReason` (does not exist on `bridge.management.Restrictions`) and `approvalDate` (does not exist). Fix: replace `restrictionReason` with `remarks` in the SELECT columns; remove `approvalDate` from SELECT and from the result mapping. The endpoint 500s at runtime (not compile time) because CDS validates SELECT column names lazily. Always verify column names against `db/schema.cds` or `sqlite3 PRAGMA table_info()` when writing report queries.
+Source: UAT 2026-05-14 — bridge-closures endpoint returning 500
+Applied: srv/reports-api.js — removed restrictionReason/approvalDate from SELECT; mapped to remarks
+
+[2026-05-14] [syncBridgeClosureStatus / Date Mismatch] Learning: `syncBridgeClosureStatus()` in admin-service.js sets `postingStatus='Closed'` if ANY active Restriction with a non-null `closureType` exists, WITHOUT checking `closureStartDate <= today`. The `activeClosureCount` in `after('READ', Bridges)` DOES apply a date-range filter. This means a future-dated closure restriction sets `postingStatus='Closed'` while `activeClosureCount=0` — the two fields are inconsistent. Fix: add the same date-range guard to `syncBridgeClosureStatus`: `closureStartDate IS NULL OR closureStartDate <= today`. Not yet applied — noted for next sprint.
+Source: UAT 2026-05-14 — code review of syncBridgeClosureStatus vs activeClosureCount computation
+
 ---
 
 ## Contributing to this file
