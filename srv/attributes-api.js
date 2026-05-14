@@ -358,6 +358,10 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, requir
   const router = express.Router()
   router.use(express.json({ limit: '10mb' }))
 
+  const manageScopeMiddleware = typeof requireManageScope === 'function'
+    ? requireManageScope
+    : (_req, _res, next) => next()
+
   /**
    * GET /attributes/api/config?objectType=bridge
    * Returns all active AttributeGroups with their AttributeDefinitions and AllowedValues
@@ -842,14 +846,8 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, requir
     }
   })
 
-  // Apply authentication guard if provided.
-  // When called from server.js these are always passed; the fallback keeps the module
-  // usable in isolation (e.g. unit tests) without breaking.
   const authMiddleware = typeof requiresAuthentication === 'function'
     ? requiresAuthentication
-    : (_req, _res, next) => next()
-  const manageScopeMiddleware = typeof requireManageScope === 'function'
-    ? requireManageScope
     : (_req, _res, next) => next()
 
   app.use('/attributes/api', authMiddleware, router)
