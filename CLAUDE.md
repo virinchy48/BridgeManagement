@@ -886,6 +886,23 @@ Applied: srv/admin-service.cds, srv/admin-service.js, srv/server.js
 Source: Expert Council v4 — QA validation step
 Applied: test/*.test.js (6 new), test/integration/*.test.js (10 new)
 
+[2026-05-14] [Expert Council v4 / Full Remediation] Learning: All 18 Expert Council v4 findings closed in a single remediation pass. Key patterns discovered during the fix sprint:
+(1) `@restrict` must be added to EVERY entity in AdminService — CAP's default for an unrestricted entity is full CRUD for any authenticated user, even with service-level @requires. Pattern: always grep `admin-service.cds` for entity projections without a preceding @restrict block when adding new entities.
+(2) `conditionKey()` in reports-api.js must use the same 1-10 scale as the DB schema — never re-map a numeric field's scale without checking the canonical DB definition first.
+(3) `refreshKPISnapshots` with N×5 per-state DB queries can be collapsed to 5 GROUP BY queries + JS map reduction. Pattern: whenever you see `for (const state of states) { await db.query... }` with COUNT queries, replace with `GROUP BY state` + `Promise.all`.
+(4) CSRF "unsafe" fallback is a known bypass string — validateCsrfToken must explicitly block it. All frontend controllers must throw (not silently fall back) when the CSRF token fetch fails.
+(5) The /map/config Express endpoint must `delete cfg.hereApiKey` before `res.json(cfg)` because `excluding { hereApiKey }` only covers the CAP OData layer — raw Express routes that query and serialize the same entity bypass CDS exclusions.
+Source: Expert Council v4 remediation sprint — 2026-05-14
+Applied: srv/admin-service.cds, srv/reports-api.js, srv/admin-service.js, srv/server.js, 9 frontend controllers
+
+[2026-05-14] [Expert Council v4 / Coordinate Bounds] Learning: Bridge coordinate validation has THREE layers that must ALL agree on Australian bounds (GDA2020: lat -44→-10, lon 112→154): (1) `db/schema/bridge-entity.cds` @assert.range — controls OData write validation; (2) `srv/admin-service.js` numericFields range check — controls custom admin API validation; (3) `app/admin-bridges/fiori-service.cds` @Common.QuickInfo — controls UI hint text. Mismatches allow values that pass one layer but fail another, or produce confusing error messages. After any coordinate field change, verify all 3 layers.
+Source: BMS-2026-004 remediation
+Applied: db/schema/bridge-entity.cds + srv/admin-service.js both set to [-44,-10] / [112,154]
+
+[2026-05-14] [Expert Council v4 / SIMS Health Rating] Learning: `elementHealthRating` must use 0-100 SIMS-aligned scale (100=new/CS1, 0=failed/CS4). The raw weighted average of CS values (1-4) produces an inverted scale — higher number means worse condition. Inversion formula: `Math.round((1 - (weighted - 1) / 3) * 100 * 100) / 100`. The weighted variable is computed as `(qty_cs1×1 + qty_cs2×2 + qty_cs3×3 + qty_cs4×4) / total_qty`. Add `@Common.QuickInfo` annotation to the field explaining the scale. Without this fix, a near-failed bridge element with 95% CS4 shows a "health rating" of 3.8 out of 4 — which users misread as 95% healthy.
+Source: BMS-2026-012 remediation
+Applied: srv/handlers/inspections.js
+
 ---
 
 ## Contributing to this file
