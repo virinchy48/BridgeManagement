@@ -915,6 +915,14 @@ Applied: app/admin-bridges/webapp/ext/controller/BridgeDetailExt.js — sap.ui.r
 Source: Custom Attributes tab fix — Bridge Details showing static BridgeAttributes form instead of dynamic EAV panel
 Applied: fiori-service.cds, manifest.json, CustomAttributes.fragment.xml, CustomAttributesInit.js, BridgeDetailExt.js
 
+[2026-05-14] [Mass Upload / Row-Level Results] Learning: The mass upload Step 4 (Upload Results) now shows: (1) KPI strip bound to `view>/uploadKpis` (Processed/Created/Updated/Deleted/Errors/Warnings ObjectStatus tiles); (2) per-dataset summary table (`view>/uploadSummaries`) with Errors column in red state; (3) Row-Level Results Panel (`visible="{view>/hasRowResults}"`) with 6-column table (Row, Dataset, Status, Action, Record Key, Message) and colour-coded Status; (4) Export Row Results to CSV button via Blob download. Each importer appends `{ rowNum, key, status, action, message }` to a `rowResults[]` array returned from the function. The view model has separate flags: `hasUploadResults` gates the KPI strip and summary, `hasRowResults` gates the row-level panel. Always use `hasUploadResults = true` + `hasRowResults = true` together after a successful upload — the KPI strip is invisible if only `hasRowResults` is set. i18n keys for radio buttons must match exactly: `uploadModeUpsert=Upsert (Create & Update)`, `uploadModeCreate=Create Only`, `uploadModeUpdate=Update Only`.
+Source: Mass upload world-class reusable utility feature
+Applied: srv/mass-upload.js, app/mass-upload/webapp/controller/Main.controller.js, view/Main.view.xml, i18n/i18n.properties
+
+[2026-05-14] [FLP / Sample Apps Catalog] Learning: The SAP FLP sandbox bootstrap (`sandbox.js`) merges BOTH `groups` AND `catalogs` from `FioriSandboxDefaultConfig.json` into the launchpad, injecting sample app tiles. To suppress ALL of them: (1) add `bootstrapConfig: { mergeApplications: false, mergeCatalogs: false }` to `sap-ushell-config` in `fiori-apps.html`; (2) add an `Object.defineProperty` getter/setter trap BEFORE `sandbox.js` loads that freezes BOTH `groups`, `catalogs`, AND `catalogueEntries` arrays — the no-op setter discards all sandbox merges; (3) add `"catalogs": []` to the LaunchPage adapter config in `fioriSandboxConfig.json`. All three layers are needed — missing any one leaves either groups or catalog tiles visible.
+Source: User report — SAP sample apps (AppPersSample3, AppContextSample, PersSrvTest, AppStateSample, WDA Navigation) appearing in FLP home
+Applied: app/fiori-apps.html, app/appconfig/fioriSandboxConfig.json
+
 ---
 
 ## Contributing to this file
