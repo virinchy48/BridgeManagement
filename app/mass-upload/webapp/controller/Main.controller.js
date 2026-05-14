@@ -59,13 +59,9 @@ sap.ui.define([
         uploadSummaries: [],
         uploadWarnings: [],
         uploadWarningsTitle: "",
-        rowResults: [],
         lastMessage: "",
         skippedMessage: "",
         hasUploadResults: false,
-        uploadMode: "upsert",
-        uploadModeIndex: 0,
-        uploadModeDescription: "Insert new records and update existing ones.",
         allHistoryRows: [],
         historyRows: [],
         historyFilter: "",
@@ -86,17 +82,7 @@ sap.ui.define([
             insertedRows: 0,
             updatedRows: 0
           }
-        },
-        registerDatasets: [],
-        registerDataset: "",
-        registerBridgeRef: "",
-        registerStatus: "",
-        registerActive: "",
-        registerRows: [],
-        registerTotal: 0,
-        registerShowing: 0,
-        registerBusy: false,
-        registerLastParams: null
+        }
       });
       this.getView().setModel(model, "view");
       this._invisibleMessage = InvisibleMessage.getInstance();
@@ -136,81 +122,7 @@ sap.ui.define([
     onTabSelect: function (oEvent) {
       const key = oEvent.getParameter("key") || oEvent.getParameter("selectedKey");
       if (key === "history") {
-        this._loadHistoryFromServer();
-      }
-    },
-
-    // ── Upload mode (Create / Update / Upsert) ──────────────────────────────
-    _MODE_KEYS: ["upsert", "create", "update"],
-    _MODE_DESCRIPTIONS: [
-      "Insert new records and update existing ones.",
-      "Only create new records. Rows whose key already exists will be rejected.",
-      "Only update existing records. Rows whose key is not found will be rejected."
-    ],
-
-    onModeChange: function (oEvent) {
-      const idx = oEvent.getParameter("selectedIndex") || 0;
-      const model = this._getViewModel();
-      model.setProperty("/uploadMode",            this._MODE_KEYS[idx]);
-      model.setProperty("/uploadModeIndex",        idx);
-      model.setProperty("/uploadModeDescription",  this._MODE_DESCRIPTIONS[idx]);
-      this._clearPreview();
-    },
-
-    // ── Register tab ─────────────────────────────────────────────────────────
-    onRegisterDatasetChange: function () {
-      this._getViewModel().setProperty("/registerRows", []);
-      this._getViewModel().setProperty("/registerTotal", 0);
-      this._getViewModel().setProperty("/registerShowing", 0);
-    },
-
-    onRegisterSearch: async function () {
-      const model = this._getViewModel();
-      const dataset   = model.getProperty("/registerDataset");
-      const bridgeRef = model.getProperty("/registerBridgeRef");
-      const status    = model.getProperty("/registerStatus");
-      const active    = model.getProperty("/registerActive");
-
-      if (!dataset) { MessageBox.warning("Select a data type first."); return; }
-
-      model.setProperty("/registerBusy", true);
-      try {
-        const params = new URLSearchParams({ dataset });
-        if (bridgeRef) params.set("bridgeRef", bridgeRef);
-        if (status)    params.set("status",    status);
-        if (active)    params.set("active",    active);
-
-        const res = await fetch(`/mass-upload/api/register?${params}`);
-        if (!res.ok) { throw new Error(`HTTP ${res.status}: ${(await res.json()).error?.message || "Failed"}`); }
-        const payload = await res.json();
-        const rows = (payload.rows || []).map(r => ({
-          ...r,
-          _key:    r.bridgeId || r.restrictionRef || r.inspectionRef || r.defectId || r.surveyRef || r.ratingRef || r.permitRef || r.ID || "",
-          _status: r.status || r.postingStatus || r.assessmentStatus || r.overallGrade || "",
-          _date:   r.inspectionDate || r.assessmentDate || r.surveyDate || r.assessmentDate || r.appliedDate || r.createdAt || ""
-        }));
-        model.setProperty("/registerRows",    rows);
-        model.setProperty("/registerTotal",   payload.total || rows.length);
-        model.setProperty("/registerShowing", rows.length);
-        model.setProperty("/registerLastParams", params.toString());
-      } catch (e) {
-        MessageBox.error("Search failed: " + e.message);
-      } finally {
-        model.setProperty("/registerBusy", false);
-      }
-    },
-
-    onRegisterExport: function () {
-      const params = this._getViewModel().getProperty("/registerLastParams");
-      if (params) window.open(`/mass-upload/api/export?${params}`, "_blank");
-    },
-
-    onRegisterDownloadForUpdate: function () {
-      const model  = this._getViewModel();
-      const params = model.getProperty("/registerLastParams");
-      if (params) {
-        window.open(`/mass-upload/api/export?${params}`, "_blank");
-        MessageToast.show("Switch to Upload mode and select 'Update Only' to re-upload the edited file.");
+        this._applyHistoryFilter();
       }
     },
 
@@ -256,7 +168,8 @@ sap.ui.define([
     },
 
     onHistoryRefresh: function () {
-      this._loadHistoryFromServer();
+      this._applyHistoryFilter();
+      MessageToast.show("Upload history refreshed");
     },
 
     onRunAdminReport: function () {
@@ -274,12 +187,6 @@ sap.ui.define([
 
     onExportHistory: function () {
       this._downloadRowsAsCsv(this._getViewModel().getProperty("/historyRows") || [], "mass-upload-history.csv");
-    },
-
-    onDownloadSessionReport: function (oEvent) {
-      const ctx  = oEvent.getSource().getBindingContext("view");
-      const url  = ctx && ctx.getProperty("reportUrl");
-      if (url) { window.open(url, "_blank"); }
     },
 
     onExportAdminReport: function () {
@@ -313,7 +220,6 @@ sap.ui.define([
       model.setProperty("/uploadSummaries", []);
       model.setProperty("/uploadWarnings", []);
       model.setProperty("/uploadWarningsTitle", "");
-      model.setProperty("/rowResults", []);
       model.setProperty("/lastMessage", "");
       model.setProperty("/skippedMessage", "");
       model.setProperty("/hasUploadResults", false);
@@ -360,12 +266,10 @@ sap.ui.define([
 
       try {
         const contentBase64 = await this._readFileAsBase64(this._file);
-        const mode = model.getProperty("/uploadMode") || "upsert";
         const response = await this._mutate("/mass-upload/api/validate", "POST", {
           fileName: this._file.name,
           dataset,
-          contentBase64,
-          mode
+          contentBase64
         });
 
         const payload = await response.json();
@@ -425,8 +329,7 @@ sap.ui.define([
         const response = await this._mutate("/mass-upload/api/upload", "POST", {
           fileName: this._file.name,
           dataset: model.getProperty("/selectedDataset"),
-          contentBase64,
-          mode: model.getProperty("/uploadMode") || "upsert"
+          contentBase64
         });
 
         const contentType = response.headers.get("content-type") || "";
@@ -466,7 +369,6 @@ sap.ui.define([
         }
 
         model.setProperty("/hasUploadResults", !!(payload.message || (payload.summaries || []).length));
-        model.setProperty("/rowResults", this._buildRowResults(payload.summaries || [], payload.warnings || []));
         this._appendUploadHistory(payload);
         this._setSelectedFile(null);
         this.byId("fileUploader").clear();
@@ -498,12 +400,6 @@ sap.ui.define([
           label: "All"
         }].concat(model.getProperty("/datasets")));
 
-        // Register tab: only user-facing non-lookup datasets (have a bridgeRef or key field)
-        const USER_FACING = ["Bridges", "Restrictions", "BridgeInspections", "BridgeDefects",
-          "BridgeCapacities", "BridgeScourAssessments", "BridgeConditionSurveys", "BridgeLoadRatings", "BridgePermits"];
-        model.setProperty("/registerDatasets",
-          (payload.datasets || []).filter(d => USER_FACING.includes(d.name)));
-
         if (!model.getProperty("/datasets").some((dataset) => dataset.name === model.getProperty("/selectedDataset"))) {
           const defaultDataset = model.getProperty("/datasets").find((dataset) => dataset.name === "Bridges");
           model.setProperty("/selectedDataset", defaultDataset ? defaultDataset.name : this._ALL_DATASETS_KEY);
@@ -524,7 +420,7 @@ sap.ui.define([
         method: "HEAD",
         headers: { "X-CSRF-Token": "Fetch" }
       });
-      this._csrfToken = res.headers.get("X-CSRF-Token") || "unsafe";
+      this._csrfToken = res.headers.get("X-CSRF-Token");
       return this._csrfToken;
     },
 
@@ -587,45 +483,6 @@ sap.ui.define([
       model.setProperty("/allHistoryRows", rows.concat(model.getProperty("/allHistoryRows") || []));
       this._applyHistoryFilter();
       this.onRunAdminReport();
-    },
-
-    _loadHistoryFromServer: async function () {
-      const model = this._getViewModel();
-      model.setProperty("/busy", true);
-      try {
-        const response = await fetch("/mass-upload/api/history");
-        if (!response.ok) { throw new Error(`HTTP ${response.status}`); }
-        const payload = await response.json();
-        const sessions = payload.sessions || [];
-        const rows = sessions.map((s) => {
-          const uploadedAt = new Date(s.createdAt || s.modifiedAt || Date.now());
-          return {
-            id: s.ID,
-            uploadedAt: uploadedAt.toISOString(),
-            uploadedDate: this._formatDate(uploadedAt),
-            uploadedAtFmt: uploadedAt.toLocaleString([], { year: "numeric", month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
-            fileName: s.fileName || "",
-            dataset: s.datasetName || "",
-            datasetLabel: s.datasetName || "All",
-            processed: Number(s.totalRows || 0),
-            inserted: Number(s.insertedRows || 0),
-            updated: Number(s.updatedRows || 0),
-            deactivated: Number(s.deactivatedRows || 0),
-            warnings: Number(s.warningCount || 0),
-            statusLabel: s.status || "Completed",
-            statusState: s.status === "Failed" ? "Error" : s.status === "PartialSuccess" ? "Warning" : "Success",
-            reportUrl: `/mass-upload/api/history/${s.ID}/report.csv`
-          };
-        });
-        model.setProperty("/allHistoryRows", rows);
-        this._applyHistoryFilter();
-        this.onRunAdminReport();
-        MessageToast.show(`Upload history loaded (${rows.length} sessions)`);
-      } catch (e) {
-        MessageBox.error("Could not load upload history: " + e.message);
-      } finally {
-        model.setProperty("/busy", false);
-      }
     },
 
     _applyHistoryFilter: function () {
@@ -945,50 +802,6 @@ sap.ui.define([
         return "Manage restriction direction dropdown values (e.g. BOTH, NORTHBOUND, SOUTHBOUND).";
       }
       return dataset.description;
-    },
-
-    _buildRowResults: function (summaries, warnings) {
-      const summaryRows = summaries.map(s => ({
-        rowNum: "-",
-        dataset: s.label || s.dataset || "",
-        status: s.inserted > 0 || s.updated > 0 ? "Success" : "Information",
-        statusState: s.inserted > 0 || s.updated > 0 ? "Success" : "None",
-        message: `${s.inserted || 0} inserted, ${s.updated || 0} updated, ${s.processed || 0} processed`
-      }));
-      const warningRows = warnings.map((w, i) => {
-        const m = w.match(/^(.+?) row (\d+):\s*(.+)/);
-        return {
-          rowNum: m ? parseInt(m[2]) : (i + 1),
-          dataset: m ? m[1] : "Unknown",
-          status: "Skipped",
-          statusState: "Warning",
-          message: m ? m[3] : w
-        };
-      });
-      return summaryRows.concat(warningRows);
-    },
-
-    onExportRowResults: function () {
-      const rows = this._getViewModel().getProperty("/rowResults") || [];
-      if (!rows.length) {
-        MessageToast.show("No results to export");
-        return;
-      }
-      const header = "Row,Dataset,Status,Message\n";
-      const csv = header + rows.map(r =>
-        [r.rowNum, r.dataset, r.status, r.message]
-          .map(this._escapeCsvValue)
-          .join(",")
-      ).join("\n");
-      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "upload-results.csv";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     },
 
     onShowHelp: function () {

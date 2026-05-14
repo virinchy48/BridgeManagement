@@ -1,6 +1,6 @@
 const cds = require('@sap/cds')
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
-const { calculateBHI } = require('./lib/bhi-calculator')
+const { computeBhiBsi } = require('./bhi-bsi-engine')
 const { isFeatureEnabled } = require('./feature-flags')
 
 module.exports = class AdminService extends cds.ApplicationService { init() {
@@ -78,8 +78,8 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
         ['heavyVehiclePercent', 'Heavy Vehicle Percentage']
       ],
       range: [
-        ['latitude', 'Latitude', -90, 90],
-        ['longitude', 'Longitude', -180, 180],
+        ['latitude', 'Latitude', -44, -10],
+        ['longitude', 'Longitude', 112, 154],
         ['yearBuilt', 'Year Built', 1800, 2100],
         ['spanCount', 'Number of Spans', 1, 999],
         ['numberOfLanes', 'Number of Lanes', 1, 20],
@@ -415,7 +415,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     // Batch COUNT active restrictions for all records in one query
     const wantCount = !req.query?.$select || req.query.$select.split(',').map(f => f.trim()).includes('activeRestrictionCount')
     const ids = list.map(b => b.ID).filter(Boolean)
-    if (wantCount && ids.length > 0) {
+    // Skip expensive COUNT on single-record ObjectPage navigations (count loads from Restrictions tab directly)
+    const isSingleRecord = list.length === 1 && req.params?.[0]
+    if (wantCount && ids.length > 0 && !isSingleRecord) {
       const counts = await SELECT.from('bridge.management.BridgeRestrictions')
         .columns('bridge_ID', 'count(1) as cnt')
         .where({ bridge_ID: { in: ids }, active: true })
@@ -451,22 +453,21 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (bhiEnabled) {
       for (const b of list) {
         if (b.conditionRating != null) {
-          // Convert 1-10 conditionRating to 1-5 AS 5100.7 scale for calculateBHI
-          const rating15 = Math.max(1, Math.min(5, Math.ceil(b.conditionRating / 2)))
-          try {
-            const result = calculateBHI({
-              superstructure: rating15,
-              substructure:   rating15,
-              deck:           rating15,
-              bearing:        rating15,
-              joint:          rating15
-            })
-            b.bhi = result.score
-            b.nbi = result.score
-          } catch (_) {
-            b.bhi = null
-            b.nbi = null
-          }
+          const elementRatings = [
+            { element: 'Deck',           rating: b.conditionRating, weight: 25 },
+            { element: 'Substructure',   rating: b.conditionRating, weight: 30 },
+            { element: 'Superstructure', rating: b.conditionRating, weight: 30 },
+            { element: 'Approach',       rating: b.conditionRating, weight: 15 },
+          ]
+          const result = computeBhiBsi({
+            structureMode: 'Road',
+            elementRatings,
+            importanceClass: b.importanceLevel || 2,
+            envPenalty: 0,
+            yearBuilt: b.yearBuilt
+          })
+          b.bhi = result.bhi
+          b.nbi = result.nbi
         }
       }
     }
@@ -531,16 +532,12 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
     await db.run(UPDATE('bridge.management.Restrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ ID }))
-    // Cascade to sub-restrictions (children) under the same legal authority
-    await db.run(UPDATE('bridge.management.Restrictions').set({ active: false, restrictionStatus: 'Retired' }).where({ parent_ID: ID, active: true }))
     return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
   })
   this.on('reactivate', Restrictions, async (req) => {
     const { ID } = req.params[0]
     const db = await cds.connect.to('db')
     await db.run(UPDATE('bridge.management.Restrictions').set({ active: true, restrictionStatus: 'Active' }).where({ ID }))
-    // Cascade reactivate to children that were retired together with this parent
-    await db.run(UPDATE('bridge.management.Restrictions').set({ active: true, restrictionStatus: 'Active' }).where({ parent_ID: ID, active: false }))
     return db.run(SELECT.one.from('bridge.management.Restrictions').where({ ID }))
   })
 
@@ -978,10 +975,6 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
           LoadRatingCertificates, NhvrRouteAssessments,
           BridgeConditionSurveys, BridgeLoadRatings, BridgePermits } = this.entities
 
-  this.on('deactivate',  BridgeInspections.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
-  this.on('reactivate',  BridgeInspections.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
-  this.on('complete',    BridgeInspections.drafts, req => req.error(409, 'Save or discard your changes before deactivating.'))
-
   this.before('NEW', BridgeInspections.drafts, async (req) => {
     if (!req.data.inspectionRef) {
       const last = await cds.run(SELECT.one.from('bridge.management.BridgeInspections').columns('inspectionRef').orderBy('inspectionRef desc').limit(1))
@@ -1104,8 +1097,11 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     let consequence = d.consequence ?? null
     // During draftActivate, req.data only has {IsActiveEntity:true} — fetch from draft
     if ((likelihood === null || consequence === null) && d.ID) {
+      const table = req.target?.name?.includes('.drafts')
+        ? 'bridge.management.BridgeRiskAssessments.drafts'
+        : 'bridge.management.BridgeRiskAssessments.drafts'
       const draft = await db.run(
-        SELECT.one.from('bridge.management.BridgeRiskAssessments.drafts').columns('likelihood', 'consequence').where({ ID: d.ID })
+        SELECT.one.from(table).columns('likelihood', 'consequence').where({ ID: d.ID })
       ).catch(() => null)
       likelihood = likelihood ?? draft?.likelihood ?? null
       consequence = consequence ?? draft?.consequence ?? null
@@ -1152,6 +1148,11 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     })
     return db.run(SELECT.one.from('bridge.management.BridgeRiskAssessments').where({ ID }))
   })
+
+  if (BridgeRiskAssessments?.drafts) {
+    this.on('deactivate', BridgeRiskAssessments.drafts, req => req.error(409, 'Save or discard changes before deactivating.'))
+    this.on('reactivate', BridgeRiskAssessments.drafts, req => req.error(409, 'Save or discard changes before deactivating.'))
+  }
 
   // ── LoadRatingCertificates ───────────────────────────────────────────────
   this.before('NEW', LoadRatingCertificates.drafts, async (req) => {
@@ -1629,63 +1630,75 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     )
     const model = activeModel || { version: '1.0.0', ...DEFAULT_MODEL }
 
-    const bridges = await db.run(
-      SELECT.from('bridge.management.Bridges')
-        .columns('ID', 'conditionRating', 'yearBuilt', 'heavyVehiclePercent', 'postingStatus')
-        .where({ isActive: true })
-    )
+    const BATCH_SIZE = 500
+    let skip = 0
+    let scored = 0
+    let skipped = 0
 
-    if (!bridges.length) return { scored: 0, skipped: 0, message: 'No active bridges found' }
+    while (true) {
+      const bridges = await db.run(
+        SELECT.from('bridge.management.Bridges')
+          .columns('ID', 'conditionRating', 'yearBuilt', 'heavyVehiclePercent', 'postingStatus')
+          .where({ isActive: true })
+          .limit(BATCH_SIZE, skip)
+      )
 
-    const bridgeIds = bridges.map(b => b.ID)
-    const defectCounts = await db.run(
-      SELECT.from('bridge.management.BridgeDefects')
-        .columns('bridge_ID', 'count(1) as cnt')
-        .where({ bridge_ID: { in: bridgeIds }, severity: { '>=': 3 }, remediationStatus: 'Open' })
-        .groupBy('bridge_ID')
-    )
-    const defectMap = Object.fromEntries((defectCounts || []).map(r => [r.bridge_ID, Number(r.cnt)]))
+      if (!bridges.length) break
 
-    const existingScores = await db.run(
-      SELECT.from('bridge.management.AssetIQScores')
-        .columns('ID', 'bridge_ID')
-        .where({ bridge_ID: { in: bridgeIds } })
-    )
-    const existingMap = Object.fromEntries((existingScores || []).map(r => [r.bridge_ID, r.ID]))
+      const bridgeIds = bridges.map(b => b.ID)
 
-    let scored = 0, skipped = 0
-    for (const bridge of bridges) {
-      try {
-        const defectCount = defectMap[bridge.ID] || 0
-        const computed = computeAssetIQScore(bridge, defectCount, model)
-        const scoreRecord = {
-          overallScore:   computed.overall,
-          ragStatus:      computed.ragStatus,
-          bciFactor:      computed.bciFactor,
-          ageFactor:      computed.ageFactor,
-          trafficFactor:  computed.trafficFactor,
-          defectFactor:   computed.defectFactor,
-          loadFactor:     computed.loadFactor,
-          modelVersion:   model.version || '1.0.0',
-          scoredAt:       now
+      const defectCounts = await db.run(
+        SELECT.from('bridge.management.BridgeDefects')
+          .columns('bridge_ID', 'count(1) as cnt')
+          .where({ bridge_ID: { in: bridgeIds }, severity: { '>=': 3 }, remediationStatus: 'Open' })
+          .groupBy('bridge_ID')
+      )
+      const defectMap = Object.fromEntries((defectCounts || []).map(r => [r.bridge_ID, Number(r.cnt)]))
+
+      const existingScores = await db.run(
+        SELECT.from('bridge.management.AssetIQScores')
+          .columns('ID', 'bridge_ID')
+          .where({ bridge_ID: { in: bridgeIds } })
+      )
+      const existingMap = Object.fromEntries((existingScores || []).map(r => [r.bridge_ID, r.ID]))
+
+      for (const bridge of bridges) {
+        try {
+          const defectCount = defectMap[bridge.ID] || 0
+          const computed = computeAssetIQScore(bridge, defectCount, model)
+          const scoreRecord = {
+            overallScore:   computed.overall,
+            ragStatus:      computed.ragStatus,
+            bciFactor:      computed.bciFactor,
+            ageFactor:      computed.ageFactor,
+            trafficFactor:  computed.trafficFactor,
+            defectFactor:   computed.defectFactor,
+            loadFactor:     computed.loadFactor,
+            modelVersion:   model.version || '1.0.0',
+            scoredAt:       now
+          }
+          const existingId = existingMap[bridge.ID]
+          if (existingId) {
+            await db.run(UPDATE('bridge.management.AssetIQScores').set(scoreRecord).where({ ID: existingId }))
+          } else {
+            await db.run(INSERT.into('bridge.management.AssetIQScores').entries({
+              ID: cds.utils.uuid(),
+              bridge_ID: bridge.ID,
+              overrideFlag: false,
+              ...scoreRecord
+            }))
+          }
+          scored++
+        } catch (_) {
+          skipped++
         }
-        const existingId = existingMap[bridge.ID]
-        if (existingId) {
-          await db.run(UPDATE('bridge.management.AssetIQScores').set(scoreRecord).where({ ID: existingId }))
-        } else {
-          await db.run(INSERT.into('bridge.management.AssetIQScores').entries({
-            ID: cds.utils.uuid(),
-            bridge_ID: bridge.ID,
-            overrideFlag: false,
-            ...scoreRecord
-          }))
-        }
-        scored++
-      } catch (_) {
-        skipped++
       }
+
+      skip += bridges.length
+      if (bridges.length < BATCH_SIZE) break
     }
 
+    if (scored === 0 && skipped === 0) return { scored: 0, skipped: 0, message: 'No active bridges found' }
     return { scored, skipped, message: `AssetIQ scored ${scored} bridges (${skipped} skipped)` }
   })
 
@@ -1731,66 +1744,110 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const db = await cds.connect.to('db')
     const today = new Date().toISOString().slice(0, 10)
     const ninetyDaysOut = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-    const fiveYearsAgo = new Date(Date.now() - 5 * 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
 
-    const states = await db.run(
-      SELECT.from('bridge.management.Bridges').columns('state').where({ isActive: true })
-    )
-    const distinctStates = [...new Set(states.map(s => s.state).filter(Boolean)), 'ALL']
+    // Read configurable overdue threshold (default 5 years if not set)
+    let overdueYears = 5
+    try {
+      const cfg = await db.run(SELECT.one.from('bridge.management.SystemConfig').where({ configKey: 'kpi.overdueInspectionYears' }))
+      if (cfg?.value) overdueYears = parseInt(cfg.value) || 5
+    } catch (_) {}
+    const now = new Date()
+    const overdueThreshold = new Date(now.getFullYear() - overdueYears, now.getMonth(), now.getDate()).toISOString().slice(0, 10)
 
-    let statesProcessed = 0
-    for (const state of distinctStates) {
-      const filter = state === 'ALL' ? { isActive: true } : { isActive: true, state }
-
-      const [totals] = await db.run(
+    // Run 5 GROUP BY queries once for all states — eliminates N×5 per-state query loop
+    const [
+      totalsByState,
+      overdueByState,
+      restrictionsByState,
+      alertsByState,
+      lrcByState
+    ] = await Promise.all([
+      // 1. Bridge totals + averages by state
+      db.run(
         SELECT.from('bridge.management.Bridges')
           .columns(
+            'state',
             'count(1) as totalBridges',
             'sum(case when conditionRating <= 3 then 1 else 0 end) as criticalCondition',
             'sum(case when highPriorityAsset = true then 1 else 0 end) as highPriority',
             'avg(conditionRating) as avgConditionRating'
-          ).where(filter)
-      )
-
-      const [overdueResult] = await db.run(
+          )
+          .where({ isActive: true })
+          .groupBy('state')
+      ),
+      // 2. Overdue inspections by state (lastInspectionDate older than threshold)
+      db.run(
         SELECT.from('bridge.management.Bridges')
-          .columns('count(1) as cnt')
-          .where({ ...filter, lastInspectionDate: { '<=': fiveYearsAgo } })
+          .columns('state', 'count(1) as cnt')
+          .where({ isActive: true })
+          .and(`lastInspectionDate <= '${overdueThreshold}'`)
+          .groupBy('state')
+      ),
+      // 3. Active restrictions by state via bridge join
+      db.run(
+        SELECT.from('bridge.management.Restrictions as r')
+          .join('bridge.management.Bridges as b').on('r.bridge_ID = b.ID')
+          .columns('b.state', 'count(1) as cnt')
+          .where({ 'r.active': true })
+          .groupBy('b.state')
+      ),
+      // 4. Open alerts by state via bridge join
+      db.run(
+        SELECT.from('bridge.management.AlertsAndNotifications as a')
+          .join('bridge.management.Bridges as b').on('a.bridge_ID = b.ID')
+          .columns('b.state', 'count(1) as cnt')
+          .where({ 'a.status': 'Open' })
+          .groupBy('b.state')
+      ),
+      // 5. LRC expiring within 90 days by state via bridge join
+      db.run(
+        SELECT.from('bridge.management.LoadRatingCertificates as l')
+          .join('bridge.management.Bridges as b').on('l.bridge_ID = b.ID')
+          .columns('b.state', 'count(1) as cnt')
+          .where({ 'l.active': true })
+          .and(`l.certificateExpiryDate <= '${ninetyDaysOut}'`)
+          .groupBy('b.state')
       )
+    ])
 
-      const [restrictionResult] = await db.run(
-        SELECT.from('bridge.management.Restrictions')
-          .columns('count(1) as cnt')
-          .where({ active: true, ...(state !== 'ALL' ? { 'bridge.state': state } : {}) })
-      )
+    // Build helper maps: state → value
+    const toMap = (rows, key = 'cnt') => Object.fromEntries(rows.map(r => [r.state, parseInt(r[key] || 0)]))
+    const totalMap   = toMap(totalsByState, 'totalBridges')
+    const critMap    = toMap(totalsByState, 'criticalCondition')
+    const hpMap      = toMap(totalsByState, 'highPriority')
+    const avgMap     = Object.fromEntries(totalsByState.map(r => [r.state, parseFloat(r.avgConditionRating || 0)]))
+    const overdueMap = toMap(overdueByState)
+    const restrictMap= toMap(restrictionsByState)
+    const alertMap   = toMap(alertsByState)
+    const lrcMap     = toMap(lrcByState)
 
-      const [alertResult] = await db.run(
-        SELECT.from('bridge.management.AlertsAndNotifications')
-          .columns('count(1) as cnt')
-          .where({ active: true, status: 'Open' })
-      )
+    // Compute ALL-state aggregates
+    const sumAll = map => Object.values(map).reduce((a, b) => a + b, 0)
+    const allTotal = sumAll(totalMap)
+    const allAvgCond = Object.values(avgMap).length
+      ? Object.values(avgMap).reduce((a, b) => a + b, 0) / Object.values(avgMap).length
+      : 0
 
-      const [lrcResult] = await db.run(
-        SELECT.from('bridge.management.LoadRatingCertificates')
-          .columns('count(1) as cnt')
-          .where({ active: true, expiryDate: { '<=': ninetyDaysOut } })
-      )
+    const statesToProcess = [...new Set([...Object.keys(totalMap), 'ALL'])]
+    let statesProcessed = 0
 
+    for (const state of statesToProcess) {
+      const isAll = state === 'ALL'
       const snapshot = {
-        snapshotDate: today,
-        snapshotType: 'Daily',
+        snapshotDate:       today,
+        snapshotType:       'Daily',
         state,
-        totalBridges: totals?.totalBridges || 0,
-        activeBridges: totals?.totalBridges || 0,
-        criticalCondition: totals?.criticalCondition || 0,
-        highPriority: totals?.highPriority || 0,
-        overdueInspections: overdueResult?.cnt || 0,
-        activeRestrictions: restrictionResult?.cnt || 0,
-        openAlerts: alertResult?.cnt || 0,
-        avgConditionRating: totals?.avgConditionRating ? Math.round(totals.avgConditionRating * 100) / 100 : null,
-        highRiskCount: 0,
-        lrcExpiringCount: lrcResult?.cnt || 0,
-        nhvrExpiringCount: 0
+        totalBridges:       isAll ? allTotal : (totalMap[state] || 0),
+        activeBridges:      isAll ? allTotal : (totalMap[state] || 0),
+        criticalCondition:  isAll ? sumAll(critMap) : (critMap[state] || 0),
+        highPriority:       isAll ? sumAll(hpMap) : (hpMap[state] || 0),
+        overdueInspections: isAll ? sumAll(overdueMap) : (overdueMap[state] || 0),
+        activeRestrictions: isAll ? sumAll(restrictMap) : (restrictMap[state] || 0),
+        openAlerts:         isAll ? sumAll(alertMap) : (alertMap[state] || 0),
+        avgConditionRating: Math.round((isAll ? allAvgCond : (avgMap[state] || 0)) * 100) / 100 || null,
+        highRiskCount:      0,
+        lrcExpiringCount:   isAll ? sumAll(lrcMap) : (lrcMap[state] || 0),
+        nhvrExpiringCount:  0
       }
 
       const existing = await db.run(
@@ -1839,13 +1896,10 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     return SELECT.one.from(BridgeMaintenanceActions).where({ ID })
   })
 
-  this.on('deactivate', BridgeMaintenanceActions.drafts, req => req.error(409, 'Save or discard changes before deactivating.'))
-  this.on('reactivate', BridgeMaintenanceActions.drafts, req => req.error(409, 'Save or discard changes before deactivating.'))
-
-  this.before('CREATE', 'BridgeDocuments', (req) => {
-    req.data.uploadedBy = req.user?.id || 'anonymous'
-    req.data.active = true
-  })
+  if (BridgeMaintenanceActions?.drafts) {
+    this.on('deactivate', BridgeMaintenanceActions.drafts, req => req.error(409, 'Save or discard changes before deactivating.'))
+    this.on('reactivate', BridgeMaintenanceActions.drafts, req => req.error(409, 'Save or discard changes before deactivating.'))
+  }
 
   return super.init()
 }}

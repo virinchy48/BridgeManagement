@@ -354,7 +354,7 @@ async function buildAttributeColumns(db, objectType) {
  * @param {Function} [requiresAuthentication] - Express middleware that enforces auth
  * @param {Function} [validateCsrfToken] - Express middleware that validates CSRF token
  */
-module.exports = function mountAttributesApi(app, requiresAuthentication, validateCsrfToken) {
+module.exports = function mountAttributesApi(app, requiresAuthentication, requireManageScope) {
   const router = express.Router()
   router.use(express.json({ limit: '10mb' }))
 
@@ -418,7 +418,7 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
    * @returns {{ ok: true, saved: number }}
    * @throws {422} If type coercion fails, range is violated, or a required field is empty
    */
-  router.post('/values/:objectType/:objectId', async (req, res) => {
+  router.post('/values/:objectType/:objectId', manageScopeMiddleware, async (req, res) => {
     const { objectType, objectId } = req.params
     const incoming = req.body?.values || {}
     try {
@@ -495,7 +495,7 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
    * @param {string} objectId
    * @returns {{ ok: true, deleted: number }} Number of value rows removed
    */
-  router.delete('/values/:objectType/:objectId', async (req, res) => {
+  router.delete('/values/:objectType/:objectId', manageScopeMiddleware, async (req, res) => {
     const { objectType, objectId } = req.params
     try {
       const db = await cds.connect.to('db')
@@ -653,7 +653,7 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
    * @throws {422} In mode=all, if any row contains a validation error
    * @auth Requires 'admin' scope (enforced by route-level middleware in server.js)
    */
-  router.post('/import', async (req, res) => {
+  router.post('/import', manageScopeMiddleware, async (req, res) => {
     const { objectType } = req.query
     const { fileName, contentBase64, mode = 'all' } = req.body || {}
     if (!objectType) return res.status(400).json({ error: { message: 'objectType is required' } })
@@ -842,15 +842,15 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, valida
     }
   })
 
-  // Apply authentication guard (and CSRF guard for state-changing routes) if provided.
+  // Apply authentication guard if provided.
   // When called from server.js these are always passed; the fallback keeps the module
   // usable in isolation (e.g. unit tests) without breaking.
   const authMiddleware = typeof requiresAuthentication === 'function'
     ? requiresAuthentication
     : (_req, _res, next) => next()
-  const csrfMiddleware = typeof validateCsrfToken === 'function'
-    ? validateCsrfToken
+  const manageScopeMiddleware = typeof requireManageScope === 'function'
+    ? requireManageScope
     : (_req, _res, next) => next()
 
-  app.use('/attributes/api', authMiddleware, csrfMiddleware, router)
+  app.use('/attributes/api', authMiddleware, router)
 }

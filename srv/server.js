@@ -1,27 +1,19 @@
 const cds = require('@sap/cds')
 const express = require('express')
 const helmet = require('helmet')
-const crypto = require('crypto')
-const { v4: uuidv4 } = require('uuid')
 const { recordActivity } = require('./user-activity')
 
 const {
   buildCsvTemplate,
   buildWorkbookTemplate,
-  exportDatasetRows,
   getDatasets,
   importUpload,
-  validateUpload,
-  recordUploadSession,
-  getUploadHistory,
-  getUploadSessionById
+  validateUpload
 } = require('./mass-upload')
 
 const mountAttributesApi = require('./attributes-api')
 const mountReportsApi = require('./reports-api')
 const mountBhiBsiApi = require('./bhi-bsi-api')
-const mountExternalApi = require('./external-api')
-const qrApi = require('./qr-api')
 
 const { diffRecords, writeChangeLogs, fetchCurrentRecord } = require('./audit-log')
 
@@ -1087,38 +1079,6 @@ async function loadProximityBridges({ lat, lng, radiusKm = 10 } = {}) {
 }
 
 cds.on('bootstrap', (app) => {
-  // Correlation ID middleware — must be first
-  app.use((req, res, next) => {
-    req.correlationId = req.headers['x-correlation-id'] || req.headers['x-request-id'] || uuidv4()
-    res.setHeader('x-correlation-id', req.correlationId)
-    next()
-  })
-
-  // Structured request logger
-  app.use((req, res, next) => {
-    const start = Date.now()
-    res.on('finish', () => {
-      const ms = Date.now() - start
-      const entry = {
-        ts: new Date().toISOString(),
-        correlationId: req.correlationId,
-        method: req.method,
-        path: req.path,
-        status: res.statusCode,
-        ms,
-        userId: req.user?.id || req.authInfo?.getLogonName?.() || 'anonymous'
-      }
-      if (res.statusCode >= 400) {
-        console.error(JSON.stringify(entry))
-      } else if (ms > 2000) {
-        console.warn(JSON.stringify({ ...entry, slow: true }))
-      } else {
-        console.log(JSON.stringify(entry))
-      }
-    })
-    next()
-  })
-
   // ── FE4 draft-protocol UUID guard ─────────────────────────────────────────
   // FE4 (UI5 1.145.x) passes the parent Bridge's integer ID as the key for
   // UUID-keyed composition child entities when checking for draft/sibling entities
@@ -1156,28 +1116,9 @@ cds.on('bootstrap', (app) => {
     res.json({
       status: 'UP',
       ts: new Date().toISOString(),
-      version: process.env.npm_package_version || '1.2.0',
-      env: process.env.NODE_ENV || 'development',
-      uptime: Math.floor(process.uptime()),
-      memory: { heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), unit: 'MB' }
+      version: process.env.npm_package_version || '1.0.0',
+      env: process.env.NODE_ENV || 'development'
     })
-  })
-
-  app.get('/health/deep', async (_req, res) => {
-    try {
-      const db = await cds.connect.to('db')
-      const [bridges] = await db.run('SELECT COUNT(*) as cnt FROM bridge_management_Bridges WHERE isActive=1')
-      res.json({
-        status: 'UP',
-        ts: new Date().toISOString(),
-        version: process.env.npm_package_version || '1.2.0',
-        db: { status: 'connected', activeBridges: bridges?.cnt ?? 0 },
-        uptime: Math.floor(process.uptime()),
-        memory: { heapUsed: Math.round(process.memoryUsage().heapUsed / 1024 / 1024), unit: 'MB' }
-      })
-    } catch (e) {
-      res.status(503).json({ status: 'DEGRADED', error: e.message, ts: new Date().toISOString() })
-    }
   })
 
   // ── Security middleware ────────────────────────────────────────────────────
@@ -1219,7 +1160,7 @@ cds.on('bootstrap', (app) => {
   const validateCsrfToken = (req, res, next) => {
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
       const csrfToken = req.headers['x-csrf-token']
-      if (!csrfToken || csrfToken.length < 4 || csrfToken.toLowerCase() === 'fetch') {
+      if (!csrfToken || csrfToken.length < 4 || csrfToken.toLowerCase() === 'fetch' || csrfToken.toLowerCase() === 'unsafe') {
         return res.status(403).json({ error: 'CSRF token required', code: 'CSRF_MISSING' })
       }
     }
@@ -1278,7 +1219,7 @@ cds.on('bootstrap', (app) => {
 
   router.post('/upload', async (req, res) => {
     try {
-      const { fileName, contentBase64, dataset, mode = 'upsert' } = req.body || {}
+      const { fileName, contentBase64, dataset } = req.body || {}
       if (!fileName) {
         return res.status(400).json({ error: { message: 'fileName is required' } })
       }
@@ -1307,17 +1248,7 @@ cds.on('bootstrap', (app) => {
         buffer,
         fileName,
         datasetName: dataset,
-        uploadedBy: req.user?.id || 'system',
-        mode
-      })
-      const db = await cds.connect.to('db')
-      await recordUploadSession(db, {
-        fileName,
-        datasetName: dataset,
-        uploadedBy: req.user?.id || 'system',
-        mode,
-        summaries: result.summaries || [],
-        warnings:  result.warnings  || []
+        uploadedBy: req.user?.id || 'system'
       })
       res.json(result)
     } catch (error) {
@@ -1327,7 +1258,7 @@ cds.on('bootstrap', (app) => {
 
   router.post('/validate', async (req, res) => {
     try {
-      const { fileName, contentBase64, dataset, mode = 'upsert' } = req.body || {}
+      const { fileName, contentBase64, dataset } = req.body || {}
       if (!fileName) {
         return res.status(400).json({ error: { message: 'fileName is required' } })
       }
@@ -1341,8 +1272,7 @@ cds.on('bootstrap', (app) => {
       const result = await validateUpload({
         buffer,
         fileName,
-        datasetName: dataset,
-        mode
+        datasetName: dataset
       })
       res.json(result)
     } catch (error) {
@@ -1350,95 +1280,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  // Export current DB records for a dataset as CSV (ready to edit and re-upload for updates)
-  router.get('/export', async (req, res) => {
-    try {
-      const { dataset, bridgeRef, active, status } = req.query
-      if (!dataset) return res.status(400).json({ error: { message: 'dataset query param required' } })
-      const csv = await exportDatasetRows(dataset, { bridgeRef, active, status })
-      const safeName = dataset.replace(/[^a-zA-Z0-9_-]/g, '_')
-      res.setHeader('Content-Type', 'text/csv')
-      res.setHeader('Content-Disposition', `attachment; filename="${safeName}-export-${new Date().toISOString().slice(0, 10)}.csv"`)
-      res.send(csv)
-    } catch (e) {
-      res.status(400).json({ error: { message: e.message } })
-    }
-  })
-
-  // Register endpoint: returns filtered rows as JSON for the Register tab table
-  router.get('/register', async (req, res) => {
-    try {
-      const { dataset, bridgeRef, active, status, limit = '200', offset = '0' } = req.query
-      if (!dataset) return res.status(400).json({ error: { message: 'dataset query param required' } })
-      const csv = await exportDatasetRows(dataset, { bridgeRef, active, status })
-      // Parse the CSV back to objects for JSON response (reuse XLSX)
-      const XLSX = require('xlsx')
-      const wb = XLSX.read(Buffer.from(csv), { type: 'buffer' })
-      const ws = wb.Sheets[wb.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(ws, { defval: null })
-      const start = parseInt(offset, 10) || 0
-      const end = start + (parseInt(limit, 10) || 200)
-      res.json({ total: rows.length, rows: rows.slice(start, end), dataset })
-    } catch (e) {
-      res.status(400).json({ error: { message: e.message } })
-    }
-  })
-
-  router.get('/history', async (_req, res) => {
-    try {
-      const sessions = await getUploadHistory()
-      res.json({ sessions })
-    } catch (e) {
-      res.status(500).json({ error: { message: e.message } })
-    }
-  })
-
-  router.get('/history/:id/report.csv', async (req, res) => {
-    try {
-      const session = await getUploadSessionById(req.params.id)
-      if (!session) return res.status(404).json({ error: { message: 'Session not found' } })
-      const lines = ['Type,Dataset,Label,Inserted,Updated,Deactivated,Processed']
-      for (const s of session.summaries) {
-        lines.push(`Data,${s.dataset || ''},${(s.label || '').replace(/,/g, ';')},${s.inserted || 0},${s.updated || 0},${s.deactivated || 0},${s.processed || 0}`)
-      }
-      if (session.warnings.length) {
-        lines.push('')
-        lines.push('Warnings')
-        session.warnings.forEach(w => lines.push(String(w).replace(/,/g, ';')))
-      }
-      res.setHeader('Content-Type', 'text/csv')
-      res.setHeader('Content-Disposition', `attachment; filename="upload-report-${req.params.id.substring(0, 8)}.csv"`)
-      res.send(lines.join('\n'))
-    } catch (e) {
-      res.status(500).json({ error: { message: e.message } })
-    }
-  })
-
-  // ── Rate limiting ─────────────────────────────────────────────────────────
-  // Built without express-rate-limit to avoid adding a dep; uses a simple in-process
-  // token bucket. For production multi-instance deployments, replace with
-  // express-rate-limit + a Redis store.
-  const _rateLimitStore = new Map()
-  function simpleRateLimit(windowMs, maxReqs) {
-    return (req, res, next) => {
-      const key = req.ip || req.connection.remoteAddress || 'unknown'
-      const now = Date.now()
-      let bucket = _rateLimitStore.get(key)
-      if (!bucket || now - bucket.start > windowMs) {
-        bucket = { start: now, count: 0 }
-        _rateLimitStore.set(key, bucket)
-      }
-      bucket.count++
-      if (bucket.count > maxReqs) {
-        return res.status(429).json({ error: 'Too Many Requests', retryAfter: Math.ceil((bucket.start + windowMs - now) / 1000) })
-      }
-      next()
-    }
-  }
-  const apiLimiter    = simpleRateLimit(15 * 60 * 1000, 500)
-  const uploadLimiter = simpleRateLimit(60 * 1000, 10)
-
-  app.use('/mass-upload/api', uploadLimiter, requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, router)
+  app.use('/mass-upload/api', requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, router)
 
   // Dashboard analytics API
   const dashboardRouter = express.Router()
@@ -1458,7 +1300,7 @@ cds.on('bootstrap', (app) => {
   dashboardRouter.get('/analytics', dashboardHandler)
   dashboardRouter.get('/overview',  dashboardHandler)
 
-  app.use('/dashboard/api', apiLimiter, requiresAuthentication, dashboardRouter)
+  app.use('/dashboard/api', requiresAuthentication, dashboardRouter)
 
   const mapRouter = express.Router()
 
@@ -1617,13 +1459,14 @@ cds.on('bootstrap', (app) => {
       } else {
         cfg.customWmsLayers = [];
       }
+      delete cfg.hereApiKey  // never expose API key in map config endpoint
       res.json(cfg);
     } catch (err) {
       res.status(500).json({ error: { message: err.message || 'Failed to load GIS config' } });
     }
   });
 
-  app.use('/map/api', apiLimiter, requiresAuthentication, mapRouter)
+  app.use('/map/api', requiresAuthentication, mapRouter)
 
   const massEditRouter = express.Router()
   massEditRouter.use(express.json({ limit: '5mb' }))
@@ -1683,8 +1526,8 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/mass-edit/api', apiLimiter, requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, massEditRouter)
-  mountAttributesApi(app, requiresAuthentication, validateCsrfToken)
+  app.use('/mass-edit/api', requiresAuthentication, requireScope('admin', 'manage'), validateCsrfToken, massEditRouter)
+  mountAttributesApi(app, requiresAuthentication, requireScope('manage', 'admin'))
 
   // ── Audit Report API ─────────────────────────────────────────────────────
   const auditRouter = express.Router()
@@ -1758,7 +1601,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/audit/api', apiLimiter, requiresAuthentication, requireScope('admin', 'manage'), auditRouter)
+  app.use('/audit/api', requiresAuthentication, requireScope('admin', 'manage'), auditRouter)
 
   // ── User Access API ───────────────────────────────────────────────────────
   const accessRouter = express.Router()
@@ -1798,7 +1641,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/access/api', apiLimiter, requiresAuthentication, accessRouter)
+  app.use('/access/api', requiresAuthentication, accessRouter)
 
   // ── Data Quality API ──────────────────────────────────────────────────────
   const qualityRouter = express.Router()
@@ -2117,7 +1960,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  app.use('/quality/api', apiLimiter, requiresAuthentication, validateCsrfToken, qualityRouter)
+  app.use('/quality/api', requiresAuthentication, validateCsrfToken, qualityRouter)
 
   // ── System Config API ─────────────────────────────────────────────────────
   const sysRouter = express.Router()
@@ -2165,7 +2008,7 @@ cds.on('bootstrap', (app) => {
     } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
-  app.use('/system/api', apiLimiter, requiresAuthentication, requireScope('admin'), validateCsrfToken, sysRouter)
+  app.use('/system/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, sysRouter)
 
   // ── Feature Flags API — read (all authenticated), write (config_manager|admin) ──
   const { isFeatureEnabled, DEPENDENCIES, KNOWN_FLAGS } = require('./feature-flags')
@@ -2554,94 +2397,7 @@ cds.on('bootstrap', (app) => {
     }
   })
 
-  // ── Document API — linked to BridgeInspections or BridgeDefects ──────────
-  const ALLOWED_LINKED_ENTITIES = new Set(['BridgeInspections', 'BridgeDefects'])
-
-  adminBridgeRouter.post('/documents/upload', async (req, res) => {
-    try {
-      const { linkedEntity, linkedEntityId, bridge_ID, documentType, fileName, mimeType, fileSizeKb, contentBase64, description } = req.body || {}
-      if (!fileName) return res.status(400).json({ error: { message: 'fileName is required' } })
-      if (!linkedEntity || !ALLOWED_LINKED_ENTITIES.has(linkedEntity)) {
-        return res.status(400).json({ error: { message: 'linkedEntity must be BridgeInspections or BridgeDefects' } })
-      }
-      if (!linkedEntityId) return res.status(400).json({ error: { message: 'linkedEntityId is required' } })
-
-      const db = await cds.connect.to('db')
-      const safeName = sanitizeAttachmentName(fileName)
-      const now = new Date()
-      const content = contentBase64 ? Buffer.from(contentBase64, 'base64') : null
-      const entry = {
-        ID: cds.utils.uuid(),
-        bridge_ID: bridge_ID || null,
-        linkedEntity,
-        linkedEntityId,
-        documentType: documentType || 'Other',
-        title: safeName,
-        fileName: safeName,
-        mediaType: mimeType || 'application/octet-stream',
-        fileSize: fileSizeKb ? Number(fileSizeKb) * 1024 : (content ? content.length : 0),
-        description: description || null,
-        uploadedBy: req.user?.id || 'anonymous',
-        content,
-        documentDate: now.toISOString().slice(0, 10),
-        active: true,
-        createdAt: now.toISOString(),
-        createdBy: req.user?.id || 'anonymous',
-        modifiedAt: now.toISOString(),
-        modifiedBy: req.user?.id || 'anonymous'
-      }
-      await db.run(INSERT.into('bridge.management.BridgeDocuments').entries(entry))
-      res.status(201).json({
-        ID: entry.ID,
-        fileName: entry.fileName,
-        documentType: entry.documentType,
-        uploadedBy: entry.uploadedBy,
-        createdAt: entry.createdAt
-      })
-    } catch (error) {
-      res.status(error.status || 422).json({ error: { message: error.message || 'Upload failed' } })
-    }
-  })
-
-  adminBridgeRouter.get('/documents', async (req, res) => {
-    try {
-      const { linkedEntity, linkedEntityId } = req.query
-      if (!linkedEntity || !ALLOWED_LINKED_ENTITIES.has(linkedEntity)) {
-        return res.status(400).json({ error: { message: 'linkedEntity must be BridgeInspections or BridgeDefects' } })
-      }
-      if (!linkedEntityId) return res.status(400).json({ error: { message: 'linkedEntityId is required' } })
-      const db = await cds.connect.to('db')
-      const rows = await db.run(
-        SELECT.from('bridge.management.BridgeDocuments')
-          .columns('ID', 'documentType', 'fileName', 'fileSize', 'description', 'uploadedBy', 'createdAt', 'active')
-          .where({ linkedEntity, linkedEntityId, active: true })
-          .orderBy('createdAt desc')
-      )
-      res.json(rows || [])
-    } catch (error) {
-      res.status(error.status || 500).json({ error: { message: error.message || 'Failed to load documents' } })
-    }
-  })
-
-  adminBridgeRouter.delete('/documents/:id', async (req, res) => {
-    try {
-      const db = await cds.connect.to('db')
-      const result = await db.run(
-        UPDATE.entity('bridge.management.BridgeDocuments')
-          .set({ active: false, modifiedAt: new Date().toISOString(), modifiedBy: req.user?.id || 'anonymous' })
-          .where({ ID: req.params.id })
-      )
-      if (!result) return res.status(404).json({ error: { message: 'Document not found' } })
-      res.status(204).end()
-    } catch (error) {
-      res.status(error.status || 500).json({ error: { message: error.message || 'Failed to delete document' } })
-    }
-  })
-
-  app.use('/admin-bridges/api', apiLimiter, requiresAuthentication, requireScope('admin', 'manage', 'inspect'), validateCsrfToken, adminBridgeRouter)
-
-  // QR codes + PDF inspection reports
-  app.use('/admin-bridges/api', requiresAuthentication, qrApi)
+  app.use('/admin-bridges/api', requiresAuthentication, requireScope('admin', 'manage', 'inspect'), validateCsrfToken, adminBridgeRouter)
 
   // ── BNAC Integration Config ─────────────────────────────────────────────
   const bnacRouter = express.Router()
@@ -2786,11 +2542,10 @@ cds.on('bootstrap', (app) => {
     } catch (error) { res.status(500).json({ error: { message: error.message } }) }
   })
 
-  mountReportsApi(app, requiresAuthentication)
-  mountBhiBsiApi(app, requiresAuthentication, validateCsrfToken)
-  mountExternalApi(app, apiLimiter, requiresAuthentication)
+  mountReportsApi(app, requiresAuthentication, requireScope('view', 'inspect', 'manage', 'admin'))
+  mountBhiBsiApi(app, requiresAuthentication, requireScope)
 
-  app.use('/bnac/api', apiLimiter, requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
+  app.use('/bnac/api', requiresAuthentication, requireScope('admin'), validateCsrfToken, bnacRouter)
 })
 
 cds.on('served', async () => {

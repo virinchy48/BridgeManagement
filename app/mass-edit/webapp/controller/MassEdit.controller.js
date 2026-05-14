@@ -692,7 +692,7 @@ sap.ui.define([
         method: "HEAD",
         headers: { "X-CSRF-Token": "Fetch" }
       });
-      this._csrfToken = res.headers.get("X-CSRF-Token") || "unsafe";
+      this._csrfToken = res.headers.get("X-CSRF-Token");
       return this._csrfToken;
     },
 

@@ -1,6 +1,5 @@
 using {bridge.management as my} from '../db/schema';
 
-@requires: ['admin','manage','inspect','operate','view','executive_view','certify','config_manager']
 service AdminService {
   entity Bridges      as projection on my.Bridges      actions {
     action deactivate()   returns Bridges;
@@ -15,9 +14,6 @@ service AdminService {
     action reactivate() returns BridgeRestrictions;
   };
   entity BridgeRestrictionProvisions as projection on my.BridgeRestrictionProvisions;
-  entity RestrictionProvisions as projection on my.RestrictionProvisions;
-  entity ProvisionTypes        as projection on my.ProvisionTypes;
-  entity RepairsProposalTypes  as projection on my.RepairsProposalTypes;
   entity BridgeCapacities as projection on my.BridgeCapacities actions {
     action deactivate() returns BridgeCapacities;
     action reactivate() returns BridgeCapacities;
@@ -60,34 +56,25 @@ service AdminService {
   entity BridgeElements        as projection on my.BridgeElements;
   // Risk + compliance: Manager+Admin write; all read
   @restrict: [
-    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
-    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
-    { grant: ['DELETE'],          to: [] }
+    { grant: ['READ'],                            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'],                 to: ['manage','admin'] },
+    { grant: ['deactivate','reactivate'],         to: ['manage','admin'] },
+    { grant: ['DELETE'],                          to: [] }
   ]
   entity BridgeRiskAssessments as projection on my.BridgeRiskAssessments actions {
     action deactivate() returns BridgeRiskAssessments;
     action reactivate() returns BridgeRiskAssessments;
   };
-  @restrict: [
-    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
-    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
-    { grant: ['DELETE'],          to: [] }
-  ]
   entity LoadRatingCertificates as projection on my.LoadRatingCertificates actions {
     action deactivate() returns LoadRatingCertificates;
     action reactivate() returns LoadRatingCertificates;
   };
-  @restrict: [
-    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
-    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
-    { grant: ['DELETE'],          to: [] }
-  ]
   entity NhvrRouteAssessments  as projection on my.NhvrRouteAssessments actions {
     action deactivate() returns NhvrRouteAssessments;
     action reactivate() returns NhvrRouteAssessments;
   };
   entity NhvrApprovedVehicleClasses as projection on my.NhvrApprovedVehicleClasses;
-  // Alerts: system-generated; read by all; write only by manage/admin
+  // Alerts: Manager+Admin write; all read
   @restrict: [
     { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
     { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
@@ -96,7 +83,7 @@ service AdminService {
   entity AlertsAndNotifications as projection on my.AlertsAndNotifications;
   @restrict: [
     { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
-    { grant: ['CREATE','UPDATE'], to: ['inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
     { grant: ['DELETE'],          to: [] }
   ]
   entity BridgeInspectionElements as projection on my.BridgeInspectionElements;
@@ -181,7 +168,7 @@ service AdminService {
   entity FoundationTypes as projection on my.FoundationTypes;
   entity WaterwayTypes as projection on my.WaterwayTypes;
   entity FatigueDetailCategories as projection on my.FatigueDetailCategories;
-  entity DefectCodes as projection on my.DefectCodes;
+  @readonly entity DefectCodes as projection on my.DefectCodes;
   entity GISConfig as projection on my.GISConfig excluding { hereApiKey };
   entity ReferenceLayerConfig as projection on my.ReferenceLayerConfig;
   @readonly entity ChangeLog as projection on my.ChangeLog;
