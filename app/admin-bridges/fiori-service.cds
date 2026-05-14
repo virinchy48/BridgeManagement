@@ -147,9 +147,10 @@ annotate AdminService.Bridges with @(
         ]
       },
       // ── T4: Inspection Status ─────────────────────────────────────────────
-      // "Current Condition" = read-only snapshot set by Inspect Now workflow
+      // "Current Condition" = read-only snapshot updated by New Inspection workflow
       // "Inspection Schedule" = editable bridge-level manager config
       // "Environmental & Risk Flags" = editable bridge-level attributes only
+      // "Inspection History" = live sub-table of BridgeInspections for this bridge
       // Scour risk/depth live exclusively in the BridgeScourAssessments tile
       {
         $Type : 'UI.CollectionFacet',
@@ -159,6 +160,7 @@ annotate AdminService.Bridges with @(
           {$Type: 'UI.ReferenceFacet', Label: 'Current Condition',          Target: '@UI.FieldGroup#LastInspectionResults'},
           {$Type: 'UI.ReferenceFacet', Label: 'Environmental & Risk Flags', Target: '@UI.FieldGroup#EnvRisk'},
           {$Type: 'UI.ReferenceFacet', Label: 'Inspection Schedule',        Target: '@UI.FieldGroup#InspectionConfig'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Inspection History',         Target: 'inspections/@UI.LineItem'},
         ]
       },
       // ── T5: Traffic & NHVR ───────────────────────────────────────────────

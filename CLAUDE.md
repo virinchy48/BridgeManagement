@@ -975,7 +975,6 @@ Applied: app/admin-bridges/webapp/ext/controller/BridgeDetailExt.js (merged), Br
 [2026-05-14] [FE4 / btn.click() vs firePress()] Learning: Calling `domButton.click()` on an SAP UI5 Button's DOM element does NOT trigger the button's `press` event. UI5 wires its press handler to the native `click` event, but only on the innermost focusable element, and FE4 custom action buttons may have additional wrapper divs that intercept the click. To programmatically trigger a UI5 button's press handler: `sap.ui.getCore().byId(buttonId).firePress()`. In automated tests or preview_eval scripts, always use `firePress()` not `.click()`. The button ID for a FE4 `content.header.actions` entry named `myAction` is: `{appNamespace}::BridgesDetailsList--fe::CustomAction::myAction`.
 Source: New Inspection end-to-end test — DOM btn.click() did not navigate
 Applied: Documented
-
 ---
 
 ## Contributing to this file

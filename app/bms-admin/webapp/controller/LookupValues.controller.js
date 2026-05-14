@@ -46,6 +46,7 @@ sap.ui.define([
   // Entities that use `description` instead of `name`/`descr` (not sap.common.CodeList standard)
   const DESCRIPTION_FIELD_ENTITIES = new Set(["DefectCodes", "ProvisionTypes", "RepairsProposalTypes"])
 
+
   const BASE = "/odata/v4/admin"
 
   return Controller.extend("BridgeManagement.bmsadmin.controller.LookupValues", {

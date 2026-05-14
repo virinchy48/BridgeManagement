@@ -448,10 +448,7 @@
                 },
                 "inspections/@com.sap.vocabularies.UI.v1.LineItem": {
                   "tableSettings": {
-                    "enablePaste": false,
-                    "creationMode": {
-                      "name": "NewPage"
-                    }
+                    "enablePaste": false
                   }
                 },
                 "elements/@com.sap.vocabularies.UI.v1.LineItem": {
@@ -536,8 +533,8 @@
                 "header": {
                   "actions": {
                     "captureConditionAction": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onCaptureConditionOpen",
-                      "text": "Inspect Now",
+                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onNewInspection",
+                      "text": "New Inspection",
                       "enabled": true,
                       "requiresSelection": false,
                       "type": "Emphasized"
