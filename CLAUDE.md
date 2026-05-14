@@ -903,6 +903,10 @@ Applied: db/schema/bridge-entity.cds + srv/admin-service.js both set to [-44,-10
 Source: BMS-2026-012 remediation
 Applied: srv/handlers/inspections.js
 
+[2026-05-14] [BTP / Deploy / TDZ] Learning: `const` declarations inside a `module.exports = function(...)` body are subject to JavaScript TDZ (temporal dead zone) — referencing them before their declaration line throws `ReferenceError: Cannot access 'X' before initialization` and crashes the server at startup. This happens silently in local `npm test` if the function is never called, but crashes BTP immediately. Fix: always move `const middlewareVariable = ...` declarations to the TOP of the exported function, before any route definitions that use them. Pattern: declare all middleware variables in the first 10 lines after `const router = express.Router()`, before the first `router.get/post/put/delete` call.
+Source: BridgeManagement-srv crash on BTP deploy v1.8.0 — `srv/attributes-api.js` `manageScopeMiddleware` used at line 421, declared at line 851
+Applied: srv/attributes-api.js — moved manageScopeMiddleware declaration above first route; deployed as v1.8.1
+
 ---
 
 ## Contributing to this file
