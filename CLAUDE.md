@@ -866,6 +866,26 @@ Applied: srv/admin-service.js — added deactivate/reactivate .drafts guards for
 Source: AttributeConfig view debugging — UAT 2026-05-14
 Applied: Documented; always use desktop preset for Fiori admin screen verification
 
+[2026-05-14] [Expert Council v4 / Security] Learning: Expert Council v4 identified 18 canonical security/quality findings (2 CRITICAL, 6 HIGH). Key critical: (1) AdminService had no top-level `@requires` — any authenticated user could read/write all 87 entities. Fix: add `@requires: ['admin','manage','inspect','operate','view','executive_view','certify','config_manager']` to AdminService in admin-service.cds. (2) 7 entities had no `@restrict` at all (BridgeElements, BridgeRiskAssessments, LoadRatingCertificates, NhvrRouteAssessments, AlertsAndNotifications, BridgeInspectionElements, BridgeCarriageways). After adding service-level @requires, entity-level @restrict should be added for write operations separately from the service-level read guard.
+Source: Expert Council v4 — SECURITY agent findings
+Applied: srv/admin-service.cds — @requires + @restrict on 9 entities
+
+[2026-05-14] [Expert Council v4 / mta.yaml] Learning: mta.yaml role-collection entries must reference role-template names (`$XSAPPNAME.BMS_ADMIN`), not scope names (`$XSAPPNAME.admin`). Using a scope name in `role-template-references` causes the BTP role collection to be created but with no assigned role templates — users in the role collection get no permissions. The `$XSAPPNAME.BMS_ADMIN` form resolves to the role-template whose name is `BMS_ADMIN` in xs-security.json.
+Source: Expert Council v4 — STANDARDS agent finding STD-001
+Applied: mta.yaml — role-template-references fixed for BMS_ADMIN, BMS_MANAGER, BMS_INSPECTOR, BMS_OPERATOR, BMS_VIEWER
+
+[2026-05-14] [Expert Council v4 / BHI Engine] Learning: Two incompatible BHI scoring engines existed simultaneously: `srv/lib/bhi-calculator.js` (v2.1, tested, 1-5 condition scale) and `srv/bhi-bsi-engine.js` (untested, 1-10 condition scale). The admin-service.js BHI virtual-field population was calling `bhi-bsi-engine.js` — producing wrong results for bridges with conditionRating 1-5 (the actual DB scale). Fix: route admin-service.js BHI computation through `srv/lib/bhi-calculator.js` exclusively. The `bhi-bsi-engine.js` can coexist for the `/bhi-bsi/api` multi-modal API but admin-service virtual field computation must use the tested v2.1 engine.
+Source: Expert Council v4 — DOMAIN agent finding DOM-002
+Applied: srv/admin-service.js — replaced bhi-bsi-engine import with lib/bhi-calculator for virtual field population
+
+[2026-05-14] [Expert Council v4 / Demo Code] Learning: `loadDemoData`/`clearDemoData` actions were still declared in admin-service.cds and implemented in admin-service.js despite CLAUDE.md recording their removal in May 2026. The demo-data.js file was still required in server.js. When the Expert Council audit found these, they were removed from 3 locations: (1) both action declarations from admin-service.cds; (2) both handler registrations from admin-service.js; (3) the `require('./demo-data')` from server.js. Lesson: when removing a feature, grep for all references simultaneously — partial removal creates security surface (undocumented endpoints remain live).
+Source: Expert Council v4 — CODE agent finding CODE-002
+Applied: srv/admin-service.cds, srv/admin-service.js, srv/server.js
+
+[2026-05-14] [Expert Council v4 / Test Coverage] Learning: 421 tests across 24 suites after Expert Council v4. Test pyramid: 2 pure-unit suites (bhi-calculator, bsi-calculator), 12 handler-unit suites (testing pure functions inline), 10 integration suites (bridges, inspections, defects, permits, feature-flags, risk-assessments, audit-log, access-control, mass-upload × 2). All 421 pass in 1.09s total (no live server needed — pure unit pattern). Council verdict: CONDITIONAL deployment readiness — 7 open CRITICAL/HIGH items remain, estimated 6 hours to close.
+Source: Expert Council v4 — QA validation step
+Applied: test/*.test.js (6 new), test/integration/*.test.js (10 new)
+
 ---
 
 ## Contributing to this file
