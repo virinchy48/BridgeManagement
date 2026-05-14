@@ -114,6 +114,32 @@ sap.ui.define([
       }).catch(function (err) {
         MessageBox.error("Failed to update flag: " + err.message);
       });
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<p><strong>Purpose:</strong> Feature flags control which advanced assessment capabilities are visible to users. ",
+        "This lets your organisation turn new features on and off without a system update.</p>",
+        "<p><strong>How it works:</strong> Each flag in the table represents a feature. Toggle the switch to enable or disable it. ",
+        "Changes take effect immediately for all users — no page reload required.</p>",
+        "<p><strong>BHI/BSI Assessment (master switch):</strong> This is the main switch for the Bridge Health Index and Bridge Sufficiency Index assessment modules. ",
+        "Turning this off will also automatically disable all related sub-features (Org Comparison, Scour PoA, Certification Workflow, Weight Config).</p>",
+        "<p><strong>Who can change flags:</strong> Only users with the Configuration Manager or Administrator role can toggle flags on this screen. ",
+        "If you cannot toggle a flag, ask your BMS administrator to grant you the Config Manager role.</p>",
+        "<p><strong>When to use:</strong> Enable new features after your organisation has completed training and testing in the staging environment. ",
+        "Disable features that are not relevant to your bridge portfolio.</p>"
+      ].join("");
+      this._openInfoDialog("Feature Flags — Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
 
   });

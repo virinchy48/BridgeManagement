@@ -176,4 +176,19 @@ service AdminService {
 
   @requires: ['admin', 'manage']
   action refreshKPISnapshots() returns { snapshotDate: Date; statesProcessed: Integer; message: String };
+
+  @readonly
+  @requires: ['admin', 'manage', 'view']
+  entity UploadSessions as projection on my.UploadSessions;
+
+  @restrict: [
+    { grant: ['READ'],            to: ['view','inspect','manage','admin'] },
+    { grant: ['CREATE','UPDATE'], to: ['manage','admin'] },
+    { grant: ['DELETE'],          to: [] }
+  ]
+  entity BridgeMaintenanceActions as projection on my.BridgeMaintenanceActions
+    actions {
+      action deactivate() returns BridgeMaintenanceActions;
+      action reactivate() returns BridgeMaintenanceActions;
+    };
 }

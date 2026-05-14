@@ -18,6 +18,7 @@ using from './schema/elements';
 using from './schema/defects';
 using from './schema/alerts';
 using from './schema/gap-entities';
+using from './schema/maintenance';
 using {
   Currency,
   cuid,
@@ -38,7 +39,7 @@ extend entity Bridges with {
                        on restrictions.bridge = $self;
       attributes   : Composition of many BridgeAttributes
                        on attributes.bridge = $self;
-      scourAssessments : Composition of many BridgeScourAssessments
+      scourAssessments : Association to many BridgeScourAssessments
                        on scourAssessments.bridge = $self;
       documents    : Composition of many BridgeDocuments
                        on documents.bridge = $self;
@@ -654,3 +655,18 @@ extend entity Bridges with {
 // - Fiori apps annotate Bridges with @fiori.draft.enabled.
 // - Because of that .csv data has to eagerly fill in ID_texts column.
 annotate Bridges with @fiori.draft.enabled;
+
+entity UploadSessions : cuid, managed {
+  fileName        : String(255);
+  datasetName     : String(100) default 'All';
+  mode            : String(20)  default 'upsert';
+  status          : String(20)  default 'Completed';
+  totalRows       : Integer     default 0;
+  insertedRows    : Integer     default 0;
+  updatedRows     : Integer     default 0;
+  deactivatedRows : Integer     default 0;
+  warningCount    : Integer     default 0;
+  errorCount      : Integer     default 0;
+  summaryJson     : LargeString;
+  warningsJson    : LargeString;
+}

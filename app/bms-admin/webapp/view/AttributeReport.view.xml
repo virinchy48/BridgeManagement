@@ -19,6 +19,7 @@
           </Select>
           <Button text="Export to Excel" icon="sap-icon://download" press=".onExport" class="sapUiSmallMarginBegin"/>
           <Button icon="sap-icon://refresh" press=".onRefresh" tooltip="Refresh" class="sapUiSmallMarginBegin"/>
+          <Button icon="sap-icon://information" tooltip="About this page" press=".onShowHelp" type="Transparent" class="sapUiSmallMarginBegin"/>
         </f:actions>
       </f:DynamicPageTitle>
     </f:title>
@@ -83,4 +84,14 @@
       </layout:VerticalLayout>
     </f:content>
   </f:DynamicPage>
+
+  <mvc:dependents>
+    <Dialog id="infoDialog" contentWidth="520px">
+      <content>
+        <FormattedText id="infoDialogHtml" width="100%" class="sapUiSmallMargin"/>
+      </content>
+      <endButton><Button text="Close" press=".onInfoDialogClose"/></endButton>
+    </Dialog>
+  </mvc:dependents>
+
 </mvc:View>

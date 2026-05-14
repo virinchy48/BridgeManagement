@@ -209,6 +209,29 @@ sap.ui.define([
       var ot = this._objectType;
       window.open(ATTR_API + "/export?objectType=" + ot + "&format=xlsx", "_blank");
       MessageToast.show("Downloading Excel export...");
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<p><strong>Purpose:</strong> Shows which bridges have custom attribute values recorded, and how completely those attributes have been filled in across your bridge network.</p>",
+        "<p><strong>What it shows:</strong> A table listing every bridge, with columns for each custom attribute group. ",
+        "The score at the top shows how many bridges have at least one custom attribute recorded.</p>",
+        "<p><strong>How to interpret:</strong> A bridge row with empty cells means no custom attributes have been entered for that bridge yet. ",
+        "Use the Attribute Configuration screen to define what attributes are required.</p>",
+        "<p><strong>Export:</strong> Click Export to Excel to download the full report as a spreadsheet for offline analysis or sharing with your team.</p>",
+        "<p><strong>Standards:</strong> Custom attributes support TfNSW asset management requirements for non-standard data fields not captured in the core bridge register.</p>"
+      ].join("");
+      this._openInfoDialog("Attribute Values Report — Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
 
   });

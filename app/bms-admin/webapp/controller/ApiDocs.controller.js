@@ -66,6 +66,28 @@ sap.ui.define([
           ep("GET",  "/attributes/api/history/:objectType/:objectId/:key", "Change history for one attribute field")
         ]
       }));
+    },
+
+    onShowHelp: function () {
+      var sHtml = [
+        "<p><strong>Purpose:</strong> This page documents the technical data integration points available in BMS. ",
+        "It shows the OData and REST API endpoints that external systems (like NHVR, BNAC, or council GIS systems) can use to exchange data with BMS.</p>",
+        "<p><strong>Who uses it:</strong> IT developers integrating external systems, or BMS administrators troubleshooting data exchange issues.</p>",
+        "<p><strong>How to use it:</strong> Browse the list of available endpoints. Click on any endpoint to see its URL, accepted data format, ",
+        "and any authentication requirements. All endpoints require a valid BMS user account.</p>",
+        "<p><strong>Note:</strong> This screen is read-only. Changes to the API configuration require a system deployment by the BMS technical team.</p>"
+      ].join("");
+      this._openInfoDialog("API Reference — Help", sHtml);
+    },
+
+    _openInfoDialog: function (title, html) {
+      this.byId("infoDialog").setTitle(title);
+      this.byId("infoDialogHtml").setHtmlText(html);
+      this.byId("infoDialog").open();
+    },
+
+    onInfoDialogClose: function () {
+      this.byId("infoDialog").close();
     }
   });
 });

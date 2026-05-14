@@ -995,7 +995,28 @@
           "options": {
             "settings": {
               "entitySet": "BridgeRiskAssessments",
-              "editableHeaderContent": false
+              "editableHeaderContent": false,
+              "controllerName": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt",
+              "content": {
+                "header": {
+                  "actions": {
+                    "inherentMatrix": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt.onOpenInherentMatrix",
+                      "text": "Inherent Risk Matrix",
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "visible": true
+                    },
+                    "residualMatrix": {
+                      "press": "BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt.onOpenResidualMatrix",
+                      "text": "Residual Risk Matrix",
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "visible": true
+                    }
+                  }
+                }
+              }
             }
           }
         },
