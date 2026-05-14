@@ -1,17 +1,18 @@
 sap.ui.define([
+  "sap/fe/core/PageController",
   "sap/ui/model/json/JSONModel",
   "sap/ui/core/Fragment",
   "sap/m/MessageToast"
-], function (JSONModel, Fragment, MessageToast) {
+], function (PageController, JSONModel, Fragment, MessageToast) {
   "use strict";
 
-  // ── Color helpers ─────────────────────────────────────────────────────────
+  // ── Color / score helpers ────────────────────────────────────────────────────
 
   var COLOR = {
-    low:     { bg: "#4CAF50", label: "Low" },
-    medium:  { bg: "#FF9800", label: "Medium" },
-    high:    { bg: "#FF5722", label: "High" },
-    extreme: { bg: "#F44336", label: "Extreme" }
+    low:     { bg: "#4CAF50", label: "Low",     state: "Success" },
+    medium:  { bg: "#FF9800", label: "Medium",  state: "Warning" },
+    high:    { bg: "#FF5722", label: "High",    state: "Warning" },
+    extreme: { bg: "#F44336", label: "Extreme", state: "Error"   }
   };
 
   function riskColor(score) {
@@ -21,14 +22,14 @@ sap.ui.define([
     return COLOR.low;
   }
 
-  function stateForScore(score) {
-    if (score >= 15) return "Error";
-    if (score >= 10) return "Warning";
-    if (score >= 5)  return "Warning";
-    return "Success";
+  function scoreToLevel(score) {
+    if (score >= 15) return "Extreme";
+    if (score >= 10) return "High";
+    if (score >= 5)  return "Medium";
+    return "Low";
   }
 
-  // ── Matrix HTML builder ───────────────────────────────────────────────────
+  // ── 5×5 matrix HTML builder ──────────────────────────────────────────────────
 
   function buildMatrixHtml(matrixType, selectedL, selectedC) {
     var likeLabels   = ["", "Rare", "Unlikely", "Possible", "Likely", "Almost Certain"];
@@ -36,34 +37,42 @@ sap.ui.define([
 
     var parts = [
       "<div style='overflow-x:auto;padding:8px 0;'>",
-      "<table style='border-collapse:collapse;margin:0 auto;font-family:Arial,sans-serif;font-size:13px;'>",
-      "<tr><th style='padding:4px 6px;color:#555;font-size:11px;font-weight:600;text-align:right;white-space:nowrap;'>Likelihood ↓ / Consequence →</th>"
+      "<table style='border-collapse:collapse;margin:0 auto;font-family:72,Arial,sans-serif;font-size:13px;'>",
+      "<tr><th style='padding:4px 8px;color:#6a6d70;font-size:11px;font-weight:600;text-align:right;white-space:nowrap;'>",
+      "Likelihood ↓ / Consequence →</th>"
     ];
 
     for (var c = 1; c <= 5; c++) {
-      parts.push("<th style='width:76px;padding:4px 2px;text-align:center;font-size:11px;color:#555;font-weight:600;'>C" + c +
-        "<br><span style='font-weight:400;font-size:10px;color:#777;'>" + conseqLabels[c] + "</span></th>");
+      parts.push(
+        "<th style='width:80px;padding:4px 2px;text-align:center;font-size:11px;color:#6a6d70;font-weight:600;'>",
+        "C" + c + "<br><span style='font-weight:400;font-size:10px;color:#89919a;'>" + conseqLabels[c] + "</span>",
+        "</th>"
+      );
     }
     parts.push("</tr>");
 
     for (var l = 5; l >= 1; l--) {
-      parts.push("<tr><td style='padding:4px 8px;font-size:11px;color:#555;font-weight:600;text-align:right;white-space:nowrap;'>" +
-        "L" + l + " — " + likeLabels[l] + "</td>");
-
+      parts.push(
+        "<tr><td style='padding:4px 10px;font-size:11px;color:#6a6d70;font-weight:600;text-align:right;white-space:nowrap;'>",
+        "L" + l + " — " + likeLabels[l],
+        "</td>"
+      );
       for (var col = 1; col <= 5; col++) {
-        var score = l * col;
-        var clr   = riskColor(score);
-        var isSel = (l === selectedL && col === selectedC);
-        var border = isSel ? "3px solid #333" : "1px solid rgba(255,255,255,0.25)";
+        var score  = l * col;
+        var clr    = riskColor(score);
+        var isSel  = (l === selectedL && col === selectedC);
+        var border = isSel ? "3px solid #223548" : "1px solid rgba(255,255,255,0.25)";
         var fw     = isSel ? "900" : "600";
+        var shadow = isSel ? "box-shadow:0 0 0 2px #223548 inset;" : "";
 
         parts.push(
           "<td data-matrix='" + matrixType + "' data-l='" + l + "' data-c='" + col + "'",
-          " title='Likelihood " + l + " × Consequence " + col + " = " + score + " (" + clr.label + ")'",
-          " style='width:76px;height:54px;text-align:center;vertical-align:middle;cursor:pointer;",
-          "background:" + clr.bg + ";color:#fff;border:" + border + ";border-radius:3px;transition:transform 0.1s;'",
-          " onmouseover=\"this.style.transform='scale(1.06)'\"",
-          " onmouseout=\"this.style.transform=''\"",
+          " title='L" + l + " × C" + col + " = " + score + " (" + clr.label + ")'",
+          " style='width:80px;height:56px;text-align:center;vertical-align:middle;cursor:pointer;",
+          "background:" + clr.bg + ";color:#fff;border:" + border + ";" + shadow,
+          "border-radius:4px;transition:transform 0.1s,box-shadow 0.1s;user-select:none;'",
+          " onmouseover=\"this.style.transform='scale(1.08)';this.style.zIndex='2'\"",
+          " onmouseout=\"this.style.transform='';this.style.zIndex=''\"",
           ">",
           "<div style='font-size:18px;font-weight:" + fw + ";line-height:1.1;'>" + score + "</div>",
           "<div style='font-size:10px;opacity:0.9;'>" + clr.label + "</div>",
@@ -80,7 +89,17 @@ sap.ui.define([
   // ── Module-level state ─────────────────────────────────────────────────────
 
   var _oDialog = null;
-  var _oView   = null;
+  var _oCtrl   = null;   // the PageController instance (set on each open)
+
+  function _getCtx() {
+    if (!_oCtrl) return null;
+    var oView = _oCtrl.getView ? _oCtrl.getView() : null;
+    if (!oView) return null;
+    return oView.getBindingContext() ||
+      (oView.getElementBinding && oView.getElementBinding() &&
+       oView.getElementBinding().getBoundContext && oView.getElementBinding().getBoundContext()) ||
+      null;
+  }
 
   function _selLabel(l, c) {
     if (!l || !c) return "None selected";
@@ -113,7 +132,10 @@ sap.ui.define([
     oModel.setProperty("/selectedL", l);
     oModel.setProperty("/selectedC", c);
     oModel.setProperty("/selectedLabel", _selLabel(l, c));
-    oModel.setProperty("/selectedState", stateForScore(score));
+    oModel.setProperty("/selectedState", riskColor(score).state);
+    oModel.setProperty("/previewScore", score);
+    oModel.setProperty("/previewLevel", scoreToLevel(score));
+    oModel.setProperty("/previewColor", riskColor(score).bg);
     oModel.setProperty("/inherentHtml", buildMatrixHtml("inherent",
       matrixType === "inherent" ? l : 0, matrixType === "inherent" ? c : 0));
     oModel.setProperty("/residualHtml",  buildMatrixHtml("residual",
@@ -121,20 +143,13 @@ sap.ui.define([
     if (_oDialog) _attachCellHandlers(oModel);
   }
 
-  function _getCtx() {
-    if (!_oView) return null;
-    return _oView.getBindingContext() ||
-      (_oView.getElementBinding && _oView.getElementBinding() &&
-       _oView.getElementBinding().getBoundContext()) ||
-      null;
-  }
-
   function _openMatrix(matrixType) {
-    var oCtx  = _getCtx();
-    var lFld  = matrixType === "inherent" ? "likelihood"  : "residualLikelihood";
-    var cFld  = matrixType === "inherent" ? "consequence" : "residualConsequence";
-    var selL  = oCtx ? (Number(oCtx.getProperty(lFld))  || 0) : 0;
-    var selC  = oCtx ? (Number(oCtx.getProperty(cFld))  || 0) : 0;
+    var oCtx = _getCtx();
+    var lFld = matrixType === "inherent" ? "likelihood"  : "residualLikelihood";
+    var cFld = matrixType === "inherent" ? "consequence" : "residualConsequence";
+    var selL = oCtx ? (Number(oCtx.getProperty(lFld))  || 0) : 0;
+    var selC = oCtx ? (Number(oCtx.getProperty(cFld))  || 0) : 0;
+    var score = selL && selC ? selL * selC : 0;
 
     var oModel = new JSONModel({
       matrixType:    matrixType,
@@ -142,7 +157,10 @@ sap.ui.define([
       selectedL:     selL,
       selectedC:     selC,
       selectedLabel: _selLabel(selL, selC),
-      selectedState: selL && selC ? stateForScore(selL * selC) : "None",
+      selectedState: selL && selC ? riskColor(score).state : "None",
+      previewScore:  score || "",
+      previewLevel:  score ? scoreToLevel(score) : "",
+      previewColor:  score ? riskColor(score).bg : "#888",
       inherentHtml:  buildMatrixHtml("inherent", matrixType === "inherent" ? selL : 0, matrixType === "inherent" ? selC : 0),
       residualHtml:  buildMatrixHtml("residual",  matrixType === "residual"  ? selL : 0, matrixType === "residual"  ? selC : 0)
     });
@@ -156,6 +174,7 @@ sap.ui.define([
       return;
     }
 
+    var oView = _oCtrl && _oCtrl.getView ? _oCtrl.getView() : null;
     Fragment.load({
       id:         "riskMatrixAssessmentsFrag",
       name:       "BridgeManagement.adminbridges.ext.view.RiskMatrix",
@@ -163,13 +182,13 @@ sap.ui.define([
     }).then(function (oFrag) {
       _oDialog = oFrag;
       _oDialog.setModel(oModel, "matrix");
-      if (_oView) _oView.addDependent(_oDialog);
+      if (oView) oView.addDependent(_oDialog);
       var oTabBar = _findTabBar();
       if (oTabBar) oTabBar.setSelectedKey(matrixType);
       _oDialog.open();
       _attachCellHandlers(oModel);
     }).catch(function (e) {
-      MessageToast.show("Risk Matrix dialog error: " + e.message);
+      MessageToast.show("Risk Matrix error: " + e.message);
     });
   }
 
@@ -177,7 +196,7 @@ sap.ui.define([
     if (!_oDialog) return null;
     var content = _oDialog.getContent ? _oDialog.getContent() : [];
     for (var i = 0; i < content.length; i++) {
-      var items = content[i].getItems ? content[i].getItems() : [];
+      var items = content[i] && content[i].getItems ? content[i].getItems() : [];
       for (var j = 0; j < items.length; j++) {
         if (items[j].isA && items[j].isA("sap.m.IconTabBar")) return items[j];
       }
@@ -194,27 +213,41 @@ sap.ui.define([
     var selC = oModel.getProperty("/selectedC");
 
     if (!selL || !selC) {
-      MessageToast.show("Please select a cell in the matrix first.");
+      MessageToast.show("Please click a cell in the matrix to select Likelihood and Consequence.");
       return;
     }
 
     var oCtx = _getCtx();
     if (!oCtx) {
-      MessageToast.show("No binding context — cannot save.");
+      MessageToast.show("Risk record not loaded yet — please wait and try again.");
       _oDialog.close();
       return;
     }
 
-    var lFld = matrixType === "inherent" ? "likelihood"  : "residualLikelihood";
-    var cFld = matrixType === "inherent" ? "consequence" : "residualConsequence";
+    var lFld    = matrixType === "inherent" ? "likelihood"        : "residualLikelihood";
+    var cFld    = matrixType === "inherent" ? "consequence"       : "residualConsequence";
+    var scoreFld = matrixType === "inherent" ? "inherentRiskScore" : "residualRiskScore";
+    var levelFld = matrixType === "inherent" ? "inherentRiskLevel" : "residualRiskLevel";
 
     oCtx.setProperty(lFld, selL);
     oCtx.setProperty(cFld, selC);
 
-    var oODataModel = _oView.getModel();
+    // Update score and level client-side immediately for instant feedback
+    var score = selL * selC;
+    try {
+      oCtx.setProperty(scoreFld, score);
+      oCtx.setProperty(levelFld, scoreToLevel(score));
+    } catch (e) {
+      // computed fields may be read-only — server will recalculate on next GET
+    }
+
+    var oODataModel = _oCtrl && _oCtrl.getView ? _oCtrl.getView().getModel() : null;
     if (oODataModel && oODataModel.submitBatch) {
       oODataModel.submitBatch("$auto").then(function () {
-        MessageToast.show("Risk scores updated. Save the record to persist.");
+        MessageToast.show(
+          (matrixType === "inherent" ? "Inherent" : "Residual") +
+          " risk updated: L" + selL + " × C" + selC + " = " + score + " (" + scoreToLevel(score) + ")"
+        );
       }).catch(function (e) {
         MessageToast.show("Save failed: " + (e.message || "Unknown error"));
       });
@@ -230,30 +263,29 @@ sap.ui.define([
       if (!_oDialog) return;
       var key    = oEvent.getParameter("key");
       var oModel = _oDialog.getModel("matrix");
-      if (oModel) oModel.setProperty("/matrixType", key);
-      _attachCellHandlers(oModel);
+      if (oModel) {
+        oModel.setProperty("/matrixType", key);
+        _attachCellHandlers(oModel);
+      }
     },
     onRiskMatrixApply:  _apply,
     onRiskMatrixCancel: function () { if (_oDialog) _oDialog.close(); }
   };
 
-  // ── Public API ─────────────────────────────────────────────────────────────
+  // ── Extension controller — must extend PageController so getView() works ──
 
-  return {
+  return PageController.extend("BridgeManagement.adminbridges.ext.controller.RiskAssessmentsExt", {
 
     onOpenInherentMatrix: function (oEvent) {
-      // `this` is the FE4 ObjectPage controller when called from manifest press handler
-      _oView = (this && typeof this.getView === "function") ? this.getView() : _oView;
+      _oCtrl = this;
       _openMatrix("inherent");
     },
 
     onOpenResidualMatrix: function (oEvent) {
-      _oView = (this && typeof this.getView === "function") ? this.getView() : _oView;
+      _oCtrl = this;
       _openMatrix("residual");
-    },
+    }
 
-    onRiskMatrixTabSelect:  _fragmentController.onRiskMatrixTabSelect,
-    onRiskMatrixApply:      _apply,
-    onRiskMatrixCancel:     _fragmentController.onRiskMatrixCancel
-  };
+  });
+
 });
