@@ -31,6 +31,7 @@ annotate AdminService.Restrictions with @(
   UI.SelectionFields: [
     restrictionRef, bridgeRef, restrictionType,
     restrictionStatus, restrictionCategory,
+    closureType, closureStartDate, closureEndDate,
     reviewDueDate,
     permitRequired, temporary, active
   ],
@@ -112,6 +113,7 @@ annotate AdminService.Restrictions with @(
         Facets: [
           {$Type: 'UI.ReferenceFacet', Label: 'Effective Period',    Target: '@UI.FieldGroup#RstEffective'},
           {$Type: 'UI.ReferenceFacet', Label: 'Temporary Condition', Target: '@UI.FieldGroup#RstTemporary'},
+          {$Type: 'UI.ReferenceFacet', Label: 'Closure Period',      Target: '@UI.FieldGroup#RstClosure'},
           {$Type: 'UI.ReferenceFacet', Label: 'Approval & Legal',    Target: '@UI.FieldGroup#RstApproval'},
           {$Type: 'UI.ReferenceFacet', Label: 'Enforcement',         Target: '@UI.FieldGroup#RstEnforcement'},
         ]
@@ -193,6 +195,14 @@ annotate AdminService.Restrictions with @(
         {Value: reviewDueDate},
         {Value: legalEffectiveDate},
         {Value: signRequirements},
+      ]
+    },
+    FieldGroup#RstClosure: {
+      Label: 'Closure Period',
+      Data: [
+        {Value: closureType,      Label: 'Closure Type'},
+        {Value: closureStartDate, Label: 'Closure Start Date'},
+        {Value: closureEndDate,   Label: 'Closure End Date'},
       ]
     },
     // Temporary-only fields — hidden when restrictionCategory != 'Temporary'
@@ -349,6 +359,13 @@ annotate AdminService.Restrictions with {
   temporaryFrom        @title: 'Temporary From';
   temporaryTo          @title: 'Temporary To';
   temporaryReason      @title: 'Temporary Reason'  @UI.MultiLineText;
+  closureStartDate     @title: 'Closure Start Date'  @Common.QuickInfo: 'Date bridge was fully closed to traffic';
+  closureEndDate       @title: 'Closure End Date'    @Common.QuickInfo: 'Date bridge reopened — leave blank if still closed';
+  closureType          @title: 'Closure Type'        @(Common.ValueListWithFixedValues, Common.ValueList: {
+    CollectionPath: 'ClosureTypes', Parameters: [
+      {$Type: 'Common.ValueListParameterOut', LocalDataProperty: closureType, ValueListProperty: 'code'}
+    ]
+  });
   approvedBy           @title: 'Approved By';
   approvalReference    @title: 'Approval Reference';
   legalReference       @title: 'Gazette / Legal Reference';

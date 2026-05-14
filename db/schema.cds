@@ -110,6 +110,10 @@ entity Restrictions : cuid, managed {
   estimatedRepairCost    : Decimal(15,2) @Measures.ISOCurrency: 'AUD';
   programmeYear          : String(10);            // Programme Year e.g. "2026/27"
   restrictionComments    : LargeString;           // Comments / additional notes
+  // ── Closure Period (Full closure restrictions — for reporting) ───────────
+  closureStartDate    : Date;                 // Date bridge fully closed to traffic
+  closureEndDate      : Date;                 // Date bridge reopened (null = still closed)
+  closureType         : String(40);           // Full Closure / Partial Closure / Lane Closure / Emergency
   restrProvisions : Composition of many RestrictionProvisions on restrProvisions.restriction = $self;
   parent   : Association to Restrictions;
   children : Composition of many Restrictions
@@ -351,6 +355,11 @@ entity StructuralAdequacyTypes : sap.common.CodeList {
 }
 
 entity RestrictionTypes : sap.common.CodeList {
+  key code : String(40);
+  active   : Boolean default true;
+}
+
+entity ClosureTypes : sap.common.CodeList {
   key code : String(40);
   active   : Boolean default true;
 }
