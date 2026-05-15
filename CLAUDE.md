@@ -1001,6 +1001,14 @@ Applied: app/admin-bridges/webapp/ext/controller/BridgeDetailExt.js (merged), Br
 [2026-05-14] [FE4 / btn.click() vs firePress()] Learning: Calling `domButton.click()` on an SAP UI5 Button's DOM element does NOT trigger the button's `press` event. UI5 wires its press handler to the native `click` event, but only on the innermost focusable element, and FE4 custom action buttons may have additional wrapper divs that intercept the click. To programmatically trigger a UI5 button's press handler: `sap.ui.getCore().byId(buttonId).firePress()`. In automated tests or preview_eval scripts, always use `firePress()` not `.click()`. The button ID for a FE4 `content.header.actions` entry named `myAction` is: `{appNamespace}::BridgesDetailsList--fe::CustomAction::myAction`.
 Source: New Inspection end-to-end test — DOM btn.click() did not navigate
 Applied: Documented
+[2026-05-15] [CDS / Enum Types for FE4 Dropdowns] Learning: Changing a field from `String(N)` to a CDS `type X : String enum { ... }` is the safest way to add a fixed-value dropdown in FE4 — CDS v9 auto-generates `@Common.ValueListWithFixedValues` annotations. No data migration is needed: the DB column stays VARCHAR, only the allowed-values constraint changes. For integer-keyed scale fields (e.g. `urgency : Integer`) where you want UI labels without changing the DB type, use `@Common.QuickInfo` with an inline label string instead of a type change — this avoids breaking existing handler comparisons like `d.urgency >= 3`.
+Source: P2-002 (riskType/riskCategory enum types) and P2-006 (urgency QuickInfo labels) — UAT fix sprint 2026-05-15
+Applied: db/schema/enum-types.cds (RiskType, RiskCategory), db/schema/risk-assessments.cds, app/admin-bridges/fiori-service.cds
+
+[2026-05-15] [AdminService / Draft Enablement Checklist] Learning: Enabling FE4 draft on a plain-CRUD entity that already has deactivate/reactivate actions requires ALL FOUR of these in sequence: (1) `@fiori.draft.enabled` on the base schema entity in the .cds schema file; (2) `@odata.draft.enabled` on the AdminService projection in fiori-service.cds; (3) `before('NEW', Entity.drafts, ...)` handler in admin-service.js to set active default + auto-ref on draft creation — using `Entity?.drafts` guard in case the entity is not yet draft-enabled in tests; (4) `this.on('deactivate/reactivate', Entity.drafts, req => req.error(409, '...'))` guards to prevent "Service has no handler for deactivate AdminService.Entity.drafts" runtime crash. Missing step 3 causes a blank Object Page (no ref generated). Missing step 4 causes a 500 on deactivate clicks from FE4.
+Source: P2-003 — BridgeScourAssessments + BridgeMaintenanceActions draft enablement — UAT fix sprint 2026-05-15
+Applied: db/schema/scour-assessments.cds, db/schema/maintenance.cds, app/admin-bridges/fiori-service.cds, srv/admin-service.js
+
 ---
 
 ## Contributing to this file
