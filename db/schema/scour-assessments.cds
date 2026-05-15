@@ -4,6 +4,7 @@ using { bridge.management.Bridges } from './bridge-entity';
 
 entity BridgeScourAssessments : cuid, managed {
   bridge                      : Association to Bridges;
+  assessmentRef               : String(40);   // SAR-NNNN auto-generated
   assessmentDate              : Date;
   assessmentType              : String(60);
   scourRisk                   : String(20);

@@ -103,3 +103,25 @@ type MaintenanceStatus : String enum {
   Deferred   = 'Deferred';
   Cancelled  = 'Cancelled';
 }
+
+type RiskType : String enum {
+  Structural    = 'Structural';
+  Hydraulic     = 'Hydraulic';
+  Geotechnical  = 'Geotechnical';
+  Operational   = 'Operational';
+  Environmental = 'Environmental';
+  Compliance    = 'Compliance';
+  Safety        = 'Safety';
+  Other         = 'Other';
+}
+
+type RiskCategory : String enum {
+  AssetCondition    = 'Asset Condition';
+  NaturalHazard     = 'Natural Hazard';
+  TrafficLoad       = 'Traffic Load';
+  EnvironmentalImpact = 'Environmental Impact';
+  RegulatoryLegal   = 'Regulatory / Legal';
+  MaintenanceGap    = 'Maintenance Gap';
+  DesignDeficiency  = 'Design Deficiency';
+  Other             = 'Other';
+}

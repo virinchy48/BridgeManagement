@@ -5,15 +5,17 @@ using { bridge.management.BridgeInspections }  from './defects';
 using { bridge.management.BridgeDefects }      from './defects';
 using { bridge.management.RiskRegisterStatus } from './enum-types';
 using { bridge.management.TreatmentStatus }    from './enum-types';
+using { bridge.management.RiskType }           from './enum-types';
+using { bridge.management.RiskCategory }       from './enum-types';
 
 entity BridgeRiskAssessments : cuid, managed {
     bridge               : Association to Bridges @mandatory;
     assessmentId         : String(40);
     assessmentDate       : Date        @mandatory;
     assessmentCycle      : String(20);
-    riskCategory         : String(40);
+    riskCategory         : RiskCategory;
 
-    riskType             : String(40)  @mandatory;
+    riskType             : RiskType    @mandatory;
     riskDescription      : String(500) @mandatory;
     potentialConsequence : String(500);
 

@@ -1460,9 +1460,10 @@ annotate AdminService.BridgeCapacities with @(
 // Manager priority: next review date prominent
 // Data Steward: assessor accreditation, report reference mandatory
 annotate AdminService.BridgeScourAssessments with {
-  ID         @UI.Hidden;
-  createdAt  @UI.Hidden;  createdBy  @UI.Hidden;
-  modifiedAt @UI.Hidden;  modifiedBy @UI.Hidden;
+  ID            @UI.Hidden;
+  createdAt     @UI.Hidden;  createdBy  @UI.Hidden;
+  modifiedAt    @UI.Hidden;  modifiedBy @UI.Hidden;
+  assessmentRef @Core.Computed @Common.FieldControl: #ReadOnly  @title: 'Assessment Ref';
   bridge @(
     Common.Text            : bridge.bridgeName,
     Common.TextArrangement : #TextOnly,
@@ -1526,12 +1527,13 @@ annotate AdminService.BridgeScourAssessments with @(
     HeaderInfo: {
       TypeName      : 'Scour Assessment',
       TypeNamePlural: 'Scour Assessments',
-      Title         : { Value: assessmentDate },
+      Title         : { Value: assessmentRef },
       Description   : { Value: assessmentType }
     },
     LineItem: [
       {Value: bridge.bridgeId,              Label: 'Bridge ID'},
       {Value: bridge.bridgeName,            Label: 'Bridge'},
+      {Value: assessmentRef,                Label: 'Assessment Ref'},
       {Value: assessmentDate,               Label: 'Date'},
       {Value: assessmentType,               Label: 'Type'},
       {Value: scourRisk,                    Label: 'Scour Risk'},
@@ -1559,6 +1561,7 @@ annotate AdminService.BridgeScourAssessments with @(
       Label: 'Assessment',
       Data: [
         {Value: bridge_ID,            Label: 'Bridge'},
+        {Value: assessmentRef,        Label: 'Assessment Ref'},
         {Value: assessmentDate,       Label: 'Assessment Date'},
         {Value: assessmentType,       Label: 'Assessment Type'},
         {Value: scourRisk,            Label: 'Scour Risk Level'},
@@ -1907,8 +1910,12 @@ annotate bridge.management.BridgeLoadRatings     with @fiori.draft.enabled;
 annotate AdminService.BridgeLoadRatings          with @odata.draft.enabled;
 annotate bridge.management.BridgePermits         with @fiori.draft.enabled;
 annotate AdminService.BridgePermits              with @odata.draft.enabled;
-annotate bridge.management.BridgeDefects         with @fiori.draft.enabled;
-annotate AdminService.BridgeDefects              with @odata.draft.enabled;
+annotate bridge.management.BridgeDefects              with @fiori.draft.enabled;
+annotate AdminService.BridgeDefects                   with @odata.draft.enabled;
+annotate bridge.management.BridgeScourAssessments     with @fiori.draft.enabled;
+annotate AdminService.BridgeScourAssessments          with @odata.draft.enabled;
+annotate bridge.management.BridgeMaintenanceActions   with @fiori.draft.enabled;
+annotate AdminService.BridgeMaintenanceActions        with @odata.draft.enabled;
 
 // Virtual fields are internal — hide from all form layouts
 annotate AdminService.Bridges with {
@@ -2163,7 +2170,7 @@ annotate AdminService.BridgeDefects with {
   face                    @title: 'Face';
   position                @title: 'Position';
   severity                @title: 'Severity (1=Low, 4=Critical)';
-  urgency                 @title: 'Urgency (1=Low, 4=Emergency)';
+  urgency                 @title: 'Urgency'  @Common.QuickInfo: '1 = Routine (>12 months) · 2 = Planned (3–12 months) · 3 = Urgent (1–3 months) · 4 = Emergency (immediate action required)';
   dimensionLengthMm       @title: 'Length (mm)';
   dimensionWidthMm        @title: 'Width (mm)';
   dimensionDepthMm        @title: 'Depth (mm)';
@@ -2444,6 +2451,8 @@ annotate AdminService.BridgeElements with @(
 
 // ── BridgeRiskAssessments — standalone + Bridge Details ─────────────────
 annotate AdminService.BridgeRiskAssessments with {
+  riskType             @title: 'Risk Type'              @Common.QuickInfo: 'TfNSW Risk Framework §3 — primary hazard category: Structural / Hydraulic / Geotechnical / Operational / Environmental / Compliance / Safety';
+  riskCategory         @title: 'Risk Category'          @Common.QuickInfo: 'TfNSW Risk Framework §3 — asset risk grouping for portfolio reporting';
   riskOwner            @title: 'Risk Owner';
   s4MaintenancePlan    @title: 'S/4 Maintenance Plan'    @UI.Hidden;
   s4FunctionalLocation @title: 'S/4 Functional Location' @UI.Hidden;
@@ -2741,6 +2750,7 @@ annotate AdminService.LoadRatingCertificates with @(
 
 // ── NhvrRouteAssessments — standalone + Bridge Details ──────────────────
 annotate AdminService.NhvrRouteAssessments with {
+  assessmentId               @Core.Computed @Common.FieldControl: #ReadOnly  @title: 'Assessment ID';
   iapConditions              @title: 'IAP Conditions';
   structuralAnalysisRequired @title: 'Structural Analysis Required';
   concessionalMass           @title: 'Concessional Mass Scheme';
