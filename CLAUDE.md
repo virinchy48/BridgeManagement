@@ -1020,6 +1020,14 @@ Applied: app/admin-bridges/fiori-service.cds — QuickInfo + section comments on
 Source: Cross-tile audit — nhvrAssessed showing stale 'true' after deactivating the last NHVR Route Assessment
 Applied: srv/admin-service.js — deactivate + reactivate NhvrRouteAssessments handlers updated
 
+[2026-05-17] [AdminService / NhvrRouteAssessments] Learning: The deactivate rollback query must NOT include `active: true` in the WHERE clause for NhvrRouteAssessments — the entity has no `active` field (it uses `assessmentStatus` lifecycle). Including `active: true` in a CDS `.where({})` call on an entity that lacks that field throws a runtime error. Pattern: before writing any WHERE clause involving `active`, always verify the entity schema. Only Bridges (isActive), BridgeInspections, BridgeDefects, Restrictions, BridgeCapacities, BridgeConditionSurveys, BridgeLoadRatings, BridgePermits, and BridgeMaintenanceActions have an `active` boolean field.
+Source: UAT 2026-05-17 — NhvrRouteAssessments deactivate crash
+Applied: srv/admin-service.js line 1302 — removed `active: true` from rollback WHERE clause
+
+[2026-05-17] [AttributesAPI / Case Sensitivity] Learning: `srv/attributes-api.js` route handlers `/values/:objectType/:objectId` used the raw path param `objectType` without normalisation. The DB stores `objectType` as lowercase (`bridge`, `restriction`) but the FE4 controller sends `Bridge` (capitalised entity name). Fix: add `objectType = objectType.toLowerCase()` at the top of GET, POST, and DELETE handlers so both `Bridge` and `bridge` resolve to the same DB rows. Apply this to all three verbs — missing any one means POST creates rows with a capital-B key that GET cannot retrieve.
+Source: UAT 2026-05-17 — Custom attributes EAV panel blank on Bridge Details
+Applied: srv/attributes-api.js — GET/POST/DELETE handlers for /values/:objectType/:objectId
+
 ---
 
 ## Contributing to this file

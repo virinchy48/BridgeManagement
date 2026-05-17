@@ -393,7 +393,8 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, requir
    *   `values` is a flat object keyed by attributeKey; value is the first non-null typed column
    */
   router.get('/values/:objectType/:objectId', async (req, res) => {
-    const { objectType, objectId } = req.params
+    let { objectType, objectId } = req.params
+    objectType = objectType.toLowerCase()
     try {
       const db = await cds.connect.to('db')
       const values = await loadValues(db, objectType, objectId)
@@ -423,7 +424,8 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, requir
    * @throws {422} If type coercion fails, range is violated, or a required field is empty
    */
   router.post('/values/:objectType/:objectId', manageScopeMiddleware, async (req, res) => {
-    const { objectType, objectId } = req.params
+    let { objectType, objectId } = req.params
+    objectType = objectType.toLowerCase()
     const incoming = req.body?.values || {}
     try {
       const db = await cds.connect.to('db')
@@ -500,7 +502,8 @@ module.exports = function mountAttributesApi(app, requiresAuthentication, requir
    * @returns {{ ok: true, deleted: number }} Number of value rows removed
    */
   router.delete('/values/:objectType/:objectId', manageScopeMiddleware, async (req, res) => {
-    const { objectType, objectId } = req.params
+    let { objectType, objectId } = req.params
+    objectType = objectType.toLowerCase()
     try {
       const db = await cds.connect.to('db')
       const existing = await loadValues(db, objectType, objectId)

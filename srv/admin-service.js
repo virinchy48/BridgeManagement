@@ -1299,7 +1299,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       const remaining = await db.run(
         SELECT.one.from('bridge.management.NhvrRouteAssessments')
           .columns('assessmentDate')
-          .where({ bridge_ID: old.bridge_ID, assessmentStatus: 'Current', active: true })
+          .where({ bridge_ID: old.bridge_ID, assessmentStatus: 'Current' })
           .orderBy('assessmentDate desc')
       )
       await db.run(UPDATE('bridge.management.Bridges')
