@@ -1009,6 +1009,17 @@ Applied: db/schema/enum-types.cds (RiskType, RiskCategory), db/schema/risk-asses
 Source: P2-003 — BridgeScourAssessments + BridgeMaintenanceActions draft enablement — UAT fix sprint 2026-05-15
 Applied: db/schema/scour-assessments.cds, db/schema/maintenance.cds, app/admin-bridges/fiori-service.cds, srv/admin-service.js
 
+[2026-05-17] [Annotations / Cross-tile Clarity] Learning: Use `@Common.QuickInfo` section comments and field-level QuickInfo to prevent user confusion between tiles that manage overlapping concepts. Key BMS pairs:
+- **BridgeCapacities vs BridgeLoadRatings**: `grossMassLimit` on Capacities is the static design/structural limit. Load Ratings are per-vehicle-class assessed operational limits (T44, SM1600, HML). QuickInfo on Capacities.grossMassLimit should always direct users to Load Ratings tile for class-specific values.
+- **BridgeConditionSurveys vs BridgeInspections**: Inspections = WHAT was observed (element-level defects, accreditation-gated raw notes). Surveys = WHAT is the verdict (holistic 1-10 rating + overall grade, workflow Draft→Submitted→Approved). Add a section comment block above each annotate block explaining the purpose and directing users to the other tile when appropriate.
+- **BridgeScourAssessments vs BridgeRiskAssessments (hydraulic type)**: Scour = hydraulic engineering measurement record (AP-G71.8). Risk = 5×5 risk management matrix (any risk type including 'Hydraulic'). A bridge can and should have BOTH — they complement, not duplicate each other.
+Source: Cross-tile redundancy + dependency audit — UAT fix sprint 2026-05-17
+Applied: app/admin-bridges/fiori-service.cds — QuickInfo + section comments on BridgeCapacities, BridgeConditionSurveys, BridgeScourAssessments, BridgeLoadRatings, LoadRatingCertificates, BridgeDefects severity/urgency/priority
+
+[2026-05-17] [AdminService / NhvrAssessed Rollback] Learning: `NhvrRouteAssessments.deactivate` must roll back `Bridges.nhvrAssessed` and `nhvrAssessmentDate` to the most recent REMAINING Current assessment (or `false`/`null` if none remain). The `after(UPDATE)` sync-forward handler only fires on create/update — not on deactivate. The rollback query uses `SELECT.one ... WHERE { bridge_ID, assessmentStatus: 'Current', active: true } orderBy('assessmentDate desc')`. The `reactivate` handler must fire the same forward-sync to restore the values. Both handlers must be implemented in `srv/admin-service.js` alongside the deactivate handler.
+Source: Cross-tile audit — nhvrAssessed showing stale 'true' after deactivating the last NHVR Route Assessment
+Applied: srv/admin-service.js — deactivate + reactivate NhvrRouteAssessments handlers updated
+
 ---
 
 ## Contributing to this file
