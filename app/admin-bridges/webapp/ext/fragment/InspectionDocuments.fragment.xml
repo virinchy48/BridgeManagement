@@ -1,0 +1,62 @@
+<core:FragmentDefinition
+  xmlns="sap.m"
+  xmlns:core="sap.ui.core"
+  xmlns:u="sap.ui.unified"
+  core:require="{InspDoc: 'BridgeManagement/adminbridges/ext/controller/InspectionDocuments'}">
+  <VBox
+    class="sapUiSmallMargin"
+    modelContextChange="InspDoc.onContextChange">
+    <HBox alignItems="Center" class="sapUiTinyMarginBottom">
+      <Title text="Documents &amp; Attachments" level="H4" class="sapUiSmallMarginEnd"/>
+      <u:FileUploader
+        id="inspDocUploader"
+        name="inspDocFile"
+        uploadUrl=""
+        tooltip="Upload a document for this inspection"
+        change="InspDoc.onFileChange"
+        buttonText="Upload Document"
+        buttonOnly="true"
+        iconOnly="false"
+        multiple="false"
+        style="Emphasized"/>
+    </HBox>
+    <Table
+      id="inspDocTable"
+      items="{inspDocs>/items}"
+      noDataText="No documents uploaded yet"
+      busyIndicatorDelay="0"
+      busy="{inspDocs>/busy}"
+      mode="None"
+      alternateRowColors="true">
+      <columns>
+        <Column width="40%"><Text text="File Name"/></Column>
+        <Column width="15%"><Text text="Type"/></Column>
+        <Column width="15%"><Text text="Size"/></Column>
+        <Column width="15%"><Text text="Uploaded"/></Column>
+        <Column width="15%"><Text text="Actions"/></Column>
+      </columns>
+      <items>
+        <ColumnListItem>
+          <cells>
+            <Text text="{inspDocs>fileName}"/>
+            <Text text="{inspDocs>mediaType}"/>
+            <Text text="{inspDocs>fileSizeText}"/>
+            <Text text="{inspDocs>createdAtText}"/>
+            <HBox>
+              <Button
+                icon="sap-icon://download"
+                tooltip="Download"
+                type="Transparent"
+                press="InspDoc.onDownload"/>
+              <Button
+                icon="sap-icon://delete"
+                tooltip="Delete"
+                type="Transparent"
+                press="InspDoc.onDelete"/>
+            </HBox>
+          </cells>
+        </ColumnListItem>
+      </items>
+    </Table>
+  </VBox>
+</core:FragmentDefinition>

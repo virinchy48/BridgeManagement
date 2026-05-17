@@ -986,13 +986,6 @@
               "content": {
                 "header": {
                   "actions": {
-                    "uploadDocument": {
-                      "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onUploadDocument",
-                      "text": "Upload Document",
-                      "visible": true,
-                      "enabled": true,
-                      "requiresSelection": false
-                    },
                     "batchElements": {
                       "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onOpenBatchElementEntry",
                       "text": "Add Elements",
@@ -1000,6 +993,18 @@
                       "enabled": true,
                       "requiresSelection": false,
                       "type": "Emphasized"
+                    }
+                  }
+                },
+                "body": {
+                  "sections": {
+                    "inspectionDocumentsSection": {
+                      "template": "BridgeManagement.adminbridges.ext.fragment.InspectionDocuments",
+                      "title": "Documents & Attachments",
+                      "position": {
+                        "placement": "After",
+                        "anchor": "fe::FacetSection::InspectionDetails"
+                      }
                     }
                   }
                 }

@@ -56,10 +56,14 @@ sap.ui.define([
     return getBridgeIdFromHash();
   }
 
-  // Reuses CSRF pattern from Attachments.js:mutate()
+  // Uses the same custom API HEAD endpoint as Attachments.js and BridgeDetailExt.js
   async function getCsrfToken() {
-    var resp = await fetch(SERVICE + "/$metadata", { method: "HEAD", headers: { "x-csrf-token": "fetch" } });
-    return resp.headers.get("x-csrf-token") || "";
+    try {
+      var resp = await fetch("/admin-bridges/api/documents", { method: "HEAD", credentials: "include" });
+      return resp.headers.get("x-csrf-token") || resp.headers.get("X-CSRF-Token") || "bms-csrf-v1";
+    } catch (_) {
+      return "bms-csrf-v1";
+    }
   }
 
   async function mutate(url, method, body) {

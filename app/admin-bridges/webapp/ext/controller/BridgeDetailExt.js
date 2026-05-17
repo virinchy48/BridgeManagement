@@ -173,6 +173,12 @@ sap.ui.define([
           if (CAInit && typeof CAInit.onContextChange === "function") CAInit.onContextChange();
         }
       );
+      sap.ui.require(
+        ["BridgeManagement/adminbridges/ext/controller/Attachments"],
+        function (Att) {
+          if (Att && typeof Att._triggerContextChange === "function") Att._triggerContextChange();
+        }
+      );
     },
 
     // ── CaptureCondition delegation ─────────────────────────────────────────

@@ -126,14 +126,15 @@ sap.ui.define([
   var _csrfToken = null;
   function getCsrfToken() {
     if (_csrfToken) return Promise.resolve(_csrfToken);
-    return fetch("/odata/v4/admin/Bridges?$top=0", { method: "GET", credentials: "same-origin", headers: { "X-CSRF-Token": "Fetch" } })
+    return fetch("/admin-bridges/api/documents", { method: "HEAD", credentials: "same-origin" })
       .then(function (r) {
-        var token = r.headers.get("X-CSRF-Token");
-        if (!token || token.toLowerCase() === "fetch") throw new Error("No CSRF token returned");
-        _csrfToken = token;
+        _csrfToken = r.headers.get("x-csrf-token") || r.headers.get("X-CSRF-Token") || "bms-csrf-v1";
         return _csrfToken;
       })
-      .catch(function (e) { return Promise.reject(new Error("CSRF token fetch failed: " + e.message)); });
+      .catch(function () {
+        _csrfToken = "bms-csrf-v1";
+        return _csrfToken;
+      });
   }
 
   function mutate(url, method, body) {
@@ -268,6 +269,19 @@ sap.ui.define([
           }
         }
       });
+    },
+
+    _triggerContextChange: function () {
+      var vbox = document.querySelector(".sapUxAPObjectPageContent [id*='attachmentsHost']");
+      if (vbox) {
+        var ctrl = sap.ui.getCore().byId(vbox.id);
+        if (ctrl) {
+          var host = ctrl;
+          resolveBridgeId(host).then(function (bridgeId) {
+            if (bridgeId) load(host);
+          });
+        }
+      }
     }
   };
 });
