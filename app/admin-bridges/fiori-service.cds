@@ -486,7 +486,8 @@ annotate AdminService.Bridges with {
       { $Type: 'Common.ValueListParameterOut', LocalDataProperty: postingStatus, ValueListProperty: 'code' },
       { $Type: 'Common.ValueListParameterDisplayOnly', ValueListProperty: 'name' }
     ]}
-  ) @title: 'Posting Status';
+  ) @title: 'Posting Status'
+    @Common.QuickInfo: 'Auto-computed from active Restrictions — set closure-type Restrictions in the Restrictions tile to change this status';
   conditionRating @Common.FieldControl: #ReadOnly  @title: 'Condition Rating (1–10)'  @Common.QuickInfo: 'Set by Inspect Now workflow — not directly editable';
 
   // Value lists
@@ -673,7 +674,8 @@ annotate AdminService.Bridges with {
   // ── Gazette & Legal (Roads Act 1993 NSW §§121–124) ───────────────────────
   gazetteEffectiveDate  @title: 'Gazette Effective Date'  @Common.QuickInfo: 'Date gazette order came into effect — Roads Act 1993 §122';
   gazetteExpiryDate     @title: 'Gazette Expiry Date'     @Common.QuickInfo: 'Drives renewal alerts 90/60/30 days before expiry';
-  postingStatusReason   @title: 'Posting Status Reason';
+  postingStatusReason   @title: 'Posting Status Reason'
+    @Common.QuickInfo: 'Free-text annotation — your note about WHY this bridge is posted/closed. The Posting Status itself is auto-computed from active Restrictions; this field is your manual context note and is not auto-cleared when status changes.';
   activeClosureCount    @title: 'Active Closure Restrictions'  @Common.FieldControl: #ReadOnly  @Common.QuickInfo: 'Count of current active closure-type Restrictions for this bridge — auto-computed';
   maintenanceClass      @title: 'Maintenance Class';
   lifecycleStage        @title: 'Lifecycle Stage';
@@ -1452,9 +1454,21 @@ annotate AdminService.BridgeCapacities with @(
 );
 
 ////////////////////////////////////////////////////////////////////////////
-//  BridgeScourAssessments — sub-entity on Bridge ObjectPage
-////////////////////////////////////////////////////////////////////////////
-
+//  BridgeScourAssessments — Scour Assessment tile (standalone CRUD)
+//
+//  PURPOSE: Hydraulic/scour-specific assessment per Austroads AP-G71.8 / AGBT10 §5.
+//  WHEN TO USE: Record the outcome of a formal scour assessment (measured scour depth,
+//  flood immunity ARI, countermeasure details). NOT for general water-related risk.
+//  Key distinction:
+//    • Scour Assessments  — HYDRAULIC engineering: waterway type, foundation type,
+//                           measured scour depth, countermeasures (AP-G71.8 §4/5).
+//    • Risk Assessments   — RISK MANAGEMENT: 5×5 likelihood × consequence matrix,
+//                           covers ANY risk type including hydraulic — use riskType='Hydraulic'
+//                           for the risk management view of the same bridge waterway.
+//  A bridge can have BOTH: a Scour Assessment (engineering measurement) AND a Risk
+//  Assessment with riskType=Hydraulic (risk management register entry). They complement
+//  each other — they do not duplicate.
+//
 // ── BridgeScourAssessments — expert council redesign ─────────────────────
 // Inspector priority: scour risk + measured depth first
 // Manager priority: next review date prominent
@@ -1861,7 +1875,7 @@ annotate AdminService.BridgeRestrictions with {
 };
 
 annotate AdminService.BridgeCapacities with {
-  grossMassLimit        @assert.range: [0, 2000]   @Common.QuickInfo: 'Valid range: 0 – 2,000 t';
+  grossMassLimit        @assert.range: [0, 2000]   @Common.QuickInfo: 'Structural/design capacity (static record). For per-vehicle-class assessed operational limits (T44, SM1600, HML, etc.), use the Load Ratings tile. These may differ: Capacities = design/physical limit; Load Ratings = assessed safe operational limit per class.';
   grossCombined         @assert.range: [0, 3000]   @Common.QuickInfo: 'Valid range: 0 – 3,000 t';
   steerAxleLimit        @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
   singleAxleLimit       @assert.range: [0, 200]    @Common.QuickInfo: 'Valid range: 0 – 200 t';
@@ -2169,8 +2183,10 @@ annotate AdminService.BridgeDefects with {
   pierNumber              @title: 'Pier Number';
   face                    @title: 'Face';
   position                @title: 'Position';
-  severity                @title: 'Severity (1=Low, 4=Critical)';
-  urgency                 @title: 'Urgency'  @Common.QuickInfo: '1 = Routine (>12 months) · 2 = Planned (3–12 months) · 3 = Urgent (1–3 months) · 4 = Emergency (immediate action required)';
+  severity                @title: 'Severity (1=Low, 4=Critical)'
+    @Common.QuickInfo: 'Structural damage magnitude — HOW BAD is the defect: 1=Low (cosmetic), 2=Medium (functional), 3=High (structural), 4=Critical (failure risk). See SIMS §6.2.';
+  urgency                 @title: 'Urgency (repair timeline)'
+    @Common.QuickInfo: 'HOW QUICKLY must repair occur — 1=Routine (>12 months), 2=Planned (3–12 months), 3=Urgent (1–3 months), 4=Emergency (immediate). Aligns with Maintenance Priority: urgency 4=P1, 3=P2, 2=P3, 1=P4.';
   dimensionLengthMm       @title: 'Length (mm)';
   dimensionWidthMm        @title: 'Width (mm)';
   dimensionDepthMm        @title: 'Depth (mm)';
@@ -2183,7 +2199,8 @@ annotate AdminService.BridgeDefects with {
   // ── HIGH priority additions (SIMS §4.3, AGAM §5.3, TfNSW-BIM §4.4) ──────
   repairMethod            @title: 'Repair Method'                       @Common.QuickInfo: 'SIMS §4.3 — required field for work order generation';
   requiresLoadRestriction @title: 'Requires Load Restriction Review'    @Common.QuickInfo: 'TfNSW-BIM §4.4 — when true, triggers review of BridgeCapacities and LoadRatingCertificates';
-  maintenancePriority     @title: 'Maintenance Priority'                @Common.QuickInfo: 'AGAM §5.3 — P1 Emergency (immediate) to P4 Planned (>12 months)';
+  maintenancePriority     @title: 'Maintenance Priority (AGAM §5.3)'
+    @Common.QuickInfo: 'AGAM §5.3 planning priority — P1 Emergency (=urgency 4), P2 Urgent (=urgency 3), P3 Routine (=urgency 2), P4 Planned (=urgency 1). Used by Work Orders tile for scheduling; set this to match the Urgency value.';
   s4NotificationId        @title: 'S/4 Notification ID';
   s4OrderId               @title: 'S/4 Order ID';
   s4SyncStatus            @title: 'S/4 Sync Status';
@@ -2622,8 +2639,14 @@ annotate AdminService.BridgeRiskAssessments with actions {
 };
 
 // ── LoadRatingCertificates — standalone + Bridge Details ────────────────
+// PURPOSE: Formal certification document (legal instrument). An accredited engineer
+// signs off on load-carrying capacity. References the per-vehicle-class assessment
+// values recorded in the Load Ratings tile (BridgeLoadRatings).
+// WHEN TO USE: After completing per-class assessments in Load Ratings tile, create
+// a Certificate here to record the formal approval and expiry.
 annotate AdminService.LoadRatingCertificates with {
-  ratingBasis          @title: 'Rating Basis';
+  ratingBasis          @title: 'Rating Basis'
+    @Common.QuickInfo: 'Engineering standard used (AS 5100, NAASRA, Load Testing). Record the per-vehicle-class assessment values in the Load Ratings tile; this certificate formalises the overall result.';
   jurisdictionApproval @title: 'Jurisdiction Approval Reference';
   approvalDate         @title: 'Approval Date';
 };
@@ -3452,6 +3475,18 @@ annotate AdminService.BridgeRestrictions with actions {
 
 ////////////////////////////////////////////////////////////////////////////
 //  BridgeConditionSurveys (CON tile) — standalone condition survey records
+//
+//  PURPOSE: Holistic bridge condition assessment per AGAM §5.2 / AS 5100-7 Table 4.
+//  WHEN TO USE: A Condition Survey is a formal engineering assessment that produces an
+//  overall condition rating and grade — typically done annually or post-event. It is
+//  MORE FORMAL than a routine inspection. Key distinction:
+//    • Inspections tile   — WHAT was observed: element-level defect recording, accreditation-
+//                           gated, raw field notes, links to defects.
+//    • Condition Surveys  — WHAT is the verdict: holistic 1-10 rating + overall grade,
+//                           workflow (Draft → Submitted → Approved), syncs back to Bridge
+//                           conditionRating on approval.
+//  Routine inspections feed the Inspections register; engineering judgement assessments
+//  that produce a formal grade go here.
 ////////////////////////////////////////////////////////////////////////////
 
 annotate AdminService.BridgeConditionSurveys with @(
@@ -3584,8 +3619,8 @@ annotate AdminService.BridgeConditionSurveys with {
   actionPlan                  @title: 'Action Plan'  @UI.MultiLineText;
   surveyType @title: 'Survey Type';
   surveyedBy @title: 'Surveyed By';
-  conditionRating @title: 'Condition Rating (1–10)'  @Common.QuickInfo: 'Valid range: 1 – 10';
-  structuralRating @title: 'Structural Rating (1–10)' @Common.QuickInfo: 'Valid range: 1 – 10';
+  conditionRating @title: 'Condition Rating (1–10)'  @Common.QuickInfo: 'Overall bridge condition 1 (failed) – 10 (new). Distinct from individual inspection element ratings — this is the surveyors holistic judgement per AGAM §5.2. Feeds back to the Bridge master conditionRating field on survey approval.';
+  structuralRating @title: 'Structural Rating (1–10)' @Common.QuickInfo: 'Structural adequacy component 1 – 10. Separate from conditionRating — a bridge can have good overall condition but a lower structural rating due to design deficiencies.';
   overallGrade @title: 'Overall Grade';
   notes    @UI.MultiLineText  @title: 'Notes';
   remarks  @UI.MultiLineText  @title: 'Remarks';
@@ -3682,6 +3717,10 @@ annotate AdminService.BridgeLoadRatings with @(
   ]
 );
 
+// PURPOSE: Per-vehicle-class engineering assessment values (T44, SM1600, HML, PBS etc).
+// Records the rating factor and mass limit for EACH vehicle class separately.
+// WHEN TO USE: After a load rating inspection. Once all classes are assessed, create
+// a formal Load Rating Certificate in the Certificates tile to capture the approved result.
 annotate AdminService.BridgeLoadRatings with {
   ID            @Core.Computed;
   createdBy     @UI.Hidden;  createdAt     @UI.Hidden;

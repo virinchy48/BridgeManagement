@@ -1293,6 +1293,19 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
       changes: [{ fieldName: 'assessmentStatus', oldValue: old?.assessmentStatus || 'Current', newValue: 'Superseded' }]
     })
+    // Re-sync Bridge.nhvrAssessed — roll back to most recent remaining Current assessment,
+    // or clear to false/null if no Current assessment remains for this bridge.
+    if (old?.bridge_ID) {
+      const remaining = await db.run(
+        SELECT.one.from('bridge.management.NhvrRouteAssessments')
+          .columns('assessmentDate')
+          .where({ bridge_ID: old.bridge_ID, assessmentStatus: 'Current', active: true })
+          .orderBy('assessmentDate desc')
+      )
+      await db.run(UPDATE('bridge.management.Bridges')
+        .set({ nhvrAssessed: !!remaining, nhvrAssessmentDate: remaining?.assessmentDate ?? null })
+        .where({ ID: old.bridge_ID }))
+    }
     return db.run(SELECT.one.from('bridge.management.NhvrRouteAssessments').where({ ID }))
   })
 
@@ -1306,6 +1319,12 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       source: 'OData', batchId: cds.utils.uuid(), changedBy: req.user?.id || 'system',
       changes: [{ fieldName: 'assessmentStatus', oldValue: old?.assessmentStatus || 'Superseded', newValue: 'Current' }]
     })
+    // Re-sync Bridge.nhvrAssessed to reflect newly Current assessment
+    if (old?.bridge_ID && old?.assessmentDate) {
+      await db.run(UPDATE('bridge.management.Bridges')
+        .set({ nhvrAssessed: true, nhvrAssessmentDate: old.assessmentDate })
+        .where({ ID: old.bridge_ID }))
+    }
     return db.run(SELECT.one.from('bridge.management.NhvrRouteAssessments').where({ ID }))
   })
 
