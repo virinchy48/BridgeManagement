@@ -1028,6 +1028,25 @@ Applied: srv/admin-service.js line 1302 — removed `active: true` from rollback
 Source: UAT 2026-05-17 — Custom attributes EAV panel blank on Bridge Details
 Applied: srv/attributes-api.js — GET/POST/DELETE handlers for /values/:objectType/:objectId
 
+[2026-05-18] [CSRF / Custom REST Routers] Learning: The CAP OData layer (`/odata/v4/admin/*`) does NOT emit `X-CSRF-Token` in local dummy auth mode — the header is silently absent. Any controller that calls `getCsrfToken()` by fetching a CAP OData endpoint with `X-CSRF-Token: Fetch` will always fail (throws "No CSRF token returned") and cause ALL uploads to return HTTP 403 CSRF_MISSING. The ONLY working CSRF probe endpoint in this app is `HEAD /admin-bridges/api/documents` — it returns `x-csrf-token: bms-csrf-v1` unconditionally. Always use this endpoint for getCsrfToken() in every frontend controller that mutates custom Express routes. Pattern:
+```javascript
+function getCsrfToken() {
+  if (_csrfToken) return Promise.resolve(_csrfToken);
+  return fetch("/admin-bridges/api/documents", { method: "HEAD", credentials: "same-origin" })
+    .then(function (r) {
+      _csrfToken = r.headers.get("x-csrf-token") || "bms-csrf-v1";
+      return _csrfToken;
+    })
+    .catch(function () { _csrfToken = "bms-csrf-v1"; return _csrfToken; });
+}
+```
+Source: Document upload fix — Attachments.js and InspectionRegister.js both had wrong CSRF endpoint
+Applied: app/admin-bridges/webapp/ext/controller/Attachments.js, InspectionRegister.js, InspectionDocuments.js
+
+[2026-05-18] [FE4 / Inspection ObjectPage Documents Section] Learning: The BridgeInspectionsObjectPage had an "Upload Document" header action that POSTed to `/admin-bridges/api/documents` successfully but had no list view — users could upload but not see, download, or delete their documents. Pattern for adding a self-contained documents list to any sub-domain ObjectPage: (1) create `ext/fragment/InspectionDocuments.fragment.xml` with a VBox (has `modelContextChange="InspDoc.onContextChange"`) containing a FileUploader + Table bound to `{inspDocs>/items}`; (2) create `ext/controller/InspectionDocuments.js` with getCsrfToken, loadDocs, onContextChange (with 600ms setTimeout retry on null inspectionId), onFileChange, onDownload, onDelete; (3) add `body.sections.inspectionDocumentsSection` to the ObjectPage target in manifest.json. The header "Upload Document" action can be removed since the in-page panel provides the full workflow. The `modelContextChange` event fires when FE4 sets the OData binding context on the host VBox — no additional sap.ui.require boot is needed in BridgeDetailExt.js for sub-domain ObjectPages (BridgeDetailExt.js is the extension for the Bridge Details page only, not Inspection pages).
+Source: Document upload in inspections fix — 2026-05-18
+Applied: app/admin-bridges/webapp/ext/controller/InspectionDocuments.js (new), ext/fragment/InspectionDocuments.fragment.xml (new), manifest.json
+
 ---
 
 ## Contributing to this file
