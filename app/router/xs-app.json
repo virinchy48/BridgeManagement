@@ -26,8 +26,15 @@
       "csrfProtection": false
     },
     {
-      "source": "^/(map|dashboard|health|mass-upload|mass-edit|audit|access|quality|system|admin-bridges|bnac)(.*)",
-      "target": "/$1$2",
+      "source": "^/health(.*)$",
+      "target": "/health$1",
+      "destination": "srv-api",
+      "authenticationType": "none",
+      "csrfProtection": false
+    },
+    {
+      "source": "^/(map|dashboard|mass-upload|mass-edit|audit|access|quality|system|admin-bridges|bnac)/api/(.*)",
+      "target": "/$1/api/$2",
       "destination": "srv-api",
       "authenticationType": "xsuaa",
       "csrfProtection": false
