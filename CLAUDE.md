@@ -1058,3 +1058,14 @@ Applied: app/router/xs-app.json
 If you discover a new convention, fix a recurring mistake, or learn something about the
 codebase that would have saved you time — add it here and commit it. Keep entries concise:
 lead with the rule, follow with the reason if it is not obvious.
+
+[2026-05-20] [BTP / FLP / HTML5 Repo URLs] Learning: The FLP sandbox `fioriSandboxConfig.json` used for BTP deployment MUST use different `resolutionResult.url` values than local dev. Local dev serves apps from the filesystem (CDS static file handler) at `/xxx/webapp/`. BTP HTML5 Application Repository serves apps at `/<sap.app.id with dots replaced by slashes>/` — NO `/webapp` suffix, NO hyphen-directory names. Example: `sap.app.id = "BridgeManagement.adminbridges"` → BTP URL `/BridgeManagement/adminbridges`. The zip's `archiveName` (e.g. `admin-bridges`) does NOT determine the BTP serving path — only `sap.app.id` does. Solution: maintain TWO separate files: `app/appconfig/fioriSandboxConfig.json` (local, uses `/xxx/webapp`) and `app/router/appconfig/fioriSandboxConfig.json` (BTP, uses `/<Namespace>/<appname>`). Never copy the local file to the router directory without updating all `url` fields.
+Source: BTP "Failed to load UI5 component for navigation intent #Bridges-manage" — 2026-05-20
+Applied: app/router/appconfig/fioriSandboxConfig.json — all 22 inbound URLs updated to BTP format
+
+[2026-05-20] [BTP / FLP / fiori-apps.html] Learning: The `app/router/fiori-apps.html` MUST be minimal — only the renderer config and UI5 library list. The full FLP sandbox config (tiles, groups, ClientSideTargetResolution inbounds) belongs exclusively in `app/router/appconfig/fioriSandboxConfig.json`. If `fiori-apps.html` also defines the full inline `sap-ushell-config` with all inbounds, the FLP sandbox merges both sources and creates duplicate intent registrations that prevent component loading. Rule: copy local `fiori-apps.html` to the router ONLY after stripping all LaunchPage/ClientSideTargetResolution config blocks, leaving just the renderer + bootstrap script tags.
+Source: BTP "App could not be opened" after syncing full fiori-apps.html to router — 2026-05-20
+Applied: app/router/fiori-apps.html — restored to minimal; all tile/intent config stays in fioriSandboxConfig.json
+
+[2026-05-20] [BTP / FLP / Tile visibility vs component load] Learning: BTP FLP showing tiles correctly (from fioriSandboxConfig.json) does NOT prove component loading works. The FLP reads tiles/groups from the LaunchPage adapter config (JSON only, no HTTP fetch). Component loading is a separate step triggered when the user clicks a tile — it fetches `{url}/manifest.json` from the HTML5 repo. These are independent failure modes: tiles can appear with correct labels/icons while every click fails with "App could not be opened". Always click at least one tile from each group as part of BTP smoke test, not just confirm tile count.
+Source: BTP deployment debugging — 2026-05-20
