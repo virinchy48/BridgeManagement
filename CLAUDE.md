@@ -1047,6 +1047,10 @@ Applied: app/admin-bridges/webapp/ext/controller/Attachments.js, InspectionRegis
 Source: Document upload in inspections fix — 2026-05-18
 Applied: app/admin-bridges/webapp/ext/controller/InspectionDocuments.js (new), ext/fragment/InspectionDocuments.fragment.xml (new), manifest.json
 
+[2026-05-20] [BTP / xs-app.json] Learning: The broad xs-app.json route `"source": "^/(map|dashboard|...|admin-bridges|bnac)(.*)"` was routing ALL paths with those prefixes to srv-api — including `/admin-bridges/webapp/Component.js` which should be served from the HTML5 repo. This caused "Failed to load UI5 component for navigation intent #Bridges-manage" on BTP because the backend has no handler for static UI5 files. Fix: split the route into two specific entries: (1) `"source": "^/health(.*)$"` with `authenticationType: none` for the health endpoint; (2) `"source": "^/(map|dashboard|...|admin-bridges|bnac)/api/(.*)"` matching ONLY the `/api/` subpath. Paths like `/admin-bridges/webapp/Component.js` now fall through to the HTML5 repo catch-all route. The key rule: **backend Express routers are ALL mounted at `/xxx/api/` — never at the bare prefix `/xxx/`**. The xs-app.json backend route must always include `/api/` to avoid intercepting frontend static assets that share the same first path segment.
+Source: BTP "App could not be opened" for #Bridges-manage — 2026-05-20
+Applied: app/router/xs-app.json
+
 ---
 
 ## Contributing to this file
