@@ -5,7 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>New Bridge Management System (BMS)</title>
+  <title>Bridge Management System (BMS)</title>
 
   <script>
     window['sap-ushell-config'] = {
@@ -18,130 +18,12 @@
               enablePersonalization: false,
               enableAppFinder: false,
               enableSetTheme: false,
-              enableUserDefaultParameters: false,
-              movePersonalizedAppsSection: false,
               preloadLibrariesForRootIntent: false
-            }
-          }
-        }
-      },
-      bootstrapConfig: {
-        "mergeApplications": false,
-        "mergeCatalogs": false
-      },
-      services: {
-        LaunchPage: {
-          adapter: {
-            config: {
-              groups: [
-                {
-                  id: "bms.group.operations",
-                  title: "OPERATIONS",
-                  isPreset: true, isVisible: true, isGroupLocked: false,
-                  tiles: [
-                    { id: "Dashboard",      tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Dashboard",           subtitle: "Operations Centre",           icon: "sap-icon://home",                targetURL: "#Dashboard-display" } },
-                    { id: "Bridges",        tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Bridges",             subtitle: "Asset Registry",              icon: "sap-icon://functional-location",  targetURL: "#Bridges-manage" } },
-                    { id: "Restrictions",   tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Restrictions",        subtitle: "Active & Scheduled",          icon: "sap-icon://alert",                targetURL: "#Restrictions-manage" } },
-                    { id: "MapView",        tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Map View",            subtitle: "Geographic Explorer",         icon: "sap-icon://map-2",                targetURL: "#Map-display" } },
-                    { id: "Reports",        tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Network Reports",     subtitle: "Analytics & Risk Register",   icon: "sap-icon://bar-chart",            targetURL: "#Bridges-manage&/NetworkReports" } }
-                  ]
-                },
-                {
-                  id: "bms.group.subdomains",
-                  title: "BRIDGE SUB-DOMAINS",
-                  isPreset: true, isVisible: true, isGroupLocked: false,
-                  tiles: [
-                    { id: "Inspections",         tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Inspections",            subtitle: "All Bridge Inspections",       icon: "sap-icon://inspection",           targetURL: "#Bridges-manage&/BridgeInspections" } },
-                    { id: "Defects",             tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Defects",                 subtitle: "View-Only — Create via Inspections", icon: "sap-icon://error",                targetURL: "#Bridges-manage&/BridgeDefects" } },
-                    { id: "Capacity",            tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Bridge Capacity",         subtitle: "Load & Geometric Capacity",    icon: "sap-icon://weight",               targetURL: "#Bridges-manage&/BridgeCapacities" } },
-                    { id: "ConditionSurveys",    tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Condition Surveys",       subtitle: "Physical Condition Ratings",   icon: "sap-icon://survey",               targetURL: "#Bridges-manage&/BridgeConditionSurveys" } },
-                    { id: "LoadRatings",         tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Load Ratings",            subtitle: "Per-Vehicle Class Ratings",    icon: "sap-icon://vehicle-repair",       targetURL: "#Bridges-manage&/BridgeLoadRatings" } },
-                    { id: "RiskAssessments",     tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Risk Assessments",        subtitle: "Risk Register & Treatment",    icon: "sap-icon://business-objects-experience", targetURL: "#Bridges-manage&/BridgeRiskAssessments" } },
-                    { id: "NhvrRouteAssessments",tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "NHVR Route Assessments",  subtitle: "Heavy Vehicle Route Approvals", icon: "sap-icon://map",                 targetURL: "#Bridges-manage&/NhvrRouteAssessments" } },
-                    { id: "LoadRatingCerts",     tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Load Rating Certificates", subtitle: "Issued Certificates",         icon: "sap-icon://document-text",        targetURL: "#Bridges-manage&/LoadRatingCertificates" } },
-                    { id: "Permits",             tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Permits",                subtitle: "Permit Applications",          icon: "sap-icon://to-be-reviewed",       targetURL: "#Bridges-manage&/BridgePermits" } },
-                    { id: "ScourAssessments",    tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Scour Assessments",      subtitle: "Hydraulic Scour Risk Register", icon: "sap-icon://overflow",            targetURL: "#Bridges-manage&/BridgeScourAssessments" } },
-                    { id: "WorkOrdersTile",      tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Work Orders",             subtitle: "Maintenance Action Register",  icon: "sap-icon://tools-opportunity",    targetURL: "#Maintenance-manage" } }
-                  ]
-                },
-                {
-                  id: "bms.group.admin",
-                  title: "BMS BUSINESS ADMIN",
-                  isPreset: true, isVisible: true, isGroupLocked: false,
-                  tiles: [
-                    { id: "MassUpload", tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Mass Upload",       subtitle: "CSV Drag & Drop",           icon: "sap-icon://upload-to-cloud",  targetURL: "#MassUpload-display" } },
-                    { id: "BmsAdmin",        tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "BMS Administration",    subtitle: "Audit, Config & User Access",      icon: "sap-icon://action-settings", targetURL: "#BmsAdmin-manage" } },
-                    { id: "AttributesAdmin", tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Attribute Configuration", subtitle: "Class & Characteristics Setup",     icon: "sap-icon://customize",       targetURL: "#AttributesAdmin-manage" } },
-                    { id: "MassEdit",        tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "Mass Edit",             subtitle: "In-App Grid Editor",               icon: "sap-icon://edit",            targetURL: "#MassEdit-manage" } },
-                    { id: "AssetIQ",        tileType: "sap.ushell.ui.tile.StaticTile", properties: { title: "AssetIQ — Risk Intelligence", subtitle: "Bridge Health & Risk Scores", icon: "sap-icon://ai",              targetURL: "#Bridges-manage&/AssetIQScores" } }
-                  ]
-                }
-              ]
-            }
-          }
-        },
-        NavTargetResolution: {
-          config: { enableClientSideTargetResolution: true }
-        },
-        ClientSideTargetResolution: {
-          adapter: {
-            config: {
-              inbounds: {
-                "Dashboard-display":      { semanticObject: "Dashboard",      action: "display", title: "Dashboard",               signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.dashboard",      url: "/dashboard/webapp" } },
-                "Bridges-manage":         { semanticObject: "Bridges",        action: "manage",  title: "Bridges",                 signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges",  url: "/admin-bridges/webapp" } },
-                "Restrictions-manage":    { semanticObject: "Restrictions",   action: "manage",  title: "Restrictions",            signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.restrictions", url: "/restrictions/webapp" } },
-                "Map-display":            { semanticObject: "Map",            action: "display", title: "Map View",                signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.mapview",      url: "/map-view/webapp" } },
-                "MapView-display":        { semanticObject: "MapView",        action: "display", title: "Map View",                signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.mapview",      url: "/map-view/webapp" } },
-                "MassUpload-display":     { semanticObject: "MassUpload",     action: "display", title: "Mass Upload",             signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.massupload",   url: "/mass-upload/webapp" } },
-                "BmsAdmin-manage":        { semanticObject: "BmsAdmin",        action: "manage",  title: "BMS Administration",      signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.bmsadmin",        url: "/bms-admin/webapp" } },
-                "AttributesAdmin-manage": { semanticObject: "AttributesAdmin", action: "manage",  title: "Attribute Configuration", signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.attributesadmin", url: "/attributes-admin/webapp" } },
-                "MassEdit-manage":        { semanticObject: "MassEdit",        action: "manage",  title: "Mass Edit",               signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.massedit",        url: "/mass-edit/webapp" } },
-                "Reports-display":        { semanticObject: "Reports",        action: "display", title: "Reports",                 signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.reports",      url: "/reports/webapp" } },
-                "Inspections-manage":         { semanticObject: "Inspections",         action: "manage", title: "Inspections",            signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeInspections" } },
-                "Defects-manage":             { semanticObject: "Defects",             action: "manage", title: "Defects",                signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeDefects" } },
-                "Capacity-manage":            { semanticObject: "Capacity",            action: "manage", title: "Bridge Capacity",         signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeCapacities" } },
-                "ConditionSurveys-manage":    { semanticObject: "ConditionSurveys",    action: "manage", title: "Condition Surveys",       signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeConditionSurveys" } },
-                "LoadRatings-manage":         { semanticObject: "LoadRatings",         action: "manage", title: "Load Ratings",            signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeLoadRatings" } },
-                "RiskAssessments-manage":     { semanticObject: "RiskAssessments",     action: "manage", title: "Risk Assessments",        signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeRiskAssessments" } },
-                "NhvrRouteAssessments-manage":{ semanticObject: "NhvrRouteAssessments",action: "manage", title: "NHVR Route Assessments",  signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "NhvrRouteAssessments" } },
-                "ScourAssessments-manage":    { semanticObject: "ScourAssessments",    action: "manage", title: "Scour Assessments",       signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgeScourAssessments" } },
-                "LoadRatingCerts-manage":     { semanticObject: "LoadRatingCerts",     action: "manage", title: "Load Rating Certificates", signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "LoadRatingCertificates" } },
-                "Permits-manage":             { semanticObject: "Permits",             action: "manage", title: "Permits",                signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "BridgePermits" } },
-                "AssetIQ-display":            { semanticObject: "AssetIQ",             action: "display", title: "AssetIQ Risk Intelligence", signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "AssetIQScores" } },
-                "Maintenance-manage":         { semanticObject: "Maintenance",         action: "manage",  title: "Work Orders",               signature: { parameters: {}, additionalParameters: "allowed" }, resolutionResult: { applicationType: "SAPUI5", additionalInformation: "SAPUI5.Component=BridgeManagement.adminbridges", url: "/admin-bridges/webapp", innerAppRoute: "&/WorkOrdersList" } }
-              }
             }
           }
         }
       }
     }
-  </script>
-
-  <script>
-    (function() {
-      var cfg = window['sap-ushell-config'];
-      var launchCfg = cfg.services.LaunchPage.adapter.config;
-
-      var myGroups = launchCfg.groups;
-      Object.defineProperty(launchCfg, 'groups', {
-        get: function() { return myGroups; },
-        set: function() {},
-        configurable: false
-      });
-
-      var myCatalogs = [];
-      Object.defineProperty(launchCfg, 'catalogs', {
-        get: function() { return myCatalogs; },
-        set: function() {},
-        configurable: false
-      });
-
-      Object.defineProperty(cfg, 'catalogueEntries', {
-        get: function() { return []; },
-        set: function() {},
-        configurable: false
-      });
-    })();
   </script>
 
   <script
@@ -152,7 +34,7 @@
   <script
     id="sap-ui-bootstrap"
     src="https://sapui5.hana.ondemand.com/1.145.0/resources/sap-ui-core.js"
-    data-sap-ui-libs="sap.ui.core,sap.ui.generic.app,sap.ushell,sap.fe.templates"
+    data-sap-ui-libs="sap.ui.core,sap.m,sap.ushell,sap.ui.layout,sap.fe.templates"
     data-sap-ui-flexibilityServices='[{"connector": "LocalStorageConnector"}]'
     data-sap-ui-compatVersion="edge"
     data-sap-ui-theme="sap_horizon"
