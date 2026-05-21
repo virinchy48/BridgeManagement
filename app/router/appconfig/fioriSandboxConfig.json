@@ -86,7 +86,7 @@
                   "properties": {
                     "title": "Defects",
                     "subtitle": "View-Only \u2014 Create via Inspections",
-                    "icon": "sap-icon://error",
+                    "icon": "sap-icon://quality-issue",
                     "targetURL": "#Bridges-manage&/BridgeDefects"
                   }
                 },
@@ -96,7 +96,7 @@
                   "properties": {
                     "title": "Bridge Capacity",
                     "subtitle": "Load & Geometric Capacity",
-                    "icon": "sap-icon://weight",
+                    "icon": "sap-icon://simulate",
                     "targetURL": "#Bridges-manage&/BridgeCapacities"
                   }
                 },
@@ -166,7 +166,7 @@
                   "properties": {
                     "title": "Scour Assessments",
                     "subtitle": "Hydraulic Scour Risk Register",
-                    "icon": "sap-icon://overflow",
+                    "icon": "sap-icon://area-chart",
                     "targetURL": "#Bridges-manage&/BridgeScourAssessments"
                   }
                 },
