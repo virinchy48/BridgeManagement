@@ -177,7 +177,7 @@
                     "title": "Work Orders",
                     "subtitle": "Maintenance Action Register",
                     "icon": "sap-icon://tools-opportunity",
-                    "targetURL": "#Maintenance-manage"
+                    "targetURL": "#Bridges-manage&/WorkOrdersList"
                   }
                 }
               ]

@@ -434,6 +434,24 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     await UPDATE('bridge.management.Bridges').set({ postingStatus: newStatus }).where({ ID: bridgeId })
   }
 
+  // Bridges.drafts — initialise all virtual fields to safe defaults so FE4 $select never fails
+  this.after('READ', Bridges.drafts, (results) => {
+    const list = Array.isArray(results) ? results : (results ? [results] : [])
+    for (const b of list) {
+      if (!b) continue
+      b.postingStatusCriticality = b.postingStatusCriticality ?? 2
+      b.activeRestrictionCount   = b.activeRestrictionCount   ?? 0
+      b.activeClosureCount       = b.activeClosureCount       ?? 0
+      b.bsiScore                 = b.bsiScore                 ?? null
+      b.bsiWidthRating           = b.bsiWidthRating           ?? null
+      b.bsiBarrierRating         = b.bsiBarrierRating         ?? null
+      b.bsiRouteAltRating        = b.bsiRouteAltRating        ?? null
+      b.bhi                      = b.bhi                      ?? null
+      b.nbi                      = b.nbi                      ?? null
+      b.ragStatus                = b.ragStatus                ?? null
+    }
+  })
+
   this.after('READ', Bridges, async (results, req) => {
     const list = Array.isArray(results) ? results : (results ? [results] : [])
     for (const b of list) {
@@ -532,7 +550,7 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     if (req.data?.IsActiveEntity !== false) req.error(405, 'Hard delete is not permitted. Use the Deactivate action instead.')
   })
 
-  this.after('READ', Restrictions, (data) => {
+  const _computeReviewCriticality = (data) => {
     const results = Array.isArray(data) ? data : [data]
     const today = new Date()
     const in30 = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)
@@ -541,7 +559,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
       const due = new Date(r.reviewDueDate)
       r.reviewCriticality = due < today ? 1 : due <= in30 ? 2 : 3
     })
-  })
+  }
+  this.after('READ', Restrictions, _computeReviewCriticality)
+  this.after('READ', Restrictions.drafts, _computeReviewCriticality)
   this.before('DELETE', BridgeRestrictions, req => {
     return req.error(405, 'BridgeRestrictions cannot be deleted — use deactivate instead.')
   })
