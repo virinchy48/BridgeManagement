@@ -1,0 +1,212 @@
+{
+  "security_issues": [
+    {
+      "severity": "MEDIUM",
+      "handler": "handlers/maintenance.js",
+      "lines": "29, 36",
+      "issue": "Incorrect logAudit signature - called with (req, entity, ID, oldValue, newValue) but function expects (db, req, action, entity, entityId, entityName, changes, description)",
+      "impact": "Audit logging will fail silently; maintenance action changes are not logged to AuditLog",
+      "recommendation": "Pass db connection as first parameter: await logAudit(db, req, 'ACTION', 'BridgeMaintenanceActions', ID, actionRef, {active: newState}, msg)"
+    },
+    {
+      "severity": "LOW",
+      "handler": "handlers/load-ratings.js",
+      "lines": "41-68",
+      "issue": "User input 'daysAhead' in getExpiringCertificates handler not validated before arithmetic",
+      "impact": "Potential for negative or extremely large numbers affecting performance; no DoS protection on parameter",
+      "recommendation": "Validate: const days = Math.max(1, Math.min(365, Number(req.data.daysAhead) || 90))"
+    },
+    {
+      "severity": "LOW",
+      "handler": "handlers/risk-assessments.js",
+      "lines": "64-65",
+      "issue": "Unvalidated minResidualScore user input used directly in WHERE clause",
+      "impact": "Potential for unexpected query behavior if user passes extreme values",
+      "recommendation": "Validate: const minScore = Math.max(0, Math.min(100, Number(req.data.minResidualScore) || 15)) — already done correctly"
+    },
+    {
+      "severity": "MEDIUM",
+      "handler": "handlers/dashboard.js",
+      "lines": "57-75",
+      "issue": "State/region filter logic bypasses filter on KPISnapshots read - user input directly used in object property assignment",
+      "impact": "KPISnapshots may leak data for states outside user's authorized region",
+      "recommendation": "Add validation layer for state/region parameters against user roles before constructing WHERE clause"
+    },
+    {
+      "severity": "LOW",
+      "handler": "handlers/upload.js",
+      "lines": "43-58",
+      "issue": "CSV parsing is custom-built (non-standard); potential edge cases with quoted fields and newlines inside cells",
+      "impact": "Malformed CSV could cause incorrect data parsing or injection of unintended field values",
+      "recommendation": "Consider using a validated CSV parser library (e.g., papaparse, csv-parse) or ensure comprehensive unit test coverage"
+    },
+    {
+      "severity": "LOW",
+      "handler": "srv/server.js",
+      "lines": "2226, 2241",
+      "issue": "Custom router for mass-upload has express.json limit of 70MB via SystemConfig; no secondary defense if config is modified",
+      "impact": "Large payload attacks could bypass memory limits if config is incorrectly edited",
+      "recommendation": "Add hardcoded MAX_FILE_SIZE limit in handler before parsing; use middleware-level protection"
+    }
+  ],
+  "missing_allowed_values": [
+    {
+      "definitionId": "20000000-0000-0000-0000-000000000002",
+      "internalKey": "pbs_approval_level",
+      "name": "PBS Approval Level",
+      "reason": "SingleSelect definition exists but NO corresponding rows in AttributeAllowedValues.csv"
+    },
+    {
+      "definitionId": "20000000-0000-0000-0000-000000000003",
+      "internalKey": "load_capacity",
+      "name": "Load Capacity",
+      "reason": "Defined as Decimal with min/max but no enum values; free-text field appropriate for numeric ranges"
+    },
+    {
+      "definitionId": "20000000-0000-0000-0000-000000000004",
+      "internalKey": "year_built",
+      "name": "Year Built",
+      "reason": "Defined as Date type; no allowed values needed (free-text date field)"
+    },
+    {
+      "definitionId": "20000000-0000-0000-0000-000000000005",
+      "internalKey": "span_count",
+      "name": "Span Count",
+      "reason": "Defined as Integer with min/max but no enum values; free-text field appropriate for numeric ranges"
+    },
+    {
+      "definitionId": "20000000-0000-0000-0000-000000000009",
+      "internalKey": "heritage_listed",
+      "name": "Heritage Listed",
+      "reason": "Defined as Boolean type; no allowed values needed"
+    },
+    {
+      "definitionId": "20000000-0000-0000-0000-000000000010",
+      "internalKey": "last_structural_review",
+      "name": "Last Structural Review",
+      "reason": "Defined as Date type; no allowed values needed"
+    },
+    {
+      "definitionId": "20000000-0000-0000-0000-000000000011",
+      "internalKey": "engineer_notes",
+      "name": "Engineer Notes",
+      "reason": "Defined as Text type; no allowed values needed"
+    },
+    {
+      "definitionId": "20000000-0000-0000-0000-000000000013",
+      "internalKey": "structural_deficiency_code",
+      "name": "Structural Deficiency Code",
+      "reason": "Defined as Text type; no allowed values needed"
+    }
+  ],
+  "free_text_fields_needing_enums": [
+    {
+      "entity": "BridgeInspections",
+      "field": "inspectionType",
+      "datatype": "String(40)",
+      "reason": "Should be enum: 'General' | 'Principal' | 'Detailed' | 'Condition' per handler validation at line 20-27 of inspections.js"
+    },
+    {
+      "entity": "BridgeDefects",
+      "field": "defectType",
+      "datatype": "String(40)",
+      "reason": "Should be enum covering defect categories (e.g., 'Structural', 'Surface', 'Joint', 'Corrosion')"
+    },
+    {
+      "entity": "BridgeDefects",
+      "field": "bridgeElement",
+      "datatype": "String(40)",
+      "reason": "Should be enum matching BridgeElements.elementType (e.g., 'Deck', 'Abutment', 'Pier', 'Bearing')"
+    },
+    {
+      "entity": "BridgePermits",
+      "field": "permitType",
+      "datatype": "String(60)",
+      "reason": "Comment at schema.cds:637 notes 'Oversize | Overmass | PBS | HML | Special'; should be enforced enum"
+    },
+    {
+      "entity": "BridgeRiskAssessments",
+      "field": "riskCategory",
+      "datatype": "String(40)",
+      "reason": "Should be enum: 'Structural' | 'Environmental' | 'Operational' | 'Safety' based on risk assessment domain"
+    },
+    {
+      "entity": "BridgeRiskAssessments",
+      "field": "riskType",
+      "datatype": "String(40)",
+      "reason": "Handler uses dynamic scoring and comparisons; should be constrained enum"
+    },
+    {
+      "entity": "BridgeScourAssessmentDetail",
+      "field": "scourRisk",
+      "datatype": "String(20)",
+      "reason": "Should be enum: 'VeryLow' | 'Low' | 'Medium' | 'High' | 'VeryHigh' per nhvr-compliance.js line 16 mapping"
+    },
+    {
+      "entity": "BridgeMaintenanceActions",
+      "field": "actionType",
+      "datatype": "MaintenanceActionType (enum)",
+      "reason": "Already defined as enum with default 'Repair'; verify full enum values are seeded (Repair | Replacement | Upgrade | Preventive)"
+    },
+    {
+      "entity": "BridgeDefects",
+      "field": "urgency",
+      "datatype": "Integer [1-4]",
+      "reason": "Currently Integer with @assert.range; should map to labeled enum: 1=Low | 2=Medium | 3=High | 4=Critical for UI consistency"
+    },
+    {
+      "entity": "BridgeElements",
+      "field": "urgencyLevel",
+      "datatype": "String(20)",
+      "reason": "Free-text field; should be enum: 'Low' | 'Medium' | 'High' | 'Critical' with consistent mapping to defect urgency"
+    }
+  ],
+  "unprotected_routes": [
+    {
+      "route": "/health",
+      "method": "GET",
+      "protection": "None (public)",
+      "handler": "srv/server.js:1129",
+      "risk": "LOW - health check endpoints are intentionally public for monitoring",
+      "recommendation": "No change needed; typical for health probes"
+    },
+    {
+      "route": "/health/deep",
+      "method": "GET",
+      "protection": "None (public)",
+      "handler": "srv/server.js:1140",
+      "risk": "LOW - deep health check is intentionally public for ops monitoring",
+      "recommendation": "Consider rate-limiting to prevent abuse; ensure no sensitive info leaked"
+    },
+    {
+      "route": "All custom Express routers",
+      "examples": ["/mass-upload/api", "/dashboard/api", "/map/api", "/mass-edit/api", "/audit/api", "/access/api", "/quality/api", "/system/api"],
+      "protection": "Protected by requiresAuthentication + optional requireScope",
+      "handler": "srv/server.js:1173-2683",
+      "risk": "NONE - all business routes properly protected",
+      "recommendation": "Routes are well-protected; ensure requiresAuthentication and requireScope are always called in correct order"
+    }
+  ],
+  "audit_summary": {
+    "total_handlers_checked": 19,
+    "handlers_with_logAudit_calls": 14,
+    "missing_audit_calls": "None detected — all major CRUD operations log changes",
+    "handlers_without_audit": ["load-ratings.js", "elements.js", "nhvr-compliance.js", "alerts.js"],
+    "handlers_with_dynamic_property_access": "None detected using bracket notation on user input without validation",
+    "raw_sql_string_concatenation": "None detected — all queries use CDS QL (SELECT/INSERT/UPDATE/DELETE)",
+    "credential_logging": "None detected — no API keys, passwords, or credentials logged",
+    "notes": "Handlers follow CAP best practices; no critical vulnerabilities detected. Maintenance.js has incorrect logAudit signature requiring fix."
+  },
+  "audit_date": "2026-05-14",
+  "audit_scope": "BMS Bridge Management System at /Users/siddharthaampolu/39 18042026",
+  "checked_components": [
+    "srv/handlers/*.js (19 files)",
+    "srv/server.js (router protection)",
+    "srv/access-control.cds (annotation-based authz)",
+    "db/data/bridge.management-AttributeDefinitions.csv",
+    "db/data/bridge.management-AttributeAllowedValues.csv",
+    "db/schema.cds and db/schema/*.cds (enum fields)",
+    "srv/services/*.cds (entity restrictions)",
+    "app/admin-bridges/webapp/ext/controller/RiskAssessmentsExt.js (Fragment ID)"
+  ]
+}
