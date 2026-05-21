@@ -1,7 +1,6 @@
 sap.ui.define([
     "sap/fe/core/AppComponent",
-    "sap/ui/model/json/JSONModel",
-    "./fe-shims/NavServicePatch"
+    "sap/ui/model/json/JSONModel"
 ], function (AppComponent, JSONModel) {
     "use strict";
 
