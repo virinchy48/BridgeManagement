@@ -381,20 +381,6 @@
                 "url": "/BridgeManagement/massedit"
               }
             },
-            "Reports-display": {
-              "semanticObject": "Reports",
-              "action": "display",
-              "title": "Reports",
-              "signature": {
-                "parameters": {},
-                "additionalParameters": "allowed"
-              },
-              "resolutionResult": {
-                "applicationType": "SAPUI5",
-                "additionalInformation": "SAPUI5.Component=BridgeManagement.reports",
-                "url": "/BridgeManagement/reports"
-              }
-            },
             "Inspections-manage": {
               "semanticObject": "Inspections",
               "action": "manage",
