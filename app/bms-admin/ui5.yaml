@@ -11,3 +11,11 @@ builder:
     excludes:
       - "/test/**"
       - "/localService/**"
+  customTasks:
+    - name: ui5-task-zipper
+      afterTask: generateVersionInfo
+      configuration:
+        archiveName: bms-admin
+        relativePaths: true
+        additionalFiles:
+          - xs-app.json

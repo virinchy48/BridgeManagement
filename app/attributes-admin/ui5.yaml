@@ -15,7 +15,7 @@ builder:
     - name: ui5-task-zipper
       afterTask: generateVersionInfo
       configuration:
-        archiveName: attributesadmin
+        archiveName: attributes-admin
         relativePaths: true
         additionalFiles:
           - xs-app.json

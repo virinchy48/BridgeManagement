@@ -1,0 +1,70 @@
+{
+  "format_version": 1,
+  "imports": [
+    {
+      "target_table": "BRIDGE_MANAGEMENT_GISCONFIG",
+      "source_data": {
+        "data_type": "CSV",
+        "file_name": "bridge.management-GISConfig.csv",
+        "has_header": true,
+        "type_config": {
+          "delimiter": ","
+        }
+      },
+      "import_settings": {
+        "import_columns": [
+          "ID",
+          "DEFAULTBASEMAP",
+          "HEREAPIKEY",
+          "SHOWSTATEBOUNDARIES",
+          "SHOWLGABOUNDARIES",
+          "ENABLESCALEBAR",
+          "ENABLEGPS",
+          "ENABLEMINIMAP",
+          "ENABLEHEATMAP",
+          "ENABLETIMESLIDER",
+          "ENABLESTATSPANEL",
+          "ENABLEPROXIMITY",
+          "ENABLEMGACOORDS",
+          "ENABLESTREETVIEW",
+          "ENABLECONDITIONALERTS",
+          "ENABLECUSTOMWMS",
+          "ENABLESERVERCLUSTERING",
+          "CONDITIONALERTTHRESHOLD",
+          "PROXIMITYDEFAULTRADIUSKM",
+          "HEATMAPRADIUS",
+          "HEATMAPBLUR",
+          "VIEWPORTLOADINGZOOM",
+          "CUSTOMWMSLAYERS"
+        ],
+        "include_filter": [],
+        "upsert": true
+      },
+      "column_mappings": {
+        "ID": "id",
+        "DEFAULTBASEMAP": "defaultBasemap",
+        "HEREAPIKEY": "hereApiKey",
+        "SHOWSTATEBOUNDARIES": "showStateBoundaries",
+        "SHOWLGABOUNDARIES": "showLgaBoundaries",
+        "ENABLESCALEBAR": "enableScaleBar",
+        "ENABLEGPS": "enableGps",
+        "ENABLEMINIMAP": "enableMinimap",
+        "ENABLEHEATMAP": "enableHeatmap",
+        "ENABLETIMESLIDER": "enableTimeSlider",
+        "ENABLESTATSPANEL": "enableStatsPanel",
+        "ENABLEPROXIMITY": "enableProximity",
+        "ENABLEMGACOORDS": "enableMgaCoords",
+        "ENABLESTREETVIEW": "enableStreetView",
+        "ENABLECONDITIONALERTS": "enableConditionAlerts",
+        "ENABLECUSTOMWMS": "enableCustomWms",
+        "ENABLESERVERCLUSTERING": "enableServerClustering",
+        "CONDITIONALERTTHRESHOLD": "conditionAlertThreshold",
+        "PROXIMITYDEFAULTRADIUSKM": "proximityDefaultRadiusKm",
+        "HEATMAPRADIUS": "heatmapRadius",
+        "HEATMAPBLUR": "heatmapBlur",
+        "VIEWPORTLOADINGZOOM": "viewportLoadingZoom",
+        "CUSTOMWMSLAYERS": "customWmsLayers"
+      }
+    }
+  ]
+}

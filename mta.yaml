@@ -21,6 +21,7 @@ modules:
       buildpack: nodejs_buildpack
       health-check-type: http
       health-check-http-endpoint: /health
+      command: node_modules/.bin/cds-serve
     properties:
       DEFAULT_STATE: NSW
       MULTI_STATE_ENABLED: "false"
@@ -42,6 +43,8 @@ modules:
     path: gen/db
     parameters:
       buildpack: nodejs_buildpack
+    properties:
+      HDI_DEPLOY_OPTIONS: '{"auto_undeploy": true}'
     build-parameters:
       ignore:
         - node_modules/
@@ -102,6 +105,10 @@ modules:
         - name: BridgeManagementbmsadmin
           artifacts:
             - bms-admin.zip
+          target-path: app/
+        - name: BridgeManagementdashboard
+          artifacts:
+            - dashboard.zip
           target-path: app/
     requires:
       - name: BridgeManagement-auth
@@ -170,6 +177,17 @@ modules:
   - name: BridgeManagementattributesadmin
     type: html5
     path: app/attributes-admin
+    build-parameters:
+      build-result: dist
+      builder: custom
+      commands:
+        - npm ci
+        - npm run build
+      supported-platforms: []
+
+  - name: BridgeManagementdashboard
+    type: html5
+    path: app/dashboard
     build-parameters:
       build-result: dist
       builder: custom
