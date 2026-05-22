@@ -266,7 +266,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.dashboard",
-                "url": "/BridgeManagement/dashboard"
+                "url": "/BridgeManagementdashboard"
               }
             },
             "Bridges-manage": {
@@ -280,7 +280,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges"
+                "url": "/BridgeManagementadminbridges"
               }
             },
             "Restrictions-manage": {
@@ -294,7 +294,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.restrictions",
-                "url": "/BridgeManagement/restrictions"
+                "url": "/BridgeManagementrestrictions"
               }
             },
             "Map-display": {
@@ -308,7 +308,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.mapview",
-                "url": "/BridgeManagement/mapview"
+                "url": "/BridgeManagementmapview"
               }
             },
             "MapView-display": {
@@ -322,7 +322,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.mapview",
-                "url": "/BridgeManagement/mapview"
+                "url": "/BridgeManagementmapview"
               }
             },
             "MassUpload-display": {
@@ -336,7 +336,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.massupload",
-                "url": "/BridgeManagement/massupload"
+                "url": "/BridgeManagementmassupload"
               }
             },
             "BmsAdmin-manage": {
@@ -350,7 +350,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.bmsadmin",
-                "url": "/BridgeManagement/bmsadmin"
+                "url": "/BridgeManagementbmsadmin"
               }
             },
             "AttributesAdmin-manage": {
@@ -364,7 +364,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.attributesadmin",
-                "url": "/BridgeManagement/attributesadmin"
+                "url": "/BridgeManagementattributesadmin"
               }
             },
             "MassEdit-manage": {
@@ -378,7 +378,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.massedit",
-                "url": "/BridgeManagement/massedit"
+                "url": "/BridgeManagementmassedit"
               }
             },
             "Inspections-manage": {
@@ -392,7 +392,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "BridgeInspections"
               }
             },
@@ -407,7 +407,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "BridgeDefects"
               }
             },
@@ -422,7 +422,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "BridgeCapacities"
               }
             },
@@ -437,7 +437,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "BridgeConditionSurveys"
               }
             },
@@ -452,7 +452,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "BridgeLoadRatings"
               }
             },
@@ -467,7 +467,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "BridgeRiskAssessments"
               }
             },
@@ -482,7 +482,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "NhvrRouteAssessments"
               }
             },
@@ -497,7 +497,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "BridgeScourAssessments"
               }
             },
@@ -512,7 +512,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "LoadRatingCertificates"
               }
             },
@@ -527,7 +527,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "BridgePermits"
               }
             },
@@ -542,7 +542,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "innerAppRoute": "AssetIQScores"
               }
             },
@@ -557,7 +557,7 @@
               "resolutionResult": {
                 "applicationType": "SAPUI5",
                 "additionalInformation": "SAPUI5.Component=BridgeManagement.adminbridges",
-                "url": "/BridgeManagement/adminbridges",
+                "url": "/BridgeManagementadminbridges",
                 "text": "Work Orders",
                 "innerAppRoute": "&/WorkOrdersList"
               }
