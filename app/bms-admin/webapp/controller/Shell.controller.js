@@ -16,7 +16,6 @@ sap.ui.define([
     attributeReport:  "attributeReport",
     apiDocs:          "apiDocs",
     featureFlags:     "featureFlags",
-    demoData:         "demoData",
     lookupValues:     "lookupValues",
     help:             "help"
   };

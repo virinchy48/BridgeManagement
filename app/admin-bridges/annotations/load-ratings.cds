@@ -12,6 +12,10 @@ annotate AdminService.LoadRatingCertificates with {
     @Common.QuickInfo: 'Engineering standard used (AS 5100, NAASRA, Load Testing). Record the per-vehicle-class assessment values in the Load Ratings tile; this certificate formalises the overall result.';
   jurisdictionApproval @title: 'Jurisdiction Approval Reference';
   approvalDate         @title: 'Approval Date';
+  status               @title: 'Status';
+  ratingStandard       @title: 'Rating Standard';
+  certificateIssueDate @title: 'Issue Date';
+  certificateExpiryDate @title: 'Expiry Date';
 };
 
 annotate AdminService.LoadRatingCertificates with {
