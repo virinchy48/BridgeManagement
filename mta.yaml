@@ -1,6 +1,6 @@
 _schema-version: 3.3.0
 ID: BridgeManagement
-version: 2.0.8
+version: 2.0.9
 description: "Bridge Management System — NSW standalone"
 parameters:
   enable-parallel-deployments: true
@@ -23,7 +23,7 @@ modules:
     properties:
       DEFAULT_STATE: NSW
       MULTI_STATE_ENABLED: "false"
-      APP_VERSION: "1.0.0-nsw-standalone"
+      APP_VERSION: "2.0.9-nsw-standalone"
     build-parameters:
       builder: npm-ci
     provides:
