@@ -94,13 +94,14 @@ entity Bridges : managed {
       loadLimitTruck          : Decimal(9,2);  // Denormalised truck load limit t — also in BridgeRestrictions (WA: LOAD_LMT_TRUCK)
       loadLimitSemitrailer    : Decimal(9,2);  // Denormalised semi-trailer load limit t (WA: LOAD_LMT_SEMITRL)
       // Virtual fields populated server-side for UI KPI chips — never persisted
-      virtual postingStatusCriticality : Integer;
-      virtual activeRestrictionCount   : Integer default 0;
-      virtual activeClosureCount       : Integer default 0;
-      virtual bsiScore                 : Decimal(5,2);
-      virtual bsiWidthRating           : Integer;
-      virtual bsiBarrierRating         : Integer;
-      virtual bsiRouteAltRating        : Integer;
-      virtual bhi                      : Decimal(5,2);
-      virtual nbi                      : Decimal(5,2);
+      virtual postingStatusCriticality    : Integer;
+      virtual conditionRatingCriticality  : Integer;
+      virtual activeRestrictionCount      : Integer default 0;
+      virtual activeClosureCount          : Integer default 0;
+      virtual bsiScore                    : Decimal(5,2);
+      virtual bsiWidthRating              : Integer;
+      virtual bsiBarrierRating            : Integer;
+      virtual bsiRouteAltRating           : Integer;
+      virtual bhi                         : Decimal(5,2);
+      virtual nbi                         : Decimal(5,2);
 }

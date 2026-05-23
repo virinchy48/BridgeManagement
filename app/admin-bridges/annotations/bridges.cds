@@ -48,13 +48,9 @@ annotate AdminService.Bridges with @(
 
     // ── ObjectPage Dynamic Header — KPI chips ───────────────────────────────
     DataPoint#ConditionRating: {
-      Value: conditionRating,
-      Title: 'Condition Rating',
-      CriticalityCalculation: {
-        ImprovementDirection: #Maximize,
-        ToleranceRangeLowValue:  8,
-        DeviationRangeLowValue:  5
-      }
+      Value:       conditionRating,
+      Title:       'Condition Rating',
+      Criticality: conditionRatingCriticality
     },
     DataPoint#BSI: {
       Value: bsiScore,
@@ -698,8 +694,9 @@ annotate AdminService.Bridges with {
 
 // Virtual fields are internal — hide from all form layouts
 annotate AdminService.Bridges with {
-  postingStatusCriticality @UI.Hidden;
-  activeRestrictionCount   @UI.Hidden;
+  postingStatusCriticality    @UI.Hidden;
+  conditionRatingCriticality  @UI.Hidden;
+  activeRestrictionCount      @UI.Hidden;
 };
 
 annotate AdminService.Bridges with {

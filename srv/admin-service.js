@@ -439,8 +439,9 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const list = Array.isArray(results) ? results : (results ? [results] : [])
     for (const b of list) {
       if (!b) continue
-      b.postingStatusCriticality = b.postingStatusCriticality ?? 2
-      b.activeRestrictionCount   = b.activeRestrictionCount   ?? 0
+      b.postingStatusCriticality   = b.postingStatusCriticality   ?? 2
+      b.conditionRatingCriticality = b.conditionRatingCriticality ?? 0
+      b.activeRestrictionCount     = b.activeRestrictionCount     ?? 0
       b.activeClosureCount       = b.activeClosureCount       ?? 0
       b.bsiScore                 = b.bsiScore                 ?? null
       b.bsiWidthRating           = b.bsiWidthRating           ?? null
@@ -456,7 +457,11 @@ module.exports = class AdminService extends cds.ApplicationService { init() {
     const list = Array.isArray(results) ? results : (results ? [results] : [])
     for (const b of list) {
       if (!b) continue
-      b.postingStatusCriticality = POSTING_CRITICALITY[b.postingStatus] ?? 2
+      b.postingStatusCriticality   = POSTING_CRITICALITY[b.postingStatus] ?? 2
+      b.conditionRatingCriticality = b.conditionRating == null ? 0
+        : b.conditionRating >= 8 ? 3    // green  ≥8
+        : b.conditionRating >= 5 ? 2    // amber  5-7
+        : 1                             // red    <5
       b.activeRestrictionCount   = 0
       b.activeClosureCount       = 0
     }
