@@ -55,7 +55,12 @@
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
-        "uri": "i18n/i18n.properties"
+        "uri": "i18n/i18n.properties",
+        "settings": {
+          "supportedLocales": [
+            ""
+          ]
+        }
       },
       "": {
         "dataSource": "AdminService",
@@ -550,7 +555,7 @@
                       "type": "Emphasized"
                     },
                     "viewInS4Action": {
-                      "text": "View in S/4HANA \u2197",
+                      "text": "View in S/4HANA ↗",
                       "press": "BridgeManagement.adminbridges.ext.controller.BridgeDetailExt.onViewInS4Hana",
                       "enabled": true,
                       "requiresSelection": false,

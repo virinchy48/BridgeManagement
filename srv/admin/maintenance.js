@@ -16,6 +16,9 @@ module.exports = function registerMaintenance(svc) {
       const bridge = await SELECT.one.from(svc.entities.Bridges).columns('ID').where({ bridgeId: d.bridgeRef })
       if (bridge) d.bridge_ID = bridge.ID
       else req.error(404, `Bridge '${d.bridgeRef}' not found`)
+    } else if (d.bridge_ID) {
+      const bridge = await SELECT.one.from(svc.entities.Bridges).columns('bridgeId').where({ ID: d.bridge_ID })
+      if (bridge) d.bridgeRef = bridge.bridgeId
     }
   })
 

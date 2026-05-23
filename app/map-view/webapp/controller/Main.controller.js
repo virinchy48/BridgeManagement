@@ -1682,59 +1682,46 @@ sap.ui.define([
     _loadGisConfig: function () {
       var self = this;
       var configUrl = "/map/api/config";
-      var demoUrl   = "/odata/v4/admin/SystemConfig('demoModeActive')";
 
-      var configP = fetch(configUrl)
+      return fetch(configUrl)
         .then(function (res) { return res.ok ? res.json() : Promise.reject(res.statusText); })
-        .catch(function () { return null; });
-
-      var demoP = fetch(demoUrl, { headers: { Accept: "application/json" } })
-        .then(function (res) { return res.ok ? res.json() : null; })
-        .catch(function () { return null; });
-
-      return Promise.all([configP, demoP]).then(function (results) {
-        var cfg            = results[0];
-        var demoModeConfig = results[1];
-
-        if (cfg) {
-          self._gisConfig = cfg;
-          self._vm().setProperty("/gisConfig", cfg);
-          // SQLite returns 0/1 integers for booleans — use loose falsy check
-          var on = function (val) { return val !== false && val !== 0 && val != null; };
-          var off = function (val, dflt) { return val == null ? (dflt === true) : (val !== false && val !== 0); };
-          self._vm().setProperty("/features", {
-            scaleBar:         off(cfg.enableScaleBar, true),
-            gps:              off(cfg.enableGps, true),
-            minimap:          off(cfg.enableMinimap, true),
-            heatmap:          on(cfg.enableHeatmap),
-            timeSlider:       on(cfg.enableTimeSlider),
-            statsPanel:       off(cfg.enableStatsPanel, true),
-            proximity:        off(cfg.enableProximity, true),
-            mgaCoords:        off(cfg.enableMgaCoords, true),
-            streetView:       off(cfg.enableStreetView, true),
-            conditionAlerts:  off(cfg.enableConditionAlerts, true),
-            customWms:        on(cfg.enableCustomWms),
-            serverClustering: on(cfg.enableServerClustering),
-            showStateBoundaries: on(cfg.showStateBoundaries),
-            showLgaBoundaries:   on(cfg.showLgaBoundaries)
-          });
-          if (cfg.defaultBasemap && cfg.defaultBasemap !== "street") {
-            self._vm().setProperty("/basemap", cfg.defaultBasemap);
+        .catch(function () { return null; })
+        .then(function (cfg) {
+          if (cfg) {
+            self._gisConfig = cfg;
+            self._vm().setProperty("/gisConfig", cfg);
+            // SQLite returns 0/1 integers for booleans — use loose falsy check
+            var on = function (val) { return val !== false && val !== 0 && val != null; };
+            var off = function (val, dflt) { return val == null ? (dflt === true) : (val !== false && val !== 0); };
+            self._vm().setProperty("/features", {
+              scaleBar:         off(cfg.enableScaleBar, true),
+              gps:              off(cfg.enableGps, true),
+              minimap:          off(cfg.enableMinimap, true),
+              heatmap:          on(cfg.enableHeatmap),
+              timeSlider:       on(cfg.enableTimeSlider),
+              statsPanel:       off(cfg.enableStatsPanel, true),
+              proximity:        off(cfg.enableProximity, true),
+              mgaCoords:        off(cfg.enableMgaCoords, true),
+              streetView:       off(cfg.enableStreetView, true),
+              conditionAlerts:  off(cfg.enableConditionAlerts, true),
+              customWms:        on(cfg.enableCustomWms),
+              serverClustering: on(cfg.enableServerClustering),
+              showStateBoundaries: on(cfg.showStateBoundaries),
+              showLgaBoundaries:   on(cfg.showLgaBoundaries)
+            });
+            if (cfg.defaultBasemap && cfg.defaultBasemap !== "street") {
+              self._vm().setProperty("/basemap", cfg.defaultBasemap);
+            }
+            if (cfg.showStateBoundaries) {
+              self._vm().setProperty("/layers/refLayers/stateBoundaries", true);
+            }
+            if (cfg.showLgaBoundaries) {
+              self._vm().setProperty("/layers/refLayers/lgaBoundaries", true);
+            }
+          } else {
+            self._gisConfig = null;
           }
-          if (cfg.showStateBoundaries) {
-            self._vm().setProperty("/layers/refLayers/stateBoundaries", true);
-          }
-          if (cfg.showLgaBoundaries) {
-            self._vm().setProperty("/layers/refLayers/lgaBoundaries", true);
-          }
-        } else {
-          self._gisConfig = null;
-        }
-
-        if (demoModeConfig && demoModeConfig.value === "true") {
-          self._vm().setProperty("/demoModeActive", true);
-        }
-      });
+        });
     },
 
     _loadDynamicRefLayers: function () {

@@ -6,7 +6,9 @@
     "title": "{{appTitle}}",
     "description": "{{appDescription}}",
     "i18n": "i18n/i18n.properties",
-    "applicationVersion": { "version": "1.0.0" },
+    "applicationVersion": {
+      "version": "1.0.0"
+    },
     "crossNavigation": {
       "inbounds": {}
     }
@@ -14,7 +16,11 @@
   "sap.ui": {
     "technology": "UI5",
     "fullWidth": true,
-    "deviceTypes": { "desktop": true, "phone": false, "tablet": true }
+    "deviceTypes": {
+      "desktop": true,
+      "phone": false,
+      "tablet": true
+    }
   },
   "sap.ui5": {
     "dependencies": {
@@ -27,16 +33,36 @@
       }
     },
     "models": {
-      "i18n": { "type": "sap.ui.model.resource.ResourceModel", "uri": "i18n/i18n.properties" }
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties",
+        "settings": {
+          "supportedLocales": [
+            ""
+          ]
+        }
+      }
     },
-    "resources": { "css": [{ "uri": "css/style.css" }] },
+    "resources": {
+      "css": [
+        {
+          "uri": "css/style.css"
+        }
+      ]
+    },
     "rootView": {
       "viewName": "BridgeManagement.reports.view.Main",
       "type": "XML",
       "async": true,
       "id": "Main"
     },
-    "contentDensities": { "compact": true, "cozy": false }
+    "contentDensities": {
+      "compact": true,
+      "cozy": false
+    }
   },
-  "sap.fiori": { "registrationIds": [], "archeType": "analytical" }
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "analytical"
+  }
 }

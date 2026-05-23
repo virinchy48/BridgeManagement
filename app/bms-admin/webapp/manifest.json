@@ -6,11 +6,16 @@
     "title": "BMS Administration",
     "description": "Bridge Management System Administration",
     "i18n": "i18n/i18n.properties",
-    "applicationVersion": { "version": "1.0.0" },
+    "applicationVersion": {
+      "version": "1.0.0"
+    },
     "crossNavigation": {
       "inbounds": {
         "BmsAdmin-manage": {
-          "signature": { "parameters": {}, "additionalParameters": "allowed" },
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          },
           "semanticObject": "BmsAdmin",
           "action": "manage",
           "title": "BMS Administration",
@@ -23,7 +28,11 @@
   "sap.ui": {
     "technology": "UI5",
     "fullWidth": true,
-    "deviceTypes": { "desktop": true, "phone": false, "tablet": true }
+    "deviceTypes": {
+      "desktop": true,
+      "phone": false,
+      "tablet": true
+    }
   },
   "sap.ui5": {
     "dependencies": {
@@ -39,7 +48,12 @@
     "models": {
       "i18n": {
         "type": "sap.ui.model.resource.ResourceModel",
-        "uri": "i18n/i18n.properties"
+        "uri": "i18n/i18n.properties",
+        "settings": {
+          "supportedLocales": [
+            ""
+          ]
+        }
       }
     },
     "rootView": {
@@ -54,41 +68,143 @@
         "viewPath": "BridgeManagement.bmsadmin.view",
         "controlId": "adminNavContainer",
         "controlAggregation": "pages",
-        "bypassed": { "target": "changeDocuments" }
+        "bypassed": {
+          "target": "changeDocuments"
+        }
       },
       "routes": [
-        { "pattern": "", "name": "home", "target": "changeDocuments" },
-        { "pattern": "change-documents", "name": "changeDocuments", "target": "changeDocuments" },
-        { "pattern": "data-quality",       "name": "dataQuality",       "target": "dataQuality" },
-        { "pattern": "user-access", "name": "userAccess", "target": "userAccess" },
-        { "pattern": "system-config", "name": "systemConfig", "target": "systemConfig" },
-        { "pattern": "bnac-config", "name": "bnacConfig", "target": "bnacConfig" },
-        { "pattern": "attribute-config",  "name": "attributeConfig",  "target": "attributeConfig" },
-        { "pattern": "attribute-report",  "name": "attributeReport",  "target": "attributeReport" },
-        { "pattern": "gis-config",        "name": "gisConfig",        "target": "gisConfig" },
-{ "pattern": "api-docs",         "name": "apiDocs",         "target": "apiDocs" },
-        { "pattern": "feature-flags",    "name": "featureFlags",    "target": "featureFlags" },
-        { "pattern": "demo-data",         "name": "demoData",         "target": "demoData" },
-        { "pattern": "lookup-values",     "name": "lookupValues",     "target": "lookupValues" },
-        { "pattern": "help",              "name": "help",              "target": "help" }
+        {
+          "pattern": "",
+          "name": "home",
+          "target": "changeDocuments"
+        },
+        {
+          "pattern": "change-documents",
+          "name": "changeDocuments",
+          "target": "changeDocuments"
+        },
+        {
+          "pattern": "data-quality",
+          "name": "dataQuality",
+          "target": "dataQuality"
+        },
+        {
+          "pattern": "user-access",
+          "name": "userAccess",
+          "target": "userAccess"
+        },
+        {
+          "pattern": "system-config",
+          "name": "systemConfig",
+          "target": "systemConfig"
+        },
+        {
+          "pattern": "bnac-config",
+          "name": "bnacConfig",
+          "target": "bnacConfig"
+        },
+        {
+          "pattern": "attribute-config",
+          "name": "attributeConfig",
+          "target": "attributeConfig"
+        },
+        {
+          "pattern": "attribute-report",
+          "name": "attributeReport",
+          "target": "attributeReport"
+        },
+        {
+          "pattern": "gis-config",
+          "name": "gisConfig",
+          "target": "gisConfig"
+        },
+        {
+          "pattern": "api-docs",
+          "name": "apiDocs",
+          "target": "apiDocs"
+        },
+        {
+          "pattern": "feature-flags",
+          "name": "featureFlags",
+          "target": "featureFlags"
+        },
+        {
+          "pattern": "demo-data",
+          "name": "demoData",
+          "target": "demoData"
+        },
+        {
+          "pattern": "lookup-values",
+          "name": "lookupValues",
+          "target": "lookupValues"
+        },
+        {
+          "pattern": "help",
+          "name": "help",
+          "target": "help"
+        }
       ],
       "targets": {
-        "changeDocuments": { "viewName": "ChangeDocuments",  "viewLevel": 1 },
-        "dataQuality":      { "viewName": "DataQuality",      "viewLevel": 1 },
-        "userAccess":      { "viewName": "UserAccess",       "viewLevel": 1 },
-        "systemConfig":    { "viewName": "SystemConfig",     "viewLevel": 1 },
-        "bnacConfig":      { "viewName": "BnacConfig",       "viewLevel": 1 },
-        "attributeConfig": { "viewName": "AttributeConfig",  "viewLevel": 1 },
-        "attributeReport": { "viewName": "AttributeReport",  "viewLevel": 1 },
-        "gisConfig":       { "viewName": "GisConfig",        "viewLevel": 1 },
-"apiDocs":         { "viewName": "ApiDocs",          "viewLevel": 1 },
-        "featureFlags":    { "viewName": "FeatureFlags",      "viewLevel": 1 },
-        "demoData":        { "viewName": "DemoData",          "viewLevel": 1 },
-        "lookupValues":    { "viewName": "LookupValues",      "viewLevel": 1, "title": "Lookup Values" },
-        "help":            { "viewName": "Help",              "viewLevel": 1, "title": "Help & Documentation" }
+        "changeDocuments": {
+          "viewName": "ChangeDocuments",
+          "viewLevel": 1
+        },
+        "dataQuality": {
+          "viewName": "DataQuality",
+          "viewLevel": 1
+        },
+        "userAccess": {
+          "viewName": "UserAccess",
+          "viewLevel": 1
+        },
+        "systemConfig": {
+          "viewName": "SystemConfig",
+          "viewLevel": 1
+        },
+        "bnacConfig": {
+          "viewName": "BnacConfig",
+          "viewLevel": 1
+        },
+        "attributeConfig": {
+          "viewName": "AttributeConfig",
+          "viewLevel": 1
+        },
+        "attributeReport": {
+          "viewName": "AttributeReport",
+          "viewLevel": 1
+        },
+        "gisConfig": {
+          "viewName": "GisConfig",
+          "viewLevel": 1
+        },
+        "apiDocs": {
+          "viewName": "ApiDocs",
+          "viewLevel": 1
+        },
+        "featureFlags": {
+          "viewName": "FeatureFlags",
+          "viewLevel": 1
+        },
+        "demoData": {
+          "viewName": "DemoData",
+          "viewLevel": 1
+        },
+        "lookupValues": {
+          "viewName": "LookupValues",
+          "viewLevel": 1,
+          "title": "Lookup Values"
+        },
+        "help": {
+          "viewName": "Help",
+          "viewLevel": 1,
+          "title": "Help & Documentation"
+        }
       }
     },
-    "contentDensities": { "compact": true, "cozy": true }
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    }
   },
   "sap.fiori": {
     "registrationIds": [],
