@@ -1,7 +1,8 @@
-name: BMS CI
+name: BMS CI/CD
+
 on:
   push:
-    branches: [main, draftv8-btp-sid]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -10,24 +11,99 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+
       - run: npm ci
+
       - name: CDS compile check
         run: npx cds compile db/ srv/ --to json > /dev/null
+
       - name: Run tests
         run: npm test
+
       - name: CDS production build
         run: npx cds build --production
+
       - name: MBT build
         run: |
           npm install -g mbt
           mbt build --mtar BridgeManagement_ci.mtar
+
       - name: Upload MTAR artifact
         uses: actions/upload-artifact@v4
         with:
           name: BridgeManagement-mtar
           path: mta_archives/BridgeManagement_ci.mtar
           retention-days: 14
+
+  deploy-to-btp:
+    name: Deploy to SAP BTP
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: CDS production build
+        run: npx cds build --production
+
+      - name: Install MBT and build MTAR
+        run: |
+          npm install -g mbt
+          mbt build --mtar BridgeManagement_deploy.mtar
+
+      - name: Install CF CLI
+        run: |
+          curl -fsSL "https://github.com/cloudfoundry/cli/releases/download/v8.7.10/cf8-cli_8.7.10_linux_x86-64.tgz" -o /tmp/cf.tgz
+          tar -xzf /tmp/cf.tgz -C /tmp
+          sudo mv /tmp/cf8 /usr/local/bin/cf
+          cf --version
+
+      - name: CF Login
+        run: |
+          cf login \
+            -a "${{ secrets.CF_API }}" \
+            -u "${{ secrets.CF_USERNAME }}" \
+            -p "${{ secrets.CF_PASSWORD }}" \
+            -o "${{ secrets.CF_ORG }}" \
+            -s "${{ secrets.CF_SPACE }}"
+
+      - name: Deploy to BTP
+        run: |
+          printf 'y\n' | cf deploy mta_archives/BridgeManagement_deploy.mtar \
+            --version-rule ALL \
+            -f 2>&1 | tee deploy.log
+          echo "=== DEPLOY COMPLETE ==="
+
+      - name: Get App URL
+        if: always()
+        run: |
+          echo "=== APP ROUTES ==="
+          cf app BridgeManagement 2>/dev/null | grep -E "routes:|#" || true
+          cf apps 2>/dev/null | grep -E "BridgeManagement" || true
+          echo ""
+          echo "=== FLP URL ==="
+          ROUTE=$(cf app BridgeManagement 2>/dev/null | grep "routes:" | awk '{print $2}')
+          if [ -n "$ROUTE" ]; then
+            echo "https://${ROUTE}/fiori-apps.html"
+          fi
+
+      - name: Upload deploy log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log
+          path: deploy.log
+          retention-days: 7
