@@ -1,0 +1,68 @@
+name: Deploy to SAP BTP
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy to BTP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: CDS production build
+        run: npx cds build --production
+
+      - name: Build MTAR
+        run: |
+          npm install -g mbt
+          mbt build --mtar BridgeManagement_deploy.mtar
+
+      - name: Install CF CLI
+        run: |
+          curl -fsSL "https://github.com/cloudfoundry/cli/releases/download/v8.7.10/cf8-cli_8.7.10_linux_x86-64.tgz" -o /tmp/cf.tgz
+          tar -xzf /tmp/cf.tgz -C /tmp
+          sudo mv /tmp/cf8 /usr/local/bin/cf
+          cf --version
+
+      - name: CF Login
+        run: |
+          cf login \
+            -a https://api.cf.us10-001.hana.ondemand.com \
+            -u ${{ secrets.CF_USERNAME }} \
+            -p ${{ secrets.CF_PASSWORD }} \
+            -o 592f5a7btrial \
+            -s ${{ secrets.CF_SPACE }}
+
+      - name: Deploy to BTP
+        run: |
+          printf 'y\n' | cf deploy mta_archives/BridgeManagement_deploy.mtar \
+            --version-rule ALL -f 2>&1 | tee deploy.log
+          echo "=== DEPLOY COMPLETE ==="
+
+      - name: Print App URL
+        if: success()
+        run: |
+          echo ""
+          echo "=========================================="
+          ROUTE=$(cf app BridgeManagement | grep "routes:" | awk '{print $2}')
+          echo "✅ APP URL: https://${ROUTE}/fiori-apps.html"
+          echo "=========================================="
+
+      - name: Upload deploy log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-log
+          path: deploy.log
+          retention-days: 7
