@@ -5,7 +5,7 @@ const cds = require('@sap/cds')
  * Returns { requiresAuthentication, validateCsrfToken, requireScope }.
  */
 module.exports = function createMiddleware() {
-  const _isDummyAuth = !process.env.VCAP_SERVICES && cds.env.requires?.auth?.kind === 'dummy'
+  const _isDummyAuth = cds.env.requires?.auth?.kind === 'dummy'
 
   const requiresAuthentication = (req, res, next) => {
     if (req.user || req.tokenInfo || req.authInfo) return next()
