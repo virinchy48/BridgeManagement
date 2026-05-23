@@ -1140,3 +1140,44 @@ Applied: Recovery procedure documented
 [2026-05-23] [BTP / CF deploy conflicting process] Learning: If a background `cf deploy` is started and then a second deploy is attempted, the second fails with "Conflicting process found for MTA". Always use a foreground deploy (no `&`) or use `cf deploy -i <process-id> -a abort` to abort the running process before retrying. Check running processes with `cf mta-ops`. The abort clears the lock but the html5-apps-repo HOST lock may take an additional 30-60 seconds to release — wait before retrying if the next deploy shows "app-host is being modified by another process".
 Source: v2.0.12 deploy session — conflicting process from background deploy
 Applied: Documented
+
+[2026-05-23] [UAT / Mandatory fields full reference] Learning: Full UAT pass (2026-05-23) confirmed mandatory fields for all 13 entity types. Canonical minimum viable PATCH for draft activation:
+- **Bridges**: `{bridgeName, bridgeId, state, latitude, longitude, isActive:true, assetOwner, postingStatus}`
+- **Restrictions**: `{bridgeRef, restrictionType, effectiveFrom, restrictionValue, restrictionUnit}`
+- **BridgeInspections**: `{bridge_ID, inspectionType, inspectionDate, inspector, active:true}` — field is `inspector`, NOT `inspectedBy`
+- **BridgeDefects**: `{bridge_ID, defectType, severity, urgency, defectDescription, active:true}`
+- **BridgeCapacities**: `{bridge_ID, capacityType, grossMassLimit, minClearancePosted, effectiveFrom}` — NO `active` field on this entity; including it returns HTTP 400
+- **BridgeConditionSurveys**: `{bridgeRef, bridge_ID, surveyDate, surveyType, conditionRating, status:'Draft', active:true}` — both `bridgeRef` (string) AND `bridge_ID` (integer) are required
+- **BridgeLoadRatings**: `{bridgeRef, bridge_ID, vehicleClass, ratingMethod, ratingFactor, assessmentDate}`
+- **BridgeRiskAssessments**: `{bridge_ID, riskDescription, assessmentDate, assessor, inherentLikelihood, inherentConsequence}` — server auto-computes `inherentRiskScore` + `inherentRiskLevel`; do NOT set them manually
+- **NhvrRouteAssessments**: `{bridge_ID, assessorName, assessorAccreditationNo, assessmentDate, validFrom, assessmentStatus:'Current'}` — `assessmentId` is auto-gen (NRA-NNNN); use `assessmentStatus` NOT `status`; no `active` field
+- **LoadRatingCertificates**: `{bridge_ID, certificateNumber, ratingStandard, ratingLevel, certifyingEngineer, engineerQualification, certificateIssueDate, certificateExpiryDate}` — NO `bridgeRef` field; use `bridge_ID` only; field names: `certifyingEngineer` not `issuedBy`, `certificateIssueDate` not `issueDate`
+- **BridgePermits**: `{bridgeRef, bridge_ID, permitType, applicantName, vehicleClass, appliedDate, validFrom, validTo, status:'Pending', active:true}`
+- **BridgeMaintenanceActions**: `{bridge_ID, actionTitle, actionType, priority, status:'Planned'}` — `actionTitle` is required (not obvious)
+- **BridgeScourAssessments**: `{bridge_ID, assessor, assessmentType, assessmentDate, scourRisk, active:true}` — `assessor` not `assessedBy`, `assessmentType` not `assessmentMethodology`
+Source: Full UAT 2026-05-23 — 13-entity CRUD verification
+Applied: Documented — no code changes (field name corrections are in entity schema)
+
+[2026-05-23] [UAT / Incorrect field names discovered] Learning: Seven field name errors found during full CRUD UAT pass. These are NOT in the schema — they are wrong assumptions. Correct field names:
+- `BridgeInspections.inspector` (NOT `inspectedBy`)
+- `LoadRatingCertificates.certifyingEngineer` (NOT `issuedBy`)
+- `LoadRatingCertificates.certificateIssueDate` (NOT `issueDate`)
+- `LoadRatingCertificates.certificateExpiryDate` (NOT `expiryDate`)
+- `BridgeScourAssessments.assessor` (NOT `assessedBy`)
+- `BridgeScourAssessments.assessmentType` (NOT `assessmentMethodology`)
+- `NhvrRouteAssessments.assessmentStatus` (NOT `status`)
+Non-existent fields: `Bridges.suburb` (does not exist), `LoadRatingCertificates.bridgeRef` (does not exist — use `bridge_ID`), `BridgeCapacities.active` (does not exist on this entity)
+Source: Full UAT 2026-05-23
+Applied: Documented in test/UAT_BMS_Tile_Report_2026-05-23.md Appendix B
+
+[2026-05-23] [UAT / Work Orders Bridge ID column annotation bug] Learning: BridgeMaintenanceActions list report shows blank Bridge ID column even though `bridge_ID` (integer FK) is correctly set in the DB. The `@UI.LineItem` annotation for `WorkOrdersList` likely uses `{ Value: bridge_ID }` (integer) instead of `{ Value: bridge.bridgeId }` (navigation path to string identifier). Fix: in `app/admin-bridges/fiori-service.cds`, find the `WorkOrdersList` LineItem annotation and change `{ Value: bridge_ID }` to `{ Value: bridge.bridgeId, Label: 'Bridge ID' }`. Verify the `bridge` association navigation is annotated with `@Common.Text` or included in `$expand`. This is the canonical pattern used by all other sub-domain list reports (see BridgeInspections, BridgeDefects LineItem annotations for reference).
+Source: UAT 2026-05-23 — P2-001 Work Orders Bridge ID blank
+Applied: Documented in test/UAT_BMS_Fix_List_2026-05-23.md
+
+[2026-05-23] [UAT / demoModeActive stale query in BMS Admin] Learning: BMS Admin app still queries `SystemConfig('demoModeActive')` on every load, returning 404, because demo mode was removed from the backend but the controller query was not cleaned up. The 404 is functionally benign but pollutes the network log and may slightly slow initial load. Fix: grep `bms-admin/webapp` for `demoModeActive` and remove the SystemConfig fetch call (likely in `Shell.controller.js` or a `_checkDemoMode()` function). Alternatively, add a seed row to `bridge.management-SystemConfig.csv` with `key=demoModeActive, value=false`. The seed approach is faster and safer — no controller changes needed.
+Source: UAT 2026-05-23 — P3-001
+Applied: Documented in test/UAT_BMS_Fix_List_2026-05-23.md
+
+[2026-05-23] [UAT / Seed defects orphan bridge_ID] Learning: The 7 legacy seed BridgeDefects records reference `bridge_ID=1001` which does not exist in the Bridges table (IDs 1-57). This causes all 7 rows to show blank Bridge ID in the Defects list report. Fix: update `db/data/bridge.management-BridgeDefects.csv` to use valid bridge_IDs (1-5). This is the same pattern as the BridgeInspections, BridgeRestrictions, LoadRatingCertificates seed data fix applied in May 2026 (also had bridge_ID 1001-1005). Always validate seed CSV bridge_ID values match the Bridges seed data (IDs 1-57 from mass-upload-bridges-australia.csv) after any bridge seed data change.
+Source: UAT 2026-05-23 — P3-003
+Applied: Documented in test/UAT_BMS_Fix_List_2026-05-23.md
