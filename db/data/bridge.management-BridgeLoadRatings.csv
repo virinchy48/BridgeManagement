@@ -1,0 +1,7 @@
+ID,bridge_ID,bridgeRef,ratingRef,vehicleClass,ratingMethod,ratingFactor,grossMassLimit,assessedBy,assessmentDate,validTo,ratingEngineerNer,governingMember,governingFailureMode,dynamicLoadAllowance,reportRef,status,active,remarks
+34c17d98-8e95-4dc0-9b96-330db7348975,1,BRG-NSW-001,LR-0001,T44,AS 5100,0.72,12.5,J. Harrison,2023-09-01,2028-09-01,CPEng,Main arch rib — Crown,Crushing,0.3,LR-LB-T44-2023,Active,true,
+21d5fbfe-4108-47d7-b708-10e0d0065180,3,BRG-NSW-003,LR-0002,T44,AS 5100,0.91,22.5,A. Nguyen,2024-03-15,2029-03-15,CPEng,Timber deck bearer — Span 2,Bending,0.3,LR-HB-T44-2024,Active,true,
+020698a9-fd8a-458a-aed6-4013fb82ec1a,3,BRG-NSW-003,LR-0003,SM1600,AS 5100,0.85,20.0,A. Nguyen,2024-03-15,2029-03-15,CPEng,Timber deck bearer — Span 2,Shear,0.35,LR-HB-SM-2024,Active,true,
+f498fafb-49c5-4d59-82c1-7124bb5f7320,5,BRG-NSW-005,LR-0004,HML,AS 5100,1.0,68.5,R. Patel,2025-01-10,2027-01-10,CPEng,Main arch lower chord,Fatigue,0.3,LR-SHB-HML-2025,Active,true,
+13724848-7474-4795-9093-f6c1263e8fc8,8,BRG-NSW-008,LR-0005,PBS3,AS 5100,0.97,58.5,L. Chen,2024-06-20,2029-06-20,CPEng,PSC box girder — mid span,Bending,0.25,LR-MMC-PBS3-2024,Active,true,
+8c214030-b902-40c8-865f-b1b64658c065,9,BRG-NSW-009,LR-0006,T44,AS 5100,0.91,30.0,B. Williams,2023-11-05,2026-11-05,CPEng,Steel plate girder — Span 3 mid,Fatigue,0.3,LR-GFB-T44-2023,Active,true,
